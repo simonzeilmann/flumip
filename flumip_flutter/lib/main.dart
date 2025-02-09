@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Serverpod Example'),
+      home: const MyHomePage(title: 'Mipgen Example'),
     );
   }
 }
@@ -49,12 +49,13 @@ class MyHomePageState extends State<MyHomePage> {
   // Calls the `hello` method of the `example` endpoint. Will set either the
   // `_resultMessage` or `_errorMessage` field, depending on if the call
   // is successful.
-  void _callHello() async {
+
+  void _createProject() async {
     try {
-      final result = await client.example.hello(_textEditingController.text);
+      final result = await client.mipgen.createProject(_textEditingController.text);
       setState(() {
         _errorMessage = null;
-        _resultMessage = result;
+        _resultMessage = result.toString();
       });
     } catch (e) {
       setState(() {
@@ -78,14 +79,14 @@ class MyHomePageState extends State<MyHomePage> {
               child: TextField(
                 controller: _textEditingController,
                 decoration: const InputDecoration(
-                  hintText: 'Enter your name',
+                  hintText: 'New project name',
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: ElevatedButton(
-                onPressed: _callHello,
+                onPressed: _createProject,
                 child: const Text('Send to Server'),
               ),
             ),
