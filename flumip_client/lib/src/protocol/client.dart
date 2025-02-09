@@ -27,6 +27,21 @@ class EndpointExample extends _i1.EndpointRef {
       );
 }
 
+/// {@category Endpoint}
+class EndpointMipgen extends _i1.EndpointRef {
+  EndpointMipgen(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'mipgen';
+
+  _i2.Future<bool> createProject(String name) =>
+      caller.callServerEndpoint<bool>(
+        'mipgen',
+        'createProject',
+        {'name': name},
+      );
+}
+
 class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
@@ -54,12 +69,18 @@ class Client extends _i1.ServerpodClientShared {
               disconnectStreamsOnLostInternetConnection,
         ) {
     example = EndpointExample(this);
+    mipgen = EndpointMipgen(this);
   }
 
   late final EndpointExample example;
 
+  late final EndpointMipgen mipgen;
+
   @override
-  Map<String, _i1.EndpointRef> get endpointRefLookup => {'example': example};
+  Map<String, _i1.EndpointRef> get endpointRefLookup => {
+        'example': example,
+        'mipgen': mipgen,
+      };
 
   @override
   Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {};
