@@ -24,7 +24,7 @@ void main() {
     expect(result, true);
 
     mipgenService.deleteProject("testToDelete");
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(Duration(milliseconds: 50));
     expect(await mipgenService.checkProjectExists("testToDelete"), false);
   });
 
