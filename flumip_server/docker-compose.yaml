@@ -1,0 +1,54 @@
+services:
+  # Development services
+  postgres:
+    image: postgres:16.3
+    ports:
+      - '8090:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: flumip
+      POSTGRES_PASSWORD: "Ts9sUjpsxo_I4VGCOcw_UrF3gPrInFqG"
+    volumes:
+      - flumip_data:/var/lib/postgresql/data
+    profiles:
+      - '' # Default profile
+      - dev
+  redis:
+    image: redis:6.2.6
+    ports:
+      - '8091:6379'
+    command: redis-server --requirepass "lA8abCY8kEJkisCro2UQ38KHooZrurO_"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    profiles:
+      - '' # Default profile
+      - dev
+
+  # Test services
+  postgres_test:
+    image: postgres:16.3
+    ports:
+      - '9090:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: flumip_test
+      POSTGRES_PASSWORD: "zxW_YBwuziG0k5ySRDCXfvWI7EsgSVUo"
+    volumes:
+      - flumip_test_data:/var/lib/postgresql/data
+    profiles:
+      - '' # Default profile
+      - test
+  redis_test:
+    image: redis:6.2.6
+    ports:
+      - '9091:6379'
+    command: redis-server --requirepass "vqJmHdTHMvifg3bjLY3_Y7uunqmvrnRm"
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    profiles:
+      - '' # Default profile
+      - test
+
+volumes:
+  flumip_data:
+  flumip_test_data:
