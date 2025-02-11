@@ -44,7 +44,118 @@ class Endpoints extends _i1.EndpointDispatch {
             session,
             params['name'],
           ),
-        )
+        ),
+        'deleteProject': _i1.MethodConnector(
+          name: 'deleteProject',
+          params: {
+            'name': _i1.ParameterDescription(
+              name: 'name',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).deleteProject(
+            session,
+            params['name'],
+          ),
+        ),
+        'getProjects': _i1.MethodConnector(
+          name: 'getProjects',
+          params: {},
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).getProjects(session),
+        ),
+        'createGeneFile': _i1.MethodConnector(
+          name: 'createGeneFile',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'genes': _i1.ParameterDescription(
+              name: 'genes',
+              type: _i1.getType<List<String>>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).createGeneFile(
+            session,
+            params['projectName'],
+            params['genes'],
+          ),
+        ),
+        'createBedFile': _i1.MethodConnector(
+          name: 'createBedFile',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).createBedFile(
+            session,
+            params['projectName'],
+          ),
+        ),
+        'generateMips': _i1.MethodConnector(
+          name: 'generateMips',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'deleteExcessFiles': _i1.ParameterDescription(
+              name: 'deleteExcessFiles',
+              type: _i1.getType<bool>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).generateMips(
+            session,
+            params['projectName'],
+            params['deleteExcessFiles'],
+          ),
+        ),
+        'showMipsResult': _i1.MethodConnector(
+          name: 'showMipsResult',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).showMipsResult(
+            session,
+            params['projectName'],
+          ),
+        ),
       },
     );
   }

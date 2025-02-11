@@ -33,6 +33,17 @@ class MipgenService {
     Directory("$projectFolder/$projectName").delete(recursive: true);
   }
 
+  Future<List<String>> getProjects() async {
+    var dir = await Directory(projectFolder).list().toList();
+    List<String> projects = [];
+    for (var d in dir) {
+      if (d is Directory) {
+        projects.add(d.path.split("/").last);
+      }
+    }
+    return projects;
+  }
+
   Future<void> createGeneFile(String projectName, List<String> genes) async {
     if (!await checkProjectExists(projectName)) {
       throw ();

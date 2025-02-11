@@ -26,6 +26,60 @@ class EndpointMipgen extends _i1.EndpointRef {
         'createProject',
         {'name': name},
       );
+
+  _i2.Future<void> deleteProject(String name) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'deleteProject',
+        {'name': name},
+      );
+
+  _i2.Future<List<String>> getProjects() =>
+      caller.callServerEndpoint<List<String>>(
+        'mipgen',
+        'getProjects',
+        {},
+      );
+
+  _i2.Future<void> createGeneFile(
+    String projectName,
+    List<String> genes,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'createGeneFile',
+        {
+          'projectName': projectName,
+          'genes': genes,
+        },
+      );
+
+  _i2.Future<void> createBedFile(String projectName) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'createBedFile',
+        {'projectName': projectName},
+      );
+
+  _i2.Future<void> generateMips(
+    String projectName,
+    bool deleteExcessFiles,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'generateMips',
+        {
+          'projectName': projectName,
+          'deleteExcessFiles': deleteExcessFiles,
+        },
+      );
+
+  _i2.Future<List<String>> showMipsResult(String projectName) =>
+      caller.callServerEndpoint<List<String>>(
+        'mipgen',
+        'showMipsResult',
+        {'projectName': projectName},
+      );
 }
 
 class Client extends _i1.ServerpodClientShared {

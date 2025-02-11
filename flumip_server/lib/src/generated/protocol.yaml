@@ -1,2 +1,8 @@
 mipgen:
   - createProject:
+  - deleteProject:
+  - getProjects:
+  - createGeneFile:
+  - createBedFile:
+  - generateMips:
+  - showMipsResult:

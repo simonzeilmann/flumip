@@ -4,7 +4,6 @@ import 'package:serverpod/serverpod.dart';
 class MipgenEndpoint extends Endpoint {
   get mipgenService => MipgenService();
 
-
   // You create methods in your endpoint which are accessible from the client by
   // creating a public method with `Session` as its first parameter.
   // `bool`, `int`, `double`, `String`, `UuidValue`, `Duration`, `DateTime`, `ByteData`,
@@ -14,5 +13,32 @@ class MipgenEndpoint extends Endpoint {
   // passwords, and information about the request being made to the server.
   Future<bool> createProject(Session session, String name) async {
     return mipgenService.createProject(name);
+  }
+
+  Future<void> deleteProject(Session session, String name) async {
+    mipgenService.deleteProject(name);
+  }
+
+  Future<List<String>> getProjects(Session session) async {
+    return mipgenService.getProjects();
+  }
+
+  Future<void> createGeneFile(
+      Session session, String projectName, List<String> genes) async {
+    return mipgenService.createGeneFile(projectName, genes);
+  }
+
+  Future<void> createBedFile(Session session, String projectName) async {
+    return mipgenService.createBedFile(projectName);
+  }
+
+  Future<void> generateMips(
+      Session session, String projectName, bool deleteExcessFiles) async {
+    return mipgenService.generateMips(projectName);
+  }
+
+  Future<List<String>> showMipsResult(
+      Session session, String projectName) async {
+    return mipgenService.showMipsResult(projectName);
   }
 }

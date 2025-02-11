@@ -33,6 +33,10 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i2.Example?>()) {
       return (data != null ? _i2.Example.fromJson(data) : null) as T;
     }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList()
+          as dynamic;
+    }
     return super.deserialize<T>(data, t);
   }
 
