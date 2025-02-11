@@ -32,14 +32,14 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if hg38.fa file exists
-FA_FILE="data/genes/human/hg38/fa/hg38.fa"
+FA_FILE="~/mipgen/data/genes/human/hg38/fa/hg38.fa"
 FA_EXISTS=false
 if [[ -f "$FA_FILE" ]]; then
   FA_EXISTS=true
 fi
 
 # Check if refGene.txt file exists
-REFGENE_FILE="data/genes/human/hg38/refGene.txt"
+REFGENE_FILE="~/mipgen/data/genes/human/hg38/refGene.txt"
 REFGENE_EXISTS=false
 if [[ -f "$REFGENE_FILE" ]]; then
   REFGENE_EXISTS=true
