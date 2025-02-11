@@ -38,6 +38,13 @@ if [[ -f "$FA_FILE" ]]; then
   FA_EXISTS=true
 fi
 
+# Check if refGene.txt file exists
+REFGENE_FILE="data/genes/human/hg38/refGene.txt"
+REFGENE_EXISTS=false
+if [[ -f "$REFGENE_FILE" ]]; then
+  REFGENE_EXISTS=true
+fi
+
 # If -index is set but not -download and hg38.fa doesn't exist, return an error
 if $INDEX && ! $DOWNLOAD && ! $FA_EXISTS; then
   echo -e "${RED}Error: The -index flag requires the -download flag to be set first or an existing hg38.fa file.${NC}"
@@ -74,24 +81,30 @@ echo -e "\n${GREEN}Setting up data directories...${NC}\n"
 mkdir -p data/genes/human/hg38/{fa,snp} projects log
 
 if $DOWNLOAD; then
-  # Download and extract refGene file
-  echo -e "\n${GREEN}Downloading and extracting refGene data...${NC}\n"
-  cd data/genes/human/hg38
-  wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
-  gunzip -f refGene.txt.gz
+  # Download and extract refGene file if not already present
+  if ! $REFGENE_EXISTS; then
+    echo -e "\n${GREEN}Downloading and extracting refGene data...${NC}\n"
+    cd data/genes/human/hg38
+    wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
+    gunzip -f refGene.txt.gz
+    cd ../..
+  fi
 
   # Download SNP files
   echo -e "\n${GREEN}Downloading SNP files...${NC}\n"
-  cd snp
+  cd data/genes/human/hg38/snp
   wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz
   wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz.tbi
+  cd ../..
 
-  # Download and extract hg38 genome sequence
-  echo -e "\n${GREEN}Downloading and extracting hg38 genome sequence...${NC}\n"
-  cd ../fa
-  wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
-  gunzip -f hg38.fa.gz
-  cd ../../../..
+  # Download and extract hg38 genome sequence if not already present
+  if ! $FA_EXISTS; then
+    echo -e "\n${GREEN}Downloading and extracting hg38 genome sequence...${NC}\n"
+    cd fa
+    wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
+    gunzip -f hg38.fa.gz
+    cd ../../..
+  fi
 fi
 
 if $INDEX; then
