@@ -31,9 +31,16 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# If -index is set but not -download, return an error
-if $INDEX && ! $DOWNLOAD; then
-  echo -e "${RED}Error: The -index flag requires the -download flag to be set first.${NC}"
+# Check if hg38.fa file exists
+FA_FILE="data/genes/human/hg38/fa/hg38.fa"
+FA_EXISTS=false
+if [[ -f "$FA_FILE" ]]; then
+  FA_EXISTS=true
+fi
+
+# If -index is set but not -download and hg38.fa doesn't exist, return an error
+if $INDEX && ! $DOWNLOAD && ! $FA_EXISTS; then
+  echo -e "${RED}Error: The -index flag requires the -download flag to be set first or an existing hg38.fa file.${NC}"
   exit 1
 fi
 
@@ -89,7 +96,7 @@ fi
 
 if $INDEX; then
   echo -e "\n${GREEN}Indexing hg38 genome with bwa...${NC}\n"
-  bwa index data/genes/human/hg38/fa/hg38.fa
+  bwa index "$FA_FILE"
 fi
 
 echo -e "\n${GREEN}Setup completed successfully.${NC}\n"
