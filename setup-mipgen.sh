@@ -60,7 +60,7 @@ make
 echo -e "\n${GREEN}Setting execute permissions...${NC}\n"
 chmod +x mipgen
 chmod +x tools/extract_coding_gene_exons.sh
-cd ../..
+cd ..
 
 # Create the directory structure for data etc.
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
