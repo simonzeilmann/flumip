@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:serverpod/protocol.dart';
+
 class MipgenService {
   Map<String, String> envVars = Platform.environment;
 
@@ -14,11 +16,11 @@ class MipgenService {
     projectFolder = "${envVars['HOME']}/mipgen/projects";
     mipgenExe = "${envVars['HOME']}/mipgen/MIPGEN/mipgen";
     exonExtract =
-    "${envVars['HOME']}/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
+        "${envVars['HOME']}/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
     refGene = "${envVars['HOME']}/mipgen/data/genes/human/hg38/refGene.txt";
     fa = "${envVars['HOME']}/mipgen/data/genes/human/hg38/fa/hg38.fa";
     snp =
-    "${envVars['HOME']}/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
+        "${envVars['HOME']}/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
   Future<bool> createProject(String projectName) async {
@@ -57,6 +59,15 @@ class MipgenService {
     }
   }
 
+  Future<List<String>> getGenes(String projectName) async {
+    String geneFile = "$projectFolder/$projectName/genes.txt";
+    if (!await File(geneFile).exists()) {
+      throw FileNotFoundException(message: 'genes.txt not found');
+    } else {
+      return await File(geneFile).readAsLines();
+    }
+  }
+
   Future<void> createBedFile(String projectName) async {
     String geneFile = "$projectFolder/$projectName/genes.txt";
     String bedFile = "$projectFolder/$projectName/genes.bed";
@@ -80,6 +91,14 @@ class MipgenService {
         throw ();
       }
     }
+  }
+
+  Future<bool> checkBedFileExists(String projectName) async {
+    if (await File("$projectFolder/$projectName/genes.bed").exists() &&
+        await File("$projectFolder/$projectName/genes.bed").length() > 1024) {
+      return true;
+    }
+    return false;
   }
 
   Future<void> generateMips(String projectName, bool deleteExcessFiles) async {
@@ -114,6 +133,20 @@ class MipgenService {
 
     for (var d in dir) {
       if (d.path.endsWith(".picked_mips.txt")) {
+        File f = File(d.path);
+        var lines = await f.readAsLines();
+        return lines;
+      }
+    }
+
+    return List.empty();
+  }
+
+  Future<List<String>> showMipsProgress(String projectName) async {
+    var dir = await Directory("$projectFolder/$projectName").list().toList();
+
+    for (var d in dir) {
+      if (d.path.endsWith(".progress.txt")) {
         File f = File(d.path);
         var lines = await f.readAsLines();
         return lines;

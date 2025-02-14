@@ -10,13 +10,13 @@ void main() {
   // `serverpod generate` to update the test tools code.
   // Refer to the docs for more information on how to use the test helper.
   withServerpod('Mipgen endpoint', (sessionBuilder, endpoints) {
-    test('creates a project',
-            () async {
-          // Call the endpoint method by using the `endpoints` parameter and
-          // pass `sessionBuilder` as a first argument. Refer to the docs on
-          // how to use the `sessionBuilder` to set up different test scenarios.
-          final result = await endpoints.mipgen.createProject(sessionBuilder, "int_test");
-          expect(result, true);
-        });
+    test('creates a project', () async {
+      // Call the endpoint method by using the `endpoints` parameter and
+      // pass `sessionBuilder` as a first argument. Refer to the docs on
+      // how to use the `sessionBuilder` to set up different test scenarios.
+      final result =
+          await endpoints.mipgen.createProject(sessionBuilder, "int_test");
+      expect(result, true);
+    });
   });
 }

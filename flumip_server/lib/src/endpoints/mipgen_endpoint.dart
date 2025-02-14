@@ -1,4 +1,5 @@
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
 class MipgenEndpoint extends Endpoint {
@@ -28,13 +29,30 @@ class MipgenEndpoint extends Endpoint {
     return mipgenService.createGeneFile(projectName, genes);
   }
 
+  Future<List<String>> getGenes(Session session, String projectName) async {
+    try {
+      return await mipgenService.getGenes(projectName);
+    } on FileNotFoundException {
+      rethrow;
+    }
+  }
+
   Future<void> createBedFile(Session session, String projectName) async {
     return mipgenService.createBedFile(projectName);
   }
 
+  Future<bool> checkBedFileExists(Session session, String projectName) async {
+    return mipgenService.checkBedFileExists(projectName);
+  }
+
   Future<void> generateMips(
       Session session, String projectName, bool deleteExcessFiles) async {
-    return mipgenService.generateMips(projectName);
+    return mipgenService.generateMips(projectName, deleteExcessFiles);
+  }
+
+  Future<List<String>> showMipsProgress(
+      Session session, String projectName) async {
+    return mipgenService.showMipsProgress(projectName);
   }
 
   Future<List<String>> showMipsResult(
