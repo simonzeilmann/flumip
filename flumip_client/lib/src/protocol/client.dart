@@ -54,10 +54,24 @@ class EndpointMipgen extends _i1.EndpointRef {
         },
       );
 
+  _i2.Future<List<String>> getGenes(String projectName) =>
+      caller.callServerEndpoint<List<String>>(
+        'mipgen',
+        'getGenes',
+        {'projectName': projectName},
+      );
+
   _i2.Future<void> createBedFile(String projectName) =>
       caller.callServerEndpoint<void>(
         'mipgen',
         'createBedFile',
+        {'projectName': projectName},
+      );
+
+  _i2.Future<bool> checkBedFileExists(String projectName) =>
+      caller.callServerEndpoint<bool>(
+        'mipgen',
+        'checkBedFileExists',
         {'projectName': projectName},
       );
 
@@ -72,6 +86,13 @@ class EndpointMipgen extends _i1.EndpointRef {
           'projectName': projectName,
           'deleteExcessFiles': deleteExcessFiles,
         },
+      );
+
+  _i2.Future<List<String>> showMipsProgress(String projectName) =>
+      caller.callServerEndpoint<List<String>>(
+        'mipgen',
+        'showMipsProgress',
+        {'projectName': projectName},
       );
 
   _i2.Future<List<String>> showMipsResult(String projectName) =>

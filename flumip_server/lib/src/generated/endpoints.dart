@@ -96,6 +96,24 @@ class Endpoints extends _i1.EndpointDispatch {
             params['genes'],
           ),
         ),
+        'getGenes': _i1.MethodConnector(
+          name: 'getGenes',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).getGenes(
+            session,
+            params['projectName'],
+          ),
+        ),
         'createBedFile': _i1.MethodConnector(
           name: 'createBedFile',
           params: {
@@ -110,6 +128,24 @@ class Endpoints extends _i1.EndpointDispatch {
             Map<String, dynamic> params,
           ) async =>
               (endpoints['mipgen'] as _i2.MipgenEndpoint).createBedFile(
+            session,
+            params['projectName'],
+          ),
+        ),
+        'checkBedFileExists': _i1.MethodConnector(
+          name: 'checkBedFileExists',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).checkBedFileExists(
             session,
             params['projectName'],
           ),
@@ -136,6 +172,24 @@ class Endpoints extends _i1.EndpointDispatch {
             session,
             params['projectName'],
             params['deleteExcessFiles'],
+          ),
+        ),
+        'showMipsProgress': _i1.MethodConnector(
+          name: 'showMipsProgress',
+          params: {
+            'projectName': _i1.ParameterDescription(
+              name: 'projectName',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['mipgen'] as _i2.MipgenEndpoint).showMipsProgress(
+            session,
+            params['projectName'],
           ),
         ),
         'showMipsResult': _i1.MethodConnector(

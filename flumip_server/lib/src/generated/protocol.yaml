@@ -3,6 +3,9 @@ mipgen:
   - deleteProject:
   - getProjects:
   - createGeneFile:
+  - getGenes:
   - createBedFile:
+  - checkBedFileExists:
   - generateMips:
+  - showMipsProgress:
   - showMipsResult:
