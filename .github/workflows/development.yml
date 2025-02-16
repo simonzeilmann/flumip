@@ -91,7 +91,7 @@ jobs:
           docker save flumip:dev -o flumip_dev.tar
 
       - name: Transfer Docker image to remote server
-        uses: appleboy/scp-action@v0.1.1
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
@@ -101,15 +101,15 @@ jobs:
           target: "~/flumip_dev.tar"
 
       - name: Execute remote script
-        uses: appleboy/ssh-action@v0.1.1
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_dev || true
-            docker rm flumip_dev || true
+            docker stop flumip_dev
+            docker rm flumip_dev
             docker image rm flumip:dev || true
             docker load -i ~/flumip_dev.tar/flumip_dev.tar
             docker stop postgres_dev || true
