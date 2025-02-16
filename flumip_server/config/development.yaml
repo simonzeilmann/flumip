@@ -31,7 +31,7 @@ webServer:
 database:
   host: postgres_dev
   port: 8090
-  name: flumip
+  name: flumip_dev
   user: postgres
 
 # This is the setup for Redis.
