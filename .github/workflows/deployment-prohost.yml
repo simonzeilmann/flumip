@@ -46,5 +46,6 @@ jobs:
             docker stop flumip || true
             docker rm flumip || true
             docker stop postgres || true
-            docker run -d --name postgres -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=flumip -p 5432:5432 postgres:latest
+            docker rm postgres || true
+            docker run -d --name postgres -e POSTGRES_PASSWORD=${{ secrets.RPOSTGRES_KEY }} -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
             docker run -d --name flumip --link postgres:postgres -p 8080:8080 flumip:latest
