@@ -11,5 +11,10 @@ void main() {
       expect(result, true);
     },
     tags: ['integration']);
+
+    test('sample test', () {
+      expect(1, 1);
+    },
+    tags: ['integration', 'action']);
   });
 }
