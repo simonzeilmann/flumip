@@ -17,6 +17,7 @@ void main() {
       final result =
           await endpoints.mipgen.createProject(sessionBuilder, "int_test");
       expect(result, true);
-    });
+    },
+    tags: ['integration']);
   });
 }
