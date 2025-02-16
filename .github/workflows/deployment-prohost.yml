@@ -42,7 +42,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker load -i ~/flumip.tar
+            docker load -i ~/flumip.tar/flumip.tar
             docker stop flumip || true
             docker rm flumip || true
             docker stop postgres || true
