@@ -98,6 +98,7 @@ class _ProjectTileState extends State<ProjectTile> {
   }
 
   Future<void> _checkBedFileExists() async {
+    /*
     try {
       bool exists = await client.mipgen.checkBedFileExists(widget.projectName);
       setState(() {
@@ -108,6 +109,7 @@ class _ProjectTileState extends State<ProjectTile> {
         //_bedFileExists = false;
       });
     }
+     */
   }
 
   Future<void> _generateMips() async {
