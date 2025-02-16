@@ -36,4 +36,4 @@ jobs:
       - name: Build
         run: |
             cd flumip_server && flutter build web --release
-            cd ../flumip_flutter && flutter build web --release
+            cd ../flumip_flutter && dart compile exe bin/main.dart
