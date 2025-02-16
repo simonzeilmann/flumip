@@ -24,10 +24,16 @@ jobs:
           channel: 'stable'
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
 
       - name: Analyze code
-        run: dart analyze
+        run: |
+          cd flumip_server && flutter analyze
+          cd ../flumip_flutter && flutter analyze
 
-      - name: Build APK
-        run: flutter build
+      - name: Build
+        run: |
+            cd flumip_server && flutter build web --release
+            cd ../flumip_flutter && flutter build web --release
