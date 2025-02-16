@@ -14,7 +14,9 @@ void main() {
     expect(result, false);
 
     mipgenService.deleteProject("test");
-  });
+  },
+    tags: ['unit'],
+  );
 
   test("projectDeletion", () async {
     final mipgenService = MipgenService();
@@ -26,7 +28,9 @@ void main() {
     mipgenService.deleteProject("testToDelete");
     await Future.delayed(Duration(milliseconds: 50));
     expect(await mipgenService.checkProjectExists("testToDelete"), false);
-  });
+  },
+    tags: ['unit'],
+  );
 
   test("createGeneFile", () async {
     final mipgenService = MipgenService();
@@ -41,7 +45,9 @@ void main() {
         true);
 
     mipgenService.deleteProject("geneFileTest");
-  });
+  },
+    tags: ['unit'],
+  );
 
   test("createBedFile", () async {
     final mipgenService = MipgenService();
@@ -63,7 +69,9 @@ void main() {
         greaterThan(1024));
 
     mipgenService.deleteProject("bedFileTest");
-  });
+  },
+    tags: ['unit'],
+  );
 
   test("generateMips and delete excess files", () async {
     final mipgenService = MipgenService();
@@ -102,5 +110,7 @@ void main() {
         false);
 
     mipgenService.deleteProject("mipsTest");
-  });
+  },
+    tags: ['unit'],
+  );
 }
