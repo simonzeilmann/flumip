@@ -16,18 +16,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Get current tag
-        id: get_tag
-        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
       - name: Build Docker image
         run: |
           cd flumip_server
-          docker build -t flumip:${{ env.TAG }} .
+          docker build -t flumip:latest .
 
       - name: Save Docker image as tar
         run: |
-          docker save flumip:${{ env.TAG }} -o flumip.tar
+          docker save flumip:latest -o flumip.tar
 
       - name: Transfer Docker image to remote server
         uses: appleboy/scp-action@v0.1.1
@@ -48,7 +44,7 @@ jobs:
             #!/bin/bash
             docker stop flumip || true
             docker rm flumip || true
-            docker image rm flumip:${{ env.TAG }} || true
+            docker image rm flumip:latest || true
             docker load -i ~/flumip.tar/flumip.tar
             docker stop postgres || true
             docker rm postgres || true
