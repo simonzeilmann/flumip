@@ -29,7 +29,7 @@ webServer:
 
 # This is the database setup for your server.
 database:
-  host: localhost
+  host: 127.0.0.1
   port: 8090
   name: flumip_dev
   user: postgres
