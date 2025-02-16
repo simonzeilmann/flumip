@@ -84,7 +84,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd flumip_server
-          docker build -t flumip:dev .
+          docker build -f DEV.Dockerfile -t flumip:dev .
 
       - name: Save Docker image as tar
         run: |
