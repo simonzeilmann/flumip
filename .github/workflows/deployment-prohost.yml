@@ -16,19 +16,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Get current tag
+        id: get_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Build Docker image
         run: |
           cd flumip_server
-          docker build -t flumip:latest .
+          docker build -t flumip:${{ env.TAG }} .
 
       - name: Save Docker image as tar
         run: |
-          docker save flumip:latest -o flumip.tar
+          docker save flumip:${{ env.TAG }} -o flumip.tar
 
       - name: Transfer Docker image to remote server
         uses: appleboy/scp-action@v0.1.1
         with:
-          host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           source: "flumip.tar"
@@ -44,9 +47,9 @@ jobs:
             #!/bin/bash
             docker stop flumip || true
             docker rm flumip || true
-            docker image rm flumip:latest || true
+            docker image rm flumip:${{ env.TAG }} || true
             docker load -i ~/flumip.tar/flumip.tar
             docker stop postgres || true
             docker rm postgres || true
-            docker run -d --name postgres -e POSTGRES_PASSWORD=thisisanunsafepassword -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
-            docker run -d --name flumip --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='thisisanunsafepassword' -p 8080:8080 flumip:latest
+            docker run -d --name postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
+            docker run -d --name flumip --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' -p 8080:8080 flumip:${{ env.TAG }}
