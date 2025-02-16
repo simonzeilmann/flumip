@@ -22,7 +22,6 @@ class ProjectTile extends StatefulWidget {
 class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
-  bool _bedFileExists = false;
   final TextEditingController _genesController = TextEditingController();
   List<String>? _genes;
   String? _errorMessage;
@@ -102,11 +101,11 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       bool exists = await client.mipgen.checkBedFileExists(widget.projectName);
       setState(() {
-        _bedFileExists = exists;
+        //_bedFileExists = exists;
       });
     } catch (e) {
       setState(() {
-        _bedFileExists = false;
+        //_bedFileExists = false;
       });
     }
   }
