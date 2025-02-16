@@ -3,10 +3,10 @@ name: Run Integration Tests
 on:
   push:
     branches:
-      - development
+      - never
   pull_request:
     branches:
-      - main
+      - never2
 
 jobs:
   integration-test:
