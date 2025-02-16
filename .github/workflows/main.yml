@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  lint-and-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -112,7 +112,7 @@ jobs:
             docker rm flumip_main || true
             docker image rm flumip:main || true
             docker load -i ~/flumip_main.tar/flumip_main.tar
-            docker stop postgres || true
-            docker rm postgres || true
+            docker stop postgres_main || true
+            docker rm postgres_main || true
             docker run -d --name postgres_main -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
             docker run -d --name flumip_main --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' -p 8080:8080 flumip:main
