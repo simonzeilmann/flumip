@@ -18,15 +18,15 @@ jobs:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
-      - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Set Up Dart
+        uses: dart-lang/setup-dart@v1
         with:
-          channel: 'stable'
+          sdk: ${{ matrix.sdk }}
 
       - name: Get dependencies
         run: |
-          cd flumip_server && flutter pub get
-          cd ../flumip_flutter && flutter pub get
+          cd flumip_server && dart pub get
 
       - name: Run tests
-        run: flutter test --tags unit
+        run: |
+          cd flumip_server && dart test --tags "unit && action"
