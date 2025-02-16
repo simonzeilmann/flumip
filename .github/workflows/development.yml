@@ -108,11 +108,11 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_dev
-            docker rm flumip_dev
+            docker stop flumip_dev || true
+            docker rm flumip_dev || true
             docker image rm flumip:dev || true
             docker load -i ~/flumip_dev.tar/flumip_dev.tar
             docker stop postgres_dev || true
             docker rm postgres_dev || true
             docker run -d --name postgres_dev -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
-            docker run -d --name flumip_dev --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' -p 8088:8088 flumip:dev
+            docker run -d --name flumip_dev --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' -p 8088:8080 flumip:dev
