@@ -32,6 +32,11 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
+      - name: Inject passwords.yaml
+        run: |
+          echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
+
+
       - name: Run integration tests
         run: |
           cd flumip_server && flutter test --tags "integration && action"
