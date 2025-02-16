@@ -28,6 +28,7 @@ jobs:
       - name: Transfer Docker image to remote server
         uses: appleboy/scp-action@v0.1.1
         with:
+          host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
