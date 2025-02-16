@@ -4,6 +4,14 @@ import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:test/test.dart';
 
 void main() {
+
+  //TODO: Remove after testing
+  test("testTest", () {
+    expect(1, 1);
+  },
+  tags: ['unit', 'action'],
+  );
+
   test("projectCreation", () async {
     final mipgenService = MipgenService();
 
