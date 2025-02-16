@@ -91,7 +91,7 @@ jobs:
           docker save flumip:dev -o flumip_dev.tar
 
       - name: Transfer Docker image to remote server
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v0.1.1
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
