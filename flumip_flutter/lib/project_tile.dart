@@ -16,7 +16,7 @@ class ProjectTile extends StatefulWidget {
   });
 
   @override
-  _ProjectTileState createState() => _ProjectTileState();
+  State<ProjectTile> createState() => _ProjectTileState();
 }
 
 class _ProjectTileState extends State<ProjectTile> {
@@ -86,14 +86,18 @@ class _ProjectTileState extends State<ProjectTile> {
   Future<void> _createBedFile() async {
     try {
       await client.mipgen.createBedFile(widget.projectName);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('BED file created successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('BED file created successfully')),
+        );
+      }
       await _checkBedFileExists();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create BED file: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create BED file: $e')),
+        );
+      }
     }
   }
 
@@ -115,79 +119,91 @@ class _ProjectTileState extends State<ProjectTile> {
   Future<void> _generateMips() async {
     try {
       await client.mipgen.generateMips(widget.projectName, _deleteExcessFiles);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('MIPs generated successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('MIPs generated successfully')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate MIPs: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate MIPs: $e')),
+        );
+      }
     }
   }
 
   Future<void> _showMipsResult() async {
     try {
       final result = await client.mipgen.showMipsResult(widget.projectName);
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('MIPs Result'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: result.isEmpty
-                    ? [Text('No MIPs result file found.')]
-                    : result.map((line) => Text(line)).toList(),
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('MIPs Result'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: result.isEmpty
+                      ? [Text('No MIPs result file found.')]
+                      : result.map((line) => Text(line)).toList(),
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                child: Text('Close'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
+              actions: [
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load MIPs result: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load MIPs result: $e')),
+        );
+      }
     }
   }
 
   Future<void> _showProgress() async {
     try {
       final result = await client.mipgen.showMipsProgress(widget.projectName);
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('MIPs Progress'),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: result.isEmpty
-                    ? [Text('No progress file found.')]
-                    : result.map((line) => Text(line)).toList(),
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('MIPs Progress'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: result.isEmpty
+                      ? [Text('No progress file found.')]
+                      : result.map((line) => Text(line)).toList(),
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                child: Text('Close'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
+              actions: [
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load progress: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load progress: $e')),
+        );
+      }
     }
   }
 
