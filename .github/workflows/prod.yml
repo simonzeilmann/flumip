@@ -1,4 +1,4 @@
-name: main build pipeline
+name: prod build pipeline
 
 on:
   push:
@@ -84,11 +84,11 @@ jobs:
       - name: Build Docker image
         run: |
           cd flumip_server
-          docker build -t flumip:main .
+          docker build -f PROD.Dockerfile -t flumip:prod .
 
       - name: Save Docker image as tar
         run: |
-          docker save flumip:main -o flumip_main.tar
+          docker save flumip:prod -o flumip_prod.tar
 
       - name: Transfer Docker image to remote server
         uses: appleboy/scp-action@v0.1.1
@@ -97,22 +97,24 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_main.tar"
-          target: "~/flumip_main.tar"
+          source: "flumip_prod.tar"
+          target: "~/flumip_prod.tar"
 
       - name: Execute remote script
-        uses: appleboy/ssh-action@v0.1.1
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_main || true
-            docker rm flumip_main || true
-            docker image rm flumip:main || true
-            docker load -i ~/flumip_main.tar/flumip_main.tar
-            docker stop postgres_main || true
-            docker rm postgres_main || true
-            docker run -d --name postgres_main -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod -p 5432:5432 postgres:latest
-            docker run -d --name flumip_main --link postgres:postgres -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' -p 8080:8080 flumip:main
+            docker stop flumip_prod || true
+            docker rm flumip_prod || true
+            docker image rm flumip:prod || true
+            docker load -i ~/flumip_prod.tar/flumip_prod.tar
+            docker stop postgres_prod || true
+            docker rm postgres_prod || true
+            docker network rm flumip_prod || true
+            docker network create flumip_prod || true
+            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod --network flumip_prod -p 5432:5432 postgres:latest
+            docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' --network flumip_prod -p 8080:8080 flumip:prod
