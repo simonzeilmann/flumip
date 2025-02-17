@@ -116,5 +116,5 @@ jobs:
             docker rm postgres_prod || true
             docker network rm flumip_prod || true
             docker network create flumip_prod || true
-            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=serverpod --network flumip_prod -p 5432:5432 postgres:latest
+            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_KEY }} -e POSTGRES_DB=flumip --network flumip_prod -p 5432:5432 postgres:latest
             docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_KEY }}' --network flumip_prod -p 8080:8080 flumip:prod
