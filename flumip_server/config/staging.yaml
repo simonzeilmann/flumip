@@ -25,7 +25,7 @@ insightsServer:
 # Configuration for the web server.
 webServer:
   port: 8082
-  publicHost: app-staging.examplepod.com
+  publicHost: flumip-staging.simonzeilmann.com
   publicPort: 443
   publicScheme: https
 
@@ -34,11 +34,11 @@ webServer:
 # If you are connecting on a public IP (e.g. on AWS or Google Cloud Run), you
 # connect on the public IP of the database e.g. database-staging.examplepod.com.
 database:
-  host: database.private-staging.examplepod.com
-  port: 5432
-  name: serverpod
+  host: postgres_staging
+  port: 8090
+  name: flumip_staging
   user: postgres
-  requireSsl: true
+  requireSsl: false
 
 # This is the setup for Redis. The default for the Google Cloud Engine Terraform
 # configuration is to connect on a private IP address.

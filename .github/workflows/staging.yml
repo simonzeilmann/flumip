@@ -1,9 +1,9 @@
-name: prod build pipeline
+name: development build pipeline
 
 on:
   push:
     branches:
-      - main
+      - staging
 
 jobs:
   lint-and-build:
@@ -88,11 +88,11 @@ jobs:
       - name: Build Docker image
         run: |
           cd flumip_server
-          docker build -f PROD.Dockerfile -t flumip:prod .
+          docker build -f DEV.Dockerfile -t flumip:staging .
 
       - name: Save Docker image as tar
         run: |
-          docker save flumip:prod -o flumip_prod.tar
+          docker save flumip:staging -o flumip_staging.tar
 
       - name: Transfer Docker image to remote server
         uses: appleboy/scp-action@v0.1.1
@@ -101,8 +101,8 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_prod.tar"
-          target: "~/flumip_prod.tar"
+          source: "flumip_staging.tar"
+          target: "~/flumip_staging.tar"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -112,13 +112,13 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_prod || true
-            docker rm flumip_prod || true
-            docker image rm flumip:prod || true
-            docker load -i ~/flumip_prod.tar/flumip_prod.tar
-            docker stop postgres_prod || true
-            docker rm postgres_prod || true
-            docker network rm flumip_prod || true
-            docker network create flumip_prod || true
-            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PROD_KEY }} -e POSTGRES_DB=flumip --network flumip_prod -p 5432:5432 postgres:latest
-            docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_PROD_KEY }}' --network flumip_prod -p 8080:8080 flumip:prod
+            docker stop flumip_staging || true
+            docker rm flumip_staging || true
+            docker image rm flumip:staging || true
+            docker load -i ~/flumip_staging.tar/flumip_staging.tar
+            docker stop postgres_staging || true
+            docker rm postgres_staging || true
+            docker network rm flumip_staging || true
+            docker network create flumip_staging || true
+            docker run -d --name postgres_staging -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging --network flumip_staging -p 8090:5432 postgres:latest
+            docker run -d --name flumip_staging -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_STAGING_KEY }}' --network flumip_staging -p 8088:8080 flumip:staging

@@ -29,9 +29,9 @@ webServer:
 
 # This is the database setup for your server.
 database:
-  host: postgres_dev
+  host: localhost
   port: 8090
-  name: flumip_dev
+  name: postgres
   user: postgres
 
 # This is the setup for Redis.
