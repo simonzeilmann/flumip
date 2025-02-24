@@ -1,4 +1,4 @@
-name: development build pipeline
+name: staging build pipeline
 
 on:
   push:
