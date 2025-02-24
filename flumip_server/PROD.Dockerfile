@@ -9,7 +9,7 @@ RUN dart compile exe bin/main.dart -o bin/server
 FROM alpine:latest
 
 ENV runmode=production
-ENV serverid=prod
+ENV serverid=1
 ENV logging=normal
 ENV role=monolith
 
