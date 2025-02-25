@@ -70,7 +70,7 @@ jobs:
         run: |
           cd flumip_server && dart test --tags "unit && action"
 
-  deploy-to-server:
+  deploy-backend-to-server:
     runs-on: ubuntu-latest
     needs: unit-tests
 
@@ -122,3 +122,58 @@ jobs:
             docker network create flumip_staging || true
             docker run -d --name postgres_staging -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging --network flumip_staging -p 8090:5432 postgres:latest
             docker run -d --name flumip_staging -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_STAGING_KEY }}' -e runmode=staging -e logging=verbose --network flumip_staging -p 8088:8080 flumip:staging
+
+  deploy-frontend-to-server:
+    runs-on: ubuntu-latest
+    needs: deploy-backend-to-server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle' # See 'Supported distributions' for available options
+          java-version: '21'
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: |
+          cd flumip_flutter && flutter pub get
+
+      - name: Build
+        run: |
+          cd flumip_flutter && flutter build web --debug
+
+      - name: Transfer frontend to remote server
+        uses: appleboy/scp-action@v0.1.1
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          rm: true
+          source: "flumip_flutter/build/web"
+          target: "~/flumip_staging/frontend"
+
+      - name: Execute remote script
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script: |
+            #!/bin/bash
+            kill $(cat ~/staging_pid.txt) || true
+            rm ~/staging_pid.txt || true
+            rm -rf /var/www/flumip_staging/frontend
+            mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
+            chown -R www-data:www-data /var/www/flumip_staging/frontend
+            chmod -R 755 /var/www/flumip_staging/frontend
+            cd /var/www/flumip_staging/frontend
+            nohup python -m http.server 9999 &
+            echo $! > ~/staging_pid.txt
