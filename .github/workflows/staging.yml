@@ -169,11 +169,11 @@ jobs:
           script: |
             #!/bin/bash
             kill $(cat ~/staging_pid.txt) || true
-            sudo su -c rm ~/staging_pid.txt || true
-            sudo su -c rm -rf /var/www/flumip_staging/frontend
-            sudo su -c mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
-            sudo su -c chown -R www-data:www-data /var/www/flumip_staging/frontend
-            sudo su -c chmod -R 755 /var/www/flumip_staging/frontend
-            sudo su -c cd /var/www/flumip_staging/frontend
+            rm ~/staging_pid.txt || true
+            rm -rf /var/www/flumip_staging/frontend
+            mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
+#            chown -R www-data:www-data /var/www/flumip_staging/frontend
+#            chmod -R 755 /var/www/flumip_staging/frontend
+            cd /var/www/flumip_staging/frontend/flumip_flutter/build/web
             nohup python -m http.server 9999 &
             echo $! > ~/staging_pid.txt
