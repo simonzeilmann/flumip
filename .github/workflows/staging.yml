@@ -173,5 +173,5 @@ jobs:
             rm -rf /var/www/flumip_staging/frontend
             mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
             cd /var/www/flumip_staging/frontend/flumip_flutter/build/web
-            nohup python -m http.server 9999 &
+            nohup python -m http.server 9999 > nohup.out 2> nohup.err < /dev/null &
             echo $! > ~/staging_pid.txt
