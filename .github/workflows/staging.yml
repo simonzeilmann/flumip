@@ -120,7 +120,7 @@ jobs:
             docker rm postgres_staging || true
             docker network rm flumip_staging || true
             docker network create flumip_staging || true
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging --network flumip_staging -p 5433:5432 postgres:latest
+            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging --network flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 postgres:latest
             docker run -d --name flumip_staging -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_STAGING_KEY }}' -e runmode=staging -e logging=verbose --network flumip_staging -p 8090:8090 -p 8091:8091 -p 8092:8092 flumip:staging
 
   deploy-frontend-to-server:
