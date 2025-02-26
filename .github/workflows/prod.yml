@@ -146,6 +146,10 @@ jobs:
         run: |
           cd flumip_flutter && flutter pub get
 
+      - name: Set api port
+        run: |
+          sed -i "s/localhost:8080/localhost:9090/" flumip_flutter/lib/main.dart
+
       - name: Build
         run: |
           cd flumip_flutter && flutter build web --release
@@ -172,8 +176,6 @@ jobs:
             rm ~/prod_pid.txt || true
             rm -rf /var/www/flumip_prod/frontend
             mv ~/flumip_prod/frontend /var/www/flumip_prod/frontend
-            chown -R www-data:www-data /var/www/flumip_prod/frontend
-            chmod -R 755 /var/www/flumip_prod/frontend
             cd /var/www/flumip_prod/frontend
-            nohup python -m http.server 8888 &
+            nohup python -m http.server 8888 > nohup.out 2> nohup.err < /dev/null &
             echo $! > ~/prod_pid.txt
