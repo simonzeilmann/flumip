@@ -121,7 +121,7 @@ jobs:
             docker network rm flumip_prod || true
             docker network create flumip_prod || true
             docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PROD_KEY }} -e POSTGRES_DB=flumip --network flumip_prod -p 5432:5432 postgres:latest
-            docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_PROD_KEY }}' -e runmode=production --network flumip_prod -p 8080:8080 flumip:prod
+            docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_PROD_KEY }}' -e runmode=production --network flumip_prod -p 9080:8080 -p 9081:8081 -p 9082:8082 flumip:prod
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
@@ -148,7 +148,7 @@ jobs:
 
       - name: Set api port
         run: |
-          sed -i "s/localhost:8080/localhost:9090/" flumip_flutter/lib/main.dart
+          sed -i "s/localhost:8080/localhost:9080/" flumip_flutter/lib/main.dart
 
       - name: Build
         run: |

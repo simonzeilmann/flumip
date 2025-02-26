@@ -35,7 +35,7 @@ webServer:
 # connect on the public IP of the database e.g. database-staging.examplepod.com.
 database:
   host: postgres_staging
-  port: 8089
+  port: 5433
   name: flumip_staging
   user: postgres
   requireSsl: false
