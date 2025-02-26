@@ -10,24 +10,24 @@
 
 # Configuration for the main API server.
 apiServer:
-  port: 8080
-  publicHost: api-staging.examplepod.com
-  publicPort: 443
-  publicScheme: https
+  port: 8090
+  publicHost: localhost
+  publicPort: 8090
+  publicScheme: http
 
 # Configuration for the Insights server.
 insightsServer:
-  port: 8081
-  publicHost: insights-staging.examplepod.com
-  publicPort: 443
-  publicScheme: https
+  port: 8091
+  publicHost: localhost
+  publicPort: 8091
+  publicScheme: http
 
 # Configuration for the web server.
 webServer:
-  port: 8082
-  publicHost: flumip-staging.simonzeilmann.com
-  publicPort: 443
-  publicScheme: https
+  port: 8092
+  publicHost: localhost
+  publicPort: 8092
+  publicScheme: http
 
 # This is the database setup for your servers. The default for the Google Cloud
 # Engine Terraform configuration is to connect on a private IP address.
@@ -35,7 +35,7 @@ webServer:
 # connect on the public IP of the database e.g. database-staging.examplepod.com.
 database:
   host: postgres_staging
-  port: 8090
+  port: 8089
   name: flumip_staging
   user: postgres
   requireSsl: false
