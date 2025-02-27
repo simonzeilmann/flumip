@@ -118,8 +118,8 @@ jobs:
             docker load -i ~/flumip_staging.tar/flumip_staging.tar
             docker stop postgres_staging || true
             docker rm postgres_staging || true
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 postgres:16.3
-            docker run -d --name flumip_staging -e runmode=staging -e logging=verbose --network host -p 8090:8090 -p 8091:8091 -p 8092:8092 flumip:staging
+            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
+            docker run -d --name flumip_staging -e runmode=staging -e logging=verbose --network host -p 8090:8090 -p 8091:8091 -p 8092:8092 --restart unless-stopped flumip:staging
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
