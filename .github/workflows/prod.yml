@@ -118,10 +118,8 @@ jobs:
             docker load -i ~/flumip_prod.tar/flumip_prod.tar
             docker stop postgres_prod || true
             docker rm postgres_prod || true
-            docker network rm flumip_prod || true
-            docker network create flumip_prod || true
-            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PROD_KEY }} -e POSTGRES_DB=flumip --network flumip_prod -p 5432:5432 postgres:latest
-            docker run -d --name flumip_prod -e SERVERPOD_DATABASE_PASSWORD='${{ secrets.POSTGRES_PROD_KEY }}' -e runmode=production --network flumip_prod -p 9080:8080 -p 9081:8081 -p 9082:8082 flumip:prod
+            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PROD_KEY }} -e POSTGRES_DB=flumip -p 5432:5432 --restart unless-stopped postgres:latest
+            docker run -d --name flumip_prod -e runmode=production --network host -p 9080:8080 -p 9081:8081 -p 9082:8082 --restart unless-stopped flumip:prod
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
