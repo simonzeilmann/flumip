@@ -24,4 +24,4 @@ EXPOSE 8090
 EXPOSE 8091
 EXPOSE 8092
 
-ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role
+ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role --apply-migrations
