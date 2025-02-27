@@ -146,7 +146,7 @@ jobs:
 
       - name: Set api port
         run: |
-          sed -i 's/localhost:8080/127.0.0.1:8090/' flumip_flutter/lib/main.dart
+          sed -i 's/localhost:8080/localhost:8090/' flumip_flutter/lib/main.dart
 
       - name: Build
         run: |
