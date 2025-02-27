@@ -78,6 +78,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set Up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - name: Get dependencies
+        run: |
+          cd flumip_server && dart pub get
+
+      - name: Apply migrations
+        run: |
+          cd flumip_server && dart run bin/main.dart --role maintenance --apply-migrations
+
       - name: Inject passwords.yaml
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
