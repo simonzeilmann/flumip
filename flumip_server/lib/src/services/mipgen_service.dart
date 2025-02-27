@@ -13,14 +13,12 @@ class MipgenService {
   late final String snp;
 
   MipgenService() {
-    projectFolder = "${envVars['HOME']}/mipgen/projects";
-    mipgenExe = "${envVars['HOME']}/mipgen/MIPGEN/mipgen";
-    exonExtract =
-        "${envVars['HOME']}/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
-    refGene = "${envVars['HOME']}/mipgen/data/genes/human/hg38/refGene.txt";
-    fa = "${envVars['HOME']}/mipgen/data/genes/human/hg38/fa/hg38.fa";
-    snp =
-        "${envVars['HOME']}/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
+    projectFolder = "/opt/mipgen/projects";
+    mipgenExe = "/opt/mipgen/MIPGEN/mipgen";
+    exonExtract = "/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
+    refGene = "/opt/mipgen/data/genes/human/hg38/refGene.txt";
+    fa = "/opt/mipgen/data/genes/human/hg38/fa/hg38.fa";
+    snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
   Future<bool> createProject(String projectName) async {
