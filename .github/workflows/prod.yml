@@ -144,9 +144,9 @@ jobs:
         run: |
           cd flumip_flutter && flutter pub get
 
-      - name: Set api port
+      - name: Set api endpoint
         run: |
-          sed -i "s/localhost:8080/localhost:9080/" flumip_flutter/lib/main.dart
+          sed -i 's/localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
 
       - name: Build
         run: |
