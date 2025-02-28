@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: |
           cd flumip_server && dart compile exe bin/main.dart
-          cd ../flumip_flutter && flutter build web --release
+          cd ../flumip_flutter && flutter build web --debug
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -146,7 +146,7 @@ jobs:
 
       - name: Set api endpoint
         run: |
-          sed -i 's/localhost:8080/api-flumip-staging.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip-staging.simonzeilmann.com/' flumip_flutter/lib/main.dart
 
       - name: Build
         run: |
