@@ -32,7 +32,7 @@ webServer:
 database:
   host: localhost
   port: 5432
-  name: flumip
+  name: flumip_production
   user: postgres
   requireSsl: false
 
