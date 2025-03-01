@@ -160,7 +160,7 @@ jobs:
 
       - name: Set api endpoint
         run: |
-          sed -i 's/$localhost:8080/api.flumip-production.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip.production.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
 
       - name: Build
