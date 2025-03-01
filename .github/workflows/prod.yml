@@ -1,4 +1,4 @@
-name: prod build pipeline
+name: production build pipeline
 
 on:
   push:
@@ -78,31 +78,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle' # See 'Supported distributions' for available options
+          java-version: '21'
+
+      - name: Set Up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - name: Get dependencies
+        run: |
+          cd flumip_server && dart pub get
+
       - name: Inject passwords.yaml
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker image
+      - name: Build server
         run: |
           cd flumip_server
-          docker build -f PROD.Dockerfile -t flumip:prod .
+          mkdir app
+          dart compile exe bin/main.dart -o app/server
+          cp -r config app/config
+          cp -r migrations app/migrations
+          cp -r web app/web
 
-      - name: Save Docker image as tar
-        run: |
-          docker save flumip:prod -o flumip_prod.tar
-
-      - name: Transfer Docker image to remote server
+      - name: Transfer app to remote server
         uses: appleboy/scp-action@v0.1.1
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_prod.tar"
-          target: "~/flumip_prod.tar"
+          source: "flumip_server/app"
+          target: "~/flumip_production_backend"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -112,14 +124,16 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_prod || true
-            docker rm flumip_prod || true
-            docker image rm flumip:prod || true
-            docker load -i ~/flumip_prod.tar/flumip_prod.tar
-            docker stop postgres_prod || true
-            docker rm postgres_prod || true
-            docker run -d --name postgres_prod -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PROD_KEY }} -e POSTGRES_DB=flumip -p 5432:5432 --restart unless-stopped postgres:latest
-            docker run -d --name flumip_prod -e runmode=production --network host -p 9080:8080 -p 9081:8081 -p 9082:8082 --restart unless-stopped flumip:prod
+            docker stop postgres_production || true
+            docker rm postgres_production || true
+            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_prod_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
+            kill $(cat ~/production_backend_pid.txt) || true
+            rm ~/production_backend_pid.txt || true
+            rm -rf /var/www/flumip_production/backend
+            mv ~/flumip_production_backend/flumip_server/app /var/www/flumip_production/backend
+            cd /var/www/flumip_production/backend
+            nohup ./server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
+            echo $! > ~/production_backend_pid.txt
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
@@ -146,7 +160,7 @@ jobs:
 
       - name: Set api endpoint
         run: |
-          sed -i 's/localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip-production.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
 
       - name: Build
@@ -161,7 +175,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
           source: "flumip_flutter/build/web"
-          target: "~/flumip_prod/frontend"
+          target: "~/flumip_production/frontend"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -171,10 +185,10 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/prod_pid.txt) || true
-            rm ~/prod_pid.txt || true
-            rm -rf /var/www/flumip_prod/frontend
-            mv ~/flumip_prod/frontend /var/www/flumip_prod/frontend
-            cd /var/www/flumip_prod/frontend
+            kill $(cat ~/production_frontend_pid.txt) || true
+            rm ~/production_frontend_pid.txt || true
+            rm -rf /var/www/flumip_production/frontend
+            mv ~/flumip_production/frontend /var/www/flumip_production/frontend
+            cd /var/www/flumip_production/frontend/flumip_flutter/build/web
             nohup python -m http.server 8888 > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/prod_pid.txt
+            echo $! > ~/production_frontend_pid.txt
