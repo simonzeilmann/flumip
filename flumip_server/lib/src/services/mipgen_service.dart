@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:serverpod/protocol.dart';
 
 class MipgenService {
@@ -13,14 +12,12 @@ class MipgenService {
   late final String snp;
 
   MipgenService() {
-    projectFolder = "${envVars['HOME']}/mipgen/projects";
-    mipgenExe = "${envVars['HOME']}/mipgen/MIPGEN/mipgen";
-    exonExtract =
-        "${envVars['HOME']}/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
-    refGene = "${envVars['HOME']}/mipgen/data/genes/human/hg38/refGene.txt";
-    fa = "${envVars['HOME']}/mipgen/data/genes/human/hg38/fa/hg38.fa";
-    snp =
-        "${envVars['HOME']}/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
+    projectFolder = "/opt/mipgen/projects";
+    mipgenExe = "/opt/mipgen/MIPGEN/mipgen";
+    exonExtract = "/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
+    refGene = "/opt/mipgen/data/genes/human/hg38/refGene.txt";
+    fa = "/opt/mipgen/data/genes/human/hg38/fa/hg38.fa";
+    snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
   Future<bool> createProject(String projectName) async {
@@ -116,16 +113,10 @@ class MipgenService {
     arg.add("-snp_file");
     arg.add(snp);
 
-    var result = await Process.run(mipgenExe, arg,
+    await Process.start(mipgenExe, arg,
         workingDirectory: "$projectFolder/$projectName", runInShell: true);
-    if (result.exitCode != 0) {
-      //TODO: error handling
-      throw ();
-    } else {
-      if (deleteExcessFiles) {
-        deleteByproducts(projectName);
-      }
-    }
+    var mipgenPID = await getMipgenPID(projectName);
+    print(mipgenPID);
   }
 
   Future<List<String>> showMipsResult(String projectName) async {
@@ -175,5 +166,25 @@ class MipgenService {
 
   Future<bool> checkProjectExists(String projectName) async {
     return await Directory("$projectFolder/$projectName").exists();
+  }
+
+  Future<int> getMipgenPID(String projectID) async {
+    int mipgenPID = 0;
+
+    var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
+    if (process.exitCode != 0) {
+      //TODO: error handling
+      throw ();
+    } else {
+      var lines = process.stdout.split("\n");
+      for (var line in lines) {
+        if (line.contains("-project_name $projectID")) {
+          mipgenPID = int.parse(line.split(" ")[0]);
+          break;
+        }
+      }
+    }
+
+    return mipgenPID;
   }
 }

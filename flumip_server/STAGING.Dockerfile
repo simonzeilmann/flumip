@@ -8,9 +8,9 @@ RUN dart compile exe bin/main.dart -o bin/server
 
 FROM alpine:latest
 
-ENV runmode=production
-ENV serverid=default
-ENV logging=normal
+ENV runmode=staging
+ENV serverid=staging
+ENV logging=verbose
 ENV role=monolith
 
 COPY --from=build /runtime/ /
@@ -20,8 +20,8 @@ COPY --from=build /app/we[b]/ web/
 COPY --from=build /app/migration[s]/ migrations/
 
 
-EXPOSE 8080
-EXPOSE 8081
-EXPOSE 8082
+EXPOSE 8090
+EXPOSE 8091
+EXPOSE 8092
 
-ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role
+ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role --apply-migrations

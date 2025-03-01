@@ -1,0 +1,71 @@
+name: development build pipeline
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle' # See 'Supported distributions' for available options
+          java-version: '21'
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
+      - name: Analyze code
+        run: |
+          cd flumip_server && flutter analyze
+          cd ../flumip_flutter && flutter analyze
+
+      - name: Build
+        run: |
+          cd flumip_server && dart compile exe bin/main.dart
+          cd ../flumip_flutter && flutter build web --release
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: lint-and-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle' # See 'Supported distributions' for available options
+          java-version: '21'
+
+      - name: Set Up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - name: Get dependencies
+        run: |
+          cd flumip_server && dart pub get
+
+      - name: Inject passwords.yaml
+        run: |
+          echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
+
+      - name: Run tests
+        run: |
+          cd flumip_server && dart test --tags "unit && action"

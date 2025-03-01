@@ -10,6 +10,12 @@
 //
 // import 'package:PROJECTNAME_flutter/main.dart';
 
+import 'package:flutter_test/flutter_test.dart';
+
 void main() {
-  // Add your app tests here
+  test("testTest", () {
+    expect(1, 1);
+  },
+  tags: ['integration', 'action'],
+  );
 }

@@ -32,17 +32,25 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if hg38.fa file exists
-FA_FILE="$HOME/mipgen/data/genes/human/hg38/fa/hg38.fa"
+FA_FILE="/opt/mipgen/data/genes/human/hg38/fa/hg38.fa"
 FA_EXISTS=false
 if [[ -f "$FA_FILE" ]]; then
   FA_EXISTS=true
 fi
 
 # Check if refGene.txt file exists
-REFGENE_FILE="$HOME/mipgen/data/genes/human/hg38/refGene.txt"
+REFGENE_FILE="/opt/mipgen/data/genes/human/hg38/refGene.txt"
 REFGENE_EXISTS=false
 if [[ -f "$REFGENE_FILE" ]]; then
   REFGENE_EXISTS=true
+fi
+
+# Check if SNP files exist
+SNP1_FILE="/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz"
+SNP2_FILE="/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz.tbi"
+SNP_EXISTS=false
+if [[ -f "$SNP1_FILE" ]] && [[ -f "$SNP2_FILE" ]]; then
+  SNP_EXISTS=true
 fi
 
 # If -index is set but not -download and hg38.fa doesn't exist, return an error
@@ -61,8 +69,9 @@ sudo apt install build-essential tabix samtools bwa trf python-is-python3 -y
 
 # Create the mipgen directory and clone the MIPGEN repository
 echo -e "\n${GREEN}Creating 'mipgen' directory and cloning MIPGEN repository...${NC}\n"
-mkdir -p mipgen
-cd mipgen
+sudo mkdir -p /opt/mipgen
+sudo chown $USER:$USER /opt/mipgen
+cd /opt/mipgen
 if [ ! -d "MIPGEN" ]; then
   git clone https://github.com/shendurelab/MIPGEN.git
 fi
@@ -78,28 +87,29 @@ cd ..
 
 # Create the directory structure for data etc.
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
-mkdir -p $HOME/mipgen/data/genes/human/hg38/{fa,snp} $HOME/mipgen/{projects,log}
+mkdir -p /opt/mipgen/data/genes/human/hg38/{fa,snp} /opt/mipgen/{projects,log}
 
 if $DOWNLOAD; then
   # Download and extract refGene file if not already present
   if ! $REFGENE_EXISTS; then
     echo -e "\n${GREEN}Downloading and extracting refGene data...${NC}\n"
-    cd $HOME/mipgen/data/genes/human/hg38
+    cd /opt/mipgen/data/genes/human/hg38
     wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
     gunzip -f refGene.txt.gz
   fi
 
-  # Download SNP files
-  echo -e "\n${GREEN}Downloading SNP files...${NC}\n"
-  cd $HOME/mipgen/data/genes/human/hg38/snp
-  wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz
-  wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz.tbi
-  cd ../..
+  # Download and extract snp data if not already present
+  if ! $SNP_EXISTS; then
+    echo -e "\n${GREEN}Downloading SNP files...${NC}\n"
+    cd /opt/mipgen/data/genes/human/hg38/snp
+    wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz
+    wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz.tbi
+  fi
 
   # Download and extract hg38 genome sequence if not already present
   if ! $FA_EXISTS; then
     echo -e "\n${GREEN}Downloading and extracting hg38 genome sequence...${NC}\n"
-    cd $HOME/mipgen/data/genes/human/hg38/fa
+    cd /opt/mipgen/data/genes/human/hg38/fa
     wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
     gunzip -f hg38.fa.gz
   fi
