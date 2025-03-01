@@ -126,13 +126,13 @@ jobs:
             #!/bin/bash
             docker stop postgres_production || true
             docker rm postgres_production || true
-            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_prod_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
+            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             kill $(cat ~/flumip_production/backend_pid.txt) || true
             rm ~/flumip_production/backend_pid.txt || true
             rm -rf /var/www/flumip_production/backend
             mv ~/flumip_production/backend/flumip_server/app /var/www/flumip_production/backend
             cd /var/www/flumip_production/backend
-            nohup ./server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
+            nohup ./server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations > nohup.out 2> nohup.err < /dev/null &
             echo $! > ~/flumip_production/backend_pid.txt
 
   deploy-frontend-to-server:
