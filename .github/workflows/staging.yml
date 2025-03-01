@@ -158,9 +158,9 @@ jobs:
         run: |
           cd flumip_flutter && flutter pub get
 
-      - name: Set api endpoint
+      - name: Set api endpoint and website name
         run: |
-          sed -i 's/$localhost:8080/api.flumip-staging.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
           sed -i 's/Flumip Development/Flumip Staging/' flumip_flutter/lib/main.dart
 
