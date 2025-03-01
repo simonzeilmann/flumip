@@ -132,7 +132,7 @@ jobs:
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
             cd /var/www/flumip_staging/backend
-            nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
+            nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations > nohup.out 2> nohup.err < /dev/null &
             echo $! > ~/flumip_staging/backend_pid.txt
 
   deploy-frontend-to-server:
