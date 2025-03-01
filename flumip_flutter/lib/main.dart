@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flumip Staging',
+      title: 'Flumip Development',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
