@@ -130,7 +130,7 @@ jobs:
             kill $(cat ~/staging_backend_pid.txt) || true
             rm ~/staging_backend_pid.txt || true
             rm -rf /var/www/flumip_staging/backend
-            mv ~/flumip_staging_backend /var/www/flumip_staging/backend
+            mv ~/flumip_staging_backend/flumip_server/app /var/www/flumip_staging/backend
             cd /var/www/flumip_staging/backend
             nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
             echo $! > ~/staging_backend_pid.txt
