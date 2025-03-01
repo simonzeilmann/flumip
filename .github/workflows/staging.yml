@@ -82,27 +82,24 @@ jobs:
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker image
+      - name: Build server
         run: |
           cd flumip_server
-          docker build -f STAGING.Dockerfile -t flumip:staging .
+          mkdir app
+          dart compile exe bin/main.dart -o app/server
+          cp -r config app/config
+          cp -r migrations app/migrations
+          cp -r web app/web
 
-      - name: Save Docker image as tar
-        run: |
-          docker save flumip:staging -o flumip_staging.tar
-
-      - name: Transfer Docker image to remote server
+      - name: Transfer app to remote server
         uses: appleboy/scp-action@v0.1.1
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_staging.tar"
-          target: "~/flumip_staging.tar"
+          source: "flumip_server/app"
+          target: "~/flumip_staging_backend"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -112,14 +109,16 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop flumip_staging || true
-            docker rm flumip_staging || true
-            docker image rm flumip:staging || true
-            docker load -i ~/flumip_staging.tar/flumip_staging.tar
             docker stop postgres_staging || true
             docker rm postgres_staging || true
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
-            docker run -d --name flumip_staging -e runmode=staging -e logging=verbose --network host -p 8090:8090 -p 8091:8091 -p 8092:8092 --restart unless-stopped --pid=host -v /opt/mipgen:/opt/mipgen flumip:staging
+            kill $(cat ~/staging_backend_pid.txt) || true
+            rm ~/staging_backend_pid.txt || true
+            rm -rf /var/www/flumip_staging/backend
+            mv ~/flumip_staging_backend /var/www/flumip_staging/backend
+            cd /var/www/flumip_staging/backend
+            nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
+            echo $! > ~/staging_backend_pid.txt
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
@@ -171,10 +170,10 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/staging_pid.txt) || true
-            rm ~/staging_pid.txt || true
+            kill $(cat ~/staging_frontend_pid.txt) || true
+            rm ~/staging_frontend_pid.txt || true
             rm -rf /var/www/flumip_staging/frontend
             mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
             cd /var/www/flumip_staging/frontend/flumip_flutter/build/web
             nohup python -m http.server 9999 > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/staging_pid.txt
+            echo $! > ~/staging_frontend_pid.txt
