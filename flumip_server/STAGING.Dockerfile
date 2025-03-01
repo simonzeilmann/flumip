@@ -9,7 +9,7 @@ RUN dart compile exe bin/main.dart -o bin/server
 FROM alpine:latest
 
 ENV runmode=staging
-ENV serverid=2
+ENV serverid=staging
 ENV logging=verbose
 ENV role=monolith
 
@@ -24,4 +24,4 @@ EXPOSE 8090
 EXPOSE 8091
 EXPOSE 8092
 
-ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role
+ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role --apply-migrations

@@ -1,9 +1,9 @@
-name: staging build pipeline
+name: production build pipeline
 
 on:
   push:
     branches:
-      - staging
+      - main
 
 jobs:
   lint-and-build:
@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: |
           cd flumip_server && dart compile exe bin/main.dart
-          cd ../flumip_flutter && flutter build web --debug
+          cd ../flumip_flutter && flutter build web --release
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -114,7 +114,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
           source: "flumip_server/app"
-          target: "~/flumip_staging/backend"
+          target: "~/flumip_production/backend"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -124,16 +124,16 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop postgres_staging || true
-            docker rm postgres_staging || true
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
-            kill $(cat ~/flumip_staging/backend_pid.txt) || true
-            rm ~/flumip_staging/backend_pid.txt || true
-            rm -rf /var/www/flumip_staging/backend
-            mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
-            cd /var/www/flumip_staging/backend
-            nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/flumip_staging/backend_pid.txt
+            docker stop postgres_production || true
+            docker rm postgres_production || true
+            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_prod_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
+            kill $(cat ~/flumip_production/backend_pid.txt) || true
+            rm ~/flumip_production/backend_pid.txt || true
+            rm -rf /var/www/flumip_production/backend
+            mv ~/flumip_production/backend/flumip_server/app /var/www/flumip_production/backend
+            cd /var/www/flumip_production/backend
+            nohup ./server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations  > nohup.out 2> nohup.err < /dev/null &
+            echo $! > ~/flumip_production/backend_pid.txt
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
@@ -158,15 +158,15 @@ jobs:
         run: |
           cd flumip_flutter && flutter pub get
 
-      - name: Set api endpoint
+      - name: Set api endpoint and website name
         run: |
-          sed -i 's/$localhost:8080/api.flumip-staging.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
-          sed -i 's/Flumip Development/Flumip Staging/' flumip_flutter/lib/main.dart
+          sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
 
       - name: Build
         run: |
-          cd flumip_flutter && flutter build web --debug
+          cd flumip_flutter && flutter build web --release
 
       - name: Transfer frontend to remote server
         uses: appleboy/scp-action@v0.1.1
@@ -176,7 +176,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
           source: "flumip_flutter/build/web"
-          target: "~/flumip_staging/frontend"
+          target: "~/flumip_production/frontend"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -186,10 +186,10 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/flumip_staging/frontend_pid.txt) || true
-            rm ~/flumip_staging/frontend_pid.txt || true
-            rm -rf /var/www/flumip_staging/frontend
-            mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
-            cd /var/www/flumip_staging/frontend/flumip_flutter/build/web
-            nohup python -m http.server 9999 > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/flumip_staging/frontend_pid.txt
+            kill $(cat ~/flumip_production/frontend_pid.txt) || true
+            rm ~/flumip_production/frontend_pid.txt || true
+            rm -rf /var/www/flumip_production/frontend
+            mv ~/flumip_production/frontend /var/www/flumip_production/frontend
+            cd /var/www/flumip_production/frontend/flumip_flutter/build/web
+            nohup python -m http.server 8888 > nohup.out 2> nohup.err < /dev/null &
+            echo $! > ~/flumip_production/frontend_pid.txt
