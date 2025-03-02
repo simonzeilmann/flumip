@@ -153,7 +153,7 @@ class _ProjectTileState extends State<ProjectTile> {
                 child: ListBody(
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
-                      : result.map((line) => Text(line)).toList(),
+                      : result.map((line) => SelectableText(line)).toList(),
                 ),
               ),
               actions: [
