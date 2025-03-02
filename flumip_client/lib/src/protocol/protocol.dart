@@ -10,8 +10,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'example.dart' as _i2;
-export 'example.dart';
+import 'project.dart' as _i2;
+export 'project.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -27,11 +27,21 @@ class Protocol extends _i1.SerializationManager {
     Type? t,
   ]) {
     t ??= T;
-    if (t == _i2.Example) {
-      return _i2.Example.fromJson(data) as T;
+    if (t == _i2.Project) {
+      return _i2.Project.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i2.Example?>()) {
-      return (data != null ? _i2.Example.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i2.Project?>()) {
+      return (data != null ? _i2.Project.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<List<String>?>()) {
+      return (data != null
+          ? (data as List).map((e) => deserialize<String>(e)).toList()
+          : null) as dynamic;
+    }
+    if (t == _i1.getType<List<String>?>()) {
+      return (data != null
+          ? (data as List).map((e) => deserialize<String>(e)).toList()
+          : null) as dynamic;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList()
@@ -44,8 +54,8 @@ class Protocol extends _i1.SerializationManager {
   String? getClassNameForObject(Object? data) {
     String? className = super.getClassNameForObject(data);
     if (className != null) return className;
-    if (data is _i2.Example) {
-      return 'Example';
+    if (data is _i2.Project) {
+      return 'Project';
     }
     return null;
   }
@@ -56,8 +66,8 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'Example') {
-      return deserialize<_i2.Example>(data['data']);
+    if (dataClassName == 'Project') {
+      return deserialize<_i2.Project>(data['data']);
     }
     return super.deserializeByClassName(data);
   }

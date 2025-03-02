@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
+import 'package:serverpod/server.dart';
+
+import 'file_service.dart';
 
 class MipgenService {
-  Map<String, String> envVars = Platform.environment;
-
+  final projectService = ProjectService();
+  final fileService = FileService();
   late final String mipgenExe;
   late final String projectFolder;
   late final String exonExtract;
@@ -20,56 +24,19 @@ class MipgenService {
     snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
-  Future<bool> createProject(String projectName) async {
-    if (await checkProjectExists(projectName)) {
-      return false;
+  Future<void> createBedFile(Session session, int projectID) async {
+    var project = await projectService.getProject(session, projectID);
+    if (project.id == null) {
+      throw ArgumentError('Project id does not exist');
     }
-    await Directory("$projectFolder/$projectName").create();
-    return true;
-  }
-
-  void deleteProject(String projectName) {
-    Directory("$projectFolder/$projectName").delete(recursive: true);
-  }
-
-  Future<List<String>> getProjects() async {
-    var dir = await Directory(projectFolder).list().toList();
-    List<String> projects = [];
-    for (var d in dir) {
-      if (d is Directory) {
-        projects.add(d.path.split("/").last);
-      }
+    if (project.geneFileCreated == false) {
+      throw ArgumentError('Gene file does not exist');
     }
-    return projects;
-  }
 
-  Future<void> createGeneFile(String projectName, List<String> genes) async {
-    if (!await checkProjectExists(projectName)) {
-      throw ();
-    }
-    String geneFile = "$projectFolder/$projectName/genes.txt";
-    if (await File(geneFile).exists()) {
-      await writeListToFile(geneFile, genes);
-    } else {
-      File(geneFile).create();
-      await writeListToFile(geneFile, genes);
-    }
-  }
-
-  Future<List<String>> getGenes(String projectName) async {
-    String geneFile = "$projectFolder/$projectName/genes.txt";
+    String geneFile = "$projectFolder/${project.id}/genes.txt";
+    String bedFile = "$projectFolder/${project.id}/genes.bed";
     if (!await File(geneFile).exists()) {
-      throw FileNotFoundException(message: 'genes.txt not found');
-    } else {
-      return await File(geneFile).readAsLines();
-    }
-  }
-
-  Future<void> createBedFile(String projectName) async {
-    String geneFile = "$projectFolder/$projectName/genes.txt";
-    String bedFile = "$projectFolder/$projectName/genes.bed";
-    if (!await File(geneFile).exists()) {
-      throw ();
+      throw FileNotFoundException(message: 'Gene file does not exist');
     } else {
       List<String> arg = [];
       arg.add(geneFile);
@@ -77,33 +44,27 @@ class MipgenService {
 
       var process = await Process.run(exonExtract, arg);
 
-      await File(bedFile).create();
-      var sink = File(bedFile).openWrite();
-      sink.write(process.stdout);
-      await sink.flush();
-      await sink.close();
-
-      if (!await File(bedFile).exists() ||
-          await File(bedFile).length() < 1024) {
+      if (process.exitCode != 0 || process.stdout == "") {
+        //TODO: error handling
         throw ();
       }
+
+      fileService.writeStringToFile(bedFile, process.stdout);
+
+      project.bedFileCreated = true;
+      await projectService.updateProject(session, project);
     }
   }
 
-  Future<bool> checkBedFileExists(String projectName) async {
-    if (await File("$projectFolder/$projectName/genes.bed").exists() &&
-        await File("$projectFolder/$projectName/genes.bed").length() > 1024) {
-      return true;
-    }
-    return false;
-  }
+  Future<void> generateMips(
+      Session session, int projectID, bool deleteExcessFiles) async {
+    var project = await projectService.getProject(session, projectID);
 
-  Future<void> generateMips(String projectName, bool deleteExcessFiles) async {
     List<String> arg = [];
     arg.add("-regions_to_scan");
-    arg.add("$projectFolder/$projectName/genes.bed");
+    arg.add("$projectFolder/${project.id}/genes.bed");
     arg.add("-project_name");
-    arg.add(projectName);
+    arg.add(project.name);
     arg.add("-min_capture_size");
     arg.add("162");
     arg.add("-max_capture_size");
@@ -114,61 +75,16 @@ class MipgenService {
     arg.add(snp);
 
     await Process.start(mipgenExe, arg,
-        workingDirectory: "$projectFolder/$projectName", runInShell: true);
-    var mipgenPID = await getMipgenPID(projectName);
-    print(mipgenPID);
+        workingDirectory: "$projectFolder/${project.id}", runInShell: true);
+    project.started = DateTime.now();
+    project.active = true;
+    var mipgenPID = await getMipgenPID(project.name);
+    project.pid = mipgenPID;
+    project.cleanup = deleteExcessFiles;
+    await projectService.updateProject(session, project);
   }
 
-  Future<List<String>> showMipsResult(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".picked_mips.txt")) {
-        File f = File(d.path);
-        var lines = await f.readAsLines();
-        return lines;
-      }
-    }
-
-    return List.empty();
-  }
-
-  Future<List<String>> showMipsProgress(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".progress.txt")) {
-        File f = File(d.path);
-        var lines = await f.readAsLines();
-        return lines;
-      }
-    }
-
-    return List.empty();
-  }
-
-  Future<void> deleteByproducts(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
-        d.delete();
-      }
-    }
-  }
-
-  Future<void> writeListToFile(String path, List<String> list) async {
-    var sink = File(path).openWrite();
-    list.forEach(sink.writeln);
-    await sink.flush();
-    await sink.close();
-  }
-
-  Future<bool> checkProjectExists(String projectName) async {
-    return await Directory("$projectFolder/$projectName").exists();
-  }
-
-  Future<int> getMipgenPID(String projectID) async {
+  Future<int> getMipgenPID(String projectName) async {
     int mipgenPID = 0;
 
     var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
@@ -178,7 +94,7 @@ class MipgenService {
     } else {
       var lines = process.stdout.split("\n");
       for (var line in lines) {
-        if (line.contains("-project_name $projectID")) {
+        if (line.contains("-project_name $projectName")) {
           mipgenPID = int.parse(line.split(" ")[0]);
           break;
         }

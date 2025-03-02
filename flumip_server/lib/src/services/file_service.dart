@@ -1,0 +1,139 @@
+import 'package:serverpod/protocol.dart';
+import 'package:serverpod/server.dart';
+import 'dart:io';
+
+import '../generated/protocol.dart';
+import 'project_service.dart';
+
+class FileService {
+  late final String _path;
+  final projectService = ProjectService();
+
+  FileService() {
+    _path = "/opt/mipgen";
+  }
+
+  Future<void> createGeneFile(
+      Session session, int projectID, List<String> genes) async {
+    if (!await projectService.checkProjectDirectoryExists(projectID)) {
+      throw ArgumentError('Project id does not exist');
+    }
+    var project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      throw ArgumentError('Project id does not exist');
+    }
+    String geneFile = "$_path/projects/$projectID/genes.txt";
+    if (await File(geneFile).exists()) {
+      await writeListToFile(geneFile, genes);
+    } else {
+      File(geneFile).create();
+      await writeListToFile(geneFile, genes);
+    }
+    project.geneFileCreated = true;
+    await Project.db.updateRow(session, project);
+  }
+
+  Future<List<String>> getGenes(Session session, int projectID) async {
+    if (!await projectService.checkProjectDirectoryExists(projectID)) {
+      throw ArgumentError('Project id does not exist');
+    }
+    var project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      throw ArgumentError('Project id does not exist');
+    }
+    String geneFile = "$_path/projects/$projectID/genes.txt";
+    if (!await File(geneFile).exists()) {
+      throw FileNotFoundException(message: 'genes.txt not found');
+    } else {
+      return await File(geneFile).readAsLines();
+    }
+  }
+
+  Future<bool> checkBedFileExists(Session session, int projectID) async {
+    if (!await projectService.checkProjectDirectoryExists(projectID)) {
+      throw ArgumentError('Project id does not exist');
+    }
+    var project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      throw ArgumentError('Project id does not exist');
+    }
+    if (await File("$_path/projects/$projectID/genes.bed").exists() &&
+        await File("$_path/projects/$projectID/genes.bed").length() > 1024) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> deleteByproducts(Session session, int projectID) async {
+    if (!await projectService.checkProjectDirectoryExists(projectID)) {
+      throw FileNotFoundException(message: 'The Project does not exist');
+    }
+    var project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      throw ArgumentError('Project id does not exist');
+    }
+    var dir = await Directory("$_path/projects/$projectID").list().toList();
+
+    for (var d in dir) {
+      if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
+        d.delete();
+      }
+    }
+  }
+
+  Future<List<String>> showSnpMipsResult(Session session, int projectID) async {
+    var dir = await Directory("$_path/projects/$projectID").list().toList();
+
+    for (var d in dir) {
+      if (d.path.endsWith(".snps_mips.txt")) {
+        File f = File(d.path);
+        var lines = await f.readAsLines();
+        return lines;
+      }
+    }
+
+    return List.empty();
+  }
+
+  Future<List<String>> showMipsResult(Session session, int projectID) async {
+    var dir = await Directory("$_path/projects/$projectID").list().toList();
+
+    for (var d in dir) {
+      if (d.path.endsWith(".picked_mips.txt")) {
+        File f = File(d.path);
+        var lines = await f.readAsLines();
+        return lines;
+      }
+    }
+
+    return List.empty();
+  }
+
+  Future<List<String>> showMipsProgress(Session session, int projectID) async {
+    var dir = await Directory("$_path/projects/$projectID").list().toList();
+
+    for (var d in dir) {
+      if (d.path.endsWith(".progress.txt")) {
+        File f = File(d.path);
+        var lines = await f.readAsLines();
+        return lines;
+      }
+    }
+
+    return List.empty();
+  }
+
+  Future<void> writeListToFile(String path, List<String> list) async {
+    var sink = File(path).openWrite();
+    list.forEach(sink.writeln);
+    await sink.flush();
+    await sink.close();
+  }
+
+  Future<void> writeStringToFile(String path, String content) async {
+    var sink = File(path).openWrite();
+    sink.write(content);
+    await sink.flush();
+    await sink.close();
+  }
+}

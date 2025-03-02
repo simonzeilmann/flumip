@@ -14,6 +14,69 @@ import 'dart:async' as _i2;
 import 'protocol.dart' as _i3;
 
 /// {@category Endpoint}
+class EndpointFile extends _i1.EndpointRef {
+  EndpointFile(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'file';
+
+  _i2.Future<void> createGeneFile(
+    int projectID,
+    List<String> genes,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'file',
+        'createGeneFile',
+        {
+          'projectID': projectID,
+          'genes': genes,
+        },
+      );
+
+  _i2.Future<List<String>> getGenes(int projectID) =>
+      caller.callServerEndpoint<List<String>>(
+        'file',
+        'getGenes',
+        {'projectID': projectID},
+      );
+
+  _i2.Future<bool> checkBedFileExists(int projectID) =>
+      caller.callServerEndpoint<bool>(
+        'file',
+        'checkBedFileExists',
+        {'projectID': projectID},
+      );
+
+  _i2.Future<void> deleteByProducts(int projectID) =>
+      caller.callServerEndpoint<void>(
+        'file',
+        'deleteByProducts',
+        {'projectID': projectID},
+      );
+
+  _i2.Future<List<String>> showSnpMipsResult(int projectID) =>
+      caller.callServerEndpoint<List<String>>(
+        'file',
+        'showSnpMipsResult',
+        {'projectID': projectID},
+      );
+
+  _i2.Future<List<String>> showMipsResult(int projectID) =>
+      caller.callServerEndpoint<List<String>>(
+        'file',
+        'showMipsResult',
+        {'projectID': projectID},
+      );
+
+  _i2.Future<List<String>> showMipsProgress(int projectID) =>
+      caller.callServerEndpoint<List<String>>(
+        'file',
+        'showMipsProgress',
+        {'projectID': projectID},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointMipgen extends _i1.EndpointRef {
   EndpointMipgen(_i1.EndpointCaller caller) : super(caller);
 
@@ -61,11 +124,11 @@ class EndpointMipgen extends _i1.EndpointRef {
         {'projectName': projectName},
       );
 
-  _i2.Future<void> createBedFile(String projectName) =>
+  _i2.Future<void> createBedFile(int projectID) =>
       caller.callServerEndpoint<void>(
         'mipgen',
         'createBedFile',
-        {'projectName': projectName},
+        {'projectID': projectID},
       );
 
   _i2.Future<bool> checkBedFileExists(String projectName) =>
@@ -76,14 +139,14 @@ class EndpointMipgen extends _i1.EndpointRef {
       );
 
   _i2.Future<void> generateMips(
-    String projectName,
+    int projectID,
     bool deleteExcessFiles,
   ) =>
       caller.callServerEndpoint<void>(
         'mipgen',
         'generateMips',
         {
-          'projectName': projectName,
+          'projectID': projectID,
           'deleteExcessFiles': deleteExcessFiles,
         },
       );
@@ -100,6 +163,35 @@ class EndpointMipgen extends _i1.EndpointRef {
         'mipgen',
         'showMipsResult',
         {'projectName': projectName},
+      );
+}
+
+/// {@category Endpoint}
+class EndpointProject extends _i1.EndpointRef {
+  EndpointProject(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'project';
+
+  _i2.Future<bool> createProject(String name) =>
+      caller.callServerEndpoint<bool>(
+        'project',
+        'createProject',
+        {'name': name},
+      );
+
+  _i2.Future<void> deleteProject(String name) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'deleteProject',
+        {'name': name},
+      );
+
+  _i2.Future<List<String>> getProjects() =>
+      caller.callServerEndpoint<List<String>>(
+        'project',
+        'getProjects',
+        {},
       );
 }
 
@@ -129,13 +221,23 @@ class Client extends _i1.ServerpodClientShared {
           disconnectStreamsOnLostInternetConnection:
               disconnectStreamsOnLostInternetConnection,
         ) {
+    file = EndpointFile(this);
     mipgen = EndpointMipgen(this);
+    project = EndpointProject(this);
   }
+
+  late final EndpointFile file;
 
   late final EndpointMipgen mipgen;
 
+  late final EndpointProject project;
+
   @override
-  Map<String, _i1.EndpointRef> get endpointRefLookup => {'mipgen': mipgen};
+  Map<String, _i1.EndpointRef> get endpointRefLookup => {
+        'file': file,
+        'mipgen': mipgen,
+        'project': project,
+      };
 
   @override
   Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {};

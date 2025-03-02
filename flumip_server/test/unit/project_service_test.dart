@@ -1,0 +1,92 @@
+import 'package:flumip_server/src/services/project_service.dart';
+import 'package:serverpod/protocol.dart';
+import 'package:test/test.dart';
+
+import '../integration/test_tools/serverpod_test_tools.dart';
+
+void main() {
+  withServerpod('Project Creation', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test(
+      'calling `createProject` should return true',
+      () async {
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+      },
+      tags: ['unit'],
+    );
+    test(
+      'empty project name should throw an exception',
+      () async {
+        expect(
+            () => projectService.createProject(session, ""),
+            throwsA(predicate((e) =>
+                e is ArgumentError &&
+                e.message == 'Project name cannot be empty')));
+      },
+      tags: ['unit'],
+    );
+  });
+
+  withServerpod('Project Deletion', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test(
+      'calling `deleteProject` should give an empty list of projects',
+      () async {
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+        await projectService.deleteProject(session, result.id!);
+        final projects = await projectService.getProjects(session);
+        expect(projects.length, 0);
+      },
+      tags: ['unit'],
+    );
+    test('non existent project id should throw an exception', () async {
+      expect(
+          () => projectService.deleteProject(session, -1),
+          throwsA(predicate((e) =>
+              e is FileNotFoundException && e.message == 'Project not found')));
+    });
+  });
+
+  withServerpod('Get Projects', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test('calling get Project should return the requested project', () async {
+      final result = await projectService.createProject(session, "test123");
+      expect(result.name, "test123");
+      final project = await projectService.getProject(session, result.id!);
+      expect(project.name, "test123");
+    });
+
+    test(
+        'calling get Project with non existent project id should throw an exception',
+        () async {
+      expect(
+          () => projectService.getProject(session, -1),
+          throwsA(predicate((e) =>
+              e is FileNotFoundException && e.message == 'Project not found')));
+    });
+
+    test(
+      'calling `getProjects` should return a list of projects',
+      () async {
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+        final projects = await projectService.getProjects(session);
+        expect(projects.length, 1);
+        expect(projects[0].name, "test123");
+      },
+      tags: ['unit'],
+    );
+    test('calling `getProjects` should return an empty list', () async {
+      final projects = await projectService.getProjects(session);
+      expect(projects.length, 0);
+    });
+  });
+}

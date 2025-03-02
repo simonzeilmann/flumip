@@ -1,3 +1,11 @@
+file:
+  - createGeneFile:
+  - getGenes:
+  - checkBedFileExists:
+  - deleteByProducts:
+  - showSnpMipsResult:
+  - showMipsResult:
+  - showMipsProgress:
 mipgen:
   - createProject:
   - deleteProject:
@@ -9,3 +17,7 @@ mipgen:
   - generateMips:
   - showMipsProgress:
   - showMipsResult:
+project:
+  - createProject:
+  - deleteProject:
+  - getProjects:

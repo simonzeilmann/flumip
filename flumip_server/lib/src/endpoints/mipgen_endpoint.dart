@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
@@ -37,8 +39,14 @@ class MipgenEndpoint extends Endpoint {
     }
   }
 
-  Future<void> createBedFile(Session session, String projectName) async {
-    return mipgenService.createBedFile(projectName);
+  Future<void> createBedFile(Session session, int projectID) async {
+    try {
+      return mipgenService.createBedFile(session, projectID);
+    } on FileNotFoundException catch (e) {
+      throw IOException;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<bool> checkBedFileExists(Session session, String projectName) async {
@@ -46,8 +54,8 @@ class MipgenEndpoint extends Endpoint {
   }
 
   Future<void> generateMips(
-      Session session, String projectName, bool deleteExcessFiles) async {
-    return mipgenService.generateMips(projectName, deleteExcessFiles);
+      Session session, int projectID, bool deleteExcessFiles) async {
+    return mipgenService.generateMips(session, projectID, deleteExcessFiles);
   }
 
   Future<List<String>> showMipsProgress(

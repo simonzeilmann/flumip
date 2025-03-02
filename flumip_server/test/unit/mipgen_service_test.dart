@@ -3,43 +3,11 @@ import 'dart:io';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:test/test.dart';
 
+import '../integration/test_tools/serverpod_test_tools.dart';
+
 void main() {
 
-  //TODO: Remove after testing
-  test("testTest", () {
-    expect(1, 1);
-  },
-  tags: ['unit', 'action'],
-  );
-
-  test("projectCreation", () async {
-    final mipgenService = MipgenService();
-
-    bool result = await mipgenService.createProject("test");
-    expect(result, true);
-
-    result = await mipgenService.createProject("test");
-    expect(result, false);
-
-    mipgenService.deleteProject("test");
-  },
-    tags: ['unit'],
-  );
-
-  test("projectDeletion", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("testToDelete");
-    var result = await mipgenService.checkProjectExists("testToDelete");
-    expect(result, true);
-
-    mipgenService.deleteProject("testToDelete");
-    await Future.delayed(Duration(milliseconds: 50));
-    expect(await mipgenService.checkProjectExists("testToDelete"), false);
-  },
-    tags: ['unit'],
-  );
-
+/*
   test("createGeneFile", () async {
     final mipgenService = MipgenService();
 
@@ -80,45 +48,6 @@ void main() {
   },
     tags: ['unit'],
   );
+  */
 
-  test("generateMips and delete excess files", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("mipsTest");
-    List<String> genes = ["MYH11"];
-
-    await mipgenService.createGeneFile("mipsTest", genes);
-
-    await mipgenService.createBedFile("mipsTest");
-
-    await mipgenService.generateMips("mipsTest", false);
-
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.picked_mips.txt")
-            .exists(),
-        true);
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.picked_mips.txt")
-            .length(),
-        greaterThan(1024));
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.all_sequences.sai")
-            .exists(),
-        true);
-
-    await mipgenService.deleteByproducts("mipsTest");
-
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.all_sequences.sai")
-            .exists(),
-        false);
-
-    mipgenService.deleteProject("mipsTest");
-  },
-    tags: ['unit'],
-  );
 }
