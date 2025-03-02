@@ -1,6 +1,5 @@
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:test/test.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';

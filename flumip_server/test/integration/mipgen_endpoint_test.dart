@@ -7,14 +7,9 @@ void main() {
   withServerpod('Mipgen endpoint', (sessionBuilder, endpoints) {
     test('creates a project', () async {
       final result =
-          await endpoints.mipgen.createProject(sessionBuilder, "int_test");
+          await endpoints.project.createProject(sessionBuilder, "int_test");
       expect(result, true);
     },
     tags: ['integration']);
-
-    test('sample test', () {
-      expect(1, 1);
-    },
-    tags: ['integration', 'action']);
   });
 }

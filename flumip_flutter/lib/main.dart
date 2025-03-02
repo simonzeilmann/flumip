@@ -35,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<String>? _projects;
+  List<Project>? _projects;
   String? _errorMessage;
   final TextEditingController _projectController = TextEditingController();
 
@@ -47,7 +47,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void _fetchProjects() async {
     try {
-      final projects = await client.mipgen.getProjects();
+      final projects = await client.project.getProjects();
       setState(() {
         _errorMessage = null;
         _projects = projects;
@@ -62,7 +62,7 @@ class MyHomePageState extends State<MyHomePage> {
   void _createProject() async {
     if (_projectController.text.isEmpty) return;
     try {
-      await client.mipgen.createProject(_projectController.text);
+      await client.project.createProject(_projectController.text);
       _projectController.clear();
       _fetchProjects();
     } catch (e) {
@@ -72,9 +72,9 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _deleteProject(String projectName) async {
+  void _deleteProject(int projectID) async {
     try {
-      await client.mipgen.deleteProject(projectName);
+      await client.project.deleteProject(projectID);
       _fetchProjects();
     } catch (e) {
       setState(() {
@@ -122,9 +122,10 @@ class MyHomePageState extends State<MyHomePage> {
                   itemCount: _projects!.length,
                   itemBuilder: (context, index) {
                     return ProjectTile(
-                      projectName: _projects![index],
-                      onDelete: () => _deleteProject(_projects![index]),
-                      onCreateGeneFile: (genes) => client.mipgen.createGeneFile(_projects![index], genes),
+                      project: _projects![index],
+                      onDelete: () => _deleteProject(_projects![index].id!),
+                      onCreateGeneFile: (genes) => client.file
+                          .createGeneFile(_projects![index].id!, genes),
                     );
                   },
                 ),

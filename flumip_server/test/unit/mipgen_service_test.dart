@@ -1,10 +1,11 @@
+/*
 import 'dart:io';
 
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:test/test.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';
-
+*/
 void main() {
 
 /*

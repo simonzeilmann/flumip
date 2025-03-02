@@ -84,59 +84,11 @@ class EndpointMipgen extends _i1.EndpointRef {
   @override
   String get name => 'mipgen';
 
-  _i2.Future<bool> createProject(String name) =>
-      caller.callServerEndpoint<bool>(
-        'mipgen',
-        'createProject',
-        {'name': name},
-      );
-
-  _i2.Future<void> deleteProject(String name) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'deleteProject',
-        {'name': name},
-      );
-
-  _i2.Future<List<String>> getProjects() =>
-      caller.callServerEndpoint<List<String>>(
-        'mipgen',
-        'getProjects',
-        {},
-      );
-
-  _i2.Future<void> createGeneFile(
-    String projectName,
-    List<String> genes,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'createGeneFile',
-        {
-          'projectName': projectName,
-          'genes': genes,
-        },
-      );
-
-  _i2.Future<List<String>> getGenes(String projectName) =>
-      caller.callServerEndpoint<List<String>>(
-        'mipgen',
-        'getGenes',
-        {'projectName': projectName},
-      );
-
   _i2.Future<void> createBedFile(int projectID) =>
       caller.callServerEndpoint<void>(
         'mipgen',
         'createBedFile',
         {'projectID': projectID},
-      );
-
-  _i2.Future<bool> checkBedFileExists(String projectName) =>
-      caller.callServerEndpoint<bool>(
-        'mipgen',
-        'checkBedFileExists',
-        {'projectName': projectName},
       );
 
   _i2.Future<void> generateMips(
@@ -151,20 +103,6 @@ class EndpointMipgen extends _i1.EndpointRef {
           'deleteExcessFiles': deleteExcessFiles,
         },
       );
-
-  _i2.Future<List<String>> showMipsProgress(String projectName) =>
-      caller.callServerEndpoint<List<String>>(
-        'mipgen',
-        'showMipsProgress',
-        {'projectName': projectName},
-      );
-
-  _i2.Future<List<String>> showMipsResult(String projectName) =>
-      caller.callServerEndpoint<List<String>>(
-        'mipgen',
-        'showMipsResult',
-        {'projectName': projectName},
-      );
 }
 
 /// {@category Endpoint}
@@ -174,18 +112,17 @@ class EndpointProject extends _i1.EndpointRef {
   @override
   String get name => 'project';
 
-  _i2.Future<bool> createProject(String name) =>
-      caller.callServerEndpoint<bool>(
+  _i2.Future<_i3.Project> createProject(String name) =>
+      caller.callServerEndpoint<_i3.Project>(
         'project',
         'createProject',
         {'name': name},
       );
 
-  _i2.Future<void> deleteProject(String name) =>
-      caller.callServerEndpoint<void>(
+  _i2.Future<void> deleteProject(int id) => caller.callServerEndpoint<void>(
         'project',
         'deleteProject',
-        {'name': name},
+        {'id': id},
       );
 
   _i2.Future<List<_i3.Project>> getProjects() =>
@@ -193,6 +130,13 @@ class EndpointProject extends _i1.EndpointRef {
         'project',
         'getProjects',
         {},
+      );
+
+  _i2.Future<_i3.Project> getProject(int id) =>
+      caller.callServerEndpoint<_i3.Project>(
+        'project',
+        'getProject',
+        {'id': id},
       );
 }
 

@@ -78,17 +78,21 @@ class MipgenService {
         workingDirectory: "$projectFolder/${project.id}", runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await getMipgenPID(project.name);
+    var mipgenPID = await getMipgenPID(session, project.name);
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
     await projectService.updateProject(session, project);
   }
 
-  Future<int> getMipgenPID(String projectName) async {
+  Future<int> getMipgenPID(Session session, String projectName) async {
     int mipgenPID = 0;
 
     var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
-    if (process.exitCode != 0) {
+    if (process.exitCode == 1) {
+      session.log("Mipgen is not running");
+      return mipgenPID;
+    }
+    if (process.exitCode > 1) {
       //TODO: error handling
       throw ();
     } else {

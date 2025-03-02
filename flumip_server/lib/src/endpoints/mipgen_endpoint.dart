@@ -14,57 +14,19 @@ class MipgenEndpoint extends Endpoint {
   // The methods should return a typed future; the same types as for the parameters are
   // supported. The `session` object provides access to the database, logging,
   // passwords, and information about the request being made to the server.
-  Future<bool> createProject(Session session, String name) async {
-    return mipgenService.createProject(name);
-  }
-
-  Future<void> deleteProject(Session session, String name) async {
-    mipgenService.deleteProject(name);
-  }
-
-  Future<List<String>> getProjects(Session session) async {
-    return mipgenService.getProjects();
-  }
-
-  Future<void> createGeneFile(
-      Session session, String projectName, List<String> genes) async {
-    return mipgenService.createGeneFile(projectName, genes);
-  }
-
-  Future<List<String>> getGenes(Session session, String projectName) async {
-    try {
-      return await mipgenService.getGenes(projectName);
-    } on FileNotFoundException {
-      rethrow;
-    }
-  }
 
   Future<void> createBedFile(Session session, int projectID) async {
     try {
       return mipgenService.createBedFile(session, projectID);
-    } on FileNotFoundException catch (e) {
+    } on FileNotFoundException {
       throw IOException;
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<bool> checkBedFileExists(Session session, String projectName) async {
-    return mipgenService.checkBedFileExists(projectName);
-  }
-
   Future<void> generateMips(
       Session session, int projectID, bool deleteExcessFiles) async {
     return mipgenService.generateMips(session, projectID, deleteExcessFiles);
-  }
-
-  Future<List<String>> showMipsProgress(
-      Session session, String projectName) async {
-    return mipgenService.showMipsProgress(projectName);
-  }
-
-  Future<List<String>> showMipsResult(
-      Session session, String projectName) async {
-    return mipgenService.showMipsResult(projectName);
   }
 }

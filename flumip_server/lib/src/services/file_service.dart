@@ -30,6 +30,7 @@ class FileService {
       await writeListToFile(geneFile, genes);
     }
     project.geneFileCreated = true;
+    project.genes = genes;
     await Project.db.updateRow(session, project);
   }
 

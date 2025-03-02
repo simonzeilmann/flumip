@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 
+//ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
-  final String projectName;
+  Project project;
   final VoidCallback onDelete;
   final Future<void> Function(List<String>) onCreateGeneFile;
 
-  const ProjectTile({
+  ProjectTile({
     super.key,
-    required this.projectName,
+    required this.project,
     required this.onDelete,
     required this.onCreateGeneFile,
   });
@@ -24,16 +25,16 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   final TextEditingController _genesController = TextEditingController();
-  List<String>? _genes;
   String? _errorMessage;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _checkBedFileExists();
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _checkBedFileExists();
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (_isExpanded) {
+        _reloadProject();
+      }
     });
   }
 
@@ -48,30 +49,19 @@ class _ProjectTileState extends State<ProjectTile> {
       _isExpanded = !_isExpanded;
     });
     if (_isExpanded) {
-      await _fetchGenes();
+      await _reloadProject();
     }
   }
 
-  Future<void> _fetchGenes() async {
+  Future<void> _reloadProject() async {
     try {
-      final genes = await client.mipgen.getGenes(widget.projectName);
+      final project = await client.project.getProject(widget.project.id!);
       setState(() {
-        if (genes.isEmpty) {
-          _errorMessage = 'No genes found for this project.';
-          _genes = null;
-        } else {
-          _genes = genes;
-          _errorMessage = null;
-        }
-      });
-    } on Exception {
-      setState(() {
-        _errorMessage = 'No genes file exists for this project.';
-        _genes = null;
+        widget.project = project;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load genes: $e';
+        _errorMessage = 'Failed to reload project: $e';
       });
     }
   }
@@ -81,12 +71,13 @@ class _ProjectTileState extends State<ProjectTile> {
     List<String> genes = _genesController.text.split(',');
     await widget.onCreateGeneFile(genes);
     _genesController.clear();
-    await _fetchGenes();
+    await _reloadProject();
   }
 
   Future<void> _createBedFile() async {
     try {
-      await client.mipgen.createBedFile(widget.projectName);
+      await client.mipgen.createBedFile(widget.project.id!);
+      await _reloadProject();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('BED file created successfully')),
@@ -95,8 +86,7 @@ class _ProjectTileState extends State<ProjectTile> {
     } on IOException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('ERROR: The genes.txt file does not exist')),
+          SnackBar(content: Text('ERROR: The genes.txt file does not exist')),
         );
       }
     } catch (e) {
@@ -108,27 +98,13 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> _checkBedFileExists() async {
-    /*
-    try {
-      bool exists = await client.mipgen.checkBedFileExists(widget.projectName);
-      setState(() {
-        //_bedFileExists = exists;
-      });
-    } catch (e) {
-      setState(() {
-        //_bedFileExists = false;
-      });
-    }
-     */
-  }
-
   Future<void> _generateMips() async {
     try {
-      await client.mipgen.generateMips(widget.projectName, _deleteExcessFiles);
+      await client.mipgen.generateMips(widget.project.id!, _deleteExcessFiles);
+      _reloadProject();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('MIPs generated successfully')),
+          SnackBar(content: Text('MIPs generation started successfully')),
         );
       }
     } catch (e) {
@@ -142,7 +118,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _showMipsResult() async {
     try {
-      final result = await client.mipgen.showMipsResult(widget.projectName);
+      final result = await client.file.showMipsResult(widget.project.id!);
       if (mounted) {
         showDialog(
           context: context,
@@ -153,7 +129,60 @@ class _ProjectTileState extends State<ProjectTile> {
                 child: ListBody(
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
-                      : result.map((line) => SelectableText(line)).toList(),
+                      : [
+                    SelectableText.rich(
+                      TextSpan(
+                        children: result
+                            .map((line) => TextSpan(text: '$line\n'))
+                            .toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load MIPs result: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showSnpMipsResult() async {
+    try {
+      final result = await client.file.showSnpMipsResult(widget.project.id!);
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('MIPs Result'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: result.isEmpty
+                      ? [Text('No MIPs result file found.')]
+                      : [
+                    SelectableText.rich(
+                      TextSpan(
+                        children: result
+                            .map((line) => TextSpan(text: '$line\n'))
+                            .toList(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -179,7 +208,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _showProgress() async {
     try {
-      final result = await client.mipgen.showMipsProgress(widget.projectName);
+      final result = await client.file.showMipsProgress(widget.project.id!);
       if (mounted) {
         showDialog(
           context: context,
@@ -257,7 +286,7 @@ class _ProjectTileState extends State<ProjectTile> {
                   _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down),
               onPressed: _toggleExpand,
             ),
-            title: Text(widget.projectName),
+            title: Text(widget.project.name),
             trailing: IconButton(
               icon: Icon(Icons.delete),
               onPressed: _showDeleteConfirmationDialog,
@@ -273,79 +302,96 @@ class _ProjectTileState extends State<ProjectTile> {
                       _errorMessage!,
                       style: TextStyle(color: Colors.red),
                     ),
-                  if (_genes != null)
+                  if (widget.project.genes != null &&
+                      widget.project.genes!.isNotEmpty)
                     Column(
-                      children: _genes!.map((gene) => Text(
-                        gene,
-                        style: TextStyle(fontStyle: FontStyle.italic),
-                      )).toList(),
+                      children: widget.project.genes!
+                          .map((gene) => Text(
+                                gene,
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ))
+                          .toList(),
                     ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _genesController,
-                          decoration: InputDecoration(
-                            labelText: 'Genes (comma separated)',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                  if (widget.project.geneFileCreated == null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _genesController,
+                            decoration: InputDecoration(
+                              labelText: 'Genes (comma separated)',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 15),
                             ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: _createGeneFile,
-                      ),
-                    ],
-                  ),
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: _createGeneFile,
+                        ),
+                      ],
+                    ),
                   SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: _createBedFile,
-                    child: Text('Create BED File'),
-                  ),
+                  if (widget.project.geneFileCreated == true &&
+                      widget.project.bedFileCreated == null ||
+                      widget.project.bedFileCreated == false)
+                    ElevatedButton(
+                      onPressed: _createBedFile,
+                      child: Text('Create BED File'),
+                    ),
                   SizedBox(height: 5),
                   //if (_bedFileExists)
                   SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Checkbox(
-                        value: _deleteExcessFiles,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _deleteExcessFiles = value ?? false;
-                          });
-                        },
-                      ),
-                      Text('Delete excess files'),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _generateMips,
-                        child: Text('Generate MIPs'),
-                      ),
-                    ],
-                  ),
+                  if (widget.project.bedFileCreated == true &&
+                          widget.project.active == null ||
+                      widget.project.active == false)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Checkbox(
+                          value: _deleteExcessFiles,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _deleteExcessFiles = value ?? false;
+                            });
+                          },
+                        ),
+                        Text('Delete excess files'),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _generateMips,
+                          child: Text('Generate MIPs'),
+                        ),
+                      ],
+                    ),
                   SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 5),
-                      ElevatedButton(
-                        onPressed: _showProgress,
-                        child: Text('Show Progress'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _showMipsResult,
-                        child: Text('Show MIPs Result'),
-                      ),
-                    ],
-                  ),
+                  //TODO: plit and only show result if project is finished
+                  if (widget.project.active == true)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 5),
+                        ElevatedButton(
+                          onPressed: _showProgress,
+                          child: Text('Show Progress'),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _showMipsResult,
+                          child: Text('Show MIPs Result'),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _showSnpMipsResult,
+                          child: Text('Show SNP MIPs Result'),
+                        ),
+                      ],
+                    ),
                   SizedBox(height: 5),
                 ],
               ),

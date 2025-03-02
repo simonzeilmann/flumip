@@ -7,17 +7,10 @@ file:
   - showMipsResult:
   - showMipsProgress:
 mipgen:
-  - createProject:
-  - deleteProject:
-  - getProjects:
-  - createGeneFile:
-  - getGenes:
   - createBedFile:
-  - checkBedFileExists:
   - generateMips:
-  - showMipsProgress:
-  - showMipsResult:
 project:
   - createProject:
   - deleteProject:
   - getProjects:
+  - getProject:

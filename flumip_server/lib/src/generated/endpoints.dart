@@ -179,93 +179,6 @@ class Endpoints extends _i1.EndpointDispatch {
       name: 'mipgen',
       endpoint: endpoints['mipgen']!,
       methodConnectors: {
-        'createProject': _i1.MethodConnector(
-          name: 'createProject',
-          params: {
-            'name': _i1.ParameterDescription(
-              name: 'name',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).createProject(
-            session,
-            params['name'],
-          ),
-        ),
-        'deleteProject': _i1.MethodConnector(
-          name: 'deleteProject',
-          params: {
-            'name': _i1.ParameterDescription(
-              name: 'name',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).deleteProject(
-            session,
-            params['name'],
-          ),
-        ),
-        'getProjects': _i1.MethodConnector(
-          name: 'getProjects',
-          params: {},
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).getProjects(session),
-        ),
-        'createGeneFile': _i1.MethodConnector(
-          name: 'createGeneFile',
-          params: {
-            'projectName': _i1.ParameterDescription(
-              name: 'projectName',
-              type: _i1.getType<String>(),
-              nullable: false,
-            ),
-            'genes': _i1.ParameterDescription(
-              name: 'genes',
-              type: _i1.getType<List<String>>(),
-              nullable: false,
-            ),
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).createGeneFile(
-            session,
-            params['projectName'],
-            params['genes'],
-          ),
-        ),
-        'getGenes': _i1.MethodConnector(
-          name: 'getGenes',
-          params: {
-            'projectName': _i1.ParameterDescription(
-              name: 'projectName',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).getGenes(
-            session,
-            params['projectName'],
-          ),
-        ),
         'createBedFile': _i1.MethodConnector(
           name: 'createBedFile',
           params: {
@@ -282,24 +195,6 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['mipgen'] as _i3.MipgenEndpoint).createBedFile(
             session,
             params['projectID'],
-          ),
-        ),
-        'checkBedFileExists': _i1.MethodConnector(
-          name: 'checkBedFileExists',
-          params: {
-            'projectName': _i1.ParameterDescription(
-              name: 'projectName',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).checkBedFileExists(
-            session,
-            params['projectName'],
           ),
         ),
         'generateMips': _i1.MethodConnector(
@@ -324,42 +219,6 @@ class Endpoints extends _i1.EndpointDispatch {
             session,
             params['projectID'],
             params['deleteExcessFiles'],
-          ),
-        ),
-        'showMipsProgress': _i1.MethodConnector(
-          name: 'showMipsProgress',
-          params: {
-            'projectName': _i1.ParameterDescription(
-              name: 'projectName',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).showMipsProgress(
-            session,
-            params['projectName'],
-          ),
-        ),
-        'showMipsResult': _i1.MethodConnector(
-          name: 'showMipsResult',
-          params: {
-            'projectName': _i1.ParameterDescription(
-              name: 'projectName',
-              type: _i1.getType<String>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['mipgen'] as _i3.MipgenEndpoint).showMipsResult(
-            session,
-            params['projectName'],
           ),
         ),
       },
@@ -389,9 +248,9 @@ class Endpoints extends _i1.EndpointDispatch {
         'deleteProject': _i1.MethodConnector(
           name: 'deleteProject',
           params: {
-            'name': _i1.ParameterDescription(
-              name: 'name',
-              type: _i1.getType<String>(),
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
               nullable: false,
             )
           },
@@ -401,7 +260,7 @@ class Endpoints extends _i1.EndpointDispatch {
           ) async =>
               (endpoints['project'] as _i4.ProjectEndpoint).deleteProject(
             session,
-            params['name'],
+            params['id'],
           ),
         ),
         'getProjects': _i1.MethodConnector(
@@ -413,6 +272,24 @@ class Endpoints extends _i1.EndpointDispatch {
           ) async =>
               (endpoints['project'] as _i4.ProjectEndpoint)
                   .getProjects(session),
+        ),
+        'getProject': _i1.MethodConnector(
+          name: 'getProject',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint).getProject(
+            session,
+            params['id'],
+          ),
         ),
       },
     );
