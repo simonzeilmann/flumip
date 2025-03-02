@@ -32,6 +32,7 @@ jobs:
       - name: Install serverpod
         run: |
           dart pub global activate serverpod
+          export PATH="$PATH":"$HOME/.pub-cache/bin"
           cd flumip_server && serverpod generate
 
       - name: Analyze code
