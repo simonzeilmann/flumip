@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
@@ -91,7 +92,13 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('BED file created successfully')),
         );
       }
-      await _checkBedFileExists();
+    } on IOException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('ERROR: The genes.txt file does not exist')),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -268,7 +275,10 @@ class _ProjectTileState extends State<ProjectTile> {
                     ),
                   if (_genes != null)
                     Column(
-                      children: _genes!.map((gene) => Text(gene)).toList(),
+                      children: _genes!.map((gene) => Text(
+                        gene,
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      )).toList(),
                     ),
                   Row(
                     children: [
