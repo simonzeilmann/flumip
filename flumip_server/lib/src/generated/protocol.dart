@@ -12,6 +12,7 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
 import 'project.dart' as _i3;
+import 'package:flumip_server/src/generated/project.dart' as _i4;
 export 'project.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
@@ -202,6 +203,10 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList()
+          as dynamic;
+    }
+    if (t == List<_i4.Project>) {
+      return (data as List).map((e) => deserialize<_i4.Project>(e)).toList()
           as dynamic;
     }
     try {

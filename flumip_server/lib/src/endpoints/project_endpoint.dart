@@ -1,6 +1,7 @@
 import 'package:serverpod/server.dart';
 
 import '../services/project_service.dart';
+import '../generated/protocol.dart';
 
 class ProjectEndpoint extends Endpoint {
   get projectService => ProjectService();
@@ -13,7 +14,7 @@ class ProjectEndpoint extends Endpoint {
     projectService.deleteProject(session, name);
   }
 
-  Future<List<String>> getProjects(Session session) async {
+  Future<List<Project>> getProjects(Session session) async {
     return projectService.getProjects(session);
   }
 }

@@ -11,6 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'project.dart' as _i2;
+import 'package:flumip_client/src/protocol/project.dart' as _i3;
 export 'project.dart';
 export 'client.dart';
 
@@ -45,6 +46,10 @@ class Protocol extends _i1.SerializationManager {
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList()
+          as dynamic;
+    }
+    if (t == List<_i3.Project>) {
+      return (data as List).map((e) => deserialize<_i3.Project>(e)).toList()
           as dynamic;
     }
     return super.deserialize<T>(data, t);

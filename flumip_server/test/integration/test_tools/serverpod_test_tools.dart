@@ -14,6 +14,7 @@
 import 'package:serverpod_test/serverpod_test.dart' as _i1;
 import 'package:serverpod/serverpod.dart' as _i2;
 import 'dart:async' as _i3;
+import 'package:flumip_server/src/generated/project.dart' as _i4;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -716,7 +717,7 @@ class _ProjectEndpoint {
     });
   }
 
-  _i3.Future<List<String>> getProjects(
+  _i3.Future<List<_i4.Project>> getProjects(
       _i1.TestSessionBuilder sessionBuilder) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -735,7 +736,7 @@ class _ProjectEndpoint {
         var _localReturnValue = await (_localCallContext.method.call(
           _localUniqueSession,
           _localCallContext.arguments,
-        ) as _i3.Future<List<String>>);
+        ) as _i3.Future<List<_i4.Project>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

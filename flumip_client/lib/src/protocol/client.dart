@@ -11,7 +11,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
-import 'protocol.dart' as _i3;
+import 'package:flumip_client/src/protocol/project.dart' as _i3;
+import 'protocol.dart' as _i4;
 
 /// {@category Endpoint}
 class EndpointFile extends _i1.EndpointRef {
@@ -187,8 +188,8 @@ class EndpointProject extends _i1.EndpointRef {
         {'name': name},
       );
 
-  _i2.Future<List<String>> getProjects() =>
-      caller.callServerEndpoint<List<String>>(
+  _i2.Future<List<_i3.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_i3.Project>>(
         'project',
         'getProjects',
         {},
@@ -211,7 +212,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
           host,
-          _i3.Protocol(),
+          _i4.Protocol(),
           securityContext: securityContext,
           authenticationKeyManager: authenticationKeyManager,
           streamingConnectionTimeout: streamingConnectionTimeout,
