@@ -29,6 +29,11 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
+      - name: Install serverpod
+        run: |
+          dart pub global activate serverpod
+          cd flumip_server && serverpod generate
+
       - name: Analyze code
         run: |
           cd flumip_server && flutter analyze
