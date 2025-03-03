@@ -45,7 +45,6 @@ jobs:
         run: |
           git clone https://github.com/serverpod/serverpod.git
           cd serverpod
-          bash util/pub_get_all
           BASE=`pwd`
           CLI_DIR=$BASE/tools/serverpod_cli
           CLI=$CLI_DIR/bin/serverpod_cli.dart
