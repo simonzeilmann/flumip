@@ -35,6 +35,10 @@ jobs:
           export PATH="$PATH":"$HOME/.pub-cache/bin"
           cd flumip_server && serverpod generate
 
+      - name: Generate serverpod files
+        run: |
+          cd flumip_server && serverpod generate
+
       - name: Analyze code
         run: |
           cd flumip_server && flutter analyze
