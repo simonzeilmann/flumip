@@ -44,10 +44,10 @@ jobs:
       - name: Install serverpod
         run: |
           dart pub global activate serverpod
-          echo "export PATH=\$PATH:$HOME/.pub-cache/bin" >> $GITHUB_ENV
-          ls -l /home/runner/.pub-cache/bin/
+          echo "export PATH=\$PATH:$steps.flutter-action.outputs.PUB-CACHE-PATH" >> $GITHUB_ENV
           echo "PATH: $PATH"
           echo "SHELL: $SHELL"
+          ls -l /home/runner/.pub-cache
 
       - name: Generate serverpod files
         run: |
