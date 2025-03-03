@@ -54,7 +54,7 @@ jobs:
           
           pwd
           echo "flumip_server"
-          cd ../../flumip_server
+          cd /home/runner/work/flumip/flumip/flumip_server
           dart $CLI generate --no-analytics
 
       - name: Generate serverpod files
