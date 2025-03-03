@@ -51,10 +51,6 @@ jobs:
           echo "pub get cli"
           cd $CLI_DIR
           dart pub get
-  
-          echo "serverpod"
-          cd $BASE/packages/serverpod
-          dart $CLI generate --no-analytics
           
           echo "flumip_server"
           cd ../flumip_server
