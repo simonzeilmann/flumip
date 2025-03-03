@@ -45,11 +45,8 @@ jobs:
         run: |
           git clone https://github.com/serverpod/serverpod.git
           cd serverpod
-          SERVERPOD_HOME=$(pwd)
+          SERVERPOD_HOME=`pwd`
           ./util/pub_get_all
-          echo ""
-          echo ""
-          serverpod version
           dart pub global activate --source path tools/serverpod_cli
           serverpod version
           BASE=`pwd`
