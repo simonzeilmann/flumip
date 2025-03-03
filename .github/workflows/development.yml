@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -23,6 +23,11 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+      - run: |
+          echo CACHE-PATH=${{ steps.flutter-action.outputs.CACHE-PATH }}
+          echo VERSION=${{ steps.flutter-action.outputs.VERSION }}
+          echo ARCHITECTURE=${{ steps.flutter-action.outputs.ARCHITECTURE }}
+          echo PUB-CACHE-PATH=${{ steps.flutter-action.outputs.PUB-CACHE-PATH }}
 
       - name: Get dependencies
         run: |
