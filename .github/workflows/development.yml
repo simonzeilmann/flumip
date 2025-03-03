@@ -41,18 +41,25 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: Install dependencies
-        run: bash util/pub_get_all
-      - name: Run serverpod generate
-        run: bash util/run_tests_serverpod_generate
-
-      - name: Install serverpod
+      - name: clone serverpod repo and generate files
         run: |
-          dart pub global activate serverpod --trace -v
-          echo "export PATH=\$PATH:$steps.flutter-action.outputs.PUB-CACHE-PATH" >> $GITHUB_ENV
-          echo "PATH: $PATH"
-          echo "SHELL: $SHELL"
-          ls -l /home/runner/.pub-cache/global_packages/serverpod
+          git clone https://github.com/serverpod/serverpod.git
+          cd serverpod
+          bash util/pub_get_all
+          BASE=`pwd`
+          CLI_DIR=$BASE/tools/serverpod_cli
+          CLI=$CLI_DIR/bin/serverpod_cli.dart
+          echo "pub get cli"
+          cd $CLI_DIR
+          dart pub get
+  
+          echo "serverpod"
+          cd $BASE/packages/serverpod
+          dart $CLI generate --no-analytics
+          
+          echo "flumip_server"
+          cd ../flumip_server
+          dart $CLI generate --no-analytics
 
       - name: Generate serverpod files
         run: |
@@ -60,7 +67,7 @@ jobs:
 
       - name: Analyze code
         run: |
-          cd flumip_server && flutter analyze
+          cd flumip_server && dart analyze
           cd ../flumip_flutter && flutter analyze
 
       - name: Build
