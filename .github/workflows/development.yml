@@ -33,6 +33,7 @@ jobs:
         run: |
           dart pub global activate serverpod
           echo "export PATH=\$PATH:$HOME/.pub-cache/bin" >> $GITHUB_ENV
+          ls -l /home/runner/.pub-cache/bin/
           echo "PATH: $PATH"
           echo "SHELL: $SHELL"
 
