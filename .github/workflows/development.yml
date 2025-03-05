@@ -43,7 +43,7 @@ jobs:
 
       - name: clone serverpod repo and generate files
         run: |
-          dart pub global activate serverpod
+          dart pub global activate serverpod_cli
           pwd
           serverpod version
 
