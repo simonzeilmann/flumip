@@ -47,6 +47,8 @@ jobs:
           cd serverpod
           SERVERPOD_HOME=`pwd`
           ./util/pub_get_all
+          SERVERPOD_HOME=$(pwd) && dart pub global activate --source path tools/serverpod_cli
+          echo $SERVERPOD_HOME
           dart pub global activate --source path tools/serverpod_cli
           serverpod version
           BASE=`pwd`
