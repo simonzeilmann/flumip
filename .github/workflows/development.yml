@@ -70,6 +70,11 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Get dependencies
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
       - name: install serverpod
         run: |
           dart pub global activate serverpod_cli
