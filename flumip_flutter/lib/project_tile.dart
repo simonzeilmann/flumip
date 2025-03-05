@@ -312,7 +312,7 @@ class _ProjectTileState extends State<ProjectTile> {
                               ))
                           .toList(),
                     ),
-                  if (widget.project.geneFileCreated == null)
+                  if (widget.project.geneFileCreated == false)
                     Row(
                       children: [
                         Expanded(
@@ -338,7 +338,6 @@ class _ProjectTileState extends State<ProjectTile> {
                     ),
                   SizedBox(height: 5),
                   if (widget.project.geneFileCreated == true &&
-                      widget.project.bedFileCreated == null ||
                       widget.project.bedFileCreated == false)
                     ElevatedButton(
                       onPressed: _createBedFile,
@@ -348,7 +347,6 @@ class _ProjectTileState extends State<ProjectTile> {
                   //if (_bedFileExists)
                   SizedBox(height: 5),
                   if (widget.project.bedFileCreated == true &&
-                          widget.project.active == null ||
                       widget.project.active == false)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

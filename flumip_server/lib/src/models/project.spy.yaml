@@ -2,22 +2,23 @@ class: Project
 table: project
 fields:
   name: String
-  description: String?
+  description: String, default=''
+  tags: List<String>?
   created: DateTime, default=now
   owner: int?
   department: int?
   genes: List<String>?
-  geneFileCreated: bool?
-  bedFileCreated: bool?
-  active: bool?
-  pid: int?
-  size: int?
-  emailNotification: bool?
+  geneFileCreated: bool, default=false
+  bedFileCreated: bool, default=false
+  active: bool, default=false
+  pid: int, default=0
+  size: int, default=0
+  emailNotification: bool, default=false
   fasta: int?
   snp: int?
   ref: int?
   options: List<String>?
   started: DateTime?
   completedIn: Duration?
-  error: String?
-  cleanup: bool?
+  error: String, default=''
+  cleanup: bool, default=false
