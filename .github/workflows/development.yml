@@ -64,10 +64,11 @@ jobs:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
-      - name: Set Up Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
         with:
-          sdk: ${{ matrix.sdk }}
+          channel: 'stable'
 
       - name: install serverpod
         run: |
