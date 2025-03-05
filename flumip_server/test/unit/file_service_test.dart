@@ -5,6 +5,12 @@ import 'package:test/test.dart';
 import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
+
+  test('dummy test', () {
+    expect(1, 1);
+  },
+  tags: ['unit', 'action'],);
+
   withServerpod('Gene File Creation', (sessionBuilder, endpoints) {
     var session = sessionBuilder.build();
     final fileService = FileService();
