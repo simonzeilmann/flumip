@@ -44,7 +44,6 @@ jobs:
       - name: clone serverpod repo and generate files
         run: |
           dart pub global activate serverpod_vps
-          cd flumip_server
           serverpod_vps
 
       - name: Generate serverpod files
