@@ -24,32 +24,21 @@ jobs:
         id: flutter-action
         with:
           channel: 'stable'
-          
-      - name: Print outputs
-        shell: bash
-        run: |
-          echo CACHE-PATH=${{ steps.flutter-action.outputs.CACHE-PATH }}
-          echo CACHE-KEY=${{ steps.flutter-action.outputs.CACHE-KEY }}
-          echo CHANNEL=${{ steps.flutter-action.outputs.CHANNEL }}
-          echo VERSION=${{ steps.flutter-action.outputs.VERSION }}
-          echo ARCHITECTURE=${{ steps.flutter-action.outputs.ARCHITECTURE }}
-          echo PUB-CACHE-PATH=${{ steps.flutter-action.outputs.PUB-CACHE-PATH }}
-          echo PUB-CACHE-KEY=${{ steps.flutter-action.outputs.PUB-CACHE-KEY }}
 
       - name: Get dependencies
         run: |
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: clone serverpod repo and generate files
+      - name: install serverpod
         run: |
           dart pub global activate serverpod_cli
-          pwd
           serverpod version
 
       - name: Generate serverpod files
         run: |
-          cd flumip_server && serverpod generate
+          cd flumip_server
+          serverpod generate
 
       - name: Analyze code
         run: |
@@ -79,6 +68,16 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: ${{ matrix.sdk }}
+
+      - name: install serverpod
+        run: |
+          dart pub global activate serverpod_cli
+          serverpod version
+
+      - name: Generate serverpod files
+        run: |
+          cd flumip_server
+          serverpod generate
 
       - name: Get dependencies
         run: |
