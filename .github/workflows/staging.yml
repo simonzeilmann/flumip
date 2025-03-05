@@ -161,8 +161,7 @@ jobs:
             docker stop postgres_staging || true
             docker rm postgres_staging || true
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
-            PID = pgrep -f "./server --mode=staging" || true
-            kill $PID || true
+            kill $(pgrep -f "./server --mode=staging") || true
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
             cd /var/www/flumip_staging/backend
