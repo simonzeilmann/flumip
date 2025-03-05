@@ -29,7 +29,7 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: install serverpod
+      - name: Install serverpod
         run: |
           dart pub global activate serverpod_cli
           serverpod version
@@ -74,7 +74,7 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: install serverpod
+      - name: Install serverpod
         run: |
           dart pub global activate serverpod_cli
           serverpod version
