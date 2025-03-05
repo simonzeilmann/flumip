@@ -45,8 +45,15 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'description',
           columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tags',
+          columnType: _i2.ColumnType.json,
           isNullable: true,
-          dartType: 'String?',
+          dartType: 'List<String>?',
         ),
         _i2.ColumnDefinition(
           name: 'created',
@@ -76,38 +83,44 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'geneFileCreated',
           columnType: _i2.ColumnType.boolean,
-          isNullable: true,
-          dartType: 'bool?',
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
           name: 'bedFileCreated',
           columnType: _i2.ColumnType.boolean,
-          isNullable: true,
-          dartType: 'bool?',
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
           name: 'active',
           columnType: _i2.ColumnType.boolean,
-          isNullable: true,
-          dartType: 'bool?',
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
           name: 'pid',
           columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
         ),
         _i2.ColumnDefinition(
           name: 'size',
           columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
         ),
         _i2.ColumnDefinition(
           name: 'emailNotification',
           columnType: _i2.ColumnType.boolean,
-          isNullable: true,
-          dartType: 'bool?',
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
           name: 'fasta',
@@ -148,14 +161,16 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'error',
           columnType: _i2.ColumnType.text,
-          isNullable: true,
-          dartType: 'String?',
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'cleanup',
           columnType: _i2.ColumnType.boolean,
-          isNullable: true,
-          dartType: 'bool?',
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
         ),
       ],
       foreignKeys: [],
@@ -194,20 +209,24 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
           ? (data as List).map((e) => deserialize<String>(e)).toList()
-          : null) as dynamic;
+          : null) as T;
     }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
           ? (data as List).map((e) => deserialize<String>(e)).toList()
-          : null) as dynamic;
+          : null) as T;
+    }
+    if (t == _i1.getType<List<String>?>()) {
+      return (data != null
+          ? (data as List).map((e) => deserialize<String>(e)).toList()
+          : null) as T;
     }
     if (t == List<String>) {
-      return (data as List).map((e) => deserialize<String>(e)).toList()
-          as dynamic;
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
     if (t == List<_i4.Project>) {
       return (data as List).map((e) => deserialize<_i4.Project>(e)).toList()
-          as dynamic;
+          as T;
     }
     try {
       return _i2.Protocol().deserialize<T>(data, t);
