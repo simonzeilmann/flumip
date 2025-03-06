@@ -126,6 +126,7 @@ jobs:
         run: |
           cd flumip_server
           serverpod generate
+          serverpod create-migration
 
       - name: Inject passwords.yaml
         run: |
@@ -147,7 +148,7 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_server/app, kill-process.sh"
+          source: "flumip_server/app"
           target: "~/flumip_staging/backend"
 
       - name: Execute remote script
