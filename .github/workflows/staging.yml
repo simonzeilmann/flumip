@@ -166,6 +166,7 @@ jobs:
             pid=$(pgrep -f "\./server --mode=staging")
             echo killing $pid
             if [ -n "$pid" ]; then
+              echo pid is $pid
               kill "$pid" || true
             fi
             echo removing old backend
