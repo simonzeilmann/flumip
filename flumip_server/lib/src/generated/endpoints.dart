@@ -41,66 +41,6 @@ class Endpoints extends _i1.EndpointDispatch {
       name: 'file',
       endpoint: endpoints['file']!,
       methodConnectors: {
-        'createGeneFile': _i1.MethodConnector(
-          name: 'createGeneFile',
-          params: {
-            'projectID': _i1.ParameterDescription(
-              name: 'projectID',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
-            'genes': _i1.ParameterDescription(
-              name: 'genes',
-              type: _i1.getType<List<String>>(),
-              nullable: false,
-            ),
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['file'] as _i2.FileEndpoint).createGeneFile(
-            session,
-            params['projectID'],
-            params['genes'],
-          ),
-        ),
-        'getGenes': _i1.MethodConnector(
-          name: 'getGenes',
-          params: {
-            'projectID': _i1.ParameterDescription(
-              name: 'projectID',
-              type: _i1.getType<int>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['file'] as _i2.FileEndpoint).getGenes(
-            session,
-            params['projectID'],
-          ),
-        ),
-        'checkBedFileExists': _i1.MethodConnector(
-          name: 'checkBedFileExists',
-          params: {
-            'projectID': _i1.ParameterDescription(
-              name: 'projectID',
-              type: _i1.getType<int>(),
-              nullable: false,
-            )
-          },
-          call: (
-            _i1.Session session,
-            Map<String, dynamic> params,
-          ) async =>
-              (endpoints['file'] as _i2.FileEndpoint).checkBedFileExists(
-            session,
-            params['projectID'],
-          ),
-        ),
         'deleteByProducts': _i1.MethodConnector(
           name: 'deleteByProducts',
           params: {
@@ -289,6 +229,79 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['project'] as _i4.ProjectEndpoint).getProject(
             session,
             params['id'],
+          ),
+        ),
+        'addGeneToProject': _i1.MethodConnector(
+          name: 'addGeneToProject',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'gene': _i1.ParameterDescription(
+              name: 'gene',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint).addGeneToProject(
+            session,
+            params['id'],
+            params['gene'],
+          ),
+        ),
+        'removeGeneFromProject': _i1.MethodConnector(
+          name: 'removeGeneFromProject',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'gene': _i1.ParameterDescription(
+              name: 'gene',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint)
+                  .removeGeneFromProject(
+            session,
+            params['id'],
+            params['gene'],
+          ),
+        ),
+        'addGenesToProject': _i1.MethodConnector(
+          name: 'addGenesToProject',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'genes': _i1.ParameterDescription(
+              name: 'genes',
+              type: _i1.getType<List<String>>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint).addGenesToProject(
+            session,
+            params['id'],
+            params['genes'],
           ),
         ),
       },

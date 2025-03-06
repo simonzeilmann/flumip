@@ -81,13 +81,6 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'List<String>?',
         ),
         _i2.ColumnDefinition(
-          name: 'geneFileCreated',
-          columnType: _i2.ColumnType.boolean,
-          isNullable: false,
-          dartType: 'bool',
-          columnDefault: 'false',
-        ),
-        _i2.ColumnDefinition(
           name: 'bedFileCreated',
           columnType: _i2.ColumnType.boolean,
           isNullable: false,

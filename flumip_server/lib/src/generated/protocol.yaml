@@ -1,7 +1,4 @@
 file:
-  - createGeneFile:
-  - getGenes:
-  - checkBedFileExists:
   - deleteByProducts:
   - showSnpMipsResult:
   - showMipsResult:
@@ -14,3 +11,6 @@ project:
   - deleteProject:
   - getProjects:
   - getProject:
+  - addGeneToProject:
+  - removeGeneFromProject:
+  - addGenesToProject:

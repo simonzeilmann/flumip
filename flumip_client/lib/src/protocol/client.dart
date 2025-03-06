@@ -21,33 +21,6 @@ class EndpointFile extends _i1.EndpointRef {
   @override
   String get name => 'file';
 
-  _i2.Future<void> createGeneFile(
-    int projectID,
-    List<String> genes,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'file',
-        'createGeneFile',
-        {
-          'projectID': projectID,
-          'genes': genes,
-        },
-      );
-
-  _i2.Future<List<String>> getGenes(int projectID) =>
-      caller.callServerEndpoint<List<String>>(
-        'file',
-        'getGenes',
-        {'projectID': projectID},
-      );
-
-  _i2.Future<bool> checkBedFileExists(int projectID) =>
-      caller.callServerEndpoint<bool>(
-        'file',
-        'checkBedFileExists',
-        {'projectID': projectID},
-      );
-
   _i2.Future<void> deleteByProducts(int projectID) =>
       caller.callServerEndpoint<void>(
         'file',
@@ -137,6 +110,45 @@ class EndpointProject extends _i1.EndpointRef {
         'project',
         'getProject',
         {'id': id},
+      );
+
+  _i2.Future<void> addGeneToProject(
+    int id,
+    String gene,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'addGeneToProject',
+        {
+          'id': id,
+          'gene': gene,
+        },
+      );
+
+  _i2.Future<void> removeGeneFromProject(
+    int id,
+    String gene,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'removeGeneFromProject',
+        {
+          'id': id,
+          'gene': gene,
+        },
+      );
+
+  _i2.Future<void> addGenesToProject(
+    int id,
+    List<String> genes,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'addGenesToProject',
+        {
+          'id': id,
+          'genes': genes,
+        },
       );
 }
 
