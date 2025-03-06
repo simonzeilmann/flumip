@@ -8,7 +8,6 @@ fields:
   owner: int?
   department: int?
   genes: List<String>?
-  geneFileCreated: bool, default=false
   bedFileCreated: bool, default=false
   active: bool, default=false
   pid: int, default=0
