@@ -24,10 +24,8 @@ void main() {
         final result = await projectService.createProject(session, "test123");
         expect(result.name, "test123");
         await fileService.createGeneFile(session, result.id!, genes);
-        final genesFile = await fileService.getGenes(session, result.id!);
-        expect(genesFile, genes);
         final project = await projectService.getProject(session, result.id!);
-        expect(project.geneFileCreated, true);
+        expect(project.genes, genes);
       },
       tags: ['unit'],
     );

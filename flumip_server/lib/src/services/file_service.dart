@@ -16,7 +16,7 @@ class FileService {
   Future<void> createGeneFile(
       Session session, int projectID, List<String> genes) async {
     if (!await projectService.checkProjectDirectoryExists(projectID)) {
-      throw ArgumentError('Project id does not exist');
+      throw ArgumentError('Project directory does not exist');
     }
     var project = await Project.db.findById(session, projectID);
     if (project == null) {
@@ -28,25 +28,6 @@ class FileService {
     } else {
       File(geneFile).create();
       await writeListToFile(geneFile, genes);
-    }
-    project.geneFileCreated = true;
-    project.genes = genes;
-    await Project.db.updateRow(session, project);
-  }
-
-  Future<List<String>> getGenes(Session session, int projectID) async {
-    if (!await projectService.checkProjectDirectoryExists(projectID)) {
-      throw ArgumentError('Project id does not exist');
-    }
-    var project = await Project.db.findById(session, projectID);
-    if (project == null) {
-      throw ArgumentError('Project id does not exist');
-    }
-    String geneFile = "$_path/projects/$projectID/genes.txt";
-    if (!await File(geneFile).exists()) {
-      throw FileNotFoundException(message: 'genes.txt not found');
-    } else {
-      return await File(geneFile).readAsLines();
     }
   }
 
@@ -82,11 +63,21 @@ class FileService {
     }
   }
 
+  Future<void> deleteGeneFile(Session session, int projectID) async {
+    var project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      throw ArgumentError('Project id does not exist');
+    }
+    if (await File("$_path/projects/$projectID/genes.txt").exists()) {
+      await File("$_path/projects/$projectID/genes.txt").delete();
+    }
+  }
+
   Future<List<String>> showSnpMipsResult(Session session, int projectID) async {
     var dir = await Directory("$_path/projects/$projectID").list().toList();
 
     for (var d in dir) {
-      if (d.path.endsWith(".snps_mips.txt")) {
+      if (d.path.endsWith(".snp_mips.txt")) {
         File f = File(d.path);
         var lines = await f.readAsLines();
         return lines;

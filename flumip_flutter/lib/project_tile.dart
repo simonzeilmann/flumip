@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
@@ -66,12 +65,26 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> _createGeneFile() async {
-    if (_genesController.text.isEmpty) return;
-    List<String> genes = _genesController.text.split(',');
-    await widget.onCreateGeneFile(genes);
-    _genesController.clear();
-    await _reloadProject();
+  Future<void> _addGene(String gene) async {
+    try {
+      await client.project.addGeneToProject(widget.project.id!, gene);
+      await _reloadProject();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add gene: $e')),
+      );
+    }
+  }
+
+  Future<void> _removeGene(String gene) async {
+    try {
+      await client.project.removeGeneFromProject(widget.project.id!, gene);
+      await _reloadProject();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to remove gene: $e')),
+      );
+    }
   }
 
   Future<void> _createBedFile() async {
@@ -83,10 +96,10 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('BED file created successfully')),
         );
       }
-    } on IOException {
+    } on ArgumentError {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ERROR: The genes.txt file does not exist')),
+          SnackBar(content: Text('ERROR: The supplied genes cannot be found')),
         );
       }
     } catch (e) {
@@ -130,14 +143,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
                       : [
-                    SelectableText.rich(
-                      TextSpan(
-                        children: result
-                            .map((line) => TextSpan(text: '$line\n'))
-                            .toList(),
-                      ),
-                    ),
-                  ],
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
                 ),
               ),
               actions: [
@@ -169,20 +182,20 @@ class _ProjectTileState extends State<ProjectTile> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('MIPs Result'),
+              title: Text('SNP MIPs Result'),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: result.isEmpty
-                      ? [Text('No MIPs result file found.')]
+                      ? [Text('No SNP MIPs result file found.')]
                       : [
-                    SelectableText.rich(
-                      TextSpan(
-                        children: result
-                            .map((line) => TextSpan(text: '$line\n'))
-                            .toList(),
-                      ),
-                    ),
-                  ],
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
                 ),
               ),
               actions: [
@@ -200,7 +213,7 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load MIPs result: $e')),
+          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
         );
       }
     }
@@ -306,20 +319,31 @@ class _ProjectTileState extends State<ProjectTile> {
                       widget.project.genes!.isNotEmpty)
                     Column(
                       children: widget.project.genes!
-                          .map((gene) => Text(
-                                gene,
-                                style: TextStyle(fontStyle: FontStyle.italic),
+                          .map((gene) => Row(
+                                children: [
+                                  Center(
+                                    child: Text(
+                                      gene,
+                                      style: TextStyle(fontStyle: FontStyle.italic),
+                                    ),
+                                  ),
+                                  if(widget.project.bedFileCreated == false)
+                                    IconButton(
+                                      icon: Icon(Icons.remove_circle_outline),
+                                      onPressed: () => _removeGene(gene),
+                                    ),
+                                ],
                               ))
                           .toList(),
                     ),
-                  if (widget.project.geneFileCreated == false)
+                  if (widget.project.bedFileCreated == false)
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: _genesController,
                             decoration: InputDecoration(
-                              labelText: 'Genes (comma separated)',
+                              labelText: 'add gene',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -328,16 +352,24 @@ class _ProjectTileState extends State<ProjectTile> {
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 10, horizontal: 15),
                             ),
+                            keyboardType: TextInputType.text,
+                            onSubmitted: (value) {
+                              _addGene(value);
+                              _genesController.clear();
+                            },
                           ),
                         ),
                         IconButton(
                           icon: Icon(Icons.add),
-                          onPressed: _createGeneFile,
+                          onPressed: () {
+                            _addGene(_genesController.text);
+                            _genesController.clear();
+                          },
                         ),
                       ],
                     ),
                   SizedBox(height: 5),
-                  if (widget.project.geneFileCreated == true &&
+                  if (widget.project.genes?.isNotEmpty == true &&
                       widget.project.bedFileCreated == false)
                     ElevatedButton(
                       onPressed: _createBedFile,

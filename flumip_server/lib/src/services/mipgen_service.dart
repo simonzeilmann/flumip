@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flumip_server/src/services/project_service.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 import 'file_service.dart';
@@ -29,31 +28,30 @@ class MipgenService {
     if (project.id == null) {
       throw ArgumentError('Project id does not exist');
     }
-    if (project.geneFileCreated == false) {
-      throw ArgumentError('Gene file does not exist');
+    if (project.genes == null || project.genes!.isEmpty) {
+      throw ArgumentError('No genes found in project');
     }
 
     String geneFile = "$projectFolder/${project.id}/genes.txt";
     String bedFile = "$projectFolder/${project.id}/genes.bed";
-    if (!await File(geneFile).exists()) {
-      throw FileNotFoundException(message: 'Gene file does not exist');
-    } else {
-      List<String> arg = [];
-      arg.add(geneFile);
-      arg.add(refGene);
-
-      var process = await Process.run(exonExtract, arg);
-
-      if (process.exitCode != 0 || process.stdout == "") {
-        //TODO: error handling
-        throw ();
-      }
-
-      fileService.writeStringToFile(bedFile, process.stdout);
-
-      project.bedFileCreated = true;
-      await projectService.updateProject(session, project);
+    if (await File(geneFile).exists()) {
+      await fileService.deleteGeneFile(session, projectID);
     }
+    await fileService.createGeneFile(session, projectID, project.genes!);
+    List<String> arg = [];
+    arg.add(geneFile);
+    arg.add(refGene);
+
+    var process = await Process.run(exonExtract, arg);
+
+    if (process.exitCode != 0 || process.stdout == "") {
+      throw ArgumentError("Genes could not be extracted");
+    }
+
+    fileService.writeStringToFile(bedFile, process.stdout);
+
+    project.bedFileCreated = true;
+    await projectService.updateProject(session, project);
   }
 
   Future<void> generateMips(

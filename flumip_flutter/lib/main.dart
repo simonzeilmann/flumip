@@ -124,8 +124,8 @@ class MyHomePageState extends State<MyHomePage> {
                     return ProjectTile(
                       project: _projects![index],
                       onDelete: () => _deleteProject(_projects![index].id!),
-                      onCreateGeneFile: (genes) => client.file
-                          .createGeneFile(_projects![index].id!, genes),
+                      onCreateGeneFile: (genes) => client.project
+                          .addGenesToProject(_projects![index].id!, genes),
                     );
                   },
                 ),
