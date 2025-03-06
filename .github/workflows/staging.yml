@@ -147,7 +147,7 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "flumip_server/app"
+          source: "flumip_server/app, kill-process.sh"
           target: "~/flumip_staging/backend"
 
       - name: Execute remote script
@@ -158,36 +158,20 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            ## catch the exit code & apply logic accordingly
-            function finish() {
-              rv=$?
-              echo "the error code received is $rv"
-              if [ $rv -eq 137 ];
-              then
-                echo "It's a manual kill, attempting another run or whatever"
-              elif [ $rv -eq 0 ];
-                then
-                echo "Exited smoothly"
-              else
-                echo "Non 0 & 137 exit codes"
-                exit $rv
-              fi
-            }
-  
             docker stop postgres_staging || true
             docker rm postgres_staging || true
             echo starting postgres
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
-            echo "getting pid"
-            pgrep -f "\./server --mode=staging"
-            if [ $? -eq 0 ];
-            then
-              echo "Killing the previous server process"
-              kill -9 $(pgrep -f "\./server --mode=staging")
-            else
-              echo "No previous server process exists."
+            ./kill-process.sh "\./server --mode=staging"
+            EXIT_CODE=$?
+  
+            # Check if the exit code is greater than 1
+            if [ $EXIT_CODE -gt 1 ]; then
+              echo "kill-process.sh exited with code $EXIT_CODE. Exiting the calling script."
+              exit $EXIT_CODE
             fi
-            trap finish EXIT
+  
+            echo "kill-process.sh completed successfully with exit code $EXIT_CODE."
             echo "removing old backend"
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
