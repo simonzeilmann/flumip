@@ -70,9 +70,11 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.addGeneToProject(widget.project.id!, gene);
       await _reloadProject();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add gene: $e')),
-      );
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add gene: $e')),
+        );
+      }
     }
   }
 
@@ -81,9 +83,11 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.removeGeneFromProject(widget.project.id!, gene);
       await _reloadProject();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to remove gene: $e')),
-      );
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove gene: $e')),
+        );
+      }
     }
   }
 
