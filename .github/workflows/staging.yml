@@ -159,14 +159,11 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            docker stop postgres_staging || true
-            docker rm postgres_staging || true
-            echo starting postgres
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             kill $(cat ~/flumip_staging/backend_pid.txt) || true
             rm ~/flumip_staging/backend_pid.txt || true
-            echo "kill-process.sh completed successfully with exit code $EXIT_CODE."
-            echo "removing old backend"
+            docker stop postgres_staging || true
+            docker rm postgres_staging || true
+            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
             cd /var/www/flumip_staging/backend
@@ -210,7 +207,7 @@ jobs:
 
       - name: Set api endpoint and website name
         run: |
-          sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/api.flumip-staging.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
           sed -i 's/Flumip Development/Flumip Staging/' flumip_flutter/lib/main.dart
 
