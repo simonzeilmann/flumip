@@ -146,7 +146,7 @@ class MipgenService {
       arg.add("off");
     }
     arg.add("-score_method");
-    arg.add(options.scoreMethod.toString());
+    arg.add(options.scoreMethod.name);
     arg.add("-logistic_optimal_score");
     arg.add(options.logisticOptimalScore.toString());
     arg.add("-svr_optimal_score");
