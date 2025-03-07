@@ -10,7 +10,7 @@ void main() {
     final projectService = ProjectService();
 
     test(
-      'calling `createProject` should return true',
+      'calling `createProject` should return the project',
       () async {
         final result = await projectService.createProject(session, "test123");
         expect(result.name, "test123");
@@ -88,5 +88,58 @@ void main() {
       final projects = await projectService.getProjects(session);
       expect(projects.length, 0);
     });
+  });
+
+  withServerpod('Gene Update Tests', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test(
+      'calling `addGenesToProject` should add genes'
+          'to the project database entry',
+          () async {
+        List<String> genes = ["BART1", "SN1PZ1"];
+
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+        await projectService.addGenesToProject(session, result.id!, genes);
+        final project = await projectService.getProject(session, result.id!);
+        expect(project.genes, genes);
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'calling `addGenesToProject` should add a genes'
+          'to the project database entry',
+          () async {
+        List<String> genes = ["BART1"];
+
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+        await projectService.addGeneToProject(session, result.id!, "BART1");
+        final project = await projectService.getProject(session, result.id!);
+        expect(project.genes, genes);
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'calling `removeGeneFromProject` should remove a gene'
+          'from the project database entry',
+          () async {
+        List<String> genes = ["BART1"];
+
+        final result = await projectService.createProject(session, "test123");
+        expect(result.name, "test123");
+        await projectService.addGeneToProject(session, result.id!, "BART1");
+        final project = await projectService.getProject(session, result.id!);
+        expect(project.genes, genes);
+        await projectService.removeGeneFromProject(session, result.id!, "BART1");
+        final project2 = await projectService.getProject(session, result.id!);
+        expect(project2.genes?.isEmpty, true);
+      },
+      tags: ['unit'],
+    );
   });
 }
