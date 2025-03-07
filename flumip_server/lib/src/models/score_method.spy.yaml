@@ -1,0 +1,6 @@
+enum: ScoreMethod
+serialized: byName
+values:
+  - logistic
+  - svr
+  - mixed

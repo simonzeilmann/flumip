@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import '../generated/protocol.dart';
+import 'package:uuid/uuid.dart';
 
 class ProjectService {
   late final String projectFolder;
@@ -22,10 +23,14 @@ class ProjectService {
     if (projectName == '') {
       throw ArgumentError('Project name cannot be empty');
     }
-    var row = Project(name: projectName);
-    var project = await Project.db.insertRow(session, row);
+    var optionsRow = ProjectOptions();
+    var options = await ProjectOptions.db.insertRow(session, optionsRow);
 
-    await Directory("$projectFolder/${project.id}").create();
+    var uuid = Uuid().v7();
+    var projectRow = Project(name: projectName, folderName: uuid, options: options.id!);
+    var project = await Project.db.insertRow(session, projectRow);
+
+    await Directory("$projectFolder/${project.folderName}").create();
     return project;
   }
 
@@ -35,7 +40,7 @@ class ProjectService {
       throw FileNotFoundException(message: 'Project not found');
     } else {
       await Project.db.deleteRow(session, project);
-      Directory("$projectFolder/$id").delete(recursive: true);
+      Directory("$projectFolder/${project.folderName}").delete(recursive: true);
     }
   }
 
@@ -91,10 +96,6 @@ class ProjectService {
     );
 
     return projects;
-  }
-
-  Future<bool> checkProjectDirectoryExists(int id) async {
-    return await Directory("$projectFolder/$id").exists();
   }
 
   updateProject(Session session, Project project) {

@@ -1,0 +1,35 @@
+class: ProjectOptions
+table: project_options
+fields:
+  fasta: int?
+  snp: int?
+  minCaptureSize: int, default=162
+  maxCaptureSize: int, default=162
+  armLengths: String?
+  armLengthSums: String, default="40,41,42,43,44,45"
+  extMinLength: int, default=16
+  extMaxLength: int, default=18
+  ligMinLength: int, default=18
+  tagSizes: double, default=5.0
+  maskedArmThreshold: double, default=0.5
+  targetArmCopy: int, default=20
+  maxArmCopyProduct: int, default=75
+  trf: bool, default=false
+  genomeDir: String?
+  featureFlank: int, default=0
+  captureIncrement: int, default=5
+  logisticHeuristic: bool, default=false
+  maxMipOverlap: int, default=30
+  startingMipOverlap: int, default=0
+  checkCopyNumber: bool, default=true
+  sealBothStrands: bool, default=false
+  halfSealBothStrands: bool, default=false
+  doubleTileStrandUnaware: bool, default=false
+  doubleTileStrandsSeparately: bool, default=false
+  scoreMethod: ScoreMethod, default=logistic
+  logisticOptimalScore: double, default=0.98
+  svrOptimalScore: double, default=2.2
+  logisticPriorityScore: double, default=0.9
+  svrPriorityScore: double, default=1.5
+  silentMode: bool, default=false
+  bwaThreads: int, default=1

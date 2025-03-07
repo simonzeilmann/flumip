@@ -32,8 +32,8 @@ class MipgenService {
       throw ArgumentError('No genes found in project');
     }
 
-    String geneFile = "$projectFolder/${project.id}/genes.txt";
-    String bedFile = "$projectFolder/${project.id}/genes.bed";
+    String geneFile = "$projectFolder/${project.folderName}/genes.txt";
+    String bedFile = "$projectFolder/${project.folderName}/genes.bed";
     if (await File(geneFile).exists()) {
       await fileService.deleteGeneFile(session, projectID);
     }
@@ -60,7 +60,7 @@ class MipgenService {
 
     List<String> arg = [];
     arg.add("-regions_to_scan");
-    arg.add("$projectFolder/${project.id}/genes.bed");
+    arg.add("$projectFolder/${project.folderName}/genes.bed");
     arg.add("-project_name");
     arg.add(project.name);
     arg.add("-min_capture_size");
@@ -73,7 +73,7 @@ class MipgenService {
     arg.add(snp);
 
     await Process.start(mipgenExe, arg,
-        workingDirectory: "$projectFolder/${project.id}", runInShell: true);
+        workingDirectory: "$projectFolder/${project.folderName}", runInShell: true);
     project.started = DateTime.now();
     project.active = true;
     var mipgenPID = await getMipgenPID(session, project.name);
