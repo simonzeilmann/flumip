@@ -252,10 +252,10 @@ class Protocol extends _i1.SerializationManagerServer {
         ),
         _i2.ColumnDefinition(
           name: 'tagSizes',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _i2.ColumnType.text,
           isNullable: false,
-          dartType: 'double',
-          columnDefault: '5.0',
+          dartType: 'String',
+          columnDefault: '\'5,0\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'maskedArmThreshold',

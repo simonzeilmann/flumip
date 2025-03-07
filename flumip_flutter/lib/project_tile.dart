@@ -346,6 +346,7 @@ class _ProjectTileState extends State<ProjectTile> {
                         Expanded(
                           child: TextField(
                             controller: _genesController,
+                            autofocus: true,
                             decoration: InputDecoration(
                               labelText: 'add gene',
                               border: OutlineInputBorder(
