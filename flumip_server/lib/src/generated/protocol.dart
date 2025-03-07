@@ -12,8 +12,12 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
 import 'project.dart' as _i3;
-import 'package:flumip_server/src/generated/project.dart' as _i4;
+import 'project_options.dart' as _i4;
+import 'score_method.dart' as _i5;
+import 'package:flumip_server/src/generated/project.dart' as _i6;
 export 'project.dart';
+export 'project_options.dart';
+export 'score_method.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -41,6 +45,12 @@ class Protocol extends _i1.SerializationManagerServer {
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'folderName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'description',
@@ -97,9 +107,8 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'pid',
           columnType: _i2.ColumnType.bigint,
-          isNullable: false,
-          dartType: 'int',
-          columnDefault: '0',
+          isNullable: true,
+          dartType: 'int?',
         ),
         _i2.ColumnDefinition(
           name: 'size',
@@ -116,28 +125,10 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
-          name: 'fasta',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
-        ),
-        _i2.ColumnDefinition(
-          name: 'snp',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
-        ),
-        _i2.ColumnDefinition(
-          name: 'ref',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
-        ),
-        _i2.ColumnDefinition(
           name: 'options',
-          columnType: _i2.ColumnType.json,
-          isNullable: true,
-          dartType: 'List<String>?',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
         ),
         _i2.ColumnDefinition(
           name: 'started',
@@ -184,6 +175,258 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
+    _i2.TableDefinition(
+      name: 'project_options',
+      dartName: 'ProjectOptions',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'project_options_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fasta',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'snp',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'minCaptureSize',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '162',
+        ),
+        _i2.ColumnDefinition(
+          name: 'maxCaptureSize',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '162',
+        ),
+        _i2.ColumnDefinition(
+          name: 'armLengths',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'armLengthSums',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'40,41,42,43,44,45\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'extMinLength',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '16',
+        ),
+        _i2.ColumnDefinition(
+          name: 'extMaxLength',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '18',
+        ),
+        _i2.ColumnDefinition(
+          name: 'ligMinLength',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '18',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tagSizes',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '5.0',
+        ),
+        _i2.ColumnDefinition(
+          name: 'maskedArmThreshold',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '0.5',
+        ),
+        _i2.ColumnDefinition(
+          name: 'targetArmCopy',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '20',
+        ),
+        _i2.ColumnDefinition(
+          name: 'maxArmCopyProduct',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '75',
+        ),
+        _i2.ColumnDefinition(
+          name: 'trf',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'genomeDir',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'featureFlank',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
+        ),
+        _i2.ColumnDefinition(
+          name: 'captureIncrement',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '5',
+        ),
+        _i2.ColumnDefinition(
+          name: 'logisticHeuristic',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'maxMipOverlap',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '30',
+        ),
+        _i2.ColumnDefinition(
+          name: 'startingMipOverlap',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
+        ),
+        _i2.ColumnDefinition(
+          name: 'checkCopyNumber',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'true',
+        ),
+        _i2.ColumnDefinition(
+          name: 'sealBothStrands',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'halfSealBothStrands',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'doubleTileStrandUnaware',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'doubleTileStrandsSeparately',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'scoreMethod',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'protocol:ScoreMethod',
+          columnDefault: '\'logistic\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'logisticOptimalScore',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '0.98',
+        ),
+        _i2.ColumnDefinition(
+          name: 'svrOptimalScore',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '2.2',
+        ),
+        _i2.ColumnDefinition(
+          name: 'logisticPriorityScore',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '0.9',
+        ),
+        _i2.ColumnDefinition(
+          name: 'svrPriorityScore',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+          columnDefault: '1.5',
+        ),
+        _i2.ColumnDefinition(
+          name: 'silentMode',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'bwaThreads',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '1',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'project_options_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            )
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        )
+      ],
+      managed: true,
+    ),
     ..._i2.Protocol.targetTableDefinitions,
   ];
 
@@ -196,13 +439,20 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i3.Project) {
       return _i3.Project.fromJson(data) as T;
     }
+    if (t == _i4.ProjectOptions) {
+      return _i4.ProjectOptions.fromJson(data) as T;
+    }
+    if (t == _i5.ScoreMethod) {
+      return _i5.ScoreMethod.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i3.Project?>()) {
       return (data != null ? _i3.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<List<String>?>()) {
-      return (data != null
-          ? (data as List).map((e) => deserialize<String>(e)).toList()
-          : null) as T;
+    if (t == _i1.getType<_i4.ProjectOptions?>()) {
+      return (data != null ? _i4.ProjectOptions.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.ScoreMethod?>()) {
+      return (data != null ? _i5.ScoreMethod.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
@@ -217,8 +467,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i4.Project>) {
-      return (data as List).map((e) => deserialize<_i4.Project>(e)).toList()
+    if (t == List<_i6.Project>) {
+      return (data as List).map((e) => deserialize<_i6.Project>(e)).toList()
           as T;
     }
     try {
@@ -233,6 +483,12 @@ class Protocol extends _i1.SerializationManagerServer {
     if (className != null) return className;
     if (data is _i3.Project) {
       return 'Project';
+    }
+    if (data is _i4.ProjectOptions) {
+      return 'ProjectOptions';
+    }
+    if (data is _i5.ScoreMethod) {
+      return 'ScoreMethod';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -249,6 +505,12 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'Project') {
       return deserialize<_i3.Project>(data['data']);
+    }
+    if (dataClassName == 'ProjectOptions') {
+      return deserialize<_i4.ProjectOptions>(data['data']);
+    }
+    if (dataClassName == 'ScoreMethod') {
+      return deserialize<_i5.ScoreMethod>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -268,6 +530,8 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (t) {
       case _i3.Project:
         return _i3.Project.t;
+      case _i4.ProjectOptions:
+        return _i4.ProjectOptions.t;
     }
     return null;
   }
