@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'dart:io';
@@ -6,12 +7,10 @@ import '../generated/protocol.dart';
 import 'project_service.dart';
 
 class FileService {
-  late final String _path;
   final projectService = ProjectService();
+  final settingsService = SettingsService();
 
-  FileService() {
-    _path = "/opt/mipgen";
-  }
+  FileService();
 
   Future<void> createGeneFile(
       Session session, int projectID, List<String> genes) async {
@@ -22,7 +21,10 @@ class FileService {
     if (project == null) {
       throw ArgumentError('Project id does not exist');
     }
-    String geneFile = "$_path/projects/${project.folderName}/genes.txt";
+
+    var settings = await settingsService.getSettings(session);
+
+    String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
     if (await File(geneFile).exists()) {
       await _writeListToFile(geneFile, genes);
     } else {
@@ -39,9 +41,12 @@ class FileService {
     if (project == null) {
       throw ArgumentError('Project id does not exist');
     }
-    if (await File("$_path/projects/${project.folderName}/genes.bed")
+
+    var settings = await settingsService.getSettings(session);
+    if (await File("${settings.projectDir}/${project.folderName}/genes.bed")
             .exists() &&
-        await File("$_path/projects/${project.folderName}/genes.bed").length() >
+        await File("${settings.projectDir}/${project.folderName}/genes.bed")
+                .length() >
             1024) {
       return true;
     }
@@ -70,9 +75,12 @@ class FileService {
     if (project == null) {
       throw ArgumentError('Project id does not exist');
     }
-    if (await File("$_path/projects/${project.folderName}/genes.txt")
+    var settings = await settingsService.getSettings(session);
+
+    if (await File("${settings.projectDir}/${project.folderName}/genes.txt")
         .exists()) {
-      await File("$_path/projects/${project.folderName}/genes.txt").delete();
+      await File("${settings.projectDir}/${project.folderName}/genes.txt")
+          .delete();
     }
   }
 
@@ -123,7 +131,10 @@ class FileService {
     if (project == null) {
       throw FileNotFoundException(message: 'Project not found');
     }
-    return await Directory("$_path/projects/${project.folderName}").exists();
+
+    var settings = await settingsService.getSettings(session);
+    return await Directory("${settings.projectDir}/${project.folderName}")
+        .exists();
   }
 
   Future<List<FileSystemEntity>> _getFileList(
@@ -132,7 +143,9 @@ class FileService {
     if (project == null) {
       throw FileNotFoundException(message: 'Project not found');
     }
-    var dir = await Directory("$_path/projects/${project.folderName}")
+
+    var settings = await settingsService.getSettings(session);
+    var dir = await Directory("${settings.projectDir}/${project.folderName}")
         .list()
         .toList();
     return dir;

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/server.dart';
 
 import 'file_service.dart';
@@ -7,17 +8,12 @@ import 'file_service.dart';
 class MipgenService {
   final projectService = ProjectService();
   final fileService = FileService();
-  late final String mipgenExe;
-  late final String projectFolder;
-  late final String exonExtract;
+  final settingsService = SettingsService();
   late final String refGene;
   late final String fa;
   late final String snp;
 
   MipgenService() {
-    projectFolder = "/opt/mipgen/projects";
-    mipgenExe = "/opt/mipgen/MIPGEN/mipgen";
-    exonExtract = "/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
     refGene = "/opt/mipgen/data/genes/human/hg38/refGene.txt";
     fa = "/opt/mipgen/data/genes/human/hg38/fa/hg38.fa";
     snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
@@ -32,8 +28,10 @@ class MipgenService {
       throw ArgumentError('No genes found in project');
     }
 
-    String geneFile = "$projectFolder/${project.folderName}/genes.txt";
-    String bedFile = "$projectFolder/${project.folderName}/genes.bed";
+    var settings = await settingsService.getSettings(session);
+
+    String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
+    String bedFile = "${settings.projectDir}/${project.folderName}/genes.bed";
     if (await File(geneFile).exists()) {
       await fileService.deleteGeneFile(session, projectID);
     }
@@ -42,7 +40,7 @@ class MipgenService {
     arg.add(geneFile);
     arg.add(refGene);
 
-    var process = await Process.run(exonExtract, arg);
+    var process = await Process.run(settings.exonExtractScript, arg);
 
     if (process.exitCode != 0 || process.stdout == "") {
       throw ArgumentError("Genes could not be extracted");
@@ -60,9 +58,11 @@ class MipgenService {
     var options =
         await projectService.getProjectOptions(session, project.options);
 
+    var settings = await settingsService.getSettings(session);
+
     List<String> arg = [];
     arg.add("-regions_to_scan");
-    arg.add("$projectFolder/${project.folderName}/genes.bed");
+    arg.add("${settings.projectDir}/${project.folderName}/genes.bed");
     arg.add("-project_name");
     arg.add(project.name);
     arg.add("-bwa_genome_index");
@@ -92,12 +92,12 @@ class MipgenService {
     arg.add("-max_arm_copy_product");
     arg.add(options.maxArmCopyProduct.toString());
     arg.add("-trf");
-    if(options.trf == true) {
+    if (options.trf == true) {
       arg.add("on");
     } else {
       arg.add("off");
     }
-    if(options.genomeDir != null) {
+    if (options.genomeDir != null) {
       arg.add("-genome_dir");
       arg.add(options.genomeDir!);
     }
@@ -106,7 +106,7 @@ class MipgenService {
     arg.add("-capture_increment");
     arg.add(options.captureIncrement.toString());
     arg.add("-logistic_heuristic");
-    if(options.logisticHeuristic == true) {
+    if (options.logisticHeuristic == true) {
       arg.add("on");
     } else {
       arg.add("off");
@@ -116,31 +116,31 @@ class MipgenService {
     arg.add("-starting_mip_overlap");
     arg.add(options.startingMipOverlap.toString());
     arg.add("-check_copy_number");
-    if(options.checkCopyNumber == true) {
+    if (options.checkCopyNumber == true) {
       arg.add("on");
     } else {
       arg.add("off");
     }
     arg.add("-seal_both_strands");
-    if(options.sealBothStrands == true) {
+    if (options.sealBothStrands == true) {
       arg.add("on");
     } else {
       arg.add("off");
     }
     arg.add("-half_seal_both_strands");
-    if(options.halfSealBothStrands == true) {
+    if (options.halfSealBothStrands == true) {
       arg.add("on");
     } else {
       arg.add("off");
     }
     arg.add("-double_tile_strand_unaware");
-    if(options.doubleTileStrandUnaware == true) {
+    if (options.doubleTileStrandUnaware == true) {
       arg.add("on");
     } else {
       arg.add("off");
     }
     arg.add("-double_tile_strands_separately");
-    if(options.doubleTileStrandsSeparately == true) {
+    if (options.doubleTileStrandsSeparately == true) {
       arg.add("on");
     } else {
       arg.add("off");
@@ -156,7 +156,7 @@ class MipgenService {
     arg.add("-svr_priority_score");
     arg.add(options.svrPriorityScore.toString());
     arg.add("-silent_mode");
-    if(options.silentMode == true) {
+    if (options.silentMode == true) {
       arg.add("on");
     } else {
       arg.add("off");
@@ -164,8 +164,8 @@ class MipgenService {
     arg.add("-bwa_threads");
     arg.add(options.bwaThreads.toString());
 
-    await Process.start(mipgenExe, arg,
-        workingDirectory: "$projectFolder/${project.folderName}",
+    await Process.start(settings.mipgenExecutable, arg,
+        workingDirectory: "${settings.projectDir}/${project.folderName}",
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
