@@ -13,7 +13,8 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
 import 'package:flumip_client/src/protocol/project.dart' as _i3;
 import 'package:flumip_client/src/protocol/project_options.dart' as _i4;
-import 'protocol.dart' as _i5;
+import 'package:flumip_client/src/protocol/settings.dart' as _i5;
+import 'protocol.dart' as _i6;
 
 /// {@category Endpoint}
 class EndpointFile extends _i1.EndpointRef {
@@ -173,6 +174,28 @@ class EndpointProject extends _i1.EndpointRef {
       );
 }
 
+/// {@category Endpoint}
+class EndpointSettings extends _i1.EndpointRef {
+  EndpointSettings(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'settings';
+
+  _i2.Future<_i5.Settings> getSettings() =>
+      caller.callServerEndpoint<_i5.Settings>(
+        'settings',
+        'getSettings',
+        {},
+      );
+
+  _i2.Future<void> updateSettings(_i5.Settings settings) =>
+      caller.callServerEndpoint<void>(
+        'settings',
+        'updateSettings',
+        {'settings': settings},
+      );
+}
+
 class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
@@ -189,7 +212,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
           host,
-          _i5.Protocol(),
+          _i6.Protocol(),
           securityContext: securityContext,
           authenticationKeyManager: authenticationKeyManager,
           streamingConnectionTimeout: streamingConnectionTimeout,
@@ -202,6 +225,7 @@ class Client extends _i1.ServerpodClientShared {
     file = EndpointFile(this);
     mipgen = EndpointMipgen(this);
     project = EndpointProject(this);
+    settings = EndpointSettings(this);
   }
 
   late final EndpointFile file;
@@ -210,11 +234,14 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointProject project;
 
+  late final EndpointSettings settings;
+
   @override
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
         'file': file,
         'mipgen': mipgen,
         'project': project,
+        'settings': settings,
       };
 
   @override

@@ -16,3 +16,6 @@ project:
   - addGenesToProject:
   - getProjectOptions:
   - updateProjectOptions:
+settings:
+  - getSettings:
+  - updateSettings:
