@@ -12,7 +12,8 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
 import 'package:flumip_client/src/protocol/project.dart' as _i3;
-import 'protocol.dart' as _i4;
+import 'package:flumip_client/src/protocol/project_options.dart' as _i4;
+import 'protocol.dart' as _i5;
 
 /// {@category Endpoint}
 class EndpointFile extends _i1.EndpointRef {
@@ -150,6 +151,26 @@ class EndpointProject extends _i1.EndpointRef {
           'genes': genes,
         },
       );
+
+  _i2.Future<_i4.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_i4.ProjectOptions>(
+        'project',
+        'getProjectOptions',
+        {'id': id},
+      );
+
+  _i2.Future<void> updateProjectOptions(
+    int id,
+    _i4.ProjectOptions options,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'updateProjectOptions',
+        {
+          'id': id,
+          'options': options,
+        },
+      );
 }
 
 class Client extends _i1.ServerpodClientShared {
@@ -168,7 +189,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
           host,
-          _i4.Protocol(),
+          _i5.Protocol(),
           securityContext: securityContext,
           authenticationKeyManager: authenticationKeyManager,
           streamingConnectionTimeout: streamingConnectionTimeout,
