@@ -1,15 +1,12 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import '../generated/protocol.dart';
 import 'package:uuid/uuid.dart';
 
 class ProjectService {
-  late final String projectFolder;
-
-  ProjectService() {
-    projectFolder = "/opt/mipgen/projects";
-  }
+  ProjectService();
 
   Future<Project> getProject(Session session, int id) async {
     var project = await Project.db.findById(session, id);
@@ -27,10 +24,12 @@ class ProjectService {
     var options = await ProjectOptions.db.insertRow(session, optionsRow);
 
     var uuid = Uuid().v7();
-    var projectRow = Project(name: projectName, folderName: uuid, options: options.id!);
+    var projectRow =
+        Project(name: projectName, folderName: uuid, options: options.id!);
     var project = await Project.db.insertRow(session, projectRow);
 
-    await Directory("$projectFolder/${project.folderName}").create();
+    var settings = await SettingsService().getSettings(session);
+    await Directory("${settings.projectDir}/${project.folderName}").create();
     return project;
   }
 
@@ -40,8 +39,14 @@ class ProjectService {
       throw FileNotFoundException(message: 'Project not found');
     } else {
       await Project.db.deleteRow(session, project);
-      await ProjectOptions.db.deleteWhere(session, where: (t) => t.id.equals(project.options),);
-      Directory("$projectFolder/${project.folderName}").delete(recursive: true);
+      await ProjectOptions.db.deleteWhere(
+        session,
+        where: (t) => t.id.equals(project.options),
+      );
+
+      var settings = await SettingsService().getSettings(session);
+      Directory("${settings.projectDir}/${project.folderName}")
+          .delete(recursive: true);
     }
   }
 
