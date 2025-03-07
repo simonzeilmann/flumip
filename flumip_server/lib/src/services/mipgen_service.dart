@@ -169,13 +169,13 @@ class MipgenService {
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await getMipgenPID(session, project.name);
+    var mipgenPID = await _getMipgenPID(session, project.name);
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
     await projectService.updateProject(session, project);
   }
 
-  Future<int> getMipgenPID(Session session, String projectName) async {
+  Future<int> _getMipgenPID(Session session, String projectName) async {
     int mipgenPID = 0;
 
     var process = await Process.run("pgrep", ["--list-full", "mipgen"]);

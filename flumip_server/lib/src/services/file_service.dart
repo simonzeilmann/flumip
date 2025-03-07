@@ -15,7 +15,7 @@ class FileService {
 
   Future<void> createGeneFile(
       Session session, int projectID, List<String> genes) async {
-    if (!await checkProjectDirectoryExists(session, projectID)) {
+    if (!await _checkProjectDirectoryExists(session, projectID)) {
       throw ArgumentError('Project directory does not exist');
     }
     var project = await Project.db.findById(session, projectID);
@@ -24,15 +24,15 @@ class FileService {
     }
     String geneFile = "$_path/projects/${project.folderName}/genes.txt";
     if (await File(geneFile).exists()) {
-      await writeListToFile(geneFile, genes);
+      await _writeListToFile(geneFile, genes);
     } else {
       File(geneFile).create();
-      await writeListToFile(geneFile, genes);
+      await _writeListToFile(geneFile, genes);
     }
   }
 
   Future<bool> checkBedFileExists(Session session, int projectID) async {
-    if (!await checkProjectDirectoryExists(session, projectID)) {
+    if (!await _checkProjectDirectoryExists(session, projectID)) {
       throw ArgumentError('Project id does not exist');
     }
     var project = await Project.db.findById(session, projectID);
@@ -49,7 +49,7 @@ class FileService {
   }
 
   Future<void> deleteByproducts(Session session, int projectID) async {
-    if (!await checkProjectDirectoryExists(session, projectID)) {
+    if (!await _checkProjectDirectoryExists(session, projectID)) {
       throw FileNotFoundException(message: 'The Project does not exist');
     }
     var project = await Project.db.findById(session, projectID);
@@ -57,7 +57,7 @@ class FileService {
       throw ArgumentError('Project id does not exist');
     }
 
-    List<FileSystemEntity> dir = await getFileList(session, projectID);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
     for (var d in dir) {
       if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
         d.delete();
@@ -77,7 +77,7 @@ class FileService {
   }
 
   Future<List<String>> showSnpMipsResult(Session session, int projectID) async {
-    List<FileSystemEntity> dir = await getFileList(session, projectID);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
 
     for (var d in dir) {
       if (d.path.endsWith(".snp_mips.txt")) {
@@ -91,7 +91,7 @@ class FileService {
   }
 
   Future<List<String>> showMipsResult(Session session, int projectID) async {
-    List<FileSystemEntity> dir = await getFileList(session, projectID);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
 
     for (var d in dir) {
       if (d.path.endsWith(".picked_mips.txt")) {
@@ -105,7 +105,7 @@ class FileService {
   }
 
   Future<List<String>> showMipsProgress(Session session, int projectID) async {
-    List<FileSystemEntity> dir = await getFileList(session, projectID);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
 
     for (var d in dir) {
       if (d.path.endsWith(".progress.txt")) {
@@ -118,7 +118,7 @@ class FileService {
     return List.empty();
   }
 
-  Future<bool> checkProjectDirectoryExists(Session session, int id) async {
+  Future<bool> _checkProjectDirectoryExists(Session session, int id) async {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       throw FileNotFoundException(message: 'Project not found');
@@ -126,7 +126,7 @@ class FileService {
     return await Directory("$_path/projects/${project.folderName}").exists();
   }
 
-  Future<List<FileSystemEntity>> getFileList(
+  Future<List<FileSystemEntity>> _getFileList(
       Session session, int projectID) async {
     var project = await Project.db.findById(session, projectID);
     if (project == null) {
@@ -138,7 +138,7 @@ class FileService {
     return dir;
   }
 
-  Future<void> writeListToFile(String path, List<String> list) async {
+  Future<void> _writeListToFile(String path, List<String> list) async {
     var sink = File(path).openWrite();
     list.forEach(sink.writeln);
     await sink.flush();
