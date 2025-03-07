@@ -14,3 +14,5 @@ project:
   - addGeneToProject:
   - removeGeneFromProject:
   - addGenesToProject:
+  - getProjectOptions:
+  - updateProjectOptions:

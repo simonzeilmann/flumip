@@ -13,6 +13,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import '../endpoints/file_endpoint.dart' as _i2;
 import '../endpoints/mipgen_endpoint.dart' as _i3;
 import '../endpoints/project_endpoint.dart' as _i4;
+import 'package:flumip_server/src/generated/project_options.dart' as _i5;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -302,6 +303,49 @@ class Endpoints extends _i1.EndpointDispatch {
             session,
             params['id'],
             params['genes'],
+          ),
+        ),
+        'getProjectOptions': _i1.MethodConnector(
+          name: 'getProjectOptions',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint).getProjectOptions(
+            session,
+            params['id'],
+          ),
+        ),
+        'updateProjectOptions': _i1.MethodConnector(
+          name: 'updateProjectOptions',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'options': _i1.ParameterDescription(
+              name: 'options',
+              type: _i1.getType<_i5.ProjectOptions>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i4.ProjectEndpoint)
+                  .updateProjectOptions(
+            session,
+            params['id'],
+            params['options'],
           ),
         ),
       },
