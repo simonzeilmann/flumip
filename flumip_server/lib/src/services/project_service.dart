@@ -40,6 +40,7 @@ class ProjectService {
       throw FileNotFoundException(message: 'Project not found');
     } else {
       await Project.db.deleteRow(session, project);
+      await ProjectOptions.db.deleteWhere(session, where: (t) => t.id.equals(project.options),);
       Directory("$projectFolder/${project.folderName}").delete(recursive: true);
     }
   }
@@ -104,6 +105,15 @@ class ProjectService {
       throw FileNotFoundException(message: 'Project options not found');
     }
     return options;
+  }
+
+  Future<void> updateProjectOptions(
+      Session session, int id, ProjectOptions options) async {
+    var projectOptions = await ProjectOptions.db.findById(session, id);
+    if (projectOptions == null) {
+      throw FileNotFoundException(message: 'Project options not found');
+    }
+    await ProjectOptions.db.updateRow(session, options);
   }
 
   updateProject(Session session, Project project) {

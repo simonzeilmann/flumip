@@ -62,4 +62,21 @@ class ProjectEndpoint extends Endpoint {
       rethrow;
     }
   }
+
+  Future<ProjectOptions> getProjectOptions(Session session, int id) async {
+    try {
+      return projectService.getProjectOptions(session, id);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateProjectOptions(
+      Session session, int id, ProjectOptions options) async {
+    try {
+      return projectService.updateProjectOptions(session, id, options);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
