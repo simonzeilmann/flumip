@@ -164,13 +164,13 @@ class MipgenService {
     arg.add("-bwa_threads");
     arg.add(options.bwaThreads.toString());
 
-    var process = await Process.start(settings.mipgenExecutable, arg,
+    await Process.start(settings.mipgenExecutable, arg,
         workingDirectory: "${settings.projectDir}/${project.folderName}",
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    //var mipgenPID = await _getMipgenPID(session, project.name);
-    //project.pid = mipgenPID;
+    var mipgenPID = await _getMipgenPID(session, project.name);
+    project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
     await projectService.updateProject(session, project);
   }
