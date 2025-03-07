@@ -10,7 +10,7 @@ fields:
   extMinLength: int, default=16
   extMaxLength: int, default=18
   ligMinLength: int, default=18
-  tagSizes: double, default=5.0
+  tagSizes: String, default="5,0"
   maskedArmThreshold: double, default=0.5
   targetArmCopy: int, default=20
   maxArmCopyProduct: int, default=75
