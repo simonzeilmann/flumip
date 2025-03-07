@@ -98,6 +98,14 @@ class ProjectService {
     return projects;
   }
 
+  Future<ProjectOptions> getProjectOptions(Session session, int id) async {
+    var options = await ProjectOptions.db.findById(session, id);
+    if (options == null) {
+      throw FileNotFoundException(message: 'Project options not found');
+    }
+    return options;
+  }
+
   updateProject(Session session, Project project) {
     Project.db.updateRow(session, project);
   }

@@ -57,23 +57,116 @@ class MipgenService {
   Future<void> generateMips(
       Session session, int projectID, bool deleteExcessFiles) async {
     var project = await projectService.getProject(session, projectID);
+    var options =
+        await projectService.getProjectOptions(session, project.options);
 
     List<String> arg = [];
     arg.add("-regions_to_scan");
     arg.add("$projectFolder/${project.folderName}/genes.bed");
     arg.add("-project_name");
     arg.add(project.name);
-    arg.add("-min_capture_size");
-    arg.add("162");
-    arg.add("-max_capture_size");
-    arg.add("162");
     arg.add("-bwa_genome_index");
     arg.add(fa);
     arg.add("-snp_file");
     arg.add(snp);
+    arg.add("-min_capture_size");
+    arg.add(options.minCaptureSize.toString());
+    arg.add("-max_capture_size");
+    arg.add(options.maxCaptureSize.toString());
+    if (options.armLengths != null) {
+      arg.add("-arm_lengths");
+      arg.add(options.armLengths!);
+    }
+    arg.add("-arm_length_sums");
+    arg.add(options.armLengthSums.toString());
+    arg.add("-ext_min_length");
+    arg.add(options.extMinLength.toString());
+    arg.add("-lig_min_length");
+    arg.add(options.ligMinLength.toString());
+    arg.add("-tag_sizes");
+    arg.add(options.tagSizes.toString());
+    arg.add("-masked_arm_threshold");
+    arg.add(options.maskedArmThreshold.toString());
+    arg.add("-target_arm_copy");
+    arg.add(options.targetArmCopy.toString());
+    arg.add("-max_arm_copy_product");
+    arg.add(options.maxArmCopyProduct.toString());
+    arg.add("-trf");
+    if(options.trf == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    if(options.genomeDir != null) {
+      arg.add("-genome_dir");
+      arg.add(options.genomeDir!);
+    }
+    arg.add("-feature_flank");
+    arg.add(options.featureFlank.toString());
+    arg.add("-capture_increment");
+    arg.add(options.captureIncrement.toString());
+    arg.add("-logistic_heuristic");
+    if(options.logisticHeuristic == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-max_mip_overlap");
+    arg.add(options.maxMipOverlap.toString());
+    arg.add("-starting_mip_overlap");
+    arg.add(options.startingMipOverlap.toString());
+    arg.add("-check_copy_number");
+    if(options.checkCopyNumber == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-seal_both_strands");
+    if(options.sealBothStrands == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-half_seal_both_strands");
+    if(options.halfSealBothStrands == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-double_tile_strand_unaware");
+    if(options.doubleTileStrandUnaware == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-double_tile_strands_separately");
+    if(options.doubleTileStrandsSeparately == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-score_method");
+    arg.add(options.scoreMethod.toString());
+    arg.add("-logistic_optimal_score");
+    arg.add(options.logisticOptimalScore.toString());
+    arg.add("-svr_optimal_score");
+    arg.add(options.svrOptimalScore.toString());
+    arg.add("-logistic_priority_score");
+    arg.add(options.logisticPriorityScore.toString());
+    arg.add("-svr_priority_score");
+    arg.add(options.svrPriorityScore.toString());
+    arg.add("-silent_mode");
+    if(options.silentMode == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-bwa_threads");
+    arg.add(options.bwaThreads.toString());
 
     await Process.start(mipgenExe, arg,
-        workingDirectory: "$projectFolder/${project.folderName}", runInShell: true);
+        workingDirectory: "$projectFolder/${project.folderName}",
+        runInShell: true);
     project.started = DateTime.now();
     project.active = true;
     var mipgenPID = await getMipgenPID(session, project.name);
