@@ -13,10 +13,12 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'project.dart' as _i2;
 import 'project_options.dart' as _i3;
 import 'score_method.dart' as _i4;
-import 'package:flumip_client/src/protocol/project.dart' as _i5;
+import 'settings.dart' as _i5;
+import 'package:flumip_client/src/protocol/project.dart' as _i6;
 export 'project.dart';
 export 'project_options.dart';
 export 'score_method.dart';
+export 'settings.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -41,6 +43,9 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i4.ScoreMethod) {
       return _i4.ScoreMethod.fromJson(data) as T;
     }
+    if (t == _i5.Settings) {
+      return _i5.Settings.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i2.Project?>()) {
       return (data != null ? _i2.Project.fromJson(data) : null) as T;
     }
@@ -49,6 +54,9 @@ class Protocol extends _i1.SerializationManager {
     }
     if (t == _i1.getType<_i4.ScoreMethod?>()) {
       return (data != null ? _i4.ScoreMethod.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.Settings?>()) {
+      return (data != null ? _i5.Settings.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
@@ -63,8 +71,8 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i5.Project>) {
-      return (data as List).map((e) => deserialize<_i5.Project>(e)).toList()
+    if (t == List<_i6.Project>) {
+      return (data as List).map((e) => deserialize<_i6.Project>(e)).toList()
           as T;
     }
     return super.deserialize<T>(data, t);
@@ -83,6 +91,9 @@ class Protocol extends _i1.SerializationManager {
     if (data is _i4.ScoreMethod) {
       return 'ScoreMethod';
     }
+    if (data is _i5.Settings) {
+      return 'Settings';
+    }
     return null;
   }
 
@@ -100,6 +111,9 @@ class Protocol extends _i1.SerializationManager {
     }
     if (dataClassName == 'ScoreMethod') {
       return deserialize<_i4.ScoreMethod>(data['data']);
+    }
+    if (dataClassName == 'Settings') {
+      return deserialize<_i5.Settings>(data['data']);
     }
     return super.deserializeByClassName(data);
   }
