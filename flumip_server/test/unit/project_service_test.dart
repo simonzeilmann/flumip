@@ -65,7 +65,8 @@ void main() {
     });
 
     test(
-        'calling get Project with non existent project id should throw an exception',
+        'calling get Project with non existent project id'
+            'should throw an exception',
         () async {
       expect(
           () => projectService.getProject(session, -1),
