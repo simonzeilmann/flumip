@@ -14,10 +14,12 @@ import 'package:serverpod/protocol.dart' as _i2;
 import 'project.dart' as _i3;
 import 'project_options.dart' as _i4;
 import 'score_method.dart' as _i5;
-import 'package:flumip_server/src/generated/project.dart' as _i6;
+import 'settings.dart' as _i6;
+import 'package:flumip_server/src/generated/project.dart' as _i7;
 export 'project.dart';
 export 'project_options.dart';
 export 'score_method.dart';
+export 'settings.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -427,6 +429,82 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
+    _i2.TableDefinition(
+      name: 'settings',
+      dartName: 'Settings',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'settings_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'baseDir',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/mipgen\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'projectDir',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/mipgen/projects\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'geneDir',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/mipgen/genes\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'mipgenExecutable',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/mipgen/MIPGEN/mipgen\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'exonExtractScript',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault:
+              '\'/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'ucscTrackGenerator',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault:
+              '\'/opt/mipgen/MIPGEN/tools/generate_ucsc_track.py\'::text',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'settings_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            )
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        )
+      ],
+      managed: true,
+    ),
     ..._i2.Protocol.targetTableDefinitions,
   ];
 
@@ -445,6 +523,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i5.ScoreMethod) {
       return _i5.ScoreMethod.fromJson(data) as T;
     }
+    if (t == _i6.Settings) {
+      return _i6.Settings.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i3.Project?>()) {
       return (data != null ? _i3.Project.fromJson(data) : null) as T;
     }
@@ -453,6 +534,9 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (t == _i1.getType<_i5.ScoreMethod?>()) {
       return (data != null ? _i5.ScoreMethod.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i6.Settings?>()) {
+      return (data != null ? _i6.Settings.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
@@ -467,8 +551,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i6.Project>) {
-      return (data as List).map((e) => deserialize<_i6.Project>(e)).toList()
+    if (t == List<_i7.Project>) {
+      return (data as List).map((e) => deserialize<_i7.Project>(e)).toList()
           as T;
     }
     try {
@@ -489,6 +573,9 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (data is _i5.ScoreMethod) {
       return 'ScoreMethod';
+    }
+    if (data is _i6.Settings) {
+      return 'Settings';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -512,6 +599,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'ScoreMethod') {
       return deserialize<_i5.ScoreMethod>(data['data']);
     }
+    if (dataClassName == 'Settings') {
+      return deserialize<_i6.Settings>(data['data']);
+    }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
       return _i2.Protocol().deserializeByClassName(data);
@@ -532,6 +622,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i3.Project.t;
       case _i4.ProjectOptions:
         return _i4.ProjectOptions.t;
+      case _i6.Settings:
+        return _i6.Settings.t;
     }
     return null;
   }
