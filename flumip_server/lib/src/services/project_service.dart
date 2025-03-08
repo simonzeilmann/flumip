@@ -16,13 +16,12 @@ class ProjectService {
     return project;
   }
 
-  Future<Project> createProject(Session session, String projectName,
+  Future<Project> createProject(
+      Session session, String projectName, ProjectOptions options,
       [String? desc]) async {
     if (projectName == '') {
       throw ArgumentError('Project name cannot be empty');
     }
-    var optionsRow = ProjectOptions();
-    var options = await ProjectOptions.db.insertRow(session, optionsRow);
 
     var projectRow = Project(
         name: projectName,
@@ -113,23 +112,6 @@ class ProjectService {
     );
 
     return projects;
-  }
-
-  Future<ProjectOptions> getProjectOptions(Session session, int id) async {
-    var options = await ProjectOptions.db.findById(session, id);
-    if (options == null) {
-      throw FileNotFoundException(message: 'Project options not found');
-    }
-    return options;
-  }
-
-  Future<void> updateProjectOptions(
-      Session session, int id, ProjectOptions options) async {
-    var projectOptions = await ProjectOptions.db.findById(session, id);
-    if (projectOptions == null) {
-      throw FileNotFoundException(message: 'Project options not found');
-    }
-    await ProjectOptions.db.updateRow(session, options);
   }
 
   updateProject(Session session, Project project) {

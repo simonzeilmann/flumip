@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
@@ -15,7 +16,8 @@ void main() {
     test(
       'calling `createBedFile` should give create a bed file',
       () async {
-        final project = await projectService.createProject(session, "test123");
+        final project = await projectService.createProject(
+            session, "test123", ProjectOptions(id: 1));
         expect(project.name, "test123");
         await projectService.addGeneToProject(session, project.id!, "BRCA1");
         await mipgenService.createBedFile(session, project.id!);
@@ -28,13 +30,15 @@ void main() {
 
     test(
       'calling `createBedFile` without genes should throw an ArgumentError',
-          () async {
-        final project = await projectService.createProject(session, "test123");
+      () async {
+        final project = await projectService.createProject(
+            session, "test123", ProjectOptions(id: 1));
         expect(project.name, "test123");
         expect(
-                () => mipgenService.createBedFile(session, project.id!),
+            () => mipgenService.createBedFile(session, project.id!),
             throwsA(predicate((e) =>
-            e is ArgumentError && e.message == 'No genes found in project')));
+                e is ArgumentError &&
+                e.message == 'No genes found in project')));
       },
       tags: ['unit'],
     );

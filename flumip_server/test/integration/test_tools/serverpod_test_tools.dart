@@ -14,8 +14,8 @@
 import 'package:serverpod_test/serverpod_test.dart' as _i1;
 import 'package:serverpod/serverpod.dart' as _i2;
 import 'dart:async' as _i3;
-import 'package:flumip_server/src/generated/project.dart' as _i4;
-import 'package:flumip_server/src/generated/project_options.dart' as _i5;
+import 'package:flumip_server/src/generated/project_options.dart' as _i4;
+import 'package:flumip_server/src/generated/project.dart' as _i5;
 import 'package:flumip_server/src/generated/settings.dart' as _i6;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
@@ -105,6 +105,8 @@ class TestEndpoints {
 
   late final _MipgenEndpoint mipgen;
 
+  late final _OptionsEndpoint options;
+
   late final _ProjectEndpoint project;
 
   late final _SettingsEndpoint settings;
@@ -122,6 +124,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     mipgen = _MipgenEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    options = _OptionsEndpoint(
       endpoints,
       serializationManager,
     );
@@ -336,6 +342,135 @@ class _MipgenEndpoint {
   }
 }
 
+class _OptionsEndpoint {
+  _OptionsEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i4.ProjectOptions> createProjectOptions(
+      _i1.TestSessionBuilder sessionBuilder) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'options',
+        method: 'createProjectOptions',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'options',
+          methodName: 'createProjectOptions',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.ProjectOptions>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i4.ProjectOptions> getProjectOptions(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'options',
+        method: 'getProjectOptions',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'options',
+          methodName: 'getProjectOptions',
+          parameters: _i1.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.ProjectOptions>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> updateProjectOptions(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+    _i4.ProjectOptions options,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'options',
+        method: 'updateProjectOptions',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'options',
+          methodName: 'updateProjectOptions',
+          parameters: _i1.testObjectToJson({
+            'id': id,
+            'options': options,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> deleteProjectOptions(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'options',
+        method: 'deleteProjectOptions',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'options',
+          methodName: 'deleteProjectOptions',
+          parameters: _i1.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _ProjectEndpoint {
   _ProjectEndpoint(
     this._endpointDispatch,
@@ -346,9 +481,10 @@ class _ProjectEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i4.Project> createProject(
+  _i3.Future<_i5.Project> createProject(
     _i1.TestSessionBuilder sessionBuilder,
-    String name, [
+    String name,
+    _i4.ProjectOptions options, [
     String? description,
   ]) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -364,6 +500,7 @@ class _ProjectEndpoint {
           methodName: 'createProject',
           parameters: _i1.testObjectToJson({
             'name': name,
+            'options': options,
             'description': description,
           }),
           serializationManager: _serializationManager,
@@ -371,7 +508,7 @@ class _ProjectEndpoint {
         var _localReturnValue = await (_localCallContext.method.call(
           _localUniqueSession,
           _localCallContext.arguments,
-        ) as _i3.Future<_i4.Project>);
+        ) as _i3.Future<_i5.Project>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -408,7 +545,7 @@ class _ProjectEndpoint {
     });
   }
 
-  _i3.Future<List<_i4.Project>> getProjects(
+  _i3.Future<List<_i5.Project>> getProjects(
       _i1.TestSessionBuilder sessionBuilder) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -427,7 +564,7 @@ class _ProjectEndpoint {
         var _localReturnValue = await (_localCallContext.method.call(
           _localUniqueSession,
           _localCallContext.arguments,
-        ) as _i3.Future<List<_i4.Project>>);
+        ) as _i3.Future<List<_i5.Project>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -435,7 +572,7 @@ class _ProjectEndpoint {
     });
   }
 
-  _i3.Future<_i4.Project> getProject(
+  _i3.Future<_i5.Project> getProject(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -456,7 +593,7 @@ class _ProjectEndpoint {
         var _localReturnValue = await (_localCallContext.method.call(
           _localUniqueSession,
           _localCallContext.arguments,
-        ) as _i3.Future<_i4.Project>);
+        ) as _i3.Future<_i5.Project>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -549,68 +686,6 @@ class _ProjectEndpoint {
           parameters: _i1.testObjectToJson({
             'id': id,
             'genes': genes,
-          }),
-          serializationManager: _serializationManager,
-        );
-        var _localReturnValue = await (_localCallContext.method.call(
-          _localUniqueSession,
-          _localCallContext.arguments,
-        ) as _i3.Future<void>);
-        return _localReturnValue;
-      } finally {
-        await _localUniqueSession.close();
-      }
-    });
-  }
-
-  _i3.Future<_i5.ProjectOptions> getProjectOptions(
-    _i1.TestSessionBuilder sessionBuilder,
-    int id,
-  ) async {
-    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
-        endpoint: 'project',
-        method: 'getProjectOptions',
-      );
-      try {
-        var _localCallContext = await _endpointDispatch.getMethodCallContext(
-          createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'project',
-          methodName: 'getProjectOptions',
-          parameters: _i1.testObjectToJson({'id': id}),
-          serializationManager: _serializationManager,
-        );
-        var _localReturnValue = await (_localCallContext.method.call(
-          _localUniqueSession,
-          _localCallContext.arguments,
-        ) as _i3.Future<_i5.ProjectOptions>);
-        return _localReturnValue;
-      } finally {
-        await _localUniqueSession.close();
-      }
-    });
-  }
-
-  _i3.Future<void> updateProjectOptions(
-    _i1.TestSessionBuilder sessionBuilder,
-    int id,
-    _i5.ProjectOptions options,
-  ) async {
-    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
-        endpoint: 'project',
-        method: 'updateProjectOptions',
-      );
-      try {
-        var _localCallContext = await _endpointDispatch.getMethodCallContext(
-          createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'project',
-          methodName: 'updateProjectOptions',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'options': options,
           }),
           serializationManager: _serializationManager,
         );

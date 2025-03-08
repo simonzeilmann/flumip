@@ -62,7 +62,8 @@ class MyHomePageState extends State<MyHomePage> {
   void _createProject() async {
     if (_projectController.text.isEmpty) return;
     try {
-      await client.project.createProject(_projectController.text);
+      var options = await client.options.createProjectOptions();
+      await client.project.createProject(_projectController.text, options);
       _projectController.clear();
       _fetchProjects();
     } catch (e) {

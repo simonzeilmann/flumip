@@ -6,6 +6,11 @@ file:
 mipgen:
   - createBedFile:
   - generateMips:
+options:
+  - createProjectOptions:
+  - getProjectOptions:
+  - updateProjectOptions:
+  - deleteProjectOptions:
 project:
   - createProject:
   - deleteProject:
@@ -14,8 +19,6 @@ project:
   - addGeneToProject:
   - removeGeneFromProject:
   - addGenesToProject:
-  - getProjectOptions:
-  - updateProjectOptions:
 settings:
   - getSettings:
   - updateSettings:

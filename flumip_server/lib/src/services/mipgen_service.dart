@@ -4,11 +4,13 @@ import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/server.dart';
 
 import 'file_service.dart';
+import 'options_service.dart';
 
 class MipgenService {
   final projectService = ProjectService();
   final fileService = FileService();
   final settingsService = SettingsService();
+  final optionsService = OptionsService();
   late final String refGene;
   late final String fa;
   late final String snp;
@@ -56,7 +58,7 @@ class MipgenService {
       Session session, int projectID, bool deleteExcessFiles) async {
     var project = await projectService.getProject(session, projectID);
     var options =
-        await projectService.getProjectOptions(session, project.options);
+        await optionsService.getProjectOptions(session, project.id!);
 
     var settings = await settingsService.getSettings(session);
 

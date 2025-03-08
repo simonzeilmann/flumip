@@ -11,8 +11,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
-import 'package:flumip_client/src/protocol/project.dart' as _i3;
-import 'package:flumip_client/src/protocol/project_options.dart' as _i4;
+import 'package:flumip_client/src/protocol/project_options.dart' as _i3;
+import 'package:flumip_client/src/protocol/project.dart' as _i4;
 import 'package:flumip_client/src/protocol/settings.dart' as _i5;
 import 'protocol.dart' as _i6;
 
@@ -81,21 +81,65 @@ class EndpointMipgen extends _i1.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointOptions extends _i1.EndpointRef {
+  EndpointOptions(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'options';
+
+  _i2.Future<_i3.ProjectOptions> createProjectOptions() =>
+      caller.callServerEndpoint<_i3.ProjectOptions>(
+        'options',
+        'createProjectOptions',
+        {},
+      );
+
+  _i2.Future<_i3.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_i3.ProjectOptions>(
+        'options',
+        'getProjectOptions',
+        {'id': id},
+      );
+
+  _i2.Future<void> updateProjectOptions(
+    int id,
+    _i3.ProjectOptions options,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'options',
+        'updateProjectOptions',
+        {
+          'id': id,
+          'options': options,
+        },
+      );
+
+  _i2.Future<void> deleteProjectOptions(int id) =>
+      caller.callServerEndpoint<void>(
+        'options',
+        'deleteProjectOptions',
+        {'id': id},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointProject extends _i1.EndpointRef {
   EndpointProject(_i1.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'project';
 
-  _i2.Future<_i3.Project> createProject(
-    String name, [
+  _i2.Future<_i4.Project> createProject(
+    String name,
+    _i3.ProjectOptions options, [
     String? description,
   ]) =>
-      caller.callServerEndpoint<_i3.Project>(
+      caller.callServerEndpoint<_i4.Project>(
         'project',
         'createProject',
         {
           'name': name,
+          'options': options,
           'description': description,
         },
       );
@@ -106,15 +150,15 @@ class EndpointProject extends _i1.EndpointRef {
         {'id': id},
       );
 
-  _i2.Future<List<_i3.Project>> getProjects() =>
-      caller.callServerEndpoint<List<_i3.Project>>(
+  _i2.Future<List<_i4.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_i4.Project>>(
         'project',
         'getProjects',
         {},
       );
 
-  _i2.Future<_i3.Project> getProject(int id) =>
-      caller.callServerEndpoint<_i3.Project>(
+  _i2.Future<_i4.Project> getProject(int id) =>
+      caller.callServerEndpoint<_i4.Project>(
         'project',
         'getProject',
         {'id': id},
@@ -156,26 +200,6 @@ class EndpointProject extends _i1.EndpointRef {
         {
           'id': id,
           'genes': genes,
-        },
-      );
-
-  _i2.Future<_i4.ProjectOptions> getProjectOptions(int id) =>
-      caller.callServerEndpoint<_i4.ProjectOptions>(
-        'project',
-        'getProjectOptions',
-        {'id': id},
-      );
-
-  _i2.Future<void> updateProjectOptions(
-    int id,
-    _i4.ProjectOptions options,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'updateProjectOptions',
-        {
-          'id': id,
-          'options': options,
         },
       );
 }
@@ -230,6 +254,7 @@ class Client extends _i1.ServerpodClientShared {
         ) {
     file = EndpointFile(this);
     mipgen = EndpointMipgen(this);
+    options = EndpointOptions(this);
     project = EndpointProject(this);
     settings = EndpointSettings(this);
   }
@@ -237,6 +262,8 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointFile file;
 
   late final EndpointMipgen mipgen;
+
+  late final EndpointOptions options;
 
   late final EndpointProject project;
 
@@ -246,6 +273,7 @@ class Client extends _i1.ServerpodClientShared {
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
         'file': file,
         'mipgen': mipgen,
+        'options': options,
         'project': project,
         'settings': settings,
       };
