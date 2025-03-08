@@ -304,6 +304,7 @@ class _ProjectTileState extends State<ProjectTile> {
               onPressed: _toggleExpand,
             ),
             title: Text(widget.project.name),
+            subtitle: Text(widget.project.description ?? ''),
             trailing: IconButton(
               icon: Icon(Icons.delete),
               onPressed: _showDeleteConfirmationDialog,

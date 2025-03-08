@@ -16,7 +16,8 @@ class ProjectService {
     return project;
   }
 
-  Future<Project> createProject(Session session, String projectName) async {
+  Future<Project> createProject(Session session, String projectName,
+      [String? desc]) async {
     if (projectName == '') {
       throw ArgumentError('Project name cannot be empty');
     }
@@ -24,8 +25,11 @@ class ProjectService {
     var options = await ProjectOptions.db.insertRow(session, optionsRow);
 
     var uuid = Uuid().v7();
-    var projectRow =
-        Project(name: projectName, folderName: uuid, options: options.id!);
+    var projectRow = Project(
+        name: projectName,
+        description: desc,
+        folderName: uuid,
+        options: options.id!);
     var project = await Project.db.insertRow(session, projectRow);
 
     var settings = await SettingsService().getSettings(session);
