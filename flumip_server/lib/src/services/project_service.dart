@@ -67,7 +67,7 @@ class ProjectService {
     }
     if (RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
       project.genes ??= [];
-      project.genes!.add(gene);
+      project.genes!.add(gene.toUpperCase());
       await Project.db.updateRow(session, project);
     } else {
       throw ArgumentError('Gene name contains invalid characters');
@@ -94,6 +94,14 @@ class ProjectService {
     if (project == null) {
       throw FileNotFoundException(message: 'Project not found');
     } else {
+      for (var gene in genes) {
+        if (gene.isEmpty || gene == '') {
+          gene.toUpperCase();
+        }
+        if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
+          throw ArgumentError('Gene name contains invalid characters');
+        }
+      }
       project.genes = genes;
       await Project.db.updateRow(session, project);
     }
