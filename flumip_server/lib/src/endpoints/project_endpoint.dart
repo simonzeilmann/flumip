@@ -6,9 +6,10 @@ import '../generated/protocol.dart';
 class ProjectEndpoint extends Endpoint {
   get projectService => ProjectService();
 
-  Future<Project> createProject(Session session, String name) async {
+  Future<Project> createProject(Session session, String name,
+      [String? description]) async {
     try {
-      return projectService.createProject(session, name);
+      return projectService.createProject(session, name, description);
     } catch (e) {
       rethrow;
     }
@@ -46,7 +47,8 @@ class ProjectEndpoint extends Endpoint {
     }
   }
 
-  Future<void> removeGeneFromProject(Session session, int id, String gene) async {
+  Future<void> removeGeneFromProject(
+      Session session, int id, String gene) async {
     try {
       return projectService.removeGeneFromProject(session, id, gene);
     } catch (e) {

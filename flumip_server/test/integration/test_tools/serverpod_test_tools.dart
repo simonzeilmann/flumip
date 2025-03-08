@@ -348,8 +348,9 @@ class _ProjectEndpoint {
 
   _i3.Future<_i4.Project> createProject(
     _i1.TestSessionBuilder sessionBuilder,
-    String name,
-  ) async {
+    String name, [
+    String? description,
+  ]) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
@@ -361,7 +362,10 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'createProject',
-          parameters: _i1.testObjectToJson({'name': name}),
+          parameters: _i1.testObjectToJson({
+            'name': name,
+            'description': description,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(

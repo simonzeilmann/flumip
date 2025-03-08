@@ -18,6 +18,14 @@ void main() {
       tags: ['unit'],
     );
     test(
+      'calling `createProject` with description should return the project including the description',
+          () async {
+        final result = await projectService.createProject(session, "test123", "description");
+        expect(result.description, "description");
+      },
+      tags: ['unit'],
+    );
+    test(
       'empty project name should throw an exception',
       () async {
         expect(

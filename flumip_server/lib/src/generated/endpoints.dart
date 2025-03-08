@@ -183,7 +183,12 @@ class Endpoints extends _i1.EndpointDispatch {
               name: 'name',
               type: _i1.getType<String>(),
               nullable: false,
-            )
+            ),
+            'description': _i1.ParameterDescription(
+              name: 'description',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
           },
           call: (
             _i1.Session session,
@@ -192,6 +197,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['project'] as _i4.ProjectEndpoint).createProject(
             session,
             params['name'],
+            params['description'],
           ),
         ),
         'deleteProject': _i1.MethodConnector(

@@ -87,11 +87,17 @@ class EndpointProject extends _i1.EndpointRef {
   @override
   String get name => 'project';
 
-  _i2.Future<_i3.Project> createProject(String name) =>
+  _i2.Future<_i3.Project> createProject(
+    String name, [
+    String? description,
+  ]) =>
       caller.callServerEndpoint<_i3.Project>(
         'project',
         'createProject',
-        {'name': name},
+        {
+          'name': name,
+          'description': description,
+        },
       );
 
   _i2.Future<void> deleteProject(int id) => caller.callServerEndpoint<void>(

@@ -70,7 +70,7 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.addGeneToProject(widget.project.id!, gene);
       await _reloadProject();
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to add gene: $e')),
         );
@@ -83,7 +83,7 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.removeGeneFromProject(widget.project.id!, gene);
       await _reloadProject();
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to remove gene: $e')),
         );
@@ -147,14 +147,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
                       : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
+                    SelectableText.rich(
+                      TextSpan(
+                        children: result
+                            .map((line) => TextSpan(text: '$line\n'))
+                            .toList(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -192,14 +192,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: result.isEmpty
                       ? [Text('No SNP MIPs result file found.')]
                       : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
+                    SelectableText.rich(
+                      TextSpan(
+                        children: result
+                            .map((line) => TextSpan(text: '$line\n'))
+                            .toList(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               actions: [
@@ -313,122 +313,133 @@ class _ProjectTileState extends State<ProjectTile> {
           if (_isExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
+              child: Row(
                 children: [
-                  if (_errorMessage != null)
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  if (widget.project.genes != null &&
-                      widget.project.genes!.isNotEmpty)
-                    Column(
-                      children: widget.project.genes!
-                          .map((gene) => Row(
-                                children: [
-                                  Center(
-                                    child: Text(
-                                      gene,
-                                      style: TextStyle(fontStyle: FontStyle.italic),
-                                    ),
-                                  ),
-                                  if(widget.project.bedFileCreated == false)
-                                    IconButton(
-                                      icon: Icon(Icons.remove_circle_outline),
-                                      onPressed: () => _removeGene(gene),
-                                    ),
-                                ],
-                              ))
-                          .toList(),
-                    ),
-                  if (widget.project.bedFileCreated == false)
-                    Row(
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _genesController,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              labelText: 'add gene',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[200],
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 15),
-                            ),
-                            keyboardType: TextInputType.text,
-                            onSubmitted: (value) {
-                              _addGene(value);
-                              _genesController.clear();
-                            },
+                        if (_errorMessage != null)
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(color: Colors.red),
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.add),
-                          onPressed: () {
-                            _addGene(_genesController.text);
-                            _genesController.clear();
-                          },
-                        ),
-                      ],
-                    ),
-                  SizedBox(height: 5),
-                  if (widget.project.genes?.isNotEmpty == true &&
-                      widget.project.bedFileCreated == false)
-                    ElevatedButton(
-                      onPressed: _createBedFile,
-                      child: Text('Create BED File'),
-                    ),
-                  SizedBox(height: 5),
-                  //if (_bedFileExists)
-                  SizedBox(height: 5),
-                  if (widget.project.bedFileCreated == true &&
-                      widget.project.active == false)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Checkbox(
-                          value: _deleteExcessFiles,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _deleteExcessFiles = value ?? false;
-                            });
-                          },
-                        ),
-                        Text('Delete excess files'),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _generateMips,
-                          child: Text('Generate MIPs'),
-                        ),
-                      ],
-                    ),
-                  SizedBox(height: 5),
-                  //TODO: plit and only show result if project is finished
-                  if (widget.project.active == true)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                        if (widget.project.genes != null &&
+                            widget.project.genes!.isNotEmpty)
+                          Column(
+                            children: widget.project.genes!
+                                .map((gene) => Row(
+                              children: [
+                                Center(
+                                  child: Text(
+                                    gene,
+                                    style: TextStyle(
+                                        fontStyle: FontStyle.italic),
+                                  ),
+                                ),
+                                if (widget.project.bedFileCreated ==
+                                    false)
+                                  IconButton(
+                                    icon: Icon(
+                                        Icons.remove_circle_outline),
+                                    onPressed: () => _removeGene(gene),
+                                  ),
+                              ],
+                            ))
+                                .toList(),
+                          ),
+                        if (widget.project.bedFileCreated == false)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _genesController,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    labelText: 'add gene',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey[200],
+                                    contentPadding: EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 15),
+                                  ),
+                                  keyboardType: TextInputType.text,
+                                  onSubmitted: (value) {
+                                    _addGene(value);
+                                    _genesController.clear();
+                                  },
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                  _addGene(_genesController.text);
+                                  _genesController.clear();
+                                },
+                              ),
+                            ],
+                          ),
                         SizedBox(height: 5),
-                        ElevatedButton(
-                          onPressed: _showProgress,
-                          child: Text('Show Progress'),
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _showMipsResult,
-                          child: Text('Show MIPs Result'),
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: _showSnpMipsResult,
-                          child: Text('Show SNP MIPs Result'),
-                        ),
+                        if (widget.project.genes?.isNotEmpty == true &&
+                            widget.project.bedFileCreated == false)
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: _createBedFile,
+                              child: Text('Create BED File'),
+                            ),
+                          ),
+                        SizedBox(height: 5),
+                        if (widget.project.bedFileCreated == true &&
+                            widget.project.active == false)
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Checkbox(
+                                  value: _deleteExcessFiles,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      _deleteExcessFiles = value ?? false;
+                                    });
+                                  },
+                                ),
+                                Text('Delete excess files'),
+                                SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: _generateMips,
+                                  child: Text('Generate MIPs'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(height: 5),
+                        if (widget.project.active == true)
+                          Center(
+                            child: Column(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _showProgress,
+                                  child: Text('Show Progress'),
+                                ),
+                                SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: _showMipsResult,
+                                  child: Text('Show MIPs Result'),
+                                ),
+                                SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: _showSnpMipsResult,
+                                  child: Text('Show SNP MIPs Result'),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
-                  SizedBox(height: 5),
+                  ),
+                  SizedBox(width: 16), // Empty space on the right side
                 ],
               ),
             ),
