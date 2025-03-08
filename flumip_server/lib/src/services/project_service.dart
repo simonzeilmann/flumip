@@ -24,11 +24,10 @@ class ProjectService {
     var optionsRow = ProjectOptions();
     var options = await ProjectOptions.db.insertRow(session, optionsRow);
 
-    var uuid = Uuid().v7();
     var projectRow = Project(
         name: projectName,
         description: desc,
-        folderName: uuid,
+        folderName: Uuid().v7(),
         options: options.id!);
     var project = await Project.db.insertRow(session, projectRow);
 
