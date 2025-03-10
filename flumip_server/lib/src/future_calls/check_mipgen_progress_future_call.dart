@@ -4,18 +4,18 @@ import '../generated/project.dart';
 import '../services/mipgen_service.dart';
 import '../services/process_service.dart';
 
-class CheckMipgenProgressFutureCall extends FutureCall {
+class CheckMipgenProgressFutureCall extends FutureCall<Project> {
   final processService = ProcessService();
   final mipgenService = MipgenService();
 
   @override
-  Future<void> invoke(Session session, SerializableModel? object) async {
-    if (await processService.checkIfProcessIsRunning(session, object as Project)) {
+  Future<void> invoke(Session session, Project? project) async {
+    if (await processService.checkIfProcessIsRunning(session, project!)) {
       await session.serverpod.futureCallWithDelay(
-          'checkMipgenProgress', object, const Duration(seconds:  10));
+          'checkMipgenProgress', project, const Duration(seconds:  10));
     }
     else {
-      await mipgenService.mipgenIsFinished(session, object);
+      await mipgenService.mipgenIsFinished(session, project);
     }
   }
 }
