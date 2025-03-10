@@ -193,6 +193,25 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['options'] as _i4.OptionsEndpoint)
                   .createProjectOptions(session),
         ),
+        'insertProjectOptions': _i1.MethodConnector(
+          name: 'insertProjectOptions',
+          params: {
+            'options': _i1.ParameterDescription(
+              name: 'options',
+              type: _i1.getType<_i7.ProjectOptions>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['options'] as _i4.OptionsEndpoint)
+                  .insertProjectOptions(
+            session,
+            params['options'],
+          ),
+        ),
         'getProjectOptions': _i1.MethodConnector(
           name: 'getProjectOptions',
           params: {

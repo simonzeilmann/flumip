@@ -379,6 +379,35 @@ class _OptionsEndpoint {
     });
   }
 
+  _i3.Future<_i4.ProjectOptions> insertProjectOptions(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i4.ProjectOptions options,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'options',
+        method: 'insertProjectOptions',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'options',
+          methodName: 'insertProjectOptions',
+          parameters: _i1.testObjectToJson({'options': options}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.ProjectOptions>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i3.Future<_i4.ProjectOptions> getProjectOptions(
     _i1.TestSessionBuilder sessionBuilder,
     int id,

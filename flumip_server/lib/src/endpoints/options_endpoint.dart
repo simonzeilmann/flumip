@@ -14,6 +14,15 @@ class OptionsEndpoint extends Endpoint {
     }
   }
 
+  Future<ProjectOptions> insertProjectOptions(
+      Session session, ProjectOptions options) async {
+    try {
+      return optionsService.insertProjectOptions(session, options);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<ProjectOptions> getProjectOptions(Session session, int id) async {
     try {
       return optionsService.getProjectOptions(session, id);

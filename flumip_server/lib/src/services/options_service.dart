@@ -13,6 +13,12 @@ class OptionsService {
     return projectOptions;
   }
 
+  Future<ProjectOptions> insertProjectOptions(
+      Session session, ProjectOptions options) async {
+    var projectOptions = await ProjectOptions.db.insertRow(session, options);
+    return projectOptions;
+  }
+
   Future<ProjectOptions> getProjectOptions(Session session, int id) async {
     var projectOptions = await ProjectOptions.db.findById(session, id);
     if (projectOptions == null) {

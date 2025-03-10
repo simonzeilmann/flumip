@@ -94,6 +94,14 @@ class EndpointOptions extends _i1.EndpointRef {
         {},
       );
 
+  _i2.Future<_i3.ProjectOptions> insertProjectOptions(
+          _i3.ProjectOptions options) =>
+      caller.callServerEndpoint<_i3.ProjectOptions>(
+        'options',
+        'insertProjectOptions',
+        {'options': options},
+      );
+
   _i2.Future<_i3.ProjectOptions> getProjectOptions(int id) =>
       caller.callServerEndpoint<_i3.ProjectOptions>(
         'options',
