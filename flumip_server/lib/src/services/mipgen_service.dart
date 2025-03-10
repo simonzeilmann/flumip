@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/server.dart';
 
+import '../generated/project.dart';
 import 'file_service.dart';
 import 'options_service.dart';
 
@@ -11,6 +13,7 @@ class MipgenService {
   final fileService = FileService();
   final settingsService = SettingsService();
   final optionsService = OptionsService();
+  final processService = ProcessService();
   late final String refGene;
   late final String fa;
   late final String snp;
@@ -57,8 +60,7 @@ class MipgenService {
   Future<void> generateMips(
       Session session, int projectID, bool deleteExcessFiles) async {
     var project = await projectService.getProject(session, projectID);
-    var options =
-        await optionsService.getProjectOptions(session, project.id!);
+    var options = await optionsService.getProjectOptions(session, project.id!);
 
     var settings = await settingsService.getSettings(session);
 
@@ -171,33 +173,30 @@ class MipgenService {
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await _getMipgenPID(session, project.name);
+    var mipgenPID = await processService.getProcessPID(session, project.name);
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
     await projectService.updateProject(session, project);
+    session.log("Mipgen started with PID: $mipgenPID");
+
+    await session.serverpod.futureCallWithDelay(
+        'checkMipgenProgress', project, const Duration(seconds: 15));
   }
 
-  Future<int> _getMipgenPID(Session session, String projectName) async {
-    int mipgenPID = 0;
-
-    var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
-    if (process.exitCode == 1) {
-      session.log("Mipgen is not running");
-      return mipgenPID;
-    }
-    if (process.exitCode > 1) {
-      //TODO: error handling
-      throw ();
-    } else {
-      var lines = process.stdout.split("\n");
-      for (var line in lines) {
-        if (line.contains("-project_name $projectName")) {
-          mipgenPID = int.parse(line.split(" ")[0]);
-          break;
-        }
-      }
+  Future<void> mipgenIsFinished(Session session, Project projectModel) async {
+    var project = await projectService.getProject(session, projectModel.id!);
+    if (project.id == null) {
+      throw ArgumentError('Project id does not exist');
     }
 
-    return mipgenPID;
+    if (project.cleanup) {
+      await fileService.deleteByproducts(session, project.id!);
+    }
+    //TODO: check for errors
+
+    project.active = false;
+    project.pid = 0;
+    project.completedIn = project.started?.difference(DateTime.now());
+    await projectService.updateProject(session, project);
   }
 }

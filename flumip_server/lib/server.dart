@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/root.dart';
@@ -18,7 +19,8 @@ void run(List<String> args) async {
   );
 
   // If you are using any future calls, they need to be registered here.
-  // pod.registerFutureCall(ExampleFutureCall(), 'exampleFutureCall');
+  pod.registerFutureCall(
+      CheckMipgenProgressFutureCall(), 'checkMipgenProgress');
 
   // Setup a default page at the web root.
   pod.webServer.addRoute(RouteRoot(), '/');
@@ -32,4 +34,3 @@ void run(List<String> args) async {
   // Start the server.
   await pod.start();
 }
-
