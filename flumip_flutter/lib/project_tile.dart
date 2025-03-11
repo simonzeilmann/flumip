@@ -316,6 +316,14 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  String _printDuration(Duration duration) {
+    String negativeSign = duration.isNegative ? '-' : '';
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).abs());
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
+    return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -464,7 +472,7 @@ class _ProjectTileState extends State<ProjectTile> {
                             child: Column(
                               children: [
                                 Text(
-                                    'Completed in: ${widget.project.completedIn}'),
+                                    'Completed in: ${_printDuration(widget.project.completedIn!)}'),
                                 SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: _showMipsResult,
