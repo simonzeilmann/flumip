@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
+import 'package:flutter/services.dart';
 
 //ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
@@ -158,6 +159,20 @@ class _ProjectTileState extends State<ProjectTile> {
                 ),
               ),
               actions: [
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
                 TextButton(
                   child: Text('Close'),
                   onPressed: () {
@@ -203,6 +218,20 @@ class _ProjectTileState extends State<ProjectTile> {
                 ),
               ),
               actions: [
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Snp MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
                 TextButton(
                   child: Text('Close'),
                   onPressed: () {
@@ -436,6 +465,7 @@ class _ProjectTileState extends State<ProjectTile> {
                               children: [
                                 Text(
                                     'Completed in: ${widget.project.completedIn}'),
+                                SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: _showMipsResult,
                                   child: Text('Show MIPs Result'),
