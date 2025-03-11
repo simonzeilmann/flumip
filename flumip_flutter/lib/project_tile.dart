@@ -147,14 +147,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
                       : [
-                    SelectableText.rich(
-                      TextSpan(
-                        children: result
-                            .map((line) => TextSpan(text: '$line\n'))
-                            .toList(),
-                      ),
-                    ),
-                  ],
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
                 ),
               ),
               actions: [
@@ -192,14 +192,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: result.isEmpty
                       ? [Text('No SNP MIPs result file found.')]
                       : [
-                    SelectableText.rich(
-                      TextSpan(
-                        children: result
-                            .map((line) => TextSpan(text: '$line\n'))
-                            .toList(),
-                      ),
-                    ),
-                  ],
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
                 ),
               ),
               actions: [
@@ -329,23 +329,23 @@ class _ProjectTileState extends State<ProjectTile> {
                           Column(
                             children: widget.project.genes!
                                 .map((gene) => Row(
-                              children: [
-                                Center(
-                                  child: Text(
-                                    gene,
-                                    style: TextStyle(
-                                        fontStyle: FontStyle.italic),
-                                  ),
-                                ),
-                                if (widget.project.bedFileCreated ==
-                                    false)
-                                  IconButton(
-                                    icon: Icon(
-                                        Icons.remove_circle_outline),
-                                    onPressed: () => _removeGene(gene),
-                                  ),
-                              ],
-                            ))
+                                      children: [
+                                        Center(
+                                          child: Text(
+                                            gene,
+                                            style: TextStyle(
+                                                fontStyle: FontStyle.italic),
+                                          ),
+                                        ),
+                                        if (widget.project.bedFileCreated ==
+                                            false)
+                                          IconButton(
+                                            icon: Icon(
+                                                Icons.remove_circle_outline),
+                                            onPressed: () => _removeGene(gene),
+                                          ),
+                                      ],
+                                    ))
                                 .toList(),
                           ),
                         if (widget.project.bedFileCreated == false)
@@ -392,7 +392,8 @@ class _ProjectTileState extends State<ProjectTile> {
                           ),
                         SizedBox(height: 5),
                         if (widget.project.bedFileCreated == true &&
-                            widget.project.active == false)
+                            widget.project.active == false &&
+                            widget.project.completedIn == null)
                           Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -415,7 +416,8 @@ class _ProjectTileState extends State<ProjectTile> {
                             ),
                           ),
                         SizedBox(height: 5),
-                        if (widget.project.active == true)
+                        if (widget.project.active == true &&
+                            widget.project.completedIn == null)
                           Center(
                             child: Column(
                               children: [
@@ -423,16 +425,27 @@ class _ProjectTileState extends State<ProjectTile> {
                                   onPressed: _showProgress,
                                   child: Text('Show Progress'),
                                 ),
-                                SizedBox(width: 10),
+                                SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                        if (widget.project.active == false &&
+                            widget.project.completedIn != null)
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                    'Completed in: ${widget.project.completedIn}'),
                                 ElevatedButton(
                                   onPressed: _showMipsResult,
                                   child: Text('Show MIPs Result'),
                                 ),
-                                SizedBox(width: 10),
+                                SizedBox(height: 10),
                                 ElevatedButton(
                                   onPressed: _showSnpMipsResult,
                                   child: Text('Show SNP MIPs Result'),
                                 ),
+                                SizedBox(height: 10),
                               ],
                             ),
                           ),
