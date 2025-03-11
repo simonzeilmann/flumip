@@ -10,21 +10,21 @@
 
 # Configuration for the main API server.
 apiServer:
-  port: 8090
+  port: 443
   publicHost: api.flumip-staging.simonzeilmann.com
   publicPort: 443
   publicScheme: https
 
 # Configuration for the Insights server.
 insightsServer:
-  port: 8091
+  port: 443
   publicHost: insights.flumip-staging.simonzeilmann.com
   publicPort: 443
   publicScheme: https
 
 # Configuration for the web server.
 webServer:
-  port: 8092
+  port: 443
   publicHost: app.flumip-staging.simonzeilmann.com
   publicPort: 443
   publicScheme: https
