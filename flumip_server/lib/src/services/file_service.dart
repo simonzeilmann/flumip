@@ -300,4 +300,25 @@ class FileService {
     await sink.close();
     session.log("String written to file: $path", level: LogLevel.info);
   }
+
+  /// Retrieves the size of a directory.
+  ///
+  /// \param dirPath The path of the directory.
+  /// \returns The size of the directory in bytes.
+  Future<int> getDirSize(String dirPath) async {
+    var dir = Directory(dirPath);
+    bool exists = await dir.exists();
+    if (!exists) {
+      return 0;
+    }
+
+    int totalSize = 0;
+    await dir.list(recursive: true, followLinks: false).forEach((FileSystemEntity entity) async {
+      if (entity is File) {
+        totalSize += entity.lengthSync();
+      }
+    });
+
+    return totalSize;
+  }
 }

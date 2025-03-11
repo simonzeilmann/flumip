@@ -224,6 +224,7 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectModel The project model to update.
   Future<void> mipgenIsFinished(Session session, Project projectModel) async {
+    final settings = await settingsService.getSettings(session);
     session.log("Finishing MIP generation for project ID: ${projectModel.id}",
         level: LogLevel.info);
     var project = await projectService.getProject(session, projectModel.id!);
@@ -238,11 +239,15 @@ class MipgenService {
           level: LogLevel.info);
       await fileService.deleteByproducts(session, project.id!);
     }
+
+    project.size = await fileService
+        .getDirSize("${settings.projectDir}/${project.folderName!}");
+
     //TODO: check for errors
 
     project.active = false;
     project.pid = 0;
-    project.completedIn = project.started?.difference(DateTime.now());
+    project.completedIn = DateTime.now().difference(project.started!);
     await projectService.updateProject(session, project);
     session.log("MIP generation finished for project ID: ${project.id}",
         level: LogLevel.info);

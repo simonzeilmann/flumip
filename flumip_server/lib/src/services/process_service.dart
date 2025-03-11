@@ -40,9 +40,16 @@ class ProcessService {
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
-        session.log("Process is running for project ID: ${projectModel.id}",
-            level: LogLevel.info);
-        return true;
+        if(lines[1].contains("mipgen")) {
+          session.log("Process is running for project ID: ${projectModel.id}",
+              level: LogLevel.info);
+          return true;
+        }
+        else {
+          session.log("Process is not running for project ID: ${projectModel.id}",
+              level: LogLevel.info);
+          return false;
+        }
       }
       session.log("Process is not running for project ID: ${projectModel.id}",
           level: LogLevel.info);

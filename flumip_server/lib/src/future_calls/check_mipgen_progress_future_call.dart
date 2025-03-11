@@ -9,21 +9,21 @@ class CheckMipgenProgressFutureCall extends FutureCall<Project> {
   final mipgenService = MipgenService();
 
   @override
-  Future<void> invoke(Session session, Project? project) async {
+  Future<void> invoke(Session session, Project? object) async {
     session.log(
-        "Checking MIP generation progress for project ID: ${project?.id}",
+        "Checking MIP generation progress for project ID: ${object?.id}",
         level: LogLevel.info);
-    if (await processService.checkIfProcessIsRunning(session, project!)) {
+    if (await processService.checkIfProcessIsRunning(session, object!)) {
       session.log(
-          "MIP generation process is still running for project ID: ${project.id}",
+          "MIP generation process is still running for project ID: ${object.id}",
           level: LogLevel.info);
       await session.serverpod.futureCallWithDelay(
-          'checkMipgenProgress', project, const Duration(seconds: 10));
+          'checkMipgenProgress', object, const Duration(seconds: 10));
     } else {
       session.log(
-          "MIP generation process has finished for project ID: ${project.id}",
+          "MIP generation process has finished for project ID: ${object.id}",
           level: LogLevel.info);
-      await mipgenService.mipgenIsFinished(session, project);
+      await mipgenService.mipgenIsFinished(session, object);
     }
   }
 }
