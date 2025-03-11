@@ -1,62 +1,41 @@
 import 'package:flumip_server/src/services/mipgen_service.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
+/// Endpoint for handling MIP generation-related operations.
 class MipgenEndpoint extends Endpoint {
-  get mipgenService => MipgenService();
+  final mipgenService = MipgenService();
 
-  // You create methods in your endpoint which are accessible from the client by
-  // creating a public method with `Session` as its first parameter.
-  // `bool`, `int`, `double`, `String`, `UuidValue`, `Duration`, `DateTime`, `ByteData`,
-  // and other serializable classes, exceptions and enums from your from your `protocol` directory.
-  // The methods should return a typed future; the same types as for the parameters are
-  // supported. The `session` object provides access to the database, logging,
-  // passwords, and information about the request being made to the server.
-  Future<bool> createProject(Session session, String name) async {
-    return mipgenService.createProject(name);
-  }
-
-  Future<void> deleteProject(Session session, String name) async {
-    mipgenService.deleteProject(name);
-  }
-
-  Future<List<String>> getProjects(Session session) async {
-    return mipgenService.getProjects();
-  }
-
-  Future<void> createGeneFile(
-      Session session, String projectName, List<String> genes) async {
-    return mipgenService.createGeneFile(projectName, genes);
-  }
-
-  Future<List<String>> getGenes(Session session, String projectName) async {
+  /// Creates a BED file for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  Future<void> createBedFile(Session session, int projectID) async {
+    session.log("Creating BED file for project ID: $projectID",
+        level: LogLevel.info);
     try {
-      return await mipgenService.getGenes(projectName);
-    } on FileNotFoundException {
+      return mipgenService.createBedFile(session, projectID);
+    } catch (e) {
+      session.log("Error creating BED file for project ID: $projectID",
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
 
-  Future<void> createBedFile(Session session, String projectName) async {
-    return mipgenService.createBedFile(projectName);
-  }
-
-  Future<bool> checkBedFileExists(Session session, String projectName) async {
-    return mipgenService.checkBedFileExists(projectName);
-  }
-
+  /// Generates MIPs for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  /// \param deleteExcessFiles Whether to delete excess files after generating MIPs.
   Future<void> generateMips(
-      Session session, String projectName, bool deleteExcessFiles) async {
-    return mipgenService.generateMips(projectName, deleteExcessFiles);
-  }
-
-  Future<List<String>> showMipsProgress(
-      Session session, String projectName) async {
-    return mipgenService.showMipsProgress(projectName);
-  }
-
-  Future<List<String>> showMipsResult(
-      Session session, String projectName) async {
-    return mipgenService.showMipsResult(projectName);
+      Session session, int projectID, bool deleteExcessFiles) async {
+    session.log("Generating MIPs for project ID: $projectID",
+        level: LogLevel.info);
+    try {
+      return mipgenService.generateMips(session, projectID, deleteExcessFiles);
+    } catch (e) {
+      session.log("Error generating MIPs for project ID: $projectID",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
   }
 }

@@ -1,190 +1,255 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/process_service.dart';
+import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
+import 'package:serverpod/server.dart';
 
+import '../generated/project.dart';
+import 'file_service.dart';
+import 'options_service.dart';
+
+/// Service class for handling MIP generation related operations.
 class MipgenService {
-  Map<String, String> envVars = Platform.environment;
-
-  late final String mipgenExe;
-  late final String projectFolder;
-  late final String exonExtract;
+  final projectService = ProjectService();
+  final fileService = FileService();
+  final settingsService = SettingsService();
+  final optionsService = OptionsService();
+  final processService = ProcessService();
   late final String refGene;
   late final String fa;
   late final String snp;
 
+  /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
   MipgenService() {
-    projectFolder = "/opt/mipgen/projects";
-    mipgenExe = "/opt/mipgen/MIPGEN/mipgen";
-    exonExtract = "/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh";
     refGene = "/opt/mipgen/data/genes/human/hg38/refGene.txt";
     fa = "/opt/mipgen/data/genes/human/hg38/fa/hg38.fa";
     snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
-  Future<bool> createProject(String projectName) async {
-    if (await checkProjectExists(projectName)) {
-      return false;
+  /// Creates a BED file for the specified project.
+  ///
+  /// Throws an [ArgumentError] if the project ID does not exist or if no genes are found in the project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project for which to create the BED file.
+  Future<void> createBedFile(Session session, int projectID) async {
+    session.log("Starting createBedFile for project ID: $projectID",
+        level: LogLevel.info);
+    var project = await projectService.getProject(session, projectID);
+    if (project.id == null) {
+      session.log("Project ID does not exist: $projectID",
+          level: LogLevel.error);
+      throw ArgumentError('Project id does not exist');
     }
-    await Directory("$projectFolder/$projectName").create();
-    return true;
-  }
-
-  void deleteProject(String projectName) {
-    Directory("$projectFolder/$projectName").delete(recursive: true);
-  }
-
-  Future<List<String>> getProjects() async {
-    var dir = await Directory(projectFolder).list().toList();
-    List<String> projects = [];
-    for (var d in dir) {
-      if (d is Directory) {
-        projects.add(d.path.split("/").last);
-      }
+    if (project.genes == null || project.genes!.isEmpty) {
+      session.log("No genes found in project ID: $projectID",
+          level: LogLevel.error);
+      throw ArgumentError('No genes found in project');
     }
-    return projects;
-  }
 
-  Future<void> createGeneFile(String projectName, List<String> genes) async {
-    if (!await checkProjectExists(projectName)) {
-      throw ();
-    }
-    String geneFile = "$projectFolder/$projectName/genes.txt";
+    var settings = await settingsService.getSettings(session);
+
+    String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
+    String bedFile = "${settings.projectDir}/${project.folderName}/genes.bed";
     if (await File(geneFile).exists()) {
-      await writeListToFile(geneFile, genes);
-    } else {
-      File(geneFile).create();
-      await writeListToFile(geneFile, genes);
+      session.log("Gene file exists, deleting: $geneFile",
+          level: LogLevel.warning);
+      await fileService.deleteGeneFile(session, projectID);
     }
+    session.log("Creating gene file: $geneFile", level: LogLevel.info);
+    await fileService.createGeneFile(session, projectID, project.genes!);
+    List<String> arg = [];
+    arg.add(geneFile);
+    arg.add(refGene);
+
+    session.log("Running exon extract script with arguments: $arg",
+        level: LogLevel.info);
+    var process = await Process.run(settings.exonExtractScript, arg);
+
+    if (process.exitCode != 0 || process.stdout == "") {
+      session.log("Failed to extract genes for project ID: $projectID",
+          level: LogLevel.error);
+      throw ArgumentError("Genes could not be extracted");
+    }
+
+    session.log("Writing BED file: $bedFile", level: LogLevel.info);
+    fileService.writeStringToFile(session, bedFile, process.stdout);
+
+    project.bedFileCreated = true;
+    await projectService.updateProject(session, project);
+    session.log("BED file created successfully for project ID: $projectID",
+        level: LogLevel.info);
   }
 
-  Future<List<String>> getGenes(String projectName) async {
-    String geneFile = "$projectFolder/$projectName/genes.txt";
-    if (!await File(geneFile).exists()) {
-      throw FileNotFoundException(message: 'genes.txt not found');
-    } else {
-      return await File(geneFile).readAsLines();
-    }
-  }
+  /// Generates MIPs for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project for which to generate MIPs.
+  /// \param deleteExcessFiles Whether to delete excess files after MIP generation.
+  Future<void> generateMips(
+      Session session, int projectID, bool deleteExcessFiles) async {
+    session.log("Starting generateMips for project ID: $projectID",
+        level: LogLevel.info);
+    var project = await projectService.getProject(session, projectID);
+    var options = await optionsService.getProjectOptions(session, project.id!);
 
-  Future<void> createBedFile(String projectName) async {
-    String geneFile = "$projectFolder/$projectName/genes.txt";
-    String bedFile = "$projectFolder/$projectName/genes.bed";
-    if (!await File(geneFile).exists()) {
-      throw ();
-    } else {
-      List<String> arg = [];
-      arg.add(geneFile);
-      arg.add(refGene);
+    var settings = await settingsService.getSettings(session);
 
-      var process = await Process.run(exonExtract, arg);
-
-      await File(bedFile).create();
-      var sink = File(bedFile).openWrite();
-      sink.write(process.stdout);
-      await sink.flush();
-      await sink.close();
-
-      if (!await File(bedFile).exists() ||
-          await File(bedFile).length() < 1024) {
-        throw ();
-      }
-    }
-  }
-
-  Future<bool> checkBedFileExists(String projectName) async {
-    if (await File("$projectFolder/$projectName/genes.bed").exists() &&
-        await File("$projectFolder/$projectName/genes.bed").length() > 1024) {
-      return true;
-    }
-    return false;
-  }
-
-  Future<void> generateMips(String projectName, bool deleteExcessFiles) async {
     List<String> arg = [];
     arg.add("-regions_to_scan");
-    arg.add("$projectFolder/$projectName/genes.bed");
+    arg.add("${settings.projectDir}/${project.folderName}/genes.bed");
     arg.add("-project_name");
-    arg.add(projectName);
-    arg.add("-min_capture_size");
-    arg.add("162");
-    arg.add("-max_capture_size");
-    arg.add("162");
+    arg.add(project.name);
     arg.add("-bwa_genome_index");
     arg.add(fa);
     arg.add("-snp_file");
     arg.add(snp);
-
-    await Process.start(mipgenExe, arg,
-        workingDirectory: "$projectFolder/$projectName", runInShell: true);
-    var mipgenPID = await getMipgenPID(projectName);
-    print(mipgenPID);
-  }
-
-  Future<List<String>> showMipsResult(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".picked_mips.txt")) {
-        File f = File(d.path);
-        var lines = await f.readAsLines();
-        return lines;
-      }
+    arg.add("-min_capture_size");
+    arg.add(options.minCaptureSize.toString());
+    arg.add("-max_capture_size");
+    arg.add(options.maxCaptureSize.toString());
+    if (options.armLengths != null) {
+      arg.add("-arm_lengths");
+      arg.add(options.armLengths!);
     }
-
-    return List.empty();
-  }
-
-  Future<List<String>> showMipsProgress(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".progress.txt")) {
-        File f = File(d.path);
-        var lines = await f.readAsLines();
-        return lines;
-      }
-    }
-
-    return List.empty();
-  }
-
-  Future<void> deleteByproducts(String projectName) async {
-    var dir = await Directory("$projectFolder/$projectName").list().toList();
-
-    for (var d in dir) {
-      if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
-        d.delete();
-      }
-    }
-  }
-
-  Future<void> writeListToFile(String path, List<String> list) async {
-    var sink = File(path).openWrite();
-    list.forEach(sink.writeln);
-    await sink.flush();
-    await sink.close();
-  }
-
-  Future<bool> checkProjectExists(String projectName) async {
-    return await Directory("$projectFolder/$projectName").exists();
-  }
-
-  Future<int> getMipgenPID(String projectID) async {
-    int mipgenPID = 0;
-
-    var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
-    if (process.exitCode != 0) {
-      //TODO: error handling
-      throw ();
+    arg.add("-arm_length_sums");
+    arg.add(options.armLengthSums.toString());
+    arg.add("-ext_min_length");
+    arg.add(options.extMinLength.toString());
+    arg.add("-lig_min_length");
+    arg.add(options.ligMinLength.toString());
+    arg.add("-tag_sizes");
+    arg.add(options.tagSizes.toString());
+    arg.add("-masked_arm_threshold");
+    arg.add(options.maskedArmThreshold.toString());
+    arg.add("-target_arm_copy");
+    arg.add(options.targetArmCopy.toString());
+    arg.add("-max_arm_copy_product");
+    arg.add(options.maxArmCopyProduct.toString());
+    arg.add("-trf");
+    if (options.trf == true) {
+      arg.add("on");
     } else {
-      var lines = process.stdout.split("\n");
-      for (var line in lines) {
-        if (line.contains("-project_name $projectID")) {
-          mipgenPID = int.parse(line.split(" ")[0]);
-          break;
-        }
-      }
+      arg.add("off");
+    }
+    if (options.genomeDir != null) {
+      arg.add("-genome_dir");
+      arg.add(options.genomeDir!);
+    }
+    arg.add("-feature_flank");
+    arg.add(options.featureFlank.toString());
+    arg.add("-capture_increment");
+    arg.add(options.captureIncrement.toString());
+    arg.add("-logistic_heuristic");
+    if (options.logisticHeuristic == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-max_mip_overlap");
+    arg.add(options.maxMipOverlap.toString());
+    arg.add("-starting_mip_overlap");
+    arg.add(options.startingMipOverlap.toString());
+    arg.add("-check_copy_number");
+    if (options.checkCopyNumber == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-seal_both_strands");
+    if (options.sealBothStrands == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-half_seal_both_strands");
+    if (options.halfSealBothStrands == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-double_tile_strand_unaware");
+    if (options.doubleTileStrandUnaware == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-double_tile_strands_separately");
+    if (options.doubleTileStrandsSeparately == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-score_method");
+    arg.add(options.scoreMethod.name);
+    arg.add("-logistic_optimal_score");
+    arg.add(options.logisticOptimalScore.toString());
+    arg.add("-svr_optimal_score");
+    arg.add(options.svrOptimalScore.toString());
+    arg.add("-logistic_priority_score");
+    arg.add(options.logisticPriorityScore.toString());
+    arg.add("-svr_priority_score");
+    arg.add(options.svrPriorityScore.toString());
+    arg.add("-silent_mode");
+    if (options.silentMode == true) {
+      arg.add("on");
+    } else {
+      arg.add("off");
+    }
+    arg.add("-bwa_threads");
+    arg.add(options.bwaThreads.toString());
+
+    session.log("Starting MIP generation process with arguments: $arg",
+        level: LogLevel.info);
+    await Process.start(settings.mipgenExecutable, arg,
+        workingDirectory: "${settings.projectDir}/${project.folderName}",
+        runInShell: true);
+    project.started = DateTime.now();
+    project.active = true;
+    var mipgenPID = await processService.getProcessPID(session, project.name);
+    project.pid = mipgenPID;
+    project.cleanup = deleteExcessFiles;
+    await projectService.updateProject(session, project);
+    session.log(
+        "MIP generation started with PID: $mipgenPID for project ID: $projectID",
+        level: LogLevel.info);
+
+    await session.serverpod.futureCallWithDelay(
+        'checkMipgenProgress', project, const Duration(seconds: 15));
+  }
+
+  /// Marks the MIP generation process as finished for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectModel The project model to update.
+  Future<void> mipgenIsFinished(Session session, Project projectModel) async {
+    final settings = await settingsService.getSettings(session);
+    session.log("Finishing MIP generation for project ID: ${projectModel.id}",
+        level: LogLevel.info);
+    var project = await projectService.getProject(session, projectModel.id!);
+    if (project.id == null) {
+      session.log("Project ID does not exist: ${projectModel.id}",
+          level: LogLevel.error);
+      throw ArgumentError('Project id does not exist');
     }
 
-    return mipgenPID;
+    if (project.cleanup) {
+      session.log("Deleting byproducts for project ID: ${project.id}",
+          level: LogLevel.info);
+      await fileService.deleteByproducts(session, project.id!);
+    }
+
+    project.size = await fileService
+        .getDirSize("${settings.projectDir}/${project.folderName!}");
+
+    //TODO: check for errors
+
+    project.active = false;
+    project.pid = 0;
+    project.completedIn = DateTime.now().difference(project.started!);
+    await projectService.updateProject(session, project);
+    session.log("MIP generation finished for project ID: ${project.id}",
+        level: LogLevel.info);
   }
 }

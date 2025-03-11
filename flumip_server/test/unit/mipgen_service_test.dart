@@ -1,124 +1,46 @@
-import 'dart:io';
-
+import 'package:flumip_server/src/generated/project_options.dart';
+import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:flumip_server/src/services/project_service.dart';
 import 'package:test/test.dart';
 
+import '../integration/test_tools/serverpod_test_tools.dart';
+
 void main() {
-
-  //TODO: Remove after testing
-  test("testTest", () {
-    expect(1, 1);
-  },
-  tags: ['unit', 'action'],
-  );
-
-  test("projectCreation", () async {
+  withServerpod('Bed file', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
     final mipgenService = MipgenService();
+    final fileService = FileService();
 
-    bool result = await mipgenService.createProject("test");
-    expect(result, true);
+    test(
+      'calling `createBedFile` should give create a bed file',
+      () async {
+        final project = await projectService.createProject(
+            session, "test123", ProjectOptions(id: 1));
+        expect(project.name, "test123");
+        await projectService.addGeneToProject(session, project.id!, "BRCA1");
+        await mipgenService.createBedFile(session, project.id!);
+        final exists =
+            await fileService.checkBedFileExists(session, project.id!);
+        expect(exists, true);
+      },
+      tags: ['unit'],
+    );
 
-    result = await mipgenService.createProject("test");
-    expect(result, false);
-
-    mipgenService.deleteProject("test");
-  },
-    tags: ['unit'],
-  );
-
-  test("projectDeletion", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("testToDelete");
-    var result = await mipgenService.checkProjectExists("testToDelete");
-    expect(result, true);
-
-    mipgenService.deleteProject("testToDelete");
-    await Future.delayed(Duration(milliseconds: 50));
-    expect(await mipgenService.checkProjectExists("testToDelete"), false);
-  },
-    tags: ['unit'],
-  );
-
-  test("createGeneFile", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("geneFileTest");
-    List<String> genes = ["BART1", "SN1PZ1"];
-
-    await mipgenService.createGeneFile("geneFileTest", genes);
-    expect(
-        await File("${mipgenService.projectFolder}/geneFileTest/genes.txt")
-            .exists(),
-        true);
-
-    mipgenService.deleteProject("geneFileTest");
-  },
-    tags: ['unit'],
-  );
-
-  test("createBedFile", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("bedFileTest");
-    List<String> genes = ["MYH11"];
-
-    await mipgenService.createGeneFile("bedFileTest", genes);
-
-    await mipgenService.createBedFile("bedFileTest");
-
-    expect(
-        await File("${mipgenService.projectFolder}/bedFileTest/genes.bed")
-            .exists(),
-        true);
-    expect(
-        await File("${mipgenService.projectFolder}/bedFileTest/genes.bed")
-            .length(),
-        greaterThan(1024));
-
-    mipgenService.deleteProject("bedFileTest");
-  },
-    tags: ['unit'],
-  );
-
-  test("generateMips and delete excess files", () async {
-    final mipgenService = MipgenService();
-
-    await mipgenService.createProject("mipsTest");
-    List<String> genes = ["MYH11"];
-
-    await mipgenService.createGeneFile("mipsTest", genes);
-
-    await mipgenService.createBedFile("mipsTest");
-
-    await mipgenService.generateMips("mipsTest", false);
-
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.picked_mips.txt")
-            .exists(),
-        true);
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.picked_mips.txt")
-            .length(),
-        greaterThan(1024));
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.all_sequences.sai")
-            .exists(),
-        true);
-
-    await mipgenService.deleteByproducts("mipsTest");
-
-    expect(
-        await File(
-            "${mipgenService.projectFolder}/mipsTest/mipsTest.all_sequences.sai")
-            .exists(),
-        false);
-
-    mipgenService.deleteProject("mipsTest");
-  },
-    tags: ['unit'],
-  );
+    test(
+      'calling `createBedFile` without genes should throw an ArgumentError',
+      () async {
+        final project = await projectService.createProject(
+            session, "test123", ProjectOptions(id: 1));
+        expect(project.name, "test123");
+        expect(
+            () => mipgenService.createBedFile(session, project.id!),
+            throwsA(predicate((e) =>
+                e is ArgumentError &&
+                e.message == 'No genes found in project')));
+      },
+      tags: ['unit'],
+    );
+  });
 }

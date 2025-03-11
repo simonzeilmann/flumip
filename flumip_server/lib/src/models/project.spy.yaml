@@ -1,0 +1,21 @@
+class: Project
+table: project
+fields:
+  name: String
+  folderName: String?, scope=serverOnly
+  description: String, default=''
+  tags: List<String>?
+  created: DateTime, default=now
+  owner: int?
+  department: int?
+  genes: List<String>?
+  bedFileCreated: bool, default=false
+  active: bool, default=false
+  pid: int?, scope=serverOnly
+  size: int, default=0
+  emailNotification: bool, default=false
+  options: int
+  started: DateTime?
+  completedIn: Duration?
+  error: String, default=''
+  cleanup: bool, default=false

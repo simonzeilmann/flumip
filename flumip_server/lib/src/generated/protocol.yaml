@@ -1,11 +1,25 @@
+file:
+  - deleteByProducts:
+  - showSnpMipsResult:
+  - showMipsResult:
+  - showMipsProgress:
 mipgen:
+  - createBedFile:
+  - generateMips:
+options:
+  - createProjectOptions:
+  - insertProjectOptions:
+  - getProjectOptions:
+  - updateProjectOptions:
+  - deleteProjectOptions:
+project:
   - createProject:
   - deleteProject:
   - getProjects:
-  - createGeneFile:
-  - getGenes:
-  - createBedFile:
-  - checkBedFileExists:
-  - generateMips:
-  - showMipsProgress:
-  - showMipsResult:
+  - getProject:
+  - addGeneToProject:
+  - removeGeneFromProject:
+  - addGenesToProject:
+settings:
+  - getSettings:
+  - updateSettings:

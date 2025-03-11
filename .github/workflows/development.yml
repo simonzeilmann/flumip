@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -21,6 +21,7 @@ jobs:
 
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
+        id: flutter-action
         with:
           channel: 'stable'
 
@@ -29,9 +30,19 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
+      - name: Install serverpod
+        run: |
+          dart pub global activate serverpod_cli
+          serverpod version
+
+      - name: Generate serverpod files
+        run: |
+          cd flumip_server
+          serverpod generate
+
       - name: Analyze code
         run: |
-          cd flumip_server && flutter analyze
+          cd flumip_server && dart analyze
           cd ../flumip_flutter && flutter analyze
 
       - name: Build
@@ -45,7 +56,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -53,14 +64,26 @@ jobs:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
-      - name: Set Up Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        id: flutter-action
         with:
-          sdk: ${{ matrix.sdk }}
+          channel: 'stable'
 
       - name: Get dependencies
         run: |
-          cd flumip_server && dart pub get
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
+      - name: Install serverpod
+        run: |
+          dart pub global activate serverpod_cli
+          serverpod version
+
+      - name: Generate serverpod files
+        run: |
+          cd flumip_server
+          serverpod generate
 
       - name: Inject passwords.yaml
         run: |

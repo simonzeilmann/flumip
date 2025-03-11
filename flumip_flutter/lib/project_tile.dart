@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 
+//ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
-  final String projectName;
+  Project project;
   final VoidCallback onDelete;
   final Future<void> Function(List<String>) onCreateGeneFile;
 
-  const ProjectTile({
+  ProjectTile({
     super.key,
-    required this.projectName,
+    required this.project,
     required this.onDelete,
     required this.onCreateGeneFile,
   });
@@ -23,16 +24,16 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   final TextEditingController _genesController = TextEditingController();
-  List<String>? _genes;
   String? _errorMessage;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _checkBedFileExists();
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _checkBedFileExists();
+    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (_isExpanded) {
+        _reloadProject();
+      }
     });
   }
 
@@ -47,51 +48,64 @@ class _ProjectTileState extends State<ProjectTile> {
       _isExpanded = !_isExpanded;
     });
     if (_isExpanded) {
-      await _fetchGenes();
+      await _reloadProject();
     }
   }
 
-  Future<void> _fetchGenes() async {
+  Future<void> _reloadProject() async {
     try {
-      final genes = await client.mipgen.getGenes(widget.projectName);
+      final project = await client.project.getProject(widget.project.id!);
       setState(() {
-        if (genes.isEmpty) {
-          _errorMessage = 'No genes found for this project.';
-          _genes = null;
-        } else {
-          _genes = genes;
-          _errorMessage = null;
-        }
-      });
-    } on Exception {
-      setState(() {
-        _errorMessage = 'No genes file exists for this project.';
-        _genes = null;
+        widget.project = project;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load genes: $e';
+        _errorMessage = 'Failed to reload project: $e';
       });
     }
   }
 
-  Future<void> _createGeneFile() async {
-    if (_genesController.text.isEmpty) return;
-    List<String> genes = _genesController.text.split(',');
-    await widget.onCreateGeneFile(genes);
-    _genesController.clear();
-    await _fetchGenes();
+  Future<void> _addGene(String gene) async {
+    try {
+      await client.project.addGeneToProject(widget.project.id!, gene);
+      await _reloadProject();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add gene: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _removeGene(String gene) async {
+    try {
+      await client.project.removeGeneFromProject(widget.project.id!, gene);
+      await _reloadProject();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove gene: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _createBedFile() async {
     try {
-      await client.mipgen.createBedFile(widget.projectName);
+      await client.mipgen.createBedFile(widget.project.id!);
+      await _reloadProject();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('BED file created successfully')),
         );
       }
-      await _checkBedFileExists();
+    } on ArgumentError {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ERROR: The supplied genes cannot be found')),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,27 +115,13 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> _checkBedFileExists() async {
-    /*
-    try {
-      bool exists = await client.mipgen.checkBedFileExists(widget.projectName);
-      setState(() {
-        //_bedFileExists = exists;
-      });
-    } catch (e) {
-      setState(() {
-        //_bedFileExists = false;
-      });
-    }
-     */
-  }
-
   Future<void> _generateMips() async {
     try {
-      await client.mipgen.generateMips(widget.projectName, _deleteExcessFiles);
+      await client.mipgen.generateMips(widget.project.id!, _deleteExcessFiles);
+      _reloadProject();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('MIPs generated successfully')),
+          SnackBar(content: Text('MIPs generation started successfully')),
         );
       }
     } catch (e) {
@@ -135,7 +135,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _showMipsResult() async {
     try {
-      final result = await client.mipgen.showMipsResult(widget.projectName);
+      final result = await client.file.showMipsResult(widget.project.id!);
       if (mounted) {
         showDialog(
           context: context,
@@ -146,7 +146,15 @@ class _ProjectTileState extends State<ProjectTile> {
                 child: ListBody(
                   children: result.isEmpty
                       ? [Text('No MIPs result file found.')]
-                      : result.map((line) => Text(line)).toList(),
+                      : [
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
                 ),
               ),
               actions: [
@@ -170,9 +178,54 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
+  Future<void> _showSnpMipsResult() async {
+    try {
+      final result = await client.file.showSnpMipsResult(widget.project.id!);
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('SNP MIPs Result'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: result.isEmpty
+                      ? [Text('No SNP MIPs result file found.')]
+                      : [
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _showProgress() async {
     try {
-      final result = await client.mipgen.showMipsProgress(widget.projectName);
+      final result = await client.file.showMipsProgress(widget.project.id!);
       if (mounted) {
         showDialog(
           context: context,
@@ -250,7 +303,8 @@ class _ProjectTileState extends State<ProjectTile> {
                   _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down),
               onPressed: _toggleExpand,
             ),
-            title: Text(widget.projectName),
+            title: Text(widget.project.name),
+            subtitle: Text(widget.project.description),
             trailing: IconButton(
               icon: Icon(Icons.delete),
               onPressed: _showDeleteConfirmationDialog,
@@ -259,84 +313,146 @@ class _ProjectTileState extends State<ProjectTile> {
           if (_isExpanded)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
+              child: Row(
                 children: [
-                  if (_errorMessage != null)
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  if (_genes != null)
-                    Column(
-                      children: _genes!.map((gene) => Text(gene)).toList(),
-                    ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _genesController,
-                          decoration: InputDecoration(
-                            labelText: 'Genes (comma separated)',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            contentPadding: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 15),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_errorMessage != null)
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(color: Colors.red),
                           ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: _createGeneFile,
-                      ),
-                    ],
+                        if (widget.project.genes != null &&
+                            widget.project.genes!.isNotEmpty)
+                          Column(
+                            children: widget.project.genes!
+                                .map((gene) => Row(
+                                      children: [
+                                        Center(
+                                          child: Text(
+                                            gene,
+                                            style: TextStyle(
+                                                fontStyle: FontStyle.italic),
+                                          ),
+                                        ),
+                                        if (widget.project.bedFileCreated ==
+                                            false)
+                                          IconButton(
+                                            icon: Icon(
+                                                Icons.remove_circle_outline),
+                                            onPressed: () => _removeGene(gene),
+                                          ),
+                                      ],
+                                    ))
+                                .toList(),
+                          ),
+                        if (widget.project.bedFileCreated == false)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _genesController,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    labelText: 'add gene',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.grey[200],
+                                    contentPadding: EdgeInsets.symmetric(
+                                        vertical: 10, horizontal: 15),
+                                  ),
+                                  keyboardType: TextInputType.text,
+                                  onSubmitted: (value) {
+                                    _addGene(value);
+                                    _genesController.clear();
+                                  },
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                  _addGene(_genesController.text);
+                                  _genesController.clear();
+                                },
+                              ),
+                            ],
+                          ),
+                        SizedBox(height: 5),
+                        if (widget.project.genes?.isNotEmpty == true &&
+                            widget.project.bedFileCreated == false)
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: _createBedFile,
+                              child: Text('Create BED File'),
+                            ),
+                          ),
+                        SizedBox(height: 5),
+                        if (widget.project.bedFileCreated == true &&
+                            widget.project.active == false &&
+                            widget.project.completedIn == null)
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Checkbox(
+                                  value: _deleteExcessFiles,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      _deleteExcessFiles = value ?? false;
+                                    });
+                                  },
+                                ),
+                                Text('Delete excess files'),
+                                SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: _generateMips,
+                                  child: Text('Generate MIPs'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(height: 5),
+                        if (widget.project.active == true &&
+                            widget.project.completedIn == null)
+                          Center(
+                            child: Column(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _showProgress,
+                                  child: Text('Show Progress'),
+                                ),
+                                SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                        if (widget.project.active == false &&
+                            widget.project.completedIn != null)
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                    'Completed in: ${widget.project.completedIn}'),
+                                ElevatedButton(
+                                  onPressed: _showMipsResult,
+                                  child: Text('Show MIPs Result'),
+                                ),
+                                SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: _showSnpMipsResult,
+                                  child: Text('Show SNP MIPs Result'),
+                                ),
+                                SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: _createBedFile,
-                    child: Text('Create BED File'),
-                  ),
-                  SizedBox(height: 5),
-                  //if (_bedFileExists)
-                  SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Checkbox(
-                        value: _deleteExcessFiles,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _deleteExcessFiles = value ?? false;
-                          });
-                        },
-                      ),
-                      Text('Delete excess files'),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _generateMips,
-                        child: Text('Generate MIPs'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 5),
-                      ElevatedButton(
-                        onPressed: _showProgress,
-                        child: Text('Show Progress'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: _showMipsResult,
-                        child: Text('Show MIPs Result'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 5),
+                  SizedBox(width: 16), // Empty space on the right side
                 ],
               ),
             ),
