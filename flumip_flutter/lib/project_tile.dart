@@ -570,7 +570,7 @@ class _ProjectTileState extends State<ProjectTile> {
                 });
               },
             ),
-            Text('Auto delete excess files'),
+            Text('Auto delete intermediate files'),
           ],
         ),
         SizedBox(width: 10),
