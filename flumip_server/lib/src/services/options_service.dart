@@ -6,14 +6,12 @@ import 'package:serverpod/server.dart';
 class OptionsService {
   OptionsService();
 
-  /// Creates a new project options entry in the database.
+  /// Creates a new project options entry.
   ///
   /// \param session The current session.
   /// \returns The created [ProjectOptions] object.
   Future<ProjectOptions> createProjectOptions(Session session) async {
-    var projectOptionsRow = ProjectOptions();
-    var projectOptions =
-        await ProjectOptions.db.insertRow(session, projectOptionsRow);
+    var projectOptions = ProjectOptions();
 
     return projectOptions;
   }

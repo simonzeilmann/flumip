@@ -58,7 +58,7 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       var projectUpdate = await client.project.getProject(widget.project.id!);
       final options =
-          await client.options.getProjectOptions(widget.project.id!);
+          await client.options.getProjectOptions(widget.project.options);
       setState(() {
         widget.project = projectUpdate;
         projectOptions = options;

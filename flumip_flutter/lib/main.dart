@@ -2,6 +2,7 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'project_tile.dart';
+import 'create_project_widget.dart';
 
 var client = Client('http://$localhost:8080/')
   ..connectivityMonitor = FlutterConnectivityMonitor();
@@ -37,7 +38,7 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   List<Project>? _projects;
   String? _errorMessage;
-  final TextEditingController _projectController = TextEditingController();
+  bool _showCreateProject = false;
 
   @override
   void initState() {
@@ -59,20 +60,6 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _createProject() async {
-    if (_projectController.text.isEmpty) return;
-    try {
-      var options = await client.options.createProjectOptions();
-      await client.project.createProject(_projectController.text, options);
-      _projectController.clear();
-      _fetchProjects();
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
-  }
-
   void _deleteProject(int projectID) async {
     try {
       await client.project.deleteProject(projectID);
@@ -82,6 +69,21 @@ class MyHomePageState extends State<MyHomePage> {
         _errorMessage = '$e';
       });
     }
+  }
+
+  void _toggleCreateProject() {
+    setState(() {
+      _showCreateProject = !_showCreateProject;
+    });
+  }
+
+  void _onProjectCreated() {
+    _fetchProjects();
+    _toggleCreateProject();
+  }
+
+  void _onAbort() {
+    _toggleCreateProject();
   }
 
   @override
@@ -94,29 +96,26 @@ class MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _toggleCreateProject,
+                  child: Text(_showCreateProject ? 'Cancel' : 'Create Project'),
+                ),
+              ],
+            ),
+            if (_showCreateProject)
+              CreateProjectWidget(
+                onProjectCreated: _onProjectCreated,
+                onAbort: _onAbort,
+              ),
+            SizedBox(height: 30),
             if (_errorMessage != null)
               Container(
                 color: Colors.red[300],
                 padding: const EdgeInsets.all(8),
                 child: Text(_errorMessage!),
               ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _projectController,
-                    decoration: InputDecoration(
-                      labelText: 'New Project',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: _createProject,
-                ),
-              ],
-            ),
-            SizedBox(height: 30),
             if (_projects != null)
               Expanded(
                 child: ListView.builder(
