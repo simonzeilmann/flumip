@@ -51,7 +51,7 @@ class MyHomePageState extends State<MyHomePage> {
       final projects = await client.project.getProjects();
       setState(() {
         _errorMessage = null;
-        _projects = projects;
+        _projects = projects..sort((a, b) => b.created.compareTo(a.created));
       });
     } catch (e) {
       setState(() {
