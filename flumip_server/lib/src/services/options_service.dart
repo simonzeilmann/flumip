@@ -6,6 +6,7 @@ import 'package:serverpod/server.dart';
 class OptionsService {
   OptionsService();
 
+
   /// Creates a new project options entry.
   ///
   /// \param session The current session.
