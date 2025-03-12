@@ -245,7 +245,7 @@ class MipgenService {
 
     //TODO: better errors handling
     var progress = await fileService.showMipsProgress(session, project.id!);
-    if(progress.isEmpty) {
+    if (progress.isEmpty) {
       session.log("MIP generation failed for project ID: ${project.id}",
           level: LogLevel.warning);
       project.error = "MIP generation failed";

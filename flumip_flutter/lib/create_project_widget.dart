@@ -197,7 +197,8 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
         TextField(
           controller: _descriptionController,
-          decoration: InputDecoration(labelText: 'Project Description (optional)'),
+          decoration:
+              InputDecoration(labelText: 'Project Description (optional)'),
         ),
         SizedBox(height: 5),
         Row(
