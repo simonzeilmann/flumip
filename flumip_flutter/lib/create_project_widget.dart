@@ -153,6 +153,8 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
               int.tryParse(_startingMipOverlapController.text) ?? 0,
           checkCopyNumber: _checkCopyNumber,
           sealBothStrands: _sealBothStrands,
+          halfSealBothStrands: _halfSealBothStrands,
+          doubleTileStrandUnaware: _doubleTileStrandUnaware,
           doubleTileStrandsSeparately: _doubleTileStrandsSeparately,
           scoreMethod: _scoreMethod,
           logisticOptimalScore:
@@ -255,19 +257,19 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       children: [
         TextField(
           controller: _minCaptureSizeController,
-          decoration: InputDecoration(labelText: 'Min Capture Size'),
+          decoration: InputDecoration(labelText: 'Min Capture Size [>120]'),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
         TextField(
           controller: _maxCaptureSizeController,
-          decoration: InputDecoration(labelText: 'Max Capture Size'),
+          decoration: InputDecoration(labelText: 'Max Capture Size [<250]'),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
         TextField(
           controller: _armLengthsController,
-          decoration: InputDecoration(labelText: 'Arm Lengths (optional)'),
+          decoration: InputDecoration(labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
           keyboardType: TextInputType.text,
           inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
