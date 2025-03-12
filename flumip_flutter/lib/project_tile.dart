@@ -527,6 +527,7 @@ class _ProjectTileState extends State<ProjectTile> {
             },
           ),
         ),
+        SizedBox(width: 15),
         IconButton(
           icon: Icon(Icons.add),
           onPressed: () {
@@ -534,6 +535,7 @@ class _ProjectTileState extends State<ProjectTile> {
             _genesController.clear();
           },
         ),
+        SizedBox(width: 20),
       ],
     );
   }
