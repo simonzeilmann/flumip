@@ -240,9 +240,6 @@ class MipgenService {
       await fileService.deleteByproducts(session, project.id!);
     }
 
-    project.size = await fileService
-        .getDirSize("${settings.projectDir}/${project.folderName!}");
-
     //TODO: better errors handling
     var progress = await fileService.showMipsProgress(session, project.id!);
     if (progress.isEmpty) {
@@ -250,12 +247,32 @@ class MipgenService {
           level: LogLevel.warning);
       project.error = "MIP generation failed";
     }
-
+    else {
+      project.size = await fileService
+          .getDirSize("${settings.projectDir}/${project.folderName!}");
+      project.pid = 0;
+      project.completedIn = DateTime.now().difference(project.started!);
+      await _generateUCSCTrack(session, project);
+      session.log("MIP generation finished for project ID: ${project.id}",
+          level: LogLevel.info);
+    }
     project.active = false;
-    project.pid = 0;
-    project.completedIn = DateTime.now().difference(project.started!);
     await projectService.updateProject(session, project);
-    session.log("MIP generation finished for project ID: ${project.id}",
+  }
+
+  Future<void> _generateUCSCTrack(Session session, Project project) async {
+    var settings = await settingsService.getSettings(session);
+    var projectDir = "${settings.projectDir}/${project.folderName}";
+
+    List<String> arg = [];
+    arg.add(settings.ucscTrackGenerator);
+    arg.add("$projectDir/${project.name}.picked_mips.txt");
+    arg.add("${project.name}_ucsc_track");
+
+    session.log("Starting UCSC track generation process with arguments: $arg",
         level: LogLevel.info);
+    await Process.start("python", arg,
+        workingDirectory: projectDir,
+        runInShell: true);
   }
 }
