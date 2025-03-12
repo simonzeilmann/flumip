@@ -434,7 +434,7 @@ class _ProjectTileState extends State<ProjectTile> {
         SizedBox(height: 5),
         Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
         Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths!.isNotEmpty)
+        if (projectOptions.armLengths != null && projectOptions.armLengths!.isNotEmpty)
           Text('Arm Lengths: ${projectOptions.armLengths}'),
         Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
         Text('Ext Min Length: ${projectOptions.extMinLength}'),
