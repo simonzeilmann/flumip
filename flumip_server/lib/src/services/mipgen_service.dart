@@ -109,7 +109,7 @@ class MipgenService {
     arg.add(options.minCaptureSize.toString());
     arg.add("-max_capture_size");
     arg.add(options.maxCaptureSize.toString());
-    if (options.armLengths != null) {
+    if (options.armLengths!.isNotEmpty) {
       arg.add("-arm_lengths");
       arg.add(options.armLengths!);
     }
@@ -129,7 +129,7 @@ class MipgenService {
     arg.add(options.maxArmCopyProduct.toString());
     arg.add("-trf");
     if (options.trf == true) {
-      arg.add("on");
+      arg.add("trf");
     } else {
       arg.add("off");
     }
@@ -243,7 +243,13 @@ class MipgenService {
     project.size = await fileService
         .getDirSize("${settings.projectDir}/${project.folderName!}");
 
-    //TODO: check for errors
+    //TODO: better errors handling
+    var progress = await fileService.showMipsProgress(session, project.id!);
+    if (progress.isEmpty) {
+      session.log("MIP generation failed for project ID: ${project.id}",
+          level: LogLevel.warning);
+      project.error = "MIP generation failed";
+    }
 
     project.active = false;
     project.pid = 0;

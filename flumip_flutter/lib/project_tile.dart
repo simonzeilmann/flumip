@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
+import 'package:flutter/services.dart';
 
 //ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
@@ -23,6 +24,7 @@ class ProjectTile extends StatefulWidget {
 class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
+  late ProjectOptions projectOptions = ProjectOptions();
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -54,9 +56,12 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _reloadProject() async {
     try {
-      final project = await client.project.getProject(widget.project.id!);
+      var projectUpdate = await client.project.getProject(widget.project.id!);
+      final options =
+          await client.options.getProjectOptions(widget.project.options);
       setState(() {
-        widget.project = project;
+        widget.project = projectUpdate;
+        projectOptions = options;
       });
     } catch (e) {
       setState(() {
@@ -158,6 +163,20 @@ class _ProjectTileState extends State<ProjectTile> {
                 ),
               ),
               actions: [
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
                 TextButton(
                   child: Text('Close'),
                   onPressed: () {
@@ -203,6 +222,20 @@ class _ProjectTileState extends State<ProjectTile> {
                 ),
               ),
               actions: [
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Snp MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
                 TextButton(
                   child: Text('Close'),
                   onPressed: () {
@@ -287,6 +320,14 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  String _printDuration(Duration duration) {
+    String negativeSign = duration.isNegative ? '-' : '';
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).abs());
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
+    return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -326,138 +367,243 @@ class _ProjectTileState extends State<ProjectTile> {
                           ),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
-                          Column(
-                            children: widget.project.genes!
-                                .map((gene) => Row(
-                                      children: [
-                                        Center(
-                                          child: Text(
-                                            gene,
-                                            style: TextStyle(
-                                                fontStyle: FontStyle.italic),
-                                          ),
-                                        ),
-                                        if (widget.project.bedFileCreated ==
-                                            false)
-                                          IconButton(
-                                            icon: Icon(
-                                                Icons.remove_circle_outline),
-                                            onPressed: () => _removeGene(gene),
-                                          ),
-                                      ],
-                                    ))
-                                .toList(),
-                          ),
+                          buildGeneColumn(),
                         if (widget.project.bedFileCreated == false)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _genesController,
-                                  autofocus: true,
-                                  decoration: InputDecoration(
-                                    labelText: 'add gene',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.grey[200],
-                                    contentPadding: EdgeInsets.symmetric(
-                                        vertical: 10, horizontal: 15),
-                                  ),
-                                  keyboardType: TextInputType.text,
-                                  onSubmitted: (value) {
-                                    _addGene(value);
-                                    _genesController.clear();
-                                  },
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.add),
-                                onPressed: () {
-                                  _addGene(_genesController.text);
-                                  _genesController.clear();
-                                },
-                              ),
-                            ],
-                          ),
-                        SizedBox(height: 5),
-                        if (widget.project.genes?.isNotEmpty == true &&
-                            widget.project.bedFileCreated == false)
-                          Center(
-                            child: ElevatedButton(
-                              onPressed: _createBedFile,
-                              child: Text('Create BED File'),
-                            ),
-                          ),
-                        SizedBox(height: 5),
-                        if (widget.project.bedFileCreated == true &&
-                            widget.project.active == false &&
-                            widget.project.completedIn == null)
-                          Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Checkbox(
-                                  value: _deleteExcessFiles,
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      _deleteExcessFiles = value ?? false;
-                                    });
-                                  },
-                                ),
-                                Text('Delete excess files'),
-                                SizedBox(width: 10),
-                                ElevatedButton(
-                                  onPressed: _generateMips,
-                                  child: Text('Generate MIPs'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        SizedBox(height: 5),
-                        if (widget.project.active == true &&
-                            widget.project.completedIn == null)
-                          Center(
-                            child: Column(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _showProgress,
-                                  child: Text('Show Progress'),
-                                ),
-                                SizedBox(height: 10),
-                              ],
-                            ),
-                          ),
-                        if (widget.project.active == false &&
-                            widget.project.completedIn != null)
-                          Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                    'Completed in: ${widget.project.completedIn}'),
-                                ElevatedButton(
-                                  onPressed: _showMipsResult,
-                                  child: Text('Show MIPs Result'),
-                                ),
-                                SizedBox(height: 10),
-                                ElevatedButton(
-                                  onPressed: _showSnpMipsResult,
-                                  child: Text('Show SNP MIPs Result'),
-                                ),
-                                SizedBox(height: 10),
-                              ],
-                            ),
-                          ),
+                          buildAddGeneRow(),
                       ],
                     ),
                   ),
-                  SizedBox(width: 16), // Empty space on the right side
+                  Expanded(
+                      child: Row(
+                    children: [
+                      Expanded(
+                        child: buildProjectOptionsColumn(),
+                      ),
+                    ],
+                  )),
+                  SizedBox(height: 5),
+                  if (widget.project.genes?.isNotEmpty == true &&
+                      widget.project.bedFileCreated == false)
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: _createBedFile,
+                        child: Text('Create BED File'),
+                      ),
+                    ),
+                  SizedBox(height: 5),
+                  if (widget.project.bedFileCreated == true &&
+                      widget.project.active == false &&
+                      widget.project.completedIn == null)
+                    Center(
+                      child: buildMipgenStartColumn(),
+                    ),
+                  SizedBox(height: 5),
+                  if (widget.project.active == true &&
+                      widget.project.completedIn == null)
+                    Center(
+                      child: buildMipgenProgressColumn(),
+                    ),
+                  if (widget.project.active == false &&
+                      widget.project.completedIn != null &&
+                      widget.project.error.isEmpty)
+                    Center(
+                      child: buildMipgenResultColumn(),
+                    ),
+                  if (widget.project.active == false &&
+                      widget.project.completedIn != null &&
+                      widget.project.error.isNotEmpty)
+                    Center(
+                      child: Text(
+                        'Error: ${widget.project.error}',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    )
                 ],
               ),
             ),
         ],
       ),
+    );
+  }
+
+  Column buildProjectOptionsColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Options:', style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
+        Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
+        if (projectOptions.armLengths != null && projectOptions.armLengths!.isNotEmpty)
+          Text('Arm Lengths: ${projectOptions.armLengths}'),
+        Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
+        Text('Ext Min Length: ${projectOptions.extMinLength}'),
+        Text('Ext Max Length: ${projectOptions.extMaxLength}'),
+        Text('Lig Min Length: ${projectOptions.ligMinLength}'),
+        Text('Tag Sizes: ${projectOptions.tagSizes}'),
+        Text('Masked Arm Threshold: ${projectOptions.maskedArmThreshold}'),
+        Text('Target Arm Copy: ${projectOptions.targetArmCopy}'),
+        Text('Max Arm Copy Product: ${projectOptions.maxArmCopyProduct}'),
+        if (projectOptions.trf) Text('TRF: on') else Text('TRF: off'),
+        if (projectOptions.genomeDir != null)
+          Text('Genome Dir: ${projectOptions.genomeDir}'),
+        Text('Feature Flank: ${projectOptions.featureFlank}'),
+        Text('Capture Increment: ${projectOptions.captureIncrement}'),
+        if (projectOptions.logisticHeuristic)
+          Text('Logistic Heuristic: on')
+        else
+          Text('Logistic Heuristic: off'),
+        Text('Max Mip Overlap: ${projectOptions.maxMipOverlap}'),
+        Text('Starting Mip Overlap: ${projectOptions.startingMipOverlap}'),
+        if (projectOptions.checkCopyNumber)
+          Text('Check Copy Number: on')
+        else
+          Text('Check Copy Number: off'),
+        if (projectOptions.sealBothStrands)
+          Text('Seal Both Strands: on')
+        else
+          Text('Seal Both Strands: off'),
+        if (projectOptions.halfSealBothStrands)
+          Text('Half Seal Both Strands: on')
+        else
+          Text('Half Seal Both Strands: off'),
+        if (projectOptions.doubleTileStrandUnaware)
+          Text('Double Tile Strand Unaware: on')
+        else
+          Text('Double Tile Strand Unaware: off'),
+        if (projectOptions.doubleTileStrandsSeparately)
+          Text('Double Tile Strands Separately: on')
+        else
+          Text('Double Tile Strands Separately: off'),
+        Text('Score Method: ${projectOptions.scoreMethod}'),
+        Text('Logistic Optimal Score: ${projectOptions.logisticOptimalScore}'),
+        Text('SVR Optimal Score: ${projectOptions.svrOptimalScore}'),
+        Text(
+            'Logistic Priority Score: ${projectOptions.logisticPriorityScore}'),
+        Text('SVR Priority Score: ${projectOptions.svrPriorityScore}'),
+        SizedBox(height: 5),
+      ],
+    );
+  }
+
+  Column buildGeneColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
+        ...widget.project.genes!.map(
+          (gene) => Row(
+            children: [
+              Center(
+                child: Text(
+                  gene,
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+              if (widget.project.bedFileCreated == false)
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline),
+                  onPressed: () => _removeGene(gene),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row buildAddGeneRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _genesController,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'add gene',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.grey[200],
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            ),
+            keyboardType: TextInputType.text,
+            onSubmitted: (value) {
+              _addGene(value);
+              _genesController.clear();
+            },
+          ),
+        ),
+        SizedBox(width: 15),
+        IconButton(
+          icon: Icon(Icons.add),
+          onPressed: () {
+            _addGene(_genesController.text);
+            _genesController.clear();
+          },
+        ),
+        SizedBox(width: 20),
+      ],
+    );
+  }
+
+  Column buildMipgenStartColumn() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            Checkbox(
+              value: _deleteExcessFiles,
+              onChanged: (bool? value) {
+                setState(() {
+                  _deleteExcessFiles = value ?? false;
+                });
+              },
+            ),
+            Text('Auto delete excess files'),
+          ],
+        ),
+        SizedBox(width: 10),
+        ElevatedButton(
+          onPressed: _generateMips,
+          child: Text('Generate MIPs'),
+        ),
+      ],
+    );
+  }
+
+  Column buildMipgenProgressColumn() {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: _showProgress,
+          child: Text('Show Progress'),
+        ),
+        SizedBox(height: 10),
+      ],
+    );
+  }
+
+  Column buildMipgenResultColumn() {
+    return Column(
+      children: [
+        Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
+        SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: _showMipsResult,
+          child: Text('Show MIPs Result'),
+        ),
+        SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: _showSnpMipsResult,
+          child: Text('Show SNP MIPs Result'),
+        ),
+        SizedBox(height: 10),
+      ],
     );
   }
 }

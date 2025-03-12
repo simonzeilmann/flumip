@@ -73,7 +73,7 @@ sudo mkdir -p /opt/mipgen
 sudo chown $USER:$USER /opt/mipgen
 cd /opt/mipgen
 if [ ! -d "MIPGEN" ]; then
-  git clone https://github.com/shendurelab/MIPGEN.git
+  git clone https://github.com/simonzeilmann/MIPGEN.git
 fi
 cd MIPGEN
 
