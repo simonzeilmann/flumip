@@ -129,7 +129,7 @@ class MipgenService {
     arg.add(options.maxArmCopyProduct.toString());
     arg.add("-trf");
     if (options.trf == true) {
-      arg.add("on");
+      arg.add("trf");
     } else {
       arg.add("off");
     }
