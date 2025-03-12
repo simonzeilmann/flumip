@@ -96,14 +96,15 @@ class MyHomePageState extends State<MyHomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _toggleCreateProject,
-                  child: Text(_showCreateProject ? 'Cancel' : 'Create Project'),
-                ),
-              ],
-            ),
+            if (!_showCreateProject)
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _toggleCreateProject,
+                    child: Text('Create Project'),
+                  ),
+                ],
+              ),
             if (_showCreateProject)
               CreateProjectWidget(
                 onProjectCreated: _onProjectCreated,
