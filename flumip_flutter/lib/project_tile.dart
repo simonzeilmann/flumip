@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
@@ -328,6 +329,10 @@ class _ProjectTileState extends State<ProjectTile> {
     return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
+  double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
+      (value * pow(10, fractionalDigits)).truncate() /
+      pow(10, fractionalDigits);
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -434,7 +439,8 @@ class _ProjectTileState extends State<ProjectTile> {
         SizedBox(height: 5),
         Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
         Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths != null && projectOptions.armLengths!.isNotEmpty)
+        if (projectOptions.armLengths != null &&
+            projectOptions.armLengths!.isNotEmpty)
           Text('Arm Lengths: ${projectOptions.armLengths}'),
         Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
         Text('Ext Min Length: ${projectOptions.extMinLength}'),
@@ -592,6 +598,8 @@ class _ProjectTileState extends State<ProjectTile> {
     return Column(
       children: [
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
+        SizedBox(height: 10),
+        Text('Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
         SizedBox(height: 10),
         ElevatedButton(
           onPressed: _showMipsResult,
