@@ -260,6 +260,11 @@ class MipgenService {
     await projectService.updateProject(session, project);
   }
 
+  /// Generates a UCSC track for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param project The project for which to generate the UCSC track.
+  /// \returns A future that completes when the UCSC track generation process is finished.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
     var settings = await settingsService.getSettings(session);
     var projectDir = "${settings.projectDir}/${project.folderName}";
