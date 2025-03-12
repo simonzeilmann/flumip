@@ -404,10 +404,20 @@ class _ProjectTileState extends State<ProjectTile> {
                       child: buildMipgenProgressColumn(),
                     ),
                   if (widget.project.active == false &&
-                      widget.project.completedIn != null)
+                      widget.project.completedIn != null &&
+                      widget.project.error.isEmpty)
                     Center(
                       child: buildMipgenResultColumn(),
                     ),
+                  if (widget.project.active == false &&
+                      widget.project.completedIn != null &&
+                      widget.project.error.isNotEmpty)
+                    Center(
+                      child: Text(
+                        'Error: ${widget.project.error}',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    )
                 ],
               ),
             ),
@@ -424,7 +434,7 @@ class _ProjectTileState extends State<ProjectTile> {
         SizedBox(height: 5),
         Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
         Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths != null)
+        if (projectOptions.armLengths!.isNotEmpty)
           Text('Arm Lengths: ${projectOptions.armLengths}'),
         Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
         Text('Ext Min Length: ${projectOptions.extMinLength}'),
