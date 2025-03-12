@@ -77,8 +77,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
             _projectOptions?.minCaptureSize.toString() ?? '';
         _maxCaptureSizeController.text =
             _projectOptions?.maxCaptureSize.toString() ?? '';
-        _armLengthsController.text =
-            _projectOptions?.armLengths.toString() ?? '';
+        _armLengthsController.text = '';
         _armLengthSumsController.text =
             _projectOptions?.armLengthSums.toString() ?? '';
         _extMinLengthController.text =
@@ -194,7 +193,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           ),
         TextField(
           controller: _nameController,
-          decoration: InputDecoration(labelText: 'Project Name'),
+          decoration: InputDecoration(labelText: 'Project Name (required)'),
         ),
         TextField(
           controller: _descriptionController,
