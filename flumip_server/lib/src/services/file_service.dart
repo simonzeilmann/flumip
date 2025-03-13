@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -246,7 +244,7 @@ class FileService {
     return List.empty();
   }
 
-  Future<ByteData> returnFile(Session session, int projectID, String fileName) async {
+  Future<Stream<List<int>>> returnFile(Session session, int projectID, String fileName) async {
     session.log("Returning file $fileName for project ID: $projectID",
         level: LogLevel.info);
     List<FileSystemEntity> dir = await _getFileList(session, projectID);
@@ -254,16 +252,15 @@ class FileService {
     for (var d in dir) {
       if (d.path.endsWith(fileName)) {
         File f = File(d.path);
-        var bytes = await f.readAsBytes();
         session.log("File $fileName found for project ID: $projectID",
             level: LogLevel.info);
-        return ByteData.view(Uint8List.fromList(bytes).buffer);
+        return f.openRead();
       }
     }
 
     session.log("No file $fileName found for project ID: $projectID",
         level: LogLevel.warning);
-    return ByteData.view(Uint8List(0).buffer);
+    return Stream.empty();
   }
 
   /// Checks if the project directory exists for the specified project.

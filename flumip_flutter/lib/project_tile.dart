@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
@@ -323,25 +323,26 @@ class _ProjectTileState extends State<ProjectTile> {
                 if (result.isNotEmpty)
                   TextButton(
                     onPressed: () async {
-                      html.window.open(
+                      web.window.window.open(
                           'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:1-1000000&hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}',
                           'new tab');
                     },
                     child: Text('Open in UCSC Track browser'),
                   ),
-                TextButton(
-                  onPressed: () async {
-                    await Clipboard.setData(
-                            ClipboardData(text: result.join('\n')))
-                        .then((_) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text("Snp MIPs copied to clipboard")));
-                      }
-                    });
-                  },
-                  child: Text('Copy to clipboard'),
-                ),
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Snp MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
                 TextButton(
                   child: Text('Close'),
                   onPressed: () {
