@@ -128,7 +128,12 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
   }
 
   void _createProject() async {
-    if (_nameController.text.isEmpty) return;
+    if (_nameController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Project name is required';
+      });
+      return;
+    }
     try {
       var options = ProjectOptions(
           minCaptureSize: int.tryParse(_minCaptureSizeController.text) ?? 162,
@@ -228,12 +233,13 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
                   Expanded(child: buildSecondOptionsColumn()),
                   SizedBox(width: 35),
                   Expanded(child: buildThirdOptionsColumn()),
-                  SizedBox(height: 25),
+                  SizedBox(height: 35),
                 ],
               ))
 
           // Add more fields as needed
         ],
+        SizedBox(height: 35),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -269,7 +275,8 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
         TextField(
           controller: _armLengthsController,
-          decoration: InputDecoration(labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
+          decoration: InputDecoration(
+              labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
           keyboardType: TextInputType.text,
           inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
@@ -303,13 +310,6 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           keyboardType: TextInputType.text,
           inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
-      ],
-    );
-  }
-
-  Column buildSecondOptionsColumn() {
-    return Column(
-      children: [
         TextField(
           controller: _maskedArmThresholdController,
           decoration: InputDecoration(labelText: 'Masked Arm Threshold'),
@@ -318,6 +318,13 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
             FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
           ],
         ),
+      ],
+    );
+  }
+
+  Column buildSecondOptionsColumn() {
+    return Column(
+      children: [
         TextField(
           controller: _targetArmCopyController,
           decoration: InputDecoration(labelText: 'Target Arm Copy'),
@@ -382,13 +389,6 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
-      ],
-    );
-  }
-
-  Column buildThirdOptionsColumn() {
-    return Column(
-      children: [
         Row(
           children: [
             Text('Check Copy Number'),
@@ -403,6 +403,13 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Column buildThirdOptionsColumn() {
+    return Column(
+      children: [
         Row(
           children: [
             Text('Seal Both Strands'),
