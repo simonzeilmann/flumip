@@ -129,6 +129,24 @@ class Endpoints extends _i1.EndpointDispatch {
             params['projectID'],
           ),
         ),
+        'showUSCSTrack': _i1.MethodConnector(
+          name: 'showUSCSTrack',
+          params: {
+            'projectID': _i1.ParameterDescription(
+              name: 'projectID',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['file'] as _i2.FileEndpoint).showUSCSTrack(
+            session,
+            params['projectID'],
+          ),
+        ),
       },
     );
     connectors['mipgen'] = _i1.EndpointConnector(

@@ -16,6 +16,7 @@ import 'package:flumip_client/src/protocol/project.dart' as _i4;
 import 'package:flumip_client/src/protocol/settings.dart' as _i5;
 import 'protocol.dart' as _i6;
 
+/// Endpoint for handling file-related operations.
 /// {@category Endpoint}
 class EndpointFile extends _i1.EndpointRef {
   EndpointFile(_i1.EndpointCaller caller) : super(caller);
@@ -23,6 +24,10 @@ class EndpointFile extends _i1.EndpointRef {
   @override
   String get name => 'file';
 
+  /// Deletes byproduct files for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
   _i2.Future<void> deleteByProducts(int projectID) =>
       caller.callServerEndpoint<void>(
         'file',
@@ -30,6 +35,11 @@ class EndpointFile extends _i1.EndpointRef {
         {'projectID': projectID},
       );
 
+  /// Shows the SNP MIPs result for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  /// \returns A list of strings containing the SNP MIPs result.
   _i2.Future<List<String>> showSnpMipsResult(int projectID) =>
       caller.callServerEndpoint<List<String>>(
         'file',
@@ -37,6 +47,11 @@ class EndpointFile extends _i1.EndpointRef {
         {'projectID': projectID},
       );
 
+  /// Shows the MIPs result for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  /// \returns A list of strings containing the MIPs result.
   _i2.Future<List<String>> showMipsResult(int projectID) =>
       caller.callServerEndpoint<List<String>>(
         'file',
@@ -44,14 +59,27 @@ class EndpointFile extends _i1.EndpointRef {
         {'projectID': projectID},
       );
 
+  /// Shows the MIPs progress for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  /// \returns A list of strings containing the MIPs progress.
   _i2.Future<List<String>> showMipsProgress(int projectID) =>
       caller.callServerEndpoint<List<String>>(
         'file',
         'showMipsProgress',
         {'projectID': projectID},
       );
+
+  _i2.Future<List<String>> showUSCSTrack(int projectID) =>
+      caller.callServerEndpoint<List<String>>(
+        'file',
+        'showUSCSTrack',
+        {'projectID': projectID},
+      );
 }
 
+/// Endpoint for handling MIP generation-related operations.
 /// {@category Endpoint}
 class EndpointMipgen extends _i1.EndpointRef {
   EndpointMipgen(_i1.EndpointCaller caller) : super(caller);
@@ -59,6 +87,10 @@ class EndpointMipgen extends _i1.EndpointRef {
   @override
   String get name => 'mipgen';
 
+  /// Creates a BED file for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
   _i2.Future<void> createBedFile(int projectID) =>
       caller.callServerEndpoint<void>(
         'mipgen',
@@ -66,6 +98,11 @@ class EndpointMipgen extends _i1.EndpointRef {
         {'projectID': projectID},
       );
 
+  /// Generates MIPs for the specified project.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  /// \param deleteExcessFiles Whether to delete excess files after generating MIPs.
   _i2.Future<void> generateMips(
     int projectID,
     bool deleteExcessFiles,
@@ -80,6 +117,7 @@ class EndpointMipgen extends _i1.EndpointRef {
       );
 }
 
+/// Endpoint for handling project options-related operations.
 /// {@category Endpoint}
 class EndpointOptions extends _i1.EndpointRef {
   EndpointOptions(_i1.EndpointCaller caller) : super(caller);
@@ -87,6 +125,10 @@ class EndpointOptions extends _i1.EndpointRef {
   @override
   String get name => 'options';
 
+  /// Creates project options.
+  ///
+  /// \param session The current session.
+  /// \returns The created [ProjectOptions] object.
   _i2.Future<_i3.ProjectOptions> createProjectOptions() =>
       caller.callServerEndpoint<_i3.ProjectOptions>(
         'options',
@@ -94,6 +136,11 @@ class EndpointOptions extends _i1.EndpointRef {
         {},
       );
 
+  /// Inserts project options.
+  ///
+  /// \param session The current session.
+  /// \param options The [ProjectOptions] object to insert.
+  /// \returns The inserted [ProjectOptions] object.
   _i2.Future<_i3.ProjectOptions> insertProjectOptions(
           _i3.ProjectOptions options) =>
       caller.callServerEndpoint<_i3.ProjectOptions>(
@@ -102,6 +149,11 @@ class EndpointOptions extends _i1.EndpointRef {
         {'options': options},
       );
 
+  /// Retrieves project options by ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project options to retrieve.
+  /// \returns The retrieved [ProjectOptions] object.
   _i2.Future<_i3.ProjectOptions> getProjectOptions(int id) =>
       caller.callServerEndpoint<_i3.ProjectOptions>(
         'options',
@@ -109,6 +161,11 @@ class EndpointOptions extends _i1.EndpointRef {
         {'id': id},
       );
 
+  /// Updates project options.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project options to update.
+  /// \param options The [ProjectOptions] object to update.
   _i2.Future<void> updateProjectOptions(
     int id,
     _i3.ProjectOptions options,
@@ -122,6 +179,10 @@ class EndpointOptions extends _i1.EndpointRef {
         },
       );
 
+  /// Deletes project options by ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project options to delete.
   _i2.Future<void> deleteProjectOptions(int id) =>
       caller.callServerEndpoint<void>(
         'options',
@@ -130,6 +191,7 @@ class EndpointOptions extends _i1.EndpointRef {
       );
 }
 
+/// Endpoint for handling project-related operations.
 /// {@category Endpoint}
 class EndpointProject extends _i1.EndpointRef {
   EndpointProject(_i1.EndpointCaller caller) : super(caller);
@@ -137,6 +199,13 @@ class EndpointProject extends _i1.EndpointRef {
   @override
   String get name => 'project';
 
+  /// Creates a new project.
+  ///
+  /// \param session The current session.
+  /// \param name The name of the project.
+  /// \param options The options for the project.
+  /// \param description An optional description of the project.
+  /// \returns The created [Project] object.
   _i2.Future<_i4.Project> createProject(
     String name,
     _i3.ProjectOptions options, [
@@ -152,12 +221,20 @@ class EndpointProject extends _i1.EndpointRef {
         },
       );
 
+  /// Deletes a project by ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project to delete.
   _i2.Future<void> deleteProject(int id) => caller.callServerEndpoint<void>(
         'project',
         'deleteProject',
         {'id': id},
       );
 
+  /// Retrieves all projects.
+  ///
+  /// \param session The current session.
+  /// \returns A list of [Project] objects.
   _i2.Future<List<_i4.Project>> getProjects() =>
       caller.callServerEndpoint<List<_i4.Project>>(
         'project',
@@ -165,6 +242,11 @@ class EndpointProject extends _i1.EndpointRef {
         {},
       );
 
+  /// Retrieves a project by ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project to retrieve.
+  /// \returns The retrieved [Project] object.
   _i2.Future<_i4.Project> getProject(int id) =>
       caller.callServerEndpoint<_i4.Project>(
         'project',
@@ -172,6 +254,11 @@ class EndpointProject extends _i1.EndpointRef {
         {'id': id},
       );
 
+  /// Adds a gene to a project.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param gene The gene to add.
   _i2.Future<void> addGeneToProject(
     int id,
     String gene,
@@ -185,6 +272,11 @@ class EndpointProject extends _i1.EndpointRef {
         },
       );
 
+  /// Removes a gene from a project.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param gene The gene to remove.
   _i2.Future<void> removeGeneFromProject(
     int id,
     String gene,
@@ -198,6 +290,11 @@ class EndpointProject extends _i1.EndpointRef {
         },
       );
 
+  /// Adds multiple genes to a project.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param genes The list of genes to add.
   _i2.Future<void> addGenesToProject(
     int id,
     List<String> genes,
@@ -212,6 +309,7 @@ class EndpointProject extends _i1.EndpointRef {
       );
 }
 
+/// Endpoint for handling settings-related operations.
 /// {@category Endpoint}
 class EndpointSettings extends _i1.EndpointRef {
   EndpointSettings(_i1.EndpointCaller caller) : super(caller);
@@ -219,6 +317,10 @@ class EndpointSettings extends _i1.EndpointRef {
   @override
   String get name => 'settings';
 
+  /// Retrieves the settings.
+  ///
+  /// \param session The current session.
+  /// \returns The retrieved [Settings] object.
   _i2.Future<_i5.Settings> getSettings() =>
       caller.callServerEndpoint<_i5.Settings>(
         'settings',
@@ -226,6 +328,10 @@ class EndpointSettings extends _i1.EndpointRef {
         {},
       );
 
+  /// Updates the settings.
+  ///
+  /// \param session The current session.
+  /// \param settings The [Settings] object to update.
   _i2.Future<void> updateSettings(_i5.Settings settings) =>
       caller.callServerEndpoint<void>(
         'settings',

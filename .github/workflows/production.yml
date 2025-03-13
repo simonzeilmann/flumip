@@ -210,6 +210,8 @@ jobs:
           sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
           sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
+          sed -i 's/http:/https:/' flumip_flutter/lib/project_tile.dart
+          sed -i 's/localhost:8082/app.flumip.simonzeilmann.com/' flumip_flutter/lib/project_tile.dart
 
       - name: Build
         run: |

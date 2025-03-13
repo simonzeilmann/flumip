@@ -3,6 +3,7 @@ file:
   - showSnpMipsResult:
   - showMipsResult:
   - showMipsProgress:
+  - showUSCSTrack:
 mipgen:
   - createBedFile:
   - generateMips:
