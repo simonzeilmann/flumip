@@ -128,7 +128,12 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
   }
 
   void _createProject() async {
-    if (_nameController.text.isEmpty) return;
+    if (_nameController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Project name is required';
+      });
+      return;
+    }
     try {
       var options = ProjectOptions(
           minCaptureSize: int.tryParse(_minCaptureSizeController.text) ?? 162,
@@ -270,7 +275,8 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
         TextField(
           controller: _armLengthsController,
-          decoration: InputDecoration(labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
+          decoration: InputDecoration(
+              labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
           keyboardType: TextInputType.text,
           inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
