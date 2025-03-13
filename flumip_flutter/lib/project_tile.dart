@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
@@ -289,6 +290,74 @@ class _ProjectTileState extends State<ProjectTile> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load progress: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showUSCSTrack() async {
+    try {
+      final result = await client.file.showUSCSTrack(widget.project.id!);
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('UCSC Track'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: result.isEmpty
+                      ? [Text('No USCS Track file found.')]
+                      : [
+                          SelectableText.rich(
+                            TextSpan(
+                              children: result
+                                  .map((line) => TextSpan(text: '$line\n'))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                ),
+              ),
+              actions: [
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      web.window.window.open(
+                          'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:1-1000000&hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}',
+                          'new tab');
+                    },
+                    child: Text('Open in UCSC Track browser'),
+                  ),
+                if (result.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await Clipboard.setData(
+                              ClipboardData(text: result.join('\n')))
+                          .then((_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("Snp MIPs copied to clipboard")));
+                        }
+                      });
+                    },
+                    child: Text('Copy to clipboard'),
+                  ),
+                TextButton(
+                  child: Text('Close'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
         );
       }
     }
@@ -599,7 +668,8 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
         SizedBox(height: 10),
-        Text('Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+        Text(
+            'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
         SizedBox(height: 10),
         ElevatedButton(
           onPressed: _showMipsResult,
@@ -610,6 +680,9 @@ class _ProjectTileState extends State<ProjectTile> {
           onPressed: _showSnpMipsResult,
           child: Text('Show SNP MIPs Result'),
         ),
+        SizedBox(height: 10),
+        ElevatedButton(
+            onPressed: _showUSCSTrack, child: Text('Show UCSC Track')),
         SizedBox(height: 10),
       ],
     );
