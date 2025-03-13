@@ -239,7 +239,7 @@ class MipgenService {
           level: LogLevel.info);
       await fileService.deleteByproducts(session, project.id!);
     }
-
+    
     //TODO: better errors handling
     var progress = await fileService.showMipsProgress(session, project.id!);
     if (progress.isEmpty) {

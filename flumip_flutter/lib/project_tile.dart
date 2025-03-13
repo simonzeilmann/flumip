@@ -401,7 +401,7 @@ class _ProjectTileState extends State<ProjectTile> {
   double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
       (value * pow(10, fractionalDigits)).truncate() /
       pow(10, fractionalDigits);
-
+  
   @override
   Widget build(BuildContext context) {
     return Container(
