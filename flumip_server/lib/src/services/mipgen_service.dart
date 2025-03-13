@@ -276,8 +276,13 @@ class MipgenService {
 
     session.log("Starting UCSC track generation process with arguments: $arg",
         level: LogLevel.info);
-    await Process.start("python", arg,
+    var process = await Process.run("python", arg,
         workingDirectory: projectDir,
         runInShell: true);
+
+    if (process.exitCode != 0) {
+      session.log("UCSC track generation failed for project ID: ${project.id}",
+          level: LogLevel.error);
+    }
   }
 }
