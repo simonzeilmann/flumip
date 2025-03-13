@@ -73,4 +73,16 @@ class FileEndpoint extends Endpoint {
       rethrow;
     }
   }
+
+  Future<List<String>> showUSCSTrack(Session session, int projectID) async {
+    session.log("Showing USCSTrack for project ID: $projectID",
+        level: LogLevel.info);
+    try {
+      return fileService.showUSCSTrack(session, projectID);
+    } catch (e) {
+      session.log("Error showing USCSTrack for project ID: $projectID",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
 }

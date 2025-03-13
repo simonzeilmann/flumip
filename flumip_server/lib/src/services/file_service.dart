@@ -195,7 +195,7 @@ class FileService {
     }
 
     session.log("No MIPs result found for project ID: $projectID",
-        level: LogLevel.info);
+        level: LogLevel.warning);
     return List.empty();
   }
 
@@ -220,8 +220,47 @@ class FileService {
     }
 
     session.log("No MIPs progress found for project ID: $projectID",
-        level: LogLevel.info);
+        level: LogLevel.warning);
     return List.empty();
+  }
+
+  Future<List<String>> showUSCSTrack(Session session, int projectID) async {
+    session.log("Showing USCSTrack for project ID: $projectID",
+        level: LogLevel.info);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
+
+    for (var d in dir) {
+      if (d.path.endsWith(".ucsc_track.bed")) {
+        File f = File(d.path);
+        var lines = await f.readAsLines();
+        session.log("USCS track found for project ID: $projectID",
+            level: LogLevel.info);
+        return lines;
+      }
+    }
+
+    session.log("No USCS track found for project ID: $projectID",
+        level: LogLevel.warning);
+    return List.empty();
+  }
+
+  Future<Stream<List<int>>> returnFile(Session session, int projectID, String fileName) async {
+    session.log("Returning file $fileName for project ID: $projectID",
+        level: LogLevel.info);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
+
+    for (var d in dir) {
+      if (d.path.endsWith(fileName)) {
+        File f = File(d.path);
+        session.log("File $fileName found for project ID: $projectID",
+            level: LogLevel.info);
+        return f.openRead();
+      }
+    }
+
+    session.log("No file $fileName found for project ID: $projectID",
+        level: LogLevel.warning);
+    return Stream.empty();
   }
 
   /// Checks if the project directory exists for the specified project.

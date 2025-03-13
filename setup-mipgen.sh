@@ -83,6 +83,7 @@ make
 echo -e "\n${GREEN}Setting execute permissions...${NC}\n"
 chmod +x mipgen
 chmod +x tools/extract_coding_gene_exons.sh
+chmod +x tools/generate_ucsc_track.py
 cd ..
 
 # Create the directory structure for data etc.
