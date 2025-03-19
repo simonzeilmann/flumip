@@ -22,9 +22,9 @@ class MipgenService {
 
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
   MipgenService() {
-    refGene = "/opt/mipgen/data/genes/human/hg38/refGene.txt";
-    fa = "/opt/mipgen/data/genes/human/hg38/fa/hg38.fa";
-    snp = "/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz";
+    refGene = "/opt/flumip/data/genes/human/hg38/refGene.txt";
+    fa = "/opt/flumip/data/genes/human/hg38/fa/hg38.fa";
+    snp = "/opt/flumip/data/genes/human/hg38/snp/00-common_all.vcf.gz";
   }
 
   /// Creates a BED file for the specified project.

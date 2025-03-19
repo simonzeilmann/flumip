@@ -1,9 +1,9 @@
 class: Settings
 table: settings
 fields:
-  baseDir: String, default="/opt/mipgen"
-  projectDir: String, default="/opt/mipgen/projects"
-  geneDir: String, default="/opt/mipgen/genes"
-  mipgenExecutable: String, default="/opt/mipgen/MIPGEN/mipgen"
-  exonExtractScript: String, default="/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh"
-  ucscTrackGenerator: String, default="/opt/mipgen/MIPGEN/tools/generate_ucsc_track.py"
+  baseDir: String, default="/opt/flumip"
+  projectDir: String, default="/opt/flumip/projects"
+  geneDir: String, default="/opt/flumip/genes"
+  mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
+  exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
+  ucscTrackGenerator: String, default="/opt/flumip/MIPGEN/tools/generate_ucsc_track.py"

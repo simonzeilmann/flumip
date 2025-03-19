@@ -447,28 +447,28 @@ class Protocol extends _i1.SerializationManagerServer {
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/mipgen\'::text',
+          columnDefault: '\'/opt/flumip\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'projectDir',
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/mipgen/projects\'::text',
+          columnDefault: '\'/opt/flumip/projects\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'geneDir',
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/mipgen/genes\'::text',
+          columnDefault: '\'/opt/flumip/genes\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'mipgenExecutable',
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/mipgen/MIPGEN/mipgen\'::text',
+          columnDefault: '\'/opt/flumip/MIPGEN/mipgen\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'exonExtractScript',
@@ -476,7 +476,7 @@ class Protocol extends _i1.SerializationManagerServer {
           isNullable: false,
           dartType: 'String',
           columnDefault:
-              '\'/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh\'::text',
+              '\'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'ucscTrackGenerator',
@@ -484,7 +484,7 @@ class Protocol extends _i1.SerializationManagerServer {
           isNullable: false,
           dartType: 'String',
           columnDefault:
-              '\'/opt/mipgen/MIPGEN/tools/generate_ucsc_track.py\'::text',
+              '\'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py\'::text',
         ),
       ],
       foreignKeys: [],

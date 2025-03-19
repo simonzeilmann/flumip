@@ -12,7 +12,7 @@ void main() {
       'calling `get settings` should return the standard settings',
           () async {
         final settings = await settingsService.getSettings(session);
-        expect(settings.baseDir, "/opt/mipgen");
+        expect(settings.baseDir, "/opt/flumip");
       },
       tags: ['unit'],
     );

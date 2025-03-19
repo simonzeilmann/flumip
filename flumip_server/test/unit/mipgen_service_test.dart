@@ -14,7 +14,7 @@ void main() {
     final fileService = FileService();
 
     test(
-      'calling `createBedFile` should give create a bed file',
+      'calling `createBedFile` should create a bed file',
       () async {
         final project = await projectService.createProject(
             session, "test123", ProjectOptions(id: 1));
