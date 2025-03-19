@@ -92,7 +92,8 @@ class MipgenService {
     session.log("Starting generateMips for project ID: $projectID",
         level: LogLevel.info);
     var project = await projectService.getProject(session, projectID);
-    var options = await optionsService.getProjectOptions(session, project.id!);
+    var options =
+        await optionsService.getProjectOptions(session, project.options);
 
     var settings = await settingsService.getSettings(session);
 
@@ -246,8 +247,7 @@ class MipgenService {
       session.log("MIP generation failed for project ID: ${project.id}",
           level: LogLevel.warning);
       project.error = "MIP generation failed";
-    }
-    else {
+    } else {
       project.size = await fileService
           .getDirSize("${settings.projectDir}/${project.folderName!}");
       project.pid = 0;
@@ -277,8 +277,7 @@ class MipgenService {
     session.log("Starting UCSC track generation process with arguments: $arg",
         level: LogLevel.info);
     var process = await Process.run("python", arg,
-        workingDirectory: projectDir,
-        runInShell: true);
+        workingDirectory: projectDir, runInShell: true);
 
     if (process.exitCode != 0) {
       session.log("UCSC track generation failed for project ID: ${project.id}",
