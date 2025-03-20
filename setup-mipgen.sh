@@ -59,9 +59,9 @@ if $INDEX && ! $DOWNLOAD && ! $FA_EXISTS; then
   exit 1
 fi
 
-# Update and upgrade system packages
+# Update system package repository
 echo -e "\n${GREEN}Updating and upgrading system packages...${NC}\n"
-sudo apt update && sudo apt upgrade -y
+sudo apt update
 
 # Install required packages
 echo -e "\n${GREEN}Installing required packages: build-essential, tabix, samtools, bwa, trf...${NC}\n"
