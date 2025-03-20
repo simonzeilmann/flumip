@@ -88,7 +88,9 @@ cd ..
 
 # Create the directory structure for data etc.
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
-mkdir -p /opt/flumip/data/genes/human/hg38/{fa,snp/00-common_all} /opt/flumip/{projects,log} /opt/flumip/data/custom_snp
+mkdir -p /opt/flumip/data/genes/human/hg38/{fa,snp/00-common_all}
+mkdir -p /opt/flumip/{projects}
+mkdir -p /opt/flumip/data/custom_snp/{cpmmon,private}
 
 if $DOWNLOAD; then
   # Download and extract refGene file if not already present
