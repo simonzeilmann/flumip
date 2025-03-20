@@ -97,109 +97,75 @@ class MipgenService {
 
     var settings = await settingsService.getSettings(session);
 
-    List<String> arg = [];
-    arg.add("-regions_to_scan");
-    arg.add("${settings.projectDir}/${project.folderName}/genes.bed");
-    arg.add("-project_name");
-    arg.add(project.name);
-    arg.add("-bwa_genome_index");
-    arg.add(fa);
-    arg.add("-snp_file");
-    arg.add(snp);
-    arg.add("-min_capture_size");
-    arg.add(options.minCaptureSize.toString());
-    arg.add("-max_capture_size");
-    arg.add(options.maxCaptureSize.toString());
-    if (options.armLengths!.isNotEmpty) {
-      arg.add("-arm_lengths");
-      arg.add(options.armLengths!);
-    }
-    arg.add("-arm_length_sums");
-    arg.add(options.armLengthSums.toString());
-    arg.add("-ext_min_length");
-    arg.add(options.extMinLength.toString());
-    arg.add("-lig_min_length");
-    arg.add(options.ligMinLength.toString());
-    arg.add("-tag_sizes");
-    arg.add(options.tagSizes.toString());
-    arg.add("-masked_arm_threshold");
-    arg.add(options.maskedArmThreshold.toString());
-    arg.add("-target_arm_copy");
-    arg.add(options.targetArmCopy.toString());
-    arg.add("-max_arm_copy_product");
-    arg.add(options.maxArmCopyProduct.toString());
-    arg.add("-trf");
-    if (options.trf == true) {
-      arg.add("trf");
-    } else {
-      arg.add("off");
-    }
-    if (options.genomeDir != null) {
-      arg.add("-genome_dir");
-      arg.add(options.genomeDir!);
-    }
-    arg.add("-feature_flank");
-    arg.add(options.featureFlank.toString());
-    arg.add("-capture_increment");
-    arg.add(options.captureIncrement.toString());
-    arg.add("-logistic_heuristic");
-    if (options.logisticHeuristic == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-max_mip_overlap");
-    arg.add(options.maxMipOverlap.toString());
-    arg.add("-starting_mip_overlap");
-    arg.add(options.startingMipOverlap.toString());
-    arg.add("-check_copy_number");
-    if (options.checkCopyNumber == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-seal_both_strands");
-    if (options.sealBothStrands == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-half_seal_both_strands");
-    if (options.halfSealBothStrands == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-double_tile_strand_unaware");
-    if (options.doubleTileStrandUnaware == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-double_tile_strands_separately");
-    if (options.doubleTileStrandsSeparately == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-score_method");
-    arg.add(options.scoreMethod.name);
-    arg.add("-logistic_optimal_score");
-    arg.add(options.logisticOptimalScore.toString());
-    arg.add("-svr_optimal_score");
-    arg.add(options.svrOptimalScore.toString());
-    arg.add("-logistic_priority_score");
-    arg.add(options.logisticPriorityScore.toString());
-    arg.add("-svr_priority_score");
-    arg.add(options.svrPriorityScore.toString());
-    arg.add("-silent_mode");
-    if (options.silentMode == true) {
-      arg.add("on");
-    } else {
-      arg.add("off");
-    }
-    arg.add("-bwa_threads");
-    arg.add(options.bwaThreads.toString());
+    List<String> arg = [
+      "-regions_to_scan",
+      "${settings.projectDir}/${project.folderName}/genes.bed",
+      "-project_name",
+      project.name,
+      "-bwa_genome_index",
+      fa,
+      "-snp_file",
+      snp,
+      "-min_capture_size",
+      options.minCaptureSize.toString(),
+      "-max_capture_size",
+      options.maxCaptureSize.toString(),
+      if (options.armLengths!.isNotEmpty) ...[
+        "-arm_lengths",
+        options.armLengths!
+      ],
+      "-arm_length_sums",
+      options.armLengthSums.toString(),
+      "-ext_min_length",
+      options.extMinLength.toString(),
+      "-lig_min_length",
+      options.ligMinLength.toString(),
+      "-tag_sizes",
+      options.tagSizes.toString(),
+      "-masked_arm_threshold",
+      options.maskedArmThreshold.toString(),
+      "-target_arm_copy",
+      options.targetArmCopy.toString(),
+      "-max_arm_copy_product",
+      options.maxArmCopyProduct.toString(),
+      "-trf",
+      options.trf == true ? "trf" : "off",
+      if (options.genomeDir != null) ...["-genome_dir", options.genomeDir!],
+      "-feature_flank",
+      options.featureFlank.toString(),
+      "-capture_increment",
+      options.captureIncrement.toString(),
+      "-logistic_heuristic",
+      options.logisticHeuristic == true ? "on" : "off",
+      "-max_mip_overlap",
+      options.maxMipOverlap.toString(),
+      "-starting_mip_overlap",
+      options.startingMipOverlap.toString(),
+      "-check_copy_number",
+      options.checkCopyNumber == true ? "on" : "off",
+      "-seal_both_strands",
+      options.sealBothStrands == true ? "on" : "off",
+      "-half_seal_both_strands",
+      options.halfSealBothStrands == true ? "on" : "off",
+      "-double_tile_strand_unaware",
+      options.doubleTileStrandUnaware == true ? "on" : "off",
+      "-double_tile_strands_separately",
+      options.doubleTileStrandsSeparately == true ? "on" : "off",
+      "-score_method",
+      options.scoreMethod.name,
+      "-logistic_optimal_score",
+      options.logisticOptimalScore.toString(),
+      "-svr_optimal_score",
+      options.svrOptimalScore.toString(),
+      "-logistic_priority_score",
+      options.logisticPriorityScore.toString(),
+      "-svr_priority_score",
+      options.svrPriorityScore.toString(),
+      "-silent_mode",
+      options.silentMode == true ? "on" : "off",
+      "-bwa_threads",
+      options.bwaThreads.toString()
+    ];
 
     session.log("Starting MIP generation process with arguments: $arg",
         level: LogLevel.info);
