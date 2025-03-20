@@ -4,6 +4,8 @@ fields:
   name: String
   folderName: String?, scope=serverOnly
   description: String, default=''
+  gene: int?
+  snp: int?
   tags: List<String>?
   created: DateTime, default=now
   owner: int?

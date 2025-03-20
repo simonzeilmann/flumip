@@ -10,15 +10,19 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'project.dart' as _i2;
-import 'project_options.dart' as _i3;
-import 'score_method.dart' as _i4;
-import 'settings.dart' as _i5;
-import 'package:flumip_client/src/protocol/project.dart' as _i6;
+import 'gene.dart' as _i2;
+import 'project.dart' as _i3;
+import 'project_options.dart' as _i4;
+import 'score_method.dart' as _i5;
+import 'settings.dart' as _i6;
+import 'snp.dart' as _i7;
+import 'package:flumip_client/src/protocol/project.dart' as _i8;
+export 'gene.dart';
 export 'project.dart';
 export 'project_options.dart';
 export 'score_method.dart';
 export 'settings.dart';
+export 'snp.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -34,29 +38,46 @@ class Protocol extends _i1.SerializationManager {
     Type? t,
   ]) {
     t ??= T;
-    if (t == _i2.Project) {
-      return _i2.Project.fromJson(data) as T;
+    if (t == _i2.Gene) {
+      return _i2.Gene.fromJson(data) as T;
     }
-    if (t == _i3.ProjectOptions) {
-      return _i3.ProjectOptions.fromJson(data) as T;
+    if (t == _i3.Project) {
+      return _i3.Project.fromJson(data) as T;
     }
-    if (t == _i4.ScoreMethod) {
-      return _i4.ScoreMethod.fromJson(data) as T;
+    if (t == _i4.ProjectOptions) {
+      return _i4.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i5.Settings) {
-      return _i5.Settings.fromJson(data) as T;
+    if (t == _i5.ScoreMethod) {
+      return _i5.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i2.Project?>()) {
-      return (data != null ? _i2.Project.fromJson(data) : null) as T;
+    if (t == _i6.Settings) {
+      return _i6.Settings.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i3.ProjectOptions?>()) {
-      return (data != null ? _i3.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _i7.Snp) {
+      return _i7.Snp.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i4.ScoreMethod?>()) {
-      return (data != null ? _i4.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i2.Gene?>()) {
+      return (data != null ? _i2.Gene.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i5.Settings?>()) {
-      return (data != null ? _i5.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i3.Project?>()) {
+      return (data != null ? _i3.Project.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i4.ProjectOptions?>()) {
+      return (data != null ? _i4.ProjectOptions.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.ScoreMethod?>()) {
+      return (data != null ? _i5.ScoreMethod.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i6.Settings?>()) {
+      return (data != null ? _i6.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i7.Snp?>()) {
+      return (data != null ? _i7.Snp.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<List<int>?>()) {
+      return (data != null
+          ? (data as List).map((e) => deserialize<int>(e)).toList()
+          : null) as T;
     }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
@@ -71,8 +92,8 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i6.Project>) {
-      return (data as List).map((e) => deserialize<_i6.Project>(e)).toList()
+    if (t == List<_i8.Project>) {
+      return (data as List).map((e) => deserialize<_i8.Project>(e)).toList()
           as T;
     }
     return super.deserialize<T>(data, t);
@@ -82,17 +103,23 @@ class Protocol extends _i1.SerializationManager {
   String? getClassNameForObject(Object? data) {
     String? className = super.getClassNameForObject(data);
     if (className != null) return className;
-    if (data is _i2.Project) {
+    if (data is _i2.Gene) {
+      return 'Gene';
+    }
+    if (data is _i3.Project) {
       return 'Project';
     }
-    if (data is _i3.ProjectOptions) {
+    if (data is _i4.ProjectOptions) {
       return 'ProjectOptions';
     }
-    if (data is _i4.ScoreMethod) {
+    if (data is _i5.ScoreMethod) {
       return 'ScoreMethod';
     }
-    if (data is _i5.Settings) {
+    if (data is _i6.Settings) {
       return 'Settings';
+    }
+    if (data is _i7.Snp) {
+      return 'Snp';
     }
     return null;
   }
@@ -103,17 +130,23 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'Gene') {
+      return deserialize<_i2.Gene>(data['data']);
+    }
     if (dataClassName == 'Project') {
-      return deserialize<_i2.Project>(data['data']);
+      return deserialize<_i3.Project>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i3.ProjectOptions>(data['data']);
+      return deserialize<_i4.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i4.ScoreMethod>(data['data']);
+      return deserialize<_i5.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i5.Settings>(data['data']);
+      return deserialize<_i6.Settings>(data['data']);
+    }
+    if (dataClassName == 'Snp') {
+      return deserialize<_i7.Snp>(data['data']);
     }
     return super.deserializeByClassName(data);
   }

@@ -1,0 +1,10 @@
+class: Snp
+table: snp
+fields:
+  name: String
+  description: String, default=''
+  vcfPath: String
+  tbiPath: String
+  folder: String
+  active: bool
+  private: bool, default=false
