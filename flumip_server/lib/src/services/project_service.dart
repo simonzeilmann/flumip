@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -9,8 +10,6 @@ import 'package:uuid/uuid.dart';
 /// A service class for handling project-related operations.
 class ProjectService {
   ProjectService();
-
-  final processService = ProcessService();
 
   /// Retrieves a project by its ID.
   ///
@@ -79,7 +78,7 @@ class ProjectService {
       );
 
       if(project.active && project.pid != null && project.pid! > 0) {
-        await processService.terminateProcess(session, project.pid!);
+        await sl<ProcessService>().terminateProcess(session, project.pid!);
       }
       var settings = await SettingsService().getSettings(session);
       Directory("${settings.projectDir}/${project.folderName}")

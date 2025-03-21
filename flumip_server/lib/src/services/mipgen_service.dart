@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
@@ -11,11 +12,6 @@ import 'options_service.dart';
 
 /// Service class for handling MIP generation related operations.
 class MipgenService {
-  final projectService = ProjectService();
-  final fileService = FileService();
-  final settingsService = SettingsService();
-  final optionsService = OptionsService();
-  final processService = ProcessService();
   late final String refGene;
   late final String fa;
   late final String snp;
@@ -36,7 +32,7 @@ class MipgenService {
   Future<void> createBedFile(Session session, int projectID) async {
     session.log("Starting createBedFile for project ID: $projectID",
         level: LogLevel.info);
-    var project = await projectService.getProject(session, projectID);
+    var project = await sl<ProjectService>().getProject(session, projectID);
     if (project.id == null) {
       session.log("Project ID does not exist: $projectID",
           level: LogLevel.error);
@@ -48,17 +44,17 @@ class MipgenService {
       throw ArgumentError('No genes found in project');
     }
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
 
     String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
     String bedFile = "${settings.projectDir}/${project.folderName}/genes.bed";
     if (await File(geneFile).exists()) {
       session.log("Gene file exists, deleting: $geneFile",
           level: LogLevel.warning);
-      await fileService.deleteGeneFile(session, projectID);
+      await sl<FileService>().deleteGeneFile(session, projectID);
     }
     session.log("Creating gene file: $geneFile", level: LogLevel.info);
-    await fileService.createGeneFile(session, projectID, project.genes!);
+    await sl<FileService>().createGeneFile(session, projectID, project.genes!);
     List<String> arg = [];
     arg.add(geneFile);
     arg.add(refGene);
@@ -74,10 +70,10 @@ class MipgenService {
     }
 
     session.log("Writing BED file: $bedFile", level: LogLevel.info);
-    fileService.writeStringToFile(session, bedFile, process.stdout);
+    sl<FileService>().writeStringToFile(session, bedFile, process.stdout);
 
     project.bedFileCreated = true;
-    await projectService.updateProject(session, project);
+    await sl<ProjectService>().updateProject(session, project);
     session.log("BED file created successfully for project ID: $projectID",
         level: LogLevel.info);
   }
@@ -91,11 +87,11 @@ class MipgenService {
       Session session, int projectID, bool deleteExcessFiles) async {
     session.log("Starting generateMips for project ID: $projectID",
         level: LogLevel.info);
-    var project = await projectService.getProject(session, projectID);
+    var project = await sl<ProjectService>().getProject(session, projectID);
     var options =
-        await optionsService.getProjectOptions(session, project.options);
+        await sl<OptionsService>().getProjectOptions(session, project.options);
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
 
     List<String> arg = [
       "-regions_to_scan",
@@ -174,11 +170,11 @@ class MipgenService {
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await processService.getProcessPID(
-        session, "mipgen", "-project_name ${project.name}");
+    var mipgenPID = await sl<ProcessService>()
+        .getProcessPID(session, "mipgen", "-project_name ${project.name}");
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
-    await projectService.updateProject(session, project);
+    await sl<ProjectService>().updateProject(session, project);
     session.log(
         "MIP generation started with PID: $mipgenPID for project ID: $projectID",
         level: LogLevel.info);
@@ -192,10 +188,11 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectModel The project model to update.
   Future<void> mipgenIsFinished(Session session, Project projectModel) async {
-    final settings = await settingsService.getSettings(session);
+    final settings = await sl<SettingsService>().getSettings(session);
     session.log("Finishing MIP generation for project ID: ${projectModel.id}",
         level: LogLevel.info);
-    var project = await projectService.getProject(session, projectModel.id!);
+    var project =
+        await sl<ProjectService>().getProject(session, projectModel.id!);
     if (project.id == null) {
       session.log("Project ID does not exist: ${projectModel.id}",
           level: LogLevel.error);
@@ -205,17 +202,18 @@ class MipgenService {
     if (project.cleanup) {
       session.log("Deleting byproducts for project ID: ${project.id}",
           level: LogLevel.info);
-      await fileService.deleteByproducts(session, project.id!);
+      await sl<FileService>().deleteByproducts(session, project.id!);
     }
 
     //TODO: better errors handling
-    var progress = await fileService.showMipsProgress(session, project.id!);
+    var progress =
+        await sl<FileService>().showMipsProgress(session, project.id!);
     if (progress.isEmpty) {
       session.log("MIP generation failed for project ID: ${project.id}",
           level: LogLevel.warning);
       project.error = "MIP generation failed";
     } else {
-      project.size = await fileService
+      project.size = await sl<FileService>()
           .getDirSize("${settings.projectDir}/${project.folderName!}");
       project.pid = 0;
       project.completedIn = DateTime.now().difference(project.started!);
@@ -224,7 +222,7 @@ class MipgenService {
           level: LogLevel.info);
     }
     project.active = false;
-    await projectService.updateProject(session, project);
+    await sl<ProjectService>().updateProject(session, project);
   }
 
   /// Generates a UCSC track for the specified project.
@@ -233,7 +231,7 @@ class MipgenService {
   /// \param project The project for which to generate the UCSC track.
   /// \returns A future that completes when the UCSC track generation process is finished.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
     var projectDir = "${settings.projectDir}/${project.folderName}";
 
     List<String> arg = [];

@@ -1,3 +1,4 @@
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
@@ -8,10 +9,11 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Bed file', (sessionBuilder, endpoints) {
+    setup();
     var session = sessionBuilder.build();
-    final projectService = ProjectService();
-    final mipgenService = MipgenService();
-    final fileService = FileService();
+    final projectService = sl<ProjectService>();
+    final mipgenService = sl<MipgenService>();
+    final fileService = sl<FileService>();
 
     test(
       'calling `createBedFile` should create a bed file',

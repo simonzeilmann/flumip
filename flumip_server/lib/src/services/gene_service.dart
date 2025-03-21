@@ -1,4 +1,3 @@
-import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
@@ -6,8 +5,6 @@ import '../generated/gene.dart';
 
 class GeneService {
   GeneService();
-
-  final settingsService = SettingsService();
 
   Future<Gene> getGene(Session session, int id) async {
     var gene = await Gene.db.findById(session, id);

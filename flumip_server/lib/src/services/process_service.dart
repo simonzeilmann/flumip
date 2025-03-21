@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -11,9 +12,6 @@ import 'gene_service.dart';
 /// Service class for handling process-related operations.
 class ProcessService {
   ProcessService();
-
-  final projectService = ProjectService();
-  final geneService = GeneService();
 
   /// Checks if the process is running for the specified project.
   ///
@@ -27,7 +25,7 @@ class ProcessService {
     session.log(
         "Checking if process is running for project ID: ${projectModel.id}",
         level: LogLevel.info);
-    var project = await projectService.getProject(session, projectModel.id!);
+    var project = await sl<ProjectService>().getProject(session, projectModel.id!);
     if (project.id == null) {
       session.log("Project ID does not exist: ${projectModel.id}",
           level: LogLevel.error);
@@ -67,7 +65,7 @@ class ProcessService {
     session.log(
         "Checking if index process is running for gene ID: ${geneModel.id}",
         level: LogLevel.info);
-    var gene = await geneService.getGene(session, geneModel.id!);
+    var gene = await sl<GeneService>().getGene(session, geneModel.id!);
     if (gene.id == null) {
       session.log("Gene ID does not exist: ${geneModel.id}",
           level: LogLevel.error);

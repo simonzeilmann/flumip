@@ -1,3 +1,4 @@
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:test/test.dart';
 
@@ -5,8 +6,9 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Settings standard', (sessionBuilder, endpoints) {
+    setup();
     var session = sessionBuilder.build();
-    final settingsService = SettingsService();
+    final settingsService = sl<SettingsService>();
 
     test(
       'calling `get settings` should return the standard settings',
