@@ -91,4 +91,13 @@ class ProcessService {
 
     return mipgenPID;
   }
+
+  Future<void> terminateProcess(Session session, int pid) async {
+    session.log("Terminating process with PID: $pid", level: LogLevel.info);
+    var process = await Process.run("kill", ["-9", pid.toString()]);
+    if (process.exitCode > 1) {
+      session.log("Error terminating process with PID: $pid",
+          level: LogLevel.error);
+    }
+  }
 }
