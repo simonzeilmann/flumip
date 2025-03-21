@@ -61,16 +61,18 @@ class ProcessService {
   ///
   /// \param session The current session.
   /// \param processName The name of the process to get the PID for.
+  /// \param processSearch The search string to identify the specific process.
   /// \returns The PID of the process.
-  Future<int> getProcessPID(Session session, String processName) async {
+  Future<int> getProcessPID(
+      Session session, String processName, String processSearch) async {
     session.log("Getting process PID for process name: $processName",
         level: LogLevel.info);
-    int mipgenPID = 0;
+    int processPID = 0;
 
-    var process = await Process.run("pgrep", ["--list-full", "mipgen"]);
+    var process = await Process.run("pgrep", ["--list-full", processName]);
     if (process.exitCode == 1) {
-      session.log("Mipgen is not running", level: LogLevel.info);
-      return mipgenPID;
+      session.log("Process is not running", level: LogLevel.info);
+      return processPID;
     }
     if (process.exitCode > 1) {
       session.log("Error running pgrep for process name: $processName",
@@ -80,16 +82,16 @@ class ProcessService {
     } else {
       var lines = process.stdout.split("\n");
       for (var line in lines) {
-        if (line.contains("-project_name $processName")) {
-          mipgenPID = int.parse(line.split(" ")[0]);
-          session.log("Found PID $mipgenPID for process name: $processName",
+        if (line.contains(processSearch)) {
+          processPID = int.parse(line.split(" ")[0]);
+          session.log("Found PID $processPID for process name: $processName",
               level: LogLevel.info);
           break;
         }
       }
     }
 
-    return mipgenPID;
+    return processPID;
   }
 
   Future<void> terminateProcess(Session session, int pid) async {

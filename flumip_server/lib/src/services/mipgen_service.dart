@@ -174,7 +174,8 @@ class MipgenService {
         runInShell: true);
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await processService.getProcessPID(session, project.name);
+    var mipgenPID = await processService.getProcessPID(
+        session, "mipgen", "-project_name ${project.name}");
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
     await projectService.updateProject(session, project);
