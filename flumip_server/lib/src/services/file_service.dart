@@ -1,15 +1,13 @@
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'dart:io';
 
 import '../generated/protocol.dart';
-import 'project_service.dart';
 
 /// A service class for handling file-related operations.
 class FileService {
-  final projectService = ProjectService();
-  final settingsService = SettingsService();
 
   FileService();
 
@@ -35,7 +33,7 @@ class FileService {
       throw ArgumentError('Project id does not exist');
     }
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
 
     String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
     if (await File(geneFile).exists()) {
@@ -73,7 +71,7 @@ class FileService {
       throw ArgumentError('Project id does not exist');
     }
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
     if (await File("${settings.projectDir}/${project.folderName}/genes.bed")
             .exists() &&
         await File("${settings.projectDir}/${project.folderName}/genes.bed")
@@ -135,7 +133,7 @@ class FileService {
           level: LogLevel.error);
       throw ArgumentError('Project id does not exist');
     }
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
 
     if (await File("${settings.projectDir}/${project.folderName}/genes.txt")
         .exists()) {
@@ -279,7 +277,7 @@ class FileService {
       throw FileNotFoundException(message: 'Project not found');
     }
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
     return await Directory("${settings.projectDir}/${project.folderName}")
         .exists();
   }
@@ -301,7 +299,7 @@ class FileService {
       throw FileNotFoundException(message: 'Project not found');
     }
 
-    var settings = await settingsService.getSettings(session);
+    var settings = await sl<SettingsService>().getSettings(session);
     var dir = await Directory("${settings.projectDir}/${project.folderName}")
         .list()
         .toList();

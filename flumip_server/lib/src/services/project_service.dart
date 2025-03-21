@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -75,6 +77,9 @@ class ProjectService {
         where: (t) => t.id.equals(project.options),
       );
 
+      if(project.active && project.pid != null && project.pid! > 0) {
+        await sl<ProcessService>().terminateProcess(session, project.pid!);
+      }
       var settings = await SettingsService().getSettings(session);
       Directory("${settings.projectDir}/${project.folderName}")
           .delete(recursive: true);

@@ -1,3 +1,4 @@
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -7,8 +8,9 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Project Creation', (sessionBuilder, endpoints) {
+    setup();
     var session = sessionBuilder.build();
-    final projectService = ProjectService();
+    final projectService = sl<ProjectService>();
 
     test(
       'calling `createProject` should return the project',

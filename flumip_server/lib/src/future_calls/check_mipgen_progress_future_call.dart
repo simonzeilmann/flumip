@@ -13,7 +13,7 @@ class CheckMipgenProgressFutureCall extends FutureCall<Project> {
     session.log(
         "Checking MIP generation progress for project ID: ${object?.id}",
         level: LogLevel.info);
-    if (await processService.checkIfProcessIsRunning(session, object!)) {
+    if (await processService.checkIfMipgenProcessIsRunning(session, object!)) {
       session.log(
           "MIP generation process is still running for project ID: ${object.id}",
           level: LogLevel.info);

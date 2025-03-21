@@ -9,7 +9,7 @@ void main() {
     test('creates a project', () async {
       final result = await endpoints.project
           .createProject(sessionBuilder, "int_test", ProjectOptions(id: 1));
-      expect(result, true);
+      expect(result.id, greaterThan(0));
     }, tags: ['integration']);
   });
 }
