@@ -4,13 +4,16 @@ import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+import '../generated/gene.dart';
 import '../generated/project.dart';
+import 'gene_service.dart';
 
 /// Service class for handling process-related operations.
 class ProcessService {
   ProcessService();
 
   final projectService = ProjectService();
+  final geneService = GeneService();
 
   /// Checks if the process is running for the specified project.
   ///
@@ -19,7 +22,7 @@ class ProcessService {
   /// \param session The current session.
   /// \param projectModel The project model to check.
   /// \returns A boolean indicating whether the process is running.
-  Future<bool> checkIfProcessIsRunning(
+  Future<bool> checkIfMipgenProcessIsRunning(
       Session session, Project projectModel) async {
     session.log(
         "Checking if process is running for project ID: ${projectModel.id}",
@@ -40,18 +43,51 @@ class ProcessService {
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
-        if(lines[1].contains("mipgen")) {
+        if (lines[1].contains("mipgen")) {
           session.log("Process is running for project ID: ${projectModel.id}",
               level: LogLevel.info);
           return true;
         }
-        else {
-          session.log("Process is not running for project ID: ${projectModel.id}",
-              level: LogLevel.info);
-          return false;
-        }
       }
       session.log("Process is not running for project ID: ${projectModel.id}",
+          level: LogLevel.info);
+      return false;
+    }
+  }
+
+  /// Checks if the BWA index process is running for the specified gene.
+  ///
+  /// Throws an [ArgumentError] if the gene ID does not exist.
+  ///
+  /// \param session The current session.
+  /// \param geneModel The gene model to check.
+  /// \returns A boolean indicating whether the BWA process is running.
+  Future<bool> checkIfIndexProcessIsRunning(
+      Session session, Gene geneModel) async {
+    session.log(
+        "Checking if index process is running for gene ID: ${geneModel.id}",
+        level: LogLevel.info);
+    var gene = await geneService.getGene(session, geneModel.id!);
+    if (gene.id == null) {
+      session.log("Gene ID does not exist: ${geneModel.id}",
+          level: LogLevel.error);
+      throw ArgumentError('Gene id does not exist');
+    }
+    var process = await Process.run("ps", ["-p", gene.indexPID.toString()]);
+    if (process.exitCode > 1) {
+      session.log("Error running process check for gene ID: ${geneModel.id}",
+          level: LogLevel.error);
+      throw ();
+    } else {
+      var lines = process.stdout.split("\n");
+      if (lines.length > 1) {
+        if (lines[1].contains(gene.fastaPath)) {
+          session.log("Process is running for gene ID: ${geneModel.id}",
+              level: LogLevel.info);
+          return true;
+        }
+      }
+      session.log("Process is not running for gene ID: ${geneModel.id}",
           level: LogLevel.info);
       return false;
     }
