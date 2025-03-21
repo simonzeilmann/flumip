@@ -60,7 +60,7 @@ if $INDEX && ! $DOWNLOAD && ! $FA_EXISTS; then
 fi
 
 # Update system package repository
-echo -e "\n${GREEN}Updating and upgrading system packages...${NC}\n"
+echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages
