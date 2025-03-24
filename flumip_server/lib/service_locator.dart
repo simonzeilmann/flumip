@@ -1,5 +1,5 @@
 import 'package:flumip_server/src/services/file_service.dart';
-import 'package:flumip_server/src/services/gene_service.dart';
+import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
@@ -14,7 +14,7 @@ void setup() {
   sl.registerSingleton<SettingsService>(SettingsService());
   sl.registerSingleton<ProjectService>(ProjectService());
   sl.registerSingleton<ProcessService>(ProcessService());
-  sl.registerSingleton<GeneService>(GeneService());
+  sl.registerSingleton<GenomeService>(GenomeService());
   sl.registerSingleton<FileService>(FileService());
   sl.registerSingleton<OptionsService>(OptionsService());
   sl.registerSingleton<MipgenService>(MipgenService());

@@ -10,14 +10,16 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'gene.dart' as _i2;
+import 'genome.dart' as _i2;
 import 'project.dart' as _i3;
 import 'project_options.dart' as _i4;
 import 'score_method.dart' as _i5;
 import 'settings.dart' as _i6;
 import 'snp.dart' as _i7;
-import 'package:flumip_client/src/protocol/project.dart' as _i8;
-export 'gene.dart';
+import 'package:flumip_client/src/protocol/genome.dart' as _i8;
+import 'package:flumip_client/src/protocol/snp.dart' as _i9;
+import 'package:flumip_client/src/protocol/project.dart' as _i10;
+export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
 export 'score_method.dart';
@@ -38,8 +40,8 @@ class Protocol extends _i1.SerializationManager {
     Type? t,
   ]) {
     t ??= T;
-    if (t == _i2.Gene) {
-      return _i2.Gene.fromJson(data) as T;
+    if (t == _i2.Genome) {
+      return _i2.Genome.fromJson(data) as T;
     }
     if (t == _i3.Project) {
       return _i3.Project.fromJson(data) as T;
@@ -56,8 +58,8 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i7.Snp) {
       return _i7.Snp.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i2.Gene?>()) {
-      return (data != null ? _i2.Gene.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i2.Genome?>()) {
+      return (data != null ? _i2.Genome.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<_i3.Project?>()) {
       return (data != null ? _i3.Project.fromJson(data) : null) as T;
@@ -92,8 +94,15 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i8.Project>) {
-      return (data as List).map((e) => deserialize<_i8.Project>(e)).toList()
+    if (t == List<_i8.Genome>) {
+      return (data as List).map((e) => deserialize<_i8.Genome>(e)).toList()
+          as T;
+    }
+    if (t == List<_i9.Snp>) {
+      return (data as List).map((e) => deserialize<_i9.Snp>(e)).toList() as T;
+    }
+    if (t == List<_i10.Project>) {
+      return (data as List).map((e) => deserialize<_i10.Project>(e)).toList()
           as T;
     }
     return super.deserialize<T>(data, t);
@@ -103,8 +112,8 @@ class Protocol extends _i1.SerializationManager {
   String? getClassNameForObject(Object? data) {
     String? className = super.getClassNameForObject(data);
     if (className != null) return className;
-    if (data is _i2.Gene) {
-      return 'Gene';
+    if (data is _i2.Genome) {
+      return 'Genome';
     }
     if (data is _i3.Project) {
       return 'Project';
@@ -130,8 +139,8 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'Gene') {
-      return deserialize<_i2.Gene>(data['data']);
+    if (dataClassName == 'Genome') {
+      return deserialize<_i2.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
       return deserialize<_i3.Project>(data['data']);

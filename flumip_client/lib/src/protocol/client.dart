@@ -11,10 +11,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
-import 'package:flumip_client/src/protocol/project_options.dart' as _i3;
-import 'package:flumip_client/src/protocol/project.dart' as _i4;
-import 'package:flumip_client/src/protocol/settings.dart' as _i5;
-import 'protocol.dart' as _i6;
+import 'package:flumip_client/src/protocol/genome.dart' as _i3;
+import 'package:flumip_client/src/protocol/snp.dart' as _i4;
+import 'package:flumip_client/src/protocol/project_options.dart' as _i5;
+import 'package:flumip_client/src/protocol/project.dart' as _i6;
+import 'package:flumip_client/src/protocol/settings.dart' as _i7;
+import 'protocol.dart' as _i8;
 
 /// Endpoint for handling file-related operations.
 /// {@category Endpoint}
@@ -79,6 +81,172 @@ class EndpointFile extends _i1.EndpointRef {
       );
 }
 
+/// Endpoint for genome-related operations.
+/// {@category Endpoint}
+class EndpointGenome extends _i1.EndpointRef {
+  EndpointGenome(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'genome';
+
+  /// Retrieves a genome by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the genome to retrieve.
+  /// \returns The genome with the specified ID.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<_i3.Genome> getGenome(int id) =>
+      caller.callServerEndpoint<_i3.Genome>(
+        'genome',
+        'getGenome',
+        {'id': id},
+      );
+
+  /// Retrieves all genomes.
+  ///
+  /// \param session The current session.
+  /// \returns A list of all genomes.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<List<_i3.Genome>> getAllGenomes() =>
+      caller.callServerEndpoint<List<_i3.Genome>>(
+        'genome',
+        'getAllGenomes',
+        {},
+      );
+
+  /// Updates a genome.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the genome to update.
+  /// \param genome The updated genome data.
+  /// \throws Exception if an error occurs during the update.
+  _i2.Future<void> updateGenome(
+    int id,
+    _i3.Genome genome,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'genome',
+        'updateGenome',
+        {
+          'id': id,
+          'genome': genome,
+        },
+      );
+
+  /// Collects genomes from the genome directory.
+  ///
+  /// \param session The current session.
+  /// \throws Exception if an error occurs during collection.
+  _i2.Future<void> collectGenomes() => caller.callServerEndpoint<void>(
+        'genome',
+        'collectGenomes',
+        {},
+      );
+
+  /// Indexes the FA file for the specified genome.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the genome to index.
+  /// \throws Exception if an error occurs during indexing.
+  _i2.Future<void> indexGenome(int id) => caller.callServerEndpoint<void>(
+        'genome',
+        'indexGenome',
+        {'id': id},
+      );
+
+  /// Deletes the index for the specified genome.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the genome to delete the index for.
+  /// \throws Exception if an error occurs during deletion.
+  _i2.Future<void> deleteGenomeIndex(int id) => caller.callServerEndpoint<void>(
+        'genome',
+        'deleteGenomeIndex',
+        {'id': id},
+      );
+
+  /// Retrieves an SNP by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the SNP to retrieve.
+  /// \returns The SNP with the specified ID.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<_i4.Snp> getSnp(int id) => caller.callServerEndpoint<_i4.Snp>(
+        'genome',
+        'getSnp',
+        {'id': id},
+      );
+
+  /// Retrieves all SNPs for a specific genome.
+  ///
+  /// \param session The current session.
+  /// \param genomeId The ID of the genome to retrieve SNPs for.
+  /// \returns A list of all SNPs for the specified genome.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<List<_i4.Snp>> getAllSnpForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_i4.Snp>>(
+        'genome',
+        'getAllSnpForGenome',
+        {'genomeId': genomeId},
+      );
+
+  /// Updates an SNP.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the SNP to update.
+  /// \param snp The updated SNP data.
+  /// \throws Exception if an error occurs during the update.
+  _i2.Future<void> updateSnp(
+    int id,
+    _i4.Snp snp,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'genome',
+        'updateSnp',
+        {
+          'id': id,
+          'snp': snp,
+        },
+      );
+
+  /// Retrieves all genome categories.
+  ///
+  /// \param session The current session.
+  /// \returns A list of all genome categories.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<List<String>> getCategories() =>
+      caller.callServerEndpoint<List<String>>(
+        'genome',
+        'getCategories',
+        {},
+      );
+
+  /// Retrieves genomes by category.
+  ///
+  /// \param session The current session.
+  /// \param category The category to filter genomes by.
+  /// \returns A list of genomes in the specified category.
+  /// \throws Exception if an error occurs during retrieval.
+  _i2.Future<List<_i3.Genome>> getGenomeByCategory(String category) =>
+      caller.callServerEndpoint<List<_i3.Genome>>(
+        'genome',
+        'getGenomeByCategory',
+        {'category': category},
+      );
+
+  _i2.Future<void> indexFasta(int id) => caller.callServerEndpoint<void>(
+        'genome',
+        'indexFasta',
+        {'id': id},
+      );
+
+  _i2.Future<void> deleteFastaIndex(int id) => caller.callServerEndpoint<void>(
+        'genome',
+        'deleteFastaIndex',
+        {'id': id},
+      );
+}
+
 /// Endpoint for handling MIP generation-related operations.
 /// {@category Endpoint}
 class EndpointMipgen extends _i1.EndpointRef {
@@ -129,8 +297,8 @@ class EndpointOptions extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns The created [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> createProjectOptions() =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i5.ProjectOptions> createProjectOptions() =>
+      caller.callServerEndpoint<_i5.ProjectOptions>(
         'options',
         'createProjectOptions',
         {},
@@ -141,9 +309,9 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> insertProjectOptions(
-          _i3.ProjectOptions options) =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i5.ProjectOptions> insertProjectOptions(
+          _i5.ProjectOptions options) =>
+      caller.callServerEndpoint<_i5.ProjectOptions>(
         'options',
         'insertProjectOptions',
         {'options': options},
@@ -154,8 +322,8 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param id The ID of the project options to retrieve.
   /// \returns The retrieved [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> getProjectOptions(int id) =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i5.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_i5.ProjectOptions>(
         'options',
         'getProjectOptions',
         {'id': id},
@@ -168,7 +336,7 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param options The [ProjectOptions] object to update.
   _i2.Future<void> updateProjectOptions(
     int id,
-    _i3.ProjectOptions options,
+    _i5.ProjectOptions options,
   ) =>
       caller.callServerEndpoint<void>(
         'options',
@@ -206,12 +374,12 @@ class EndpointProject extends _i1.EndpointRef {
   /// \param options The options for the project.
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
-  _i2.Future<_i4.Project> createProject(
+  _i2.Future<_i6.Project> createProject(
     String name,
-    _i3.ProjectOptions options, [
+    _i5.ProjectOptions options, [
     String? description,
   ]) =>
-      caller.callServerEndpoint<_i4.Project>(
+      caller.callServerEndpoint<_i6.Project>(
         'project',
         'createProject',
         {
@@ -235,8 +403,8 @@ class EndpointProject extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.
-  _i2.Future<List<_i4.Project>> getProjects() =>
-      caller.callServerEndpoint<List<_i4.Project>>(
+  _i2.Future<List<_i6.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_i6.Project>>(
         'project',
         'getProjects',
         {},
@@ -247,8 +415,8 @@ class EndpointProject extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param id The ID of the project to retrieve.
   /// \returns The retrieved [Project] object.
-  _i2.Future<_i4.Project> getProject(int id) =>
-      caller.callServerEndpoint<_i4.Project>(
+  _i2.Future<_i6.Project> getProject(int id) =>
+      caller.callServerEndpoint<_i6.Project>(
         'project',
         'getProject',
         {'id': id},
@@ -307,6 +475,42 @@ class EndpointProject extends _i1.EndpointRef {
           'genes': genes,
         },
       );
+
+  /// Sets the genome for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param genomeId The ID of the genome to set.
+  _i2.Future<void> setGeneById(
+    int id,
+    int genomeId,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'setGeneById',
+        {
+          'id': id,
+          'genomeId': genomeId,
+        },
+      );
+
+  /// Sets the SNP for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param snpId The ID of the SNP to set.
+  _i2.Future<void> setSnpById(
+    int id,
+    int snpId,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'setSnpById',
+        {
+          'id': id,
+          'snpId': snpId,
+        },
+      );
 }
 
 /// Endpoint for handling settings-related operations.
@@ -321,8 +525,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i5.Settings> getSettings() =>
-      caller.callServerEndpoint<_i5.Settings>(
+  _i2.Future<_i7.Settings> getSettings() =>
+      caller.callServerEndpoint<_i7.Settings>(
         'settings',
         'getSettings',
         {},
@@ -332,7 +536,7 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param settings The [Settings] object to update.
-  _i2.Future<void> updateSettings(_i5.Settings settings) =>
+  _i2.Future<void> updateSettings(_i7.Settings settings) =>
       caller.callServerEndpoint<void>(
         'settings',
         'updateSettings',
@@ -356,7 +560,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
           host,
-          _i6.Protocol(),
+          _i8.Protocol(),
           securityContext: securityContext,
           authenticationKeyManager: authenticationKeyManager,
           streamingConnectionTimeout: streamingConnectionTimeout,
@@ -367,6 +571,7 @@ class Client extends _i1.ServerpodClientShared {
               disconnectStreamsOnLostInternetConnection,
         ) {
     file = EndpointFile(this);
+    genome = EndpointGenome(this);
     mipgen = EndpointMipgen(this);
     options = EndpointOptions(this);
     project = EndpointProject(this);
@@ -374,6 +579,8 @@ class Client extends _i1.ServerpodClientShared {
   }
 
   late final EndpointFile file;
+
+  late final EndpointGenome genome;
 
   late final EndpointMipgen mipgen;
 
@@ -386,6 +593,7 @@ class Client extends _i1.ServerpodClientShared {
   @override
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
         'file': file,
+        'genome': genome,
         'mipgen': mipgen,
         'options': options,
         'project': project,

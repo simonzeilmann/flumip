@@ -86,6 +86,16 @@ class MyHomePageState extends State<MyHomePage> {
     _toggleCreateProject();
   }
 
+  void _collectGenes() {
+    try {
+      client.genome.collectGenomes();
+    } catch (e) {
+      setState(() {
+        _errorMessage = '$e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,6 +112,11 @@ class MyHomePageState extends State<MyHomePage> {
                   ElevatedButton(
                     onPressed: _toggleCreateProject,
                     child: Text('Create Project'),
+                  ),
+                  SizedBox(width: 50),
+                  ElevatedButton(
+                    onPressed: _collectGenes,
+                    child: Text('Collect Genes'),
                   ),
                 ],
               ),

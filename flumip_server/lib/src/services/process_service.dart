@@ -5,9 +5,8 @@ import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
-import '../generated/gene.dart';
-import '../generated/project.dart';
-import 'gene_service.dart';
+import '../generated/protocol.dart';
+import 'genome_service.dart';
 
 /// Service class for handling process-related operations.
 class ProcessService {
@@ -61,31 +60,31 @@ class ProcessService {
   /// \param geneModel The gene model to check.
   /// \returns A boolean indicating whether the BWA process is running.
   Future<bool> checkIfIndexProcessIsRunning(
-      Session session, Gene geneModel) async {
+      Session session, Genome genomeModel) async {
     session.log(
-        "Checking if index process is running for gene ID: ${geneModel.id}",
+        "Checking if index process is running for gene ID: ${genomeModel.id}",
         level: LogLevel.info);
-    var gene = await sl<GeneService>().getGene(session, geneModel.id!);
-    if (gene.id == null) {
-      session.log("Gene ID does not exist: ${geneModel.id}",
+    var genome = await sl<GenomeService>().getGenome(session, genomeModel.id!);
+    if (genome.id == null) {
+      session.log("Gene ID does not exist: ${genomeModel.id}",
           level: LogLevel.error);
       throw ArgumentError('Gene id does not exist');
     }
-    var process = await Process.run("ps", ["-p", gene.indexPID.toString()]);
+    var process = await Process.run("ps", ["-p", genome.indexPID.toString()]);
     if (process.exitCode > 1) {
-      session.log("Error running process check for gene ID: ${geneModel.id}",
+      session.log("Error running process check for gene ID: ${genomeModel.id}",
           level: LogLevel.error);
       throw ();
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
-        if (lines[1].contains(gene.fastaPath)) {
-          session.log("Process is running for gene ID: ${geneModel.id}",
+        if (lines[1].contains(genome.fastaPath)) {
+          session.log("Process is running for gene ID: ${genomeModel.id}",
               level: LogLevel.info);
           return true;
         }
       }
-      session.log("Process is not running for gene ID: ${geneModel.id}",
+      session.log("Process is not running for gene ID: ${genomeModel.id}",
           level: LogLevel.info);
       return false;
     }

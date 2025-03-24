@@ -86,11 +86,18 @@ chmod +x tools/extract_coding_gene_exons.sh
 chmod +x tools/generate_ucsc_track.py
 cd ..
 
-# Create the directory structure for data etc.
+# Create the base directory structure.
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
-mkdir -p /opt/flumip/data/genes/human/hg38/{fa,snp/00-common_all}
+mkdir -p /opt/flumip/data/genomes/
 mkdir -p /opt/flumip/projects
-mkdir -p /opt/flumip/data/custom_snp/{cpmmon,private}
+mkdir -p /opt/flumip/data/custom_snp/{common,private}
+
+if $DOWNLOAD; then
+  # Create the directory structure for the downloads.
+  echo -e "\n${GREEN}Setting up gene directories...${NC}\n"
+  mkdir -p /opt/flumip/data/genes/human/hg38/{fa,snp/00-common_all}
+  mkdir -p /opt/flumip/data/genes/human/hg38/snp/00-common_all
+fi
 
 if $DOWNLOAD; then
   # Download and extract refGene file if not already present

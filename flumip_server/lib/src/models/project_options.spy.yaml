@@ -1,8 +1,6 @@
 class: ProjectOptions
 table: project_options
 fields:
-  fasta: int?
-  snp: int?
   minCaptureSize: int, default=162
   maxCaptureSize: int, default=162
   armLengths: String?
