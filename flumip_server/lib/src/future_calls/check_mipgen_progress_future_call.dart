@@ -1,12 +1,13 @@
 import 'package:serverpod/serverpod.dart';
 
+import '../../service_locator.dart';
 import '../generated/project.dart';
 import '../services/mipgen_service.dart';
 import '../services/process_service.dart';
 
 class CheckMipgenProgressFutureCall extends FutureCall<Project> {
-  final processService = ProcessService();
-  final mipgenService = MipgenService();
+  final processService = sl<ProcessService>();
+  final mipgenService = sl<MipgenService>();
 
   @override
   Future<void> invoke(Session session, Project? object) async {
