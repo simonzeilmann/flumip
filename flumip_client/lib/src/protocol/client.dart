@@ -11,10 +11,11 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
-import 'package:flumip_client/src/protocol/project_options.dart' as _i3;
-import 'package:flumip_client/src/protocol/project.dart' as _i4;
-import 'package:flumip_client/src/protocol/settings.dart' as _i5;
-import 'protocol.dart' as _i6;
+import 'package:flumip_client/src/protocol/gene.dart' as _i3;
+import 'package:flumip_client/src/protocol/project_options.dart' as _i4;
+import 'package:flumip_client/src/protocol/project.dart' as _i5;
+import 'package:flumip_client/src/protocol/settings.dart' as _i6;
+import 'protocol.dart' as _i7;
 
 /// Endpoint for handling file-related operations.
 /// {@category Endpoint}
@@ -79,6 +80,46 @@ class EndpointFile extends _i1.EndpointRef {
       );
 }
 
+/// {@category Endpoint}
+class EndpointGene extends _i1.EndpointRef {
+  EndpointGene(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'gene';
+
+  _i2.Future<_i3.Gene> getGene(int id) => caller.callServerEndpoint<_i3.Gene>(
+        'gene',
+        'getGene',
+        {'id': id},
+      );
+
+  _i2.Future<List<_i3.Gene>> getAllGenes() =>
+      caller.callServerEndpoint<List<_i3.Gene>>(
+        'gene',
+        'getAllGenes',
+        {},
+      );
+
+  _i2.Future<void> updateGene(
+    int id,
+    _i3.Gene gene,
+  ) =>
+      caller.callServerEndpoint<void>(
+        'gene',
+        'updateGene',
+        {
+          'id': id,
+          'gene': gene,
+        },
+      );
+
+  _i2.Future<void> collectGenes() => caller.callServerEndpoint<void>(
+        'gene',
+        'collectGenes',
+        {},
+      );
+}
+
 /// Endpoint for handling MIP generation-related operations.
 /// {@category Endpoint}
 class EndpointMipgen extends _i1.EndpointRef {
@@ -129,8 +170,8 @@ class EndpointOptions extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns The created [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> createProjectOptions() =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i4.ProjectOptions> createProjectOptions() =>
+      caller.callServerEndpoint<_i4.ProjectOptions>(
         'options',
         'createProjectOptions',
         {},
@@ -141,9 +182,9 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> insertProjectOptions(
-          _i3.ProjectOptions options) =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i4.ProjectOptions> insertProjectOptions(
+          _i4.ProjectOptions options) =>
+      caller.callServerEndpoint<_i4.ProjectOptions>(
         'options',
         'insertProjectOptions',
         {'options': options},
@@ -154,8 +195,8 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param id The ID of the project options to retrieve.
   /// \returns The retrieved [ProjectOptions] object.
-  _i2.Future<_i3.ProjectOptions> getProjectOptions(int id) =>
-      caller.callServerEndpoint<_i3.ProjectOptions>(
+  _i2.Future<_i4.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_i4.ProjectOptions>(
         'options',
         'getProjectOptions',
         {'id': id},
@@ -168,7 +209,7 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param options The [ProjectOptions] object to update.
   _i2.Future<void> updateProjectOptions(
     int id,
-    _i3.ProjectOptions options,
+    _i4.ProjectOptions options,
   ) =>
       caller.callServerEndpoint<void>(
         'options',
@@ -206,12 +247,12 @@ class EndpointProject extends _i1.EndpointRef {
   /// \param options The options for the project.
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
-  _i2.Future<_i4.Project> createProject(
+  _i2.Future<_i5.Project> createProject(
     String name,
-    _i3.ProjectOptions options, [
+    _i4.ProjectOptions options, [
     String? description,
   ]) =>
-      caller.callServerEndpoint<_i4.Project>(
+      caller.callServerEndpoint<_i5.Project>(
         'project',
         'createProject',
         {
@@ -235,8 +276,8 @@ class EndpointProject extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.
-  _i2.Future<List<_i4.Project>> getProjects() =>
-      caller.callServerEndpoint<List<_i4.Project>>(
+  _i2.Future<List<_i5.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_i5.Project>>(
         'project',
         'getProjects',
         {},
@@ -247,8 +288,8 @@ class EndpointProject extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param id The ID of the project to retrieve.
   /// \returns The retrieved [Project] object.
-  _i2.Future<_i4.Project> getProject(int id) =>
-      caller.callServerEndpoint<_i4.Project>(
+  _i2.Future<_i5.Project> getProject(int id) =>
+      caller.callServerEndpoint<_i5.Project>(
         'project',
         'getProject',
         {'id': id},
@@ -321,8 +362,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i5.Settings> getSettings() =>
-      caller.callServerEndpoint<_i5.Settings>(
+  _i2.Future<_i6.Settings> getSettings() =>
+      caller.callServerEndpoint<_i6.Settings>(
         'settings',
         'getSettings',
         {},
@@ -332,7 +373,7 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param settings The [Settings] object to update.
-  _i2.Future<void> updateSettings(_i5.Settings settings) =>
+  _i2.Future<void> updateSettings(_i6.Settings settings) =>
       caller.callServerEndpoint<void>(
         'settings',
         'updateSettings',
@@ -356,7 +397,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
           host,
-          _i6.Protocol(),
+          _i7.Protocol(),
           securityContext: securityContext,
           authenticationKeyManager: authenticationKeyManager,
           streamingConnectionTimeout: streamingConnectionTimeout,
@@ -367,6 +408,7 @@ class Client extends _i1.ServerpodClientShared {
               disconnectStreamsOnLostInternetConnection,
         ) {
     file = EndpointFile(this);
+    gene = EndpointGene(this);
     mipgen = EndpointMipgen(this);
     options = EndpointOptions(this);
     project = EndpointProject(this);
@@ -374,6 +416,8 @@ class Client extends _i1.ServerpodClientShared {
   }
 
   late final EndpointFile file;
+
+  late final EndpointGene gene;
 
   late final EndpointMipgen mipgen;
 
@@ -386,6 +430,7 @@ class Client extends _i1.ServerpodClientShared {
   @override
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
         'file': file,
+        'gene': gene,
         'mipgen': mipgen,
         'options': options,
         'project': project,

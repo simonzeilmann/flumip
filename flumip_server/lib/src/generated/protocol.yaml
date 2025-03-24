@@ -4,6 +4,11 @@ file:
   - showMipsResult:
   - showMipsProgress:
   - showUSCSTrack:
+gene:
+  - getGene:
+  - getAllGenes:
+  - updateGene:
+  - collectGenes:
 mipgen:
   - createBedFile:
   - generateMips:

@@ -17,7 +17,8 @@ import 'project_options.dart' as _i5;
 import 'score_method.dart' as _i6;
 import 'settings.dart' as _i7;
 import 'snp.dart' as _i8;
-import 'package:flumip_server/src/generated/project.dart' as _i9;
+import 'package:flumip_server/src/generated/gene.dart' as _i9;
+import 'package:flumip_server/src/generated/project.dart' as _i10;
 export 'gene.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -62,26 +63,26 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'path',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'fastaPath',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'refPath',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'snpFolder',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'snp',
@@ -92,8 +93,8 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'category',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'active',
@@ -776,8 +777,11 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i9.Project>) {
-      return (data as List).map((e) => deserialize<_i9.Project>(e)).toList()
+    if (t == List<_i9.Gene>) {
+      return (data as List).map((e) => deserialize<_i9.Gene>(e)).toList() as T;
+    }
+    if (t == List<_i10.Project>) {
+      return (data as List).map((e) => deserialize<_i10.Project>(e)).toList()
           as T;
     }
     try {

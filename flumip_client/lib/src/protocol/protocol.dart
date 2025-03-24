@@ -16,7 +16,8 @@ import 'project_options.dart' as _i4;
 import 'score_method.dart' as _i5;
 import 'settings.dart' as _i6;
 import 'snp.dart' as _i7;
-import 'package:flumip_client/src/protocol/project.dart' as _i8;
+import 'package:flumip_client/src/protocol/gene.dart' as _i8;
+import 'package:flumip_client/src/protocol/project.dart' as _i9;
 export 'gene.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -92,8 +93,11 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i8.Project>) {
-      return (data as List).map((e) => deserialize<_i8.Project>(e)).toList()
+    if (t == List<_i8.Gene>) {
+      return (data as List).map((e) => deserialize<_i8.Gene>(e)).toList() as T;
+    }
+    if (t == List<_i9.Project>) {
+      return (data as List).map((e) => deserialize<_i9.Project>(e)).toList()
           as T;
     }
     return super.deserialize<T>(data, t);
