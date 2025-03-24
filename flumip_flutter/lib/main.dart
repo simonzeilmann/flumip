@@ -88,7 +88,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void _collectGenes() {
     try {
-      client.gene.collectGenes();
+      client.genome.collectGenomes();
     } catch (e) {
       setState(() {
         _errorMessage = '$e';
@@ -113,6 +113,7 @@ class MyHomePageState extends State<MyHomePage> {
                     onPressed: _toggleCreateProject,
                     child: Text('Create Project'),
                   ),
+                  SizedBox(width: 50),
                   ElevatedButton(
                     onPressed: _collectGenes,
                     child: Text('Collect Genes'),

@@ -1,27 +1,20 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
-import '../generated/project.dart';
 import 'file_service.dart';
+import 'genome_service.dart';
 import 'options_service.dart';
 
 /// Service class for handling MIP generation related operations.
 class MipgenService {
-  late final String refGene;
-  late final String fa;
-  late final String snp;
-
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
-  MipgenService() {
-    refGene = "/opt/flumip/data/genes/human/hg38/refGene.txt";
-    fa = "/opt/flumip/data/genes/human/hg38/fa/hg38.fa";
-    snp = "/opt/flumip/data/genes/human/hg38/snp/00-common_all.vcf.gz";
-  }
+  MipgenService();
 
   /// Creates a BED file for the specified project.
   ///
@@ -37,6 +30,17 @@ class MipgenService {
       session.log("Project ID does not exist: $projectID",
           level: LogLevel.error);
       throw ArgumentError('Project id does not exist');
+    }
+    if (project.genome == null) {
+      session.log("No genome found in project ID: $projectID",
+          level: LogLevel.error);
+      throw ArgumentError('No genome found in project');
+    }
+    var genome = await sl<GenomeService>().getGenome(session, project.genome!);
+    if (genome.refPath == null || genome.refPath!.isEmpty) {
+      session.log("No reference path found in genome ID: ${project.genome}",
+          level: LogLevel.error);
+      throw ArgumentError('No reference path found in genome');
     }
     if (project.genes == null || project.genes!.isEmpty) {
       session.log("No genes found in project ID: $projectID",
@@ -57,7 +61,7 @@ class MipgenService {
     await sl<FileService>().createGeneFile(session, projectID, project.genes!);
     List<String> arg = [];
     arg.add(geneFile);
-    arg.add(refGene);
+    arg.add(genome.refPath!);
 
     session.log("Running exon extract script with arguments: $arg",
         level: LogLevel.info);
@@ -93,15 +97,28 @@ class MipgenService {
 
     var settings = await sl<SettingsService>().getSettings(session);
 
+    var genome = await sl<GenomeService>().getGenome(session, project.genome!);
+    if (genome.fastaPath == null || genome.fastaPath!.isEmpty) {
+      session.log("No fasta path found in genome ID: ${project.genome}",
+          level: LogLevel.error);
+      throw ArgumentError('No fasta path found in genome');
+    }
+    Snp? snp;
+    if (project.snp != null) {
+      snp = await sl<GenomeService>().getSnp(session, project.snp!);
+    }
+
     List<String> arg = [
       "-regions_to_scan",
       "${settings.projectDir}/${project.folderName}/genes.bed",
       "-project_name",
       project.name,
       "-bwa_genome_index",
-      fa,
-      "-snp_file",
-      snp,
+      genome.fastaPath!,
+      if (snp != null && snp.vcfPath.isNotEmpty && snp.tbiPath.isNotEmpty) ...[
+        "-snp_file",
+        snp.vcfPath
+      ],
       "-min_capture_size",
       options.minCaptureSize.toString(),
       "-max_capture_size",

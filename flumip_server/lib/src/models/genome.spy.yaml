@@ -1,5 +1,5 @@
-class: Gene
-table: gene
+class: Genome
+table: genome
 fields:
   name: String
   description: String, default=''

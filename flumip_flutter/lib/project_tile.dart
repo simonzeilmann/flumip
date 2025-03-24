@@ -27,6 +27,8 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
+  late Genome genome;
+  late Snp snp;
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -61,9 +63,23 @@ class _ProjectTileState extends State<ProjectTile> {
       var projectUpdate = await client.project.getProject(widget.project.id!);
       final options =
           await client.options.getProjectOptions(widget.project.options);
+      Genome? genomeUpdate;
+      if (widget.project.genome != null) {
+        genomeUpdate = await client.genome.getGenome(widget.project.genome!);
+      }
+      Snp? snpUpdate;
+      if (widget.project.snp != null) {
+        snpUpdate = await client.genome.getSnp(widget.project.snp!);
+      }
       setState(() {
         widget.project = projectUpdate;
         projectOptions = options;
+        if (genomeUpdate != null) {
+          genome = genomeUpdate;
+        }
+        if (snpUpdate != null) {
+          snp = snpUpdate;
+        }
       });
     } catch (e) {
       setState(() {
@@ -390,6 +406,51 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  Future<List<String>> getGeneCategories() async {
+    try {
+      return await client.genome.getCategories();
+    } catch (e) {
+      _errorMessage = 'Failed to load gene categories: $e';
+      return [];
+    }
+  }
+
+  Future<List<Genome>> getGenomeByCategory(String category) async {
+    try {
+      return await client.genome.getGenomeByCategory(category);
+    } catch (e) {
+      _errorMessage = 'Failed to load genes for category: $e';
+      return [];
+    }
+  }
+
+  Future<List<Snp>> getSnpForGene(int geneId) async {
+    try {
+      return await client.genome.getAllSnpForGenome(geneId);
+    } catch (e) {
+      _errorMessage = 'Failed to load snps for genome: $e';
+      return [];
+    }
+  }
+
+  Future<void> setGene(int geneId) async {
+    try {
+      await client.project.setGeneById(widget.project.id!, geneId);
+      await _reloadProject();
+    } catch (e) {
+      _errorMessage = 'Failed to set genome: $e';
+    }
+  }
+
+  Future<void> setSnp(int snpId) async {
+    try {
+      await client.project.setSnpById(widget.project.id!, snpId);
+      await _reloadProject();
+    } catch (e) {
+      _errorMessage = 'Failed to set snp: $e';
+    }
+  }
+
   String _printDuration(Duration duration) {
     String negativeSign = duration.isNegative ? '-' : '';
     String twoDigits(int n) => n.toString().padLeft(2, "0");
@@ -439,6 +500,16 @@ class _ProjectTileState extends State<ProjectTile> {
                             _errorMessage!,
                             style: TextStyle(color: Colors.red),
                           ),
+                        if (widget.project.genome == null) buildGeneSelector(),
+                        if (widget.project.genome != null)
+                          Text('Genome: ${genome.name}'),
+                        SizedBox(height: 10),
+                        if (widget.project.genome != null &&
+                            widget.project.snp == null)
+                          buildSnpSelector(),
+                        if (widget.project.snp != null)
+                          Text('Snp: ${snp.name}'),
+                        SizedBox(height: 10),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
                           buildGeneColumn(),
@@ -497,6 +568,98 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
         ],
       ),
+    );
+  }
+
+  Column buildGeneSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Select Category:"),
+        FutureBuilder<List<String>>(
+          future: getGeneCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return DropdownButton<String>(
+                value: null,
+                onChanged: (String? category) {
+                  if (category != null) {
+                    getGenomeByCategory(category).then((genes) {
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('Select Gene'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var gene in genes)
+                                    ListTile(
+                                      title: Text(gene.name),
+                                      onTap: () {
+                                        setGene(gene.id!);
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    });
+                  }
+                },
+                items: snapshot.data!
+                    .map((category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ))
+                    .toList(),
+              );
+            } else if (snapshot.hasError) {
+              return Text('Failed to load gene categories: ${snapshot.error}');
+            } else {
+              return CircularProgressIndicator();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Column buildSnpSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Select SNP:"),
+        FutureBuilder<List<Snp>>(
+          future: getSnpForGene(genome.id!),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return DropdownButton<Snp>(
+                value: null,
+                onChanged: (Snp? snp) {
+                  if (snp != null) {
+                    setSnp(snp.id!);
+                  }
+                },
+                items: snapshot.data!
+                    .map((snp) => DropdownMenuItem(
+                          value: snp,
+                          child: Text(snp.name),
+                        ))
+                    .toList(),
+              );
+            } else if (snapshot.hasError) {
+              return Text('Failed to load snps: ${snapshot.error}');
+            } else {
+              return CircularProgressIndicator();
+            }
+          },
+        ),
+      ],
     );
   }
 

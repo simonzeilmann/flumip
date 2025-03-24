@@ -11,14 +11,15 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import '../endpoints/file_endpoint.dart' as _i2;
-import '../endpoints/gene_endpoint.dart' as _i3;
+import '../endpoints/genome_endpoint.dart' as _i3;
 import '../endpoints/mipgen_endpoint.dart' as _i4;
 import '../endpoints/options_endpoint.dart' as _i5;
 import '../endpoints/project_endpoint.dart' as _i6;
 import '../endpoints/settings_endpoint.dart' as _i7;
-import 'package:flumip_server/src/generated/gene.dart' as _i8;
-import 'package:flumip_server/src/generated/project_options.dart' as _i9;
-import 'package:flumip_server/src/generated/settings.dart' as _i10;
+import 'package:flumip_server/src/generated/genome.dart' as _i8;
+import 'package:flumip_server/src/generated/snp.dart' as _i9;
+import 'package:flumip_server/src/generated/project_options.dart' as _i10;
+import 'package:flumip_server/src/generated/settings.dart' as _i11;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -30,10 +31,10 @@ class Endpoints extends _i1.EndpointDispatch {
           'file',
           null,
         ),
-      'gene': _i3.GeneEndpoint()
+      'genome': _i3.GenomeEndpoint()
         ..initialize(
           server,
-          'gene',
+          'genome',
           null,
         ),
       'mipgen': _i4.MipgenEndpoint()
@@ -157,12 +158,12 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    connectors['gene'] = _i1.EndpointConnector(
-      name: 'gene',
-      endpoint: endpoints['gene']!,
+    connectors['genome'] = _i1.EndpointConnector(
+      name: 'genome',
+      endpoint: endpoints['genome']!,
       methodConnectors: {
-        'getGene': _i1.MethodConnector(
-          name: 'getGene',
+        'getGenome': _i1.MethodConnector(
+          name: 'getGenome',
           params: {
             'id': _i1.ParameterDescription(
               name: 'id',
@@ -174,31 +175,32 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['gene'] as _i3.GeneEndpoint).getGene(
+              (endpoints['genome'] as _i3.GenomeEndpoint).getGenome(
             session,
             params['id'],
           ),
         ),
-        'getAllGenes': _i1.MethodConnector(
-          name: 'getAllGenes',
+        'getAllGenomes': _i1.MethodConnector(
+          name: 'getAllGenomes',
           params: {},
           call: (
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['gene'] as _i3.GeneEndpoint).getAllGenes(session),
+              (endpoints['genome'] as _i3.GenomeEndpoint)
+                  .getAllGenomes(session),
         ),
-        'updateGene': _i1.MethodConnector(
-          name: 'updateGene',
+        'updateGenome': _i1.MethodConnector(
+          name: 'updateGenome',
           params: {
             'id': _i1.ParameterDescription(
               name: 'id',
               type: _i1.getType<int>(),
               nullable: false,
             ),
-            'gene': _i1.ParameterDescription(
-              name: 'gene',
-              type: _i1.getType<_i8.Gene>(),
+            'genome': _i1.ParameterDescription(
+              name: 'genome',
+              type: _i1.getType<_i8.Genome>(),
               nullable: false,
             ),
           },
@@ -206,20 +208,181 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['gene'] as _i3.GeneEndpoint).updateGene(
+              (endpoints['genome'] as _i3.GenomeEndpoint).updateGenome(
             session,
             params['id'],
-            params['gene'],
+            params['genome'],
           ),
         ),
-        'collectGenes': _i1.MethodConnector(
-          name: 'collectGenes',
+        'collectGenomes': _i1.MethodConnector(
+          name: 'collectGenomes',
           params: {},
           call: (
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['gene'] as _i3.GeneEndpoint).collectGenes(session),
+              (endpoints['genome'] as _i3.GenomeEndpoint)
+                  .collectGenomes(session),
+        ),
+        'indexGenome': _i1.MethodConnector(
+          name: 'indexGenome',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).indexGenome(
+            session,
+            params['id'],
+          ),
+        ),
+        'deleteGenomeIndex': _i1.MethodConnector(
+          name: 'deleteGenomeIndex',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).deleteGenomeIndex(
+            session,
+            params['id'],
+          ),
+        ),
+        'getSnp': _i1.MethodConnector(
+          name: 'getSnp',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).getSnp(
+            session,
+            params['id'],
+          ),
+        ),
+        'getAllSnpForGenome': _i1.MethodConnector(
+          name: 'getAllSnpForGenome',
+          params: {
+            'genomeId': _i1.ParameterDescription(
+              name: 'genomeId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).getAllSnpForGenome(
+            session,
+            params['genomeId'],
+          ),
+        ),
+        'updateSnp': _i1.MethodConnector(
+          name: 'updateSnp',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'snp': _i1.ParameterDescription(
+              name: 'snp',
+              type: _i1.getType<_i9.Snp>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).updateSnp(
+            session,
+            params['id'],
+            params['snp'],
+          ),
+        ),
+        'getCategories': _i1.MethodConnector(
+          name: 'getCategories',
+          params: {},
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint)
+                  .getCategories(session),
+        ),
+        'getGenomeByCategory': _i1.MethodConnector(
+          name: 'getGenomeByCategory',
+          params: {
+            'category': _i1.ParameterDescription(
+              name: 'category',
+              type: _i1.getType<String>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).getGenomeByCategory(
+            session,
+            params['category'],
+          ),
+        ),
+        'indexFasta': _i1.MethodConnector(
+          name: 'indexFasta',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).indexFasta(
+            session,
+            params['id'],
+          ),
+        ),
+        'deleteFastaIndex': _i1.MethodConnector(
+          name: 'deleteFastaIndex',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['genome'] as _i3.GenomeEndpoint).deleteFastaIndex(
+            session,
+            params['id'],
+          ),
         ),
       },
     );
@@ -290,7 +453,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i9.ProjectOptions>(),
+              type: _i1.getType<_i10.ProjectOptions>(),
               nullable: false,
             )
           },
@@ -332,7 +495,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i9.ProjectOptions>(),
+              type: _i1.getType<_i10.ProjectOptions>(),
               nullable: false,
             ),
           },
@@ -382,7 +545,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i9.ProjectOptions>(),
+              type: _i1.getType<_i10.ProjectOptions>(),
               nullable: false,
             ),
             'description': _i1.ParameterDescription(
@@ -521,6 +684,54 @@ class Endpoints extends _i1.EndpointDispatch {
             params['genes'],
           ),
         ),
+        'setGeneById': _i1.MethodConnector(
+          name: 'setGeneById',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'genomeId': _i1.ParameterDescription(
+              name: 'genomeId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i6.ProjectEndpoint).setGeneById(
+            session,
+            params['id'],
+            params['genomeId'],
+          ),
+        ),
+        'setSnpById': _i1.MethodConnector(
+          name: 'setSnpById',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'snpId': _i1.ParameterDescription(
+              name: 'snpId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['project'] as _i6.ProjectEndpoint).setSnpById(
+            session,
+            params['id'],
+            params['snpId'],
+          ),
+        ),
       },
     );
     connectors['settings'] = _i1.EndpointConnector(
@@ -542,7 +753,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'settings': _i1.ParameterDescription(
               name: 'settings',
-              type: _i1.getType<_i10.Settings>(),
+              type: _i1.getType<_i11.Settings>(),
               nullable: false,
             )
           },

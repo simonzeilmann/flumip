@@ -4,7 +4,7 @@ fields:
   name: String
   folderName: String?, scope=serverOnly
   description: String, default=''
-  gene: int?
+  genome: int?
   snp: int?
   tags: List<String>?
   created: DateTime, default=now

@@ -124,4 +124,36 @@ class ProjectEndpoint extends Endpoint {
       rethrow;
     }
   }
+
+  /// Sets the genome for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param genomeId The ID of the genome to set.
+  Future<void> setGeneById(Session session, int id, int genomeId) async {
+    session.log("Setting gene to project with ID: $id", level: LogLevel.info);
+    try {
+      return projectService.setGenomeById(session, id, genomeId);
+    } catch (e) {
+      session.log("Error setting gene to project with ID: $id",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
+
+  /// Sets the SNP for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param snpId The ID of the SNP to set.
+  Future<void> setSnpById(Session session, int id, int snpId) async {
+    session.log("Setting snp to project with ID: $id", level: LogLevel.info);
+    try {
+      return projectService.setSnpById(session, id, snpId);
+    } catch (e) {
+      session.log("Error setting snp to project with ID: $id",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
 }

@@ -11,15 +11,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
-import 'gene.dart' as _i3;
+import 'genome.dart' as _i3;
 import 'project.dart' as _i4;
 import 'project_options.dart' as _i5;
 import 'score_method.dart' as _i6;
 import 'settings.dart' as _i7;
 import 'snp.dart' as _i8;
-import 'package:flumip_server/src/generated/gene.dart' as _i9;
-import 'package:flumip_server/src/generated/project.dart' as _i10;
-export 'gene.dart';
+import 'package:flumip_server/src/generated/genome.dart' as _i9;
+import 'package:flumip_server/src/generated/snp.dart' as _i10;
+import 'package:flumip_server/src/generated/project.dart' as _i11;
+export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
 export 'score_method.dart';
@@ -35,8 +36,8 @@ class Protocol extends _i1.SerializationManagerServer {
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
     _i2.TableDefinition(
-      name: 'gene',
-      dartName: 'Gene',
+      name: 'genome',
+      dartName: 'Genome',
       schema: 'public',
       module: 'flumip',
       columns: [
@@ -45,7 +46,7 @@ class Protocol extends _i1.SerializationManagerServer {
           columnType: _i2.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'gene_id_seq\'::regclass)',
+          columnDefault: 'nextval(\'genome_id_seq\'::regclass)',
         ),
         _i2.ColumnDefinition(
           name: 'name',
@@ -135,7 +136,7 @@ class Protocol extends _i1.SerializationManagerServer {
       foreignKeys: [],
       indexes: [
         _i2.IndexDefinition(
-          indexName: 'gene_pkey',
+          indexName: 'genome_pkey',
           tableSpace: null,
           elements: [
             _i2.IndexElementDefinition(
@@ -183,7 +184,7 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: '\'\'::text',
         ),
         _i2.ColumnDefinition(
-          name: 'gene',
+          name: 'genome',
           columnType: _i2.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
@@ -322,18 +323,6 @@ class Protocol extends _i1.SerializationManagerServer {
           isNullable: false,
           dartType: 'int?',
           columnDefault: 'nextval(\'project_options_id_seq\'::regclass)',
-        ),
-        _i2.ColumnDefinition(
-          name: 'fasta',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
-        ),
-        _i2.ColumnDefinition(
-          name: 'snp',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: true,
-          dartType: 'int?',
         ),
         _i2.ColumnDefinition(
           name: 'minCaptureSize',
@@ -590,11 +579,18 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: '\'/opt/flumip/projects\'::text',
         ),
         _i2.ColumnDefinition(
-          name: 'geneDir',
+          name: 'genomeDir',
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/genes\'::text',
+          columnDefault: '\'/opt/flumip/data/genomes\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'customSnpDir',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/flumip/data/custom_snp\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'mipgenExecutable',
@@ -723,8 +719,8 @@ class Protocol extends _i1.SerializationManagerServer {
     Type? t,
   ]) {
     t ??= T;
-    if (t == _i3.Gene) {
-      return _i3.Gene.fromJson(data) as T;
+    if (t == _i3.Genome) {
+      return _i3.Genome.fromJson(data) as T;
     }
     if (t == _i4.Project) {
       return _i4.Project.fromJson(data) as T;
@@ -741,8 +737,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i8.Snp) {
       return _i8.Snp.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i3.Gene?>()) {
-      return (data != null ? _i3.Gene.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i3.Genome?>()) {
+      return (data != null ? _i3.Genome.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<_i4.Project?>()) {
       return (data != null ? _i4.Project.fromJson(data) : null) as T;
@@ -777,11 +773,15 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i9.Gene>) {
-      return (data as List).map((e) => deserialize<_i9.Gene>(e)).toList() as T;
+    if (t == List<_i9.Genome>) {
+      return (data as List).map((e) => deserialize<_i9.Genome>(e)).toList()
+          as T;
     }
-    if (t == List<_i10.Project>) {
-      return (data as List).map((e) => deserialize<_i10.Project>(e)).toList()
+    if (t == List<_i10.Snp>) {
+      return (data as List).map((e) => deserialize<_i10.Snp>(e)).toList() as T;
+    }
+    if (t == List<_i11.Project>) {
+      return (data as List).map((e) => deserialize<_i11.Project>(e)).toList()
           as T;
     }
     try {
@@ -794,8 +794,8 @@ class Protocol extends _i1.SerializationManagerServer {
   String? getClassNameForObject(Object? data) {
     String? className = super.getClassNameForObject(data);
     if (className != null) return className;
-    if (data is _i3.Gene) {
-      return 'Gene';
+    if (data is _i3.Genome) {
+      return 'Genome';
     }
     if (data is _i4.Project) {
       return 'Project';
@@ -825,8 +825,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
-    if (dataClassName == 'Gene') {
-      return deserialize<_i3.Gene>(data['data']);
+    if (dataClassName == 'Genome') {
+      return deserialize<_i3.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
       return deserialize<_i4.Project>(data['data']);
@@ -859,8 +859,8 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i3.Gene:
-        return _i3.Gene.t;
+      case _i3.Genome:
+        return _i3.Genome.t;
       case _i4.Project:
         return _i4.Project.t;
       case _i5.ProjectOptions:

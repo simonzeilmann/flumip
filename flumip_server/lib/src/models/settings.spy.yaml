@@ -3,7 +3,7 @@ table: settings
 fields:
   baseDir: String, default="/opt/flumip"
   projectDir: String, default="/opt/flumip/projects"
-  geneDir: String, default="/opt/flumip/data/genes"
+  genomeDir: String, default="/opt/flumip/data/genomes"
   customSnpDir: String, default="/opt/flumip/data/custom_snp"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"

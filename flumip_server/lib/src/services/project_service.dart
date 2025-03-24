@@ -208,4 +208,46 @@ class ProjectService {
     await Project.db.updateRow(session, project);
     session.log("Project updated with ID: ${project.id}", level: LogLevel.info);
   }
+
+  /// Sets the genome for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param geneId The ID of the genome to set.
+  /// \throws [FileNotFoundException] if the project or genome is not found.
+  Future<void> setGenomeById(Session session, int id, int geneId) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FileNotFoundException(message: 'Project not found');
+    }
+    var genome = await Genome.db.findById(session, geneId);
+    if (genome == null) {
+      session.log("Gene not found with ID: $geneId", level: LogLevel.error);
+      throw FileNotFoundException(message: 'Gene not found');
+    }
+    project.genome = geneId;
+    await Project.db.updateRow(session, project);
+  }
+
+  /// Sets the SNP for a project by its ID.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param snpId The ID of the SNP to set.
+  /// \throws [FileNotFoundException] if the project or SNP is not found.
+  Future<void> setSnpById(Session session, int id, int snpId) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FileNotFoundException(message: 'Project not found');
+    }
+    var snp = await Snp.db.findById(session, snpId);
+    if (snp == null) {
+      session.log("Snp not found with ID: $snpId", level: LogLevel.error);
+      throw FileNotFoundException(message: 'Snp not found');
+    }
+    project.snp = snpId;
+    await Project.db.updateRow(session, project);
+  }
 }
