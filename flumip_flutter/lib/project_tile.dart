@@ -27,8 +27,9 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
-  late Genome genome;
-  late Snp snp;
+  late Genome genome = Genome(name: '');
+  late Snp snp =
+      Snp(name: '', vcfPath: '', tbiPath: '', folder: '', active: false);
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -502,14 +503,19 @@ class _ProjectTileState extends State<ProjectTile> {
                           ),
                         if (widget.project.genome == null) buildGeneSelector(),
                         if (widget.project.genome != null)
-                          Text('Genome: ${genome.name}'),
+                          Text('Genome:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(genome.name),
                         SizedBox(height: 10),
-                        if (widget.project.genome != null &&
-                            widget.project.snp == null)
+                        if (widget.project.snp == null &&
+                            !widget.project.active &&
+                            widget.project.completedIn == null)
                           buildSnpSelector(),
                         if (widget.project.snp != null)
-                          Text('Snp: ${snp.name}'),
-                        SizedBox(height: 10),
+                          Text('Snp:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(snp.name),
+                        SizedBox(height: 60),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
                           buildGeneColumn(),
@@ -633,7 +639,7 @@ class _ProjectTileState extends State<ProjectTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Select SNP:"),
+        Text("Select SNP (optional):"),
         FutureBuilder<List<Snp>>(
           future: getSnpForGene(genome.id!),
           builder: (context, snapshot) {
