@@ -180,7 +180,6 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       _nameController.clear();
       _descriptionController.clear();
       widget.onProjectCreated();
-      _initializeDefaultOptions();
     } catch (e) {
       setState(() {
         _errorMessage = '$e';
