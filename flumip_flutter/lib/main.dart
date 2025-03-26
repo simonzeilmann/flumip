@@ -1,8 +1,9 @@
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flumip_flutter/projects_tab.dart';
+import 'package:flumip_flutter/settings_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
-import 'project_tile.dart';
-import 'create_project_widget.dart';
+import 'genome_tab.dart';
 
 var client = Client('http://$localhost:8080/')
   ..connectivityMonitor = FlutterConnectivityMonitor();
@@ -36,118 +37,32 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<Project>? _projects;
-  String? _errorMessage;
-  bool _showCreateProject = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchProjects();
-  }
-
-  void _fetchProjects() async {
-    try {
-      final projects = await client.project.getProjects();
-      setState(() {
-        _errorMessage = null;
-        _projects = projects..sort((a, b) => b.created.compareTo(a.created));
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
-  }
-
-  void _deleteProject(int projectID) async {
-    try {
-      await client.project.deleteProject(projectID);
-      _fetchProjects();
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
-  }
-
-  void _toggleCreateProject() {
-    setState(() {
-      _showCreateProject = !_showCreateProject;
-    });
-  }
-
-  void _onProjectCreated() {
-    _fetchProjects();
-    _toggleCreateProject();
-  }
-
-  void _onAbort() {
-    _toggleCreateProject();
-  }
-
-  void _collectGenes() {
-    try {
-      client.genome.collectGenomes();
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Projects', icon: Icon(Icons.folder)),
+              Tab(text: 'Genome & SNP', icon: Icon(Icons.dns),),
+              Tab(text: 'Settings', icon: Icon(Icons.settings),),
+            ],
+          ),
+        ),
+        body: const TabBarView(
           children: [
-            if (!_showCreateProject)
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: _toggleCreateProject,
-                    child: Text('Create Project'),
-                  ),
-                  SizedBox(width: 50),
-                  ElevatedButton(
-                    onPressed: _collectGenes,
-                    child: Text('Collect Genes'),
-                  ),
-                ],
-              ),
-            if (_showCreateProject)
-              CreateProjectWidget(
-                onProjectCreated: _onProjectCreated,
-                onAbort: _onAbort,
-              ),
-            SizedBox(height: 30),
-            if (_errorMessage != null)
-              Container(
-                color: Colors.red[300],
-                padding: const EdgeInsets.all(8),
-                child: Text(_errorMessage!),
-              ),
-            if (_projects != null)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _projects!.length,
-                  itemBuilder: (context, index) {
-                    return ProjectTile(
-                      project: _projects![index],
-                      onDelete: () => _deleteProject(_projects![index].id!),
-                      onCreateGeneFile: (genes) => client.project
-                          .addGenesToProject(_projects![index].id!, genes),
-                    );
-                  },
-                ),
-              ),
-            if (_projects == null && _errorMessage == null)
-              const CircularProgressIndicator(),
+            ProjectsTab(),
+            GenomeTab(),
+            SettingsTab(),
           ],
         ),
       ),

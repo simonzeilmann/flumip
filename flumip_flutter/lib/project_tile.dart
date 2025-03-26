@@ -10,13 +10,11 @@ import 'package:flutter/services.dart';
 class ProjectTile extends StatefulWidget {
   Project project;
   final VoidCallback onDelete;
-  final Future<void> Function(List<String>) onCreateGeneFile;
 
   ProjectTile({
     super.key,
     required this.project,
     required this.onDelete,
-    required this.onCreateGeneFile,
   });
 
   @override
