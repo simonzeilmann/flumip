@@ -1,9 +1,9 @@
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/project_tile.dart';
+import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flutter/material.dart';
 
 import 'create_project_widget.dart';
-import 'main.dart';
+import '../main.dart';
 
 class ProjectsTab extends StatefulWidget {
   const ProjectsTab({super.key});

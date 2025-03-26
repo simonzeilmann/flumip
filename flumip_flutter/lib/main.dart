@@ -1,9 +1,9 @@
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/projects_tab.dart';
-import 'package:flumip_flutter/settings_tab.dart';
+import 'package:flumip_flutter/project/projects_tab.dart';
+import 'package:flumip_flutter/settings/settings_tab.dart';
+import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
-import 'genome_tab.dart';
 
 var client = Client('http://$localhost:8080/')
   ..connectivityMonitor = FlutterConnectivityMonitor();

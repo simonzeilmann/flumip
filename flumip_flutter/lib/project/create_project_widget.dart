@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/services.dart';
 
-import 'main.dart';
+import '../main.dart';
 
 class CreateProjectWidget extends StatefulWidget {
   final VoidCallback onProjectCreated;
