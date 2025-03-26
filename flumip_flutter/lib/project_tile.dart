@@ -505,9 +505,10 @@ class _ProjectTileState extends State<ProjectTile> {
                         if (widget.project.genome != null)
                           Text('Genome:',
                               style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(genome.name),
+                        Text(genome.name),
                         SizedBox(height: 10),
-                        if (widget.project.snp == null &&
+                        if (widget.project.snp != null &&
+                            widget.project.snp == null &&
                             !widget.project.active &&
                             widget.project.completedIn == null)
                           buildSnpSelector(),
