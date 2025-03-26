@@ -505,7 +505,7 @@ class _ProjectTileState extends State<ProjectTile> {
                               style: TextStyle(fontWeight: FontWeight.bold)),
                         Text(genome.name),
                         SizedBox(height: 10),
-                        if (widget.project.snp != null &&
+                        if (widget.project.genome != null &&
                             widget.project.snp == null &&
                             !widget.project.active &&
                             widget.project.completedIn == null)
@@ -589,21 +589,23 @@ class _ProjectTileState extends State<ProjectTile> {
                 value: null,
                 onChanged: (String? category) {
                   if (category != null) {
-                    getGenomeByCategory(category).then((genes) {
+                    getGenomeByCategory(category).then((genomes) {
                       if (context.mounted) {
                         showDialog(
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: Text('Select Gene'),
+                              title: Text('Select Genome:'),
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  for (var gene in genes)
+                                  for (var selectedGenome in genomes)
                                     ListTile(
-                                      title: Text(gene.name),
+                                      title: Text(selectedGenome.name),
                                       onTap: () {
-                                        setGene(gene.id!);
+                                        genome = selectedGenome;
+                                        setGene(selectedGenome.id!);
+                                        _reloadProject();
                                         Navigator.of(context).pop();
                                       },
                                     ),
@@ -645,9 +647,11 @@ class _ProjectTileState extends State<ProjectTile> {
             if (snapshot.hasData) {
               return DropdownButton<Snp>(
                 value: null,
-                onChanged: (Snp? snp) {
-                  if (snp != null) {
-                    setSnp(snp.id!);
+                onChanged: (Snp? selectedSnp) {
+                  if (selectedSnp != null) {
+                    snp = selectedSnp;
+                    setSnp(selectedSnp.id!);
+                    _reloadProject();
                   }
                 },
                 items: snapshot.data!
