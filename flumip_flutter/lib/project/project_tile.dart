@@ -531,7 +531,6 @@ class _ProjectTileState extends State<ProjectTile> {
                       ),
                     ],
                   )),
-                  SizedBox(height: 5),
                   if (widget.project.genes?.isNotEmpty == true &&
                       widget.project.bedFileCreated == false)
                     Center(
