@@ -53,7 +53,7 @@ class MyHomePageState extends State<MyHomePage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Projects', icon: Icon(Icons.folder)),
-              Tab(text: 'Genome & SNP', icon: Icon(Icons.dns),),
+              Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns),),
               Tab(text: 'Settings', icon: Icon(Icons.settings),),
             ],
           ),
