@@ -276,12 +276,21 @@ class GenomeService {
   Future<void> indexFasta(Session session, int id) async {
     session.log("Indexing Fasta for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
-    if (genome == null ||
-        genome.indexed ||
-        genome.fastaPath == null ||
-        genome.indexing) {
+    if (genome == null) {
       session.log("Invalid genome state for indexing with ID: $id",
           level: LogLevel.error);
+      throw ArgumentError();
+    }
+    if(genome.indexed) {
+      session.log("Genome already indexed with ID: $id", level: LogLevel.error);
+      throw ArgumentError();
+    }
+    if(genome.indexing) {
+      session.log("Genome already indexing with ID: $id", level: LogLevel.error);
+      throw ArgumentError();
+    }
+    if(genome.fastaPath == null) {
+      session.log("Genome has no FASTA file with ID: $id", level: LogLevel.error);
       throw ArgumentError();
     }
 
