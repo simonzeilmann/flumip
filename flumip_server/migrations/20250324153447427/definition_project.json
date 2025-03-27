@@ -1,0 +1,696 @@
+{
+  "moduleName": "flumip",
+  "tables": [
+    {
+      "name": "gene",
+      "dartName": "Gene",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "nextval('gene_id_seq'::regclass)",
+          "dartType": "int?"
+        },
+        {
+          "name": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "path",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "fastaPath",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "refPath",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "snpFolder",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "snp",
+          "columnType": 8,
+          "isNullable": true,
+          "dartType": "List<int>?"
+        },
+        {
+          "name": "category",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "name": "indexed",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "indexing",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "indexPID",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "name": "indexResults",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "indexName": "gene_pkey",
+          "elements": [
+            {
+              "type": 0,
+              "definition": "id"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": true
+        }
+      ],
+      "managed": true
+    },
+    {
+      "name": "project",
+      "dartName": "Project",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "nextval('project_id_seq'::regclass)",
+          "dartType": "int?"
+        },
+        {
+          "name": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "folderName",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "gene",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "snp",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "tags",
+          "columnType": 8,
+          "isNullable": true,
+          "dartType": "List<String>?"
+        },
+        {
+          "name": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "CURRENT_TIMESTAMP",
+          "dartType": "DateTime"
+        },
+        {
+          "name": "owner",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "department",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "genes",
+          "columnType": 8,
+          "isNullable": true,
+          "dartType": "List<String>?"
+        },
+        {
+          "name": "bedFileCreated",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "pid",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "size",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "name": "emailNotification",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "options",
+          "columnType": 6,
+          "isNullable": false,
+          "dartType": "int"
+        },
+        {
+          "name": "started",
+          "columnType": 4,
+          "isNullable": true,
+          "dartType": "DateTime?"
+        },
+        {
+          "name": "completedIn",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "Duration?"
+        },
+        {
+          "name": "error",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "cleanup",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "indexName": "project_pkey",
+          "elements": [
+            {
+              "type": 0,
+              "definition": "id"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": true
+        }
+      ],
+      "managed": true
+    },
+    {
+      "name": "project_options",
+      "dartName": "ProjectOptions",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "nextval('project_options_id_seq'::regclass)",
+          "dartType": "int?"
+        },
+        {
+          "name": "fasta",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "snp",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "name": "minCaptureSize",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "162",
+          "dartType": "int"
+        },
+        {
+          "name": "maxCaptureSize",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "162",
+          "dartType": "int"
+        },
+        {
+          "name": "armLengths",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "armLengthSums",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'40,41,42,43,44,45'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "extMinLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "16",
+          "dartType": "int"
+        },
+        {
+          "name": "extMaxLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "18",
+          "dartType": "int"
+        },
+        {
+          "name": "ligMinLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "18",
+          "dartType": "int"
+        },
+        {
+          "name": "tagSizes",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'5,0'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "maskedArmThreshold",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.5",
+          "dartType": "double"
+        },
+        {
+          "name": "targetArmCopy",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "20",
+          "dartType": "int"
+        },
+        {
+          "name": "maxArmCopyProduct",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "75",
+          "dartType": "int"
+        },
+        {
+          "name": "trf",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "genomeDir",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "name": "featureFlank",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "name": "captureIncrement",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "5",
+          "dartType": "int"
+        },
+        {
+          "name": "logisticHeuristic",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "maxMipOverlap",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "30",
+          "dartType": "int"
+        },
+        {
+          "name": "startingMipOverlap",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "name": "checkCopyNumber",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "name": "sealBothStrands",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "halfSealBothStrands",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "doubleTileStrandUnaware",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "doubleTileStrandsSeparately",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "scoreMethod",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'logistic'::text",
+          "dartType": "protocol:ScoreMethod"
+        },
+        {
+          "name": "logisticOptimalScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.98",
+          "dartType": "double"
+        },
+        {
+          "name": "svrOptimalScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "2.2",
+          "dartType": "double"
+        },
+        {
+          "name": "logisticPriorityScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.9",
+          "dartType": "double"
+        },
+        {
+          "name": "svrPriorityScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "1.5",
+          "dartType": "double"
+        },
+        {
+          "name": "silentMode",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "bwaThreads",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "1",
+          "dartType": "int"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "indexName": "project_options_pkey",
+          "elements": [
+            {
+              "type": 0,
+              "definition": "id"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": true
+        }
+      ],
+      "managed": true
+    },
+    {
+      "name": "settings",
+      "dartName": "Settings",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "nextval('settings_id_seq'::regclass)",
+          "dartType": "int?"
+        },
+        {
+          "name": "baseDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "projectDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/projects'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "geneDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/data/genes'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "customSnpDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/data/custom_snp'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "mipgenExecutable",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/mipgen'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "exonExtractScript",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "ucscTrackGenerator",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py'::text",
+          "dartType": "String"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "indexName": "settings_pkey",
+          "elements": [
+            {
+              "type": 0,
+              "definition": "id"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": true
+        }
+      ],
+      "managed": true
+    },
+    {
+      "name": "snp",
+      "dartName": "Snp",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "name": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "nextval('snp_id_seq'::regclass)",
+          "dartType": "int?"
+        },
+        {
+          "name": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "vcfPath",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "tbiPath",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "folder",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "name": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "dartType": "bool"
+        },
+        {
+          "name": "private",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "indexName": "snp_pkey",
+          "elements": [
+            {
+              "type": 0,
+              "definition": "id"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": true
+        }
+      ],
+      "managed": true
+    }
+  ],
+  "installedModules": [
+    {
+      "module": "serverpod",
+      "version": "20240516151843329"
+    },
+    {
+      "module": "flumip",
+      "version": "20250324152523947"
+    }
+  ],
+  "migrationApiVersion": 1
+}
