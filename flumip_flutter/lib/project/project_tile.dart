@@ -51,6 +51,8 @@ class _ProjectTileState extends State<ProjectTile> {
   void _toggleExpand() async {
     setState(() {
       _isExpanded = !_isExpanded;
+      genome = Genome(name: '');
+      snp = Snp(name: '', vcfPath: '', tbiPath: '', folder: '', active: false);
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -499,13 +501,15 @@ class _ProjectTileState extends State<ProjectTile> {
                             _errorMessage!,
                             style: TextStyle(color: Colors.red),
                           ),
-                        if (widget.project.genome == null) buildGeneSelector(),
+                        if (widget.project.genome == null)
+                          buildGenomeSelector(),
                         if (widget.project.genome != null)
                           Text('Genome:',
                               style: TextStyle(fontWeight: FontWeight.bold)),
                         Text(genome.name),
                         SizedBox(height: 10),
                         if (widget.project.genome != null &&
+                            genome.snp != null &&
                             widget.project.snp == null &&
                             !widget.project.active &&
                             widget.project.completedIn == null)
@@ -575,7 +579,7 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Column buildGeneSelector() {
+  Column buildGenomeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -599,15 +603,28 @@ class _ProjectTileState extends State<ProjectTile> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   for (var selectedGenome in genomes)
-                                    ListTile(
-                                      title: Text(selectedGenome.name),
-                                      onTap: () {
-                                        genome = selectedGenome;
-                                        setGene(selectedGenome.id!);
-                                        _reloadProject();
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
+                                    if (selectedGenome.indexed) ...[
+                                      ListTile(
+                                        title: Text(selectedGenome.name),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ] else ...[
+                                      ListTile(
+                                        title: Text(
+                                            "${selectedGenome.name} (not indexed)"),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
                                 ],
                               ),
                             );
