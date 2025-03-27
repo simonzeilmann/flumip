@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
@@ -16,16 +18,31 @@ class _GenomeTabState extends State<GenomeTab> {
   Genome? selectedGenome;
   String? _errorMessage;
   String? selectedCategory;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
+    _timer = Timer.periodic(Duration(seconds: 5), (_) => _reloadSelectedGenome());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _reloadSelectedGenome() {
+    if (selectedGenome != null) {
+      _fetchGenome(selectedGenome!.id!);
+    }
   }
 
   void _fetchCategories() async {
     try {
       final categories = await client.genome.getCategories();
+      categories.sort((a, b) => a.compareTo(b)); // Sort categories alphabetically by name
       setState(() {
         _errorMessage = null;
         this.categories = categories;
@@ -40,6 +57,7 @@ class _GenomeTabState extends State<GenomeTab> {
   void _fetchGenomes(String category) async {
     try {
       final genomes = await client.genome.getGenomeByCategory(category);
+      genomes.sort((a, b) => a.name.compareTo(b.name)); // Sort genomes alphabetically by name
       setState(() {
         _errorMessage = null;
         this.genomes = genomes;
@@ -69,6 +87,7 @@ class _GenomeTabState extends State<GenomeTab> {
   void _indexGenome() async {
     try {
       await client.genome.indexFasta(selectedGenome!.id!);
+      _fetchGenome(selectedGenome!.id!);
     } catch (e) {
       setState(() {
         _errorMessage = '$e';
@@ -84,6 +103,39 @@ class _GenomeTabState extends State<GenomeTab> {
         _errorMessage = '$e';
       });
     }
+  }
+
+  void _deleteIndex() async {
+    try {
+      await client.genome.deleteFastaIndex(selectedGenome!.id!);
+      _fetchGenome(selectedGenome!.id!);
+    } catch (e) {
+      setState(() {
+        _errorMessage = '$e';
+      });
+    }
+  }
+
+  void _showIndexDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete index for ${selectedGenome!.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteIndex();
+            },
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -170,9 +222,13 @@ class _GenomeTabState extends State<GenomeTab> {
                           Text("ID: ${selectedGenome!.id}"),
                           if(selectedGenome!.description != '')
                             Text("Description: ${selectedGenome!.description}"),
-                          Text("Indexed: ${selectedGenome!.indexed}"),
                           if (selectedGenome!.indexing)
-                            Text("Indexing: ${selectedGenome!.indexing}"),
+                            Text("Indexing: ${selectedGenome!.indexing}")
+                          else
+                            Text("Indexed: ${selectedGenome!.indexed}"),
+                          if(selectedGenome!.indexed && !selectedGenome!.indexing)
+                            ElevatedButton(
+                                onPressed: _showIndexDeleteDialog, child: Text('delete index')),
                           if (!selectedGenome!.indexed &&
                               !selectedGenome!.indexing) ...[
                             ElevatedButton(
