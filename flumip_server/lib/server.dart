@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/future_calls/check_index_progress_future_call.dart';
 import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -22,6 +23,7 @@ void run(List<String> args) async {
   // If you are using any future calls, they need to be registered here.
   pod.registerFutureCall(
       CheckMipgenProgressFutureCall(), 'checkMipgenProgress');
+  pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
 
   // Setup a default page at the web root.
   pod.webServer.addRoute(RouteRoot(), '/');

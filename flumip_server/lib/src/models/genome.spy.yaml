@@ -1,0 +1,16 @@
+class: Genome
+table: genome
+fields:
+  name: String
+  description: String, default=''
+  path: String?
+  fastaPath: String?
+  refPath: String?
+  snpFolder: String?
+  snp: List<int>?
+  category: String?
+  active: bool, default=true
+  indexed: bool, default=false
+  indexing: bool, default=false
+  indexPID: int, default=0
+  indexResults: int, default=0

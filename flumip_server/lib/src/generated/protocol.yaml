@@ -4,6 +4,20 @@ file:
   - showMipsResult:
   - showMipsProgress:
   - showUSCSTrack:
+genome:
+  - getGenome:
+  - getAllGenomes:
+  - updateGenome:
+  - collectGenomes:
+  - indexGenome:
+  - deleteGenomeIndex:
+  - getSnp:
+  - getAllSnpForGenome:
+  - updateSnp:
+  - getCategories:
+  - getGenomeByCategory:
+  - indexFasta:
+  - deleteFastaIndex:
 mipgen:
   - createBedFile:
   - generateMips:
@@ -21,6 +35,8 @@ project:
   - addGeneToProject:
   - removeGeneFromProject:
   - addGenesToProject:
+  - setGeneById:
+  - setSnpById:
 settings:
   - getSettings:
   - updateSettings:

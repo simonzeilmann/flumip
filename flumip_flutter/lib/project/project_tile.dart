@@ -10,13 +10,11 @@ import 'package:flutter/services.dart';
 class ProjectTile extends StatefulWidget {
   Project project;
   final VoidCallback onDelete;
-  final Future<void> Function(List<String>) onCreateGeneFile;
 
   ProjectTile({
     super.key,
     required this.project,
     required this.onDelete,
-    required this.onCreateGeneFile,
   });
 
   @override
@@ -27,6 +25,9 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
+  late Genome genome = Genome(name: 'default');
+  late Snp snp =
+      Snp(name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -50,6 +51,9 @@ class _ProjectTileState extends State<ProjectTile> {
   void _toggleExpand() async {
     setState(() {
       _isExpanded = !_isExpanded;
+      genome = Genome(name: 'default');
+      snp = Snp(
+          name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -61,9 +65,23 @@ class _ProjectTileState extends State<ProjectTile> {
       var projectUpdate = await client.project.getProject(widget.project.id!);
       final options =
           await client.options.getProjectOptions(widget.project.options);
+      Genome? genomeUpdate;
+      if (widget.project.genome != null) {
+        genomeUpdate = await client.genome.getGenome(widget.project.genome!);
+      }
+      Snp? snpUpdate;
+      if (widget.project.snp != null) {
+        snpUpdate = await client.genome.getSnp(widget.project.snp!);
+      }
       setState(() {
         widget.project = projectUpdate;
         projectOptions = options;
+        if (genomeUpdate != null) {
+          genome = genomeUpdate;
+        }
+        if (snpUpdate != null) {
+          snp = snpUpdate;
+        }
       });
     } catch (e) {
       setState(() {
@@ -390,6 +408,53 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  Future<List<String>> getGeneCategories() async {
+    try {
+      var cat = await client.genome.getCategories();
+      cat.sort((a, b) => a.compareTo(b));
+      return cat;
+    } catch (e) {
+      _errorMessage = 'Failed to load gene categories: $e';
+      return [];
+    }
+  }
+
+  Future<List<Genome>> getGenomeByCategory(String category) async {
+    try {
+      return await client.genome.getGenomeByCategory(category);
+    } catch (e) {
+      _errorMessage = 'Failed to load genes for category: $e';
+      return [];
+    }
+  }
+
+  Future<List<Snp>> getSnpForGene(int geneId) async {
+    try {
+      return await client.genome.getAllSnpForGenome(geneId);
+    } catch (e) {
+      _errorMessage = 'Failed to load snps for genome: $e';
+      return [];
+    }
+  }
+
+  Future<void> setGene(int geneId) async {
+    try {
+      await client.project.setGeneById(widget.project.id!, geneId);
+      await _reloadProject();
+    } catch (e) {
+      _errorMessage = 'Failed to set genome: $e';
+    }
+  }
+
+  Future<void> setSnp(int snpId) async {
+    try {
+      await client.project.setSnpById(widget.project.id!, snpId);
+      await _reloadProject();
+    } catch (e) {
+      _errorMessage = 'Failed to set snp: $e';
+    }
+  }
+
   String _printDuration(Duration duration) {
     String negativeSign = duration.isNegative ? '-' : '';
     String twoDigits(int n) => n.toString().padLeft(2, "0");
@@ -439,6 +504,32 @@ class _ProjectTileState extends State<ProjectTile> {
                             _errorMessage!,
                             style: TextStyle(color: Colors.red),
                           ),
+                        if (widget.project.genome == null)
+                          buildGenomeSelector(),
+                        if (widget.project.genome != null) ...[
+                          Text('Genome:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (genome.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(genome.name),
+                          SizedBox(height: 10),
+                        ],
+                        if (widget.project.genome != null &&
+                            genome.snp != null &&
+                            widget.project.snp == null &&
+                            !widget.project.active &&
+                            widget.project.completedIn == null)
+                          buildSnpSelector(),
+                        if (widget.project.snp != null) ...[
+                          Text('Snp:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (snp.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(snp.name),
+                        ],
+                        SizedBox(height: 60),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
                           buildGeneColumn(),
@@ -455,7 +546,6 @@ class _ProjectTileState extends State<ProjectTile> {
                       ),
                     ],
                   )),
-                  SizedBox(height: 5),
                   if (widget.project.genes?.isNotEmpty == true &&
                       widget.project.bedFileCreated == false)
                     Center(
@@ -497,6 +587,116 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
         ],
       ),
+    );
+  }
+
+  Column buildGenomeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Select Category:"),
+        FutureBuilder<List<String>>(
+          future: getGeneCategories(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return DropdownButton<String>(
+                value: null,
+                onChanged: (String? category) {
+                  if (category != null) {
+                    getGenomeByCategory(category).then((genomes) {
+                      genomes.sort((a, b) => a.name.compareTo(b.name));
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text('Select Genome:'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var selectedGenome in genomes)
+                                    if (selectedGenome.indexed) ...[
+                                      ListTile(
+                                        title: Text(selectedGenome.name),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ] else ...[
+                                      ListTile(
+                                        title: Text(
+                                            "${selectedGenome.name} (not indexed)"),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    });
+                  }
+                },
+                items: snapshot.data!
+                    .map((category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ))
+                    .toList(),
+              );
+            } else if (snapshot.hasError) {
+              return Text('Failed to load gene categories: ${snapshot.error}');
+            } else {
+              return CircularProgressIndicator();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  Column buildSnpSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Select SNP (optional):"),
+        FutureBuilder<List<Snp>>(
+          future: getSnpForGene(genome.id!),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return DropdownButton<Snp>(
+                value: null,
+                onChanged: (Snp? selectedSnp) {
+                  if (selectedSnp != null) {
+                    snp = selectedSnp;
+                    setSnp(selectedSnp.id!);
+                    _reloadProject();
+                  }
+                },
+                items: snapshot.data!
+                    .map((snp) => DropdownMenuItem(
+                          value: snp,
+                          child: Text(snp.name),
+                        ))
+                    .toList(),
+              );
+            } else if (snapshot.hasError) {
+              return Text('Failed to load snps: ${snapshot.error}');
+            } else {
+              return CircularProgressIndicator();
+            }
+          },
+        ),
+      ],
     );
   }
 

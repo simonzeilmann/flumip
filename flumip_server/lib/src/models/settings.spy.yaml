@@ -1,9 +1,20 @@
 class: Settings
 table: settings
 fields:
-  baseDir: String, default="/opt/mipgen"
-  projectDir: String, default="/opt/mipgen/projects"
-  geneDir: String, default="/opt/mipgen/genes"
-  mipgenExecutable: String, default="/opt/mipgen/MIPGEN/mipgen"
-  exonExtractScript: String, default="/opt/mipgen/MIPGEN/tools/extract_coding_gene_exons.sh"
-  ucscTrackGenerator: String, default="/opt/mipgen/MIPGEN/tools/generate_ucsc_track.py"
+  baseDir: String, default="/opt/flumip"
+  projectDir: String, default="/opt/flumip/projects"
+  genomeDir: String, default="/opt/flumip/data/genomes"
+  customSnpDir: String, default="/opt/flumip/data/custom_snp"
+  toolsDir: String, default="/opt/flumip/tools"
+  mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
+  exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
+  ucscTrackGenerator: String, default="/opt/flumip/MIPGEN/tools/generate_ucsc_track.py"
+  mailActive: bool, default=false
+  smtpServer: String, default=""
+  smtpPort: int, default=25
+  smtpUser: String, default=""
+  smtpPassword: String, default=""
+  smtpFrom: String, default="flumip@yourdomain.com"
+  startTLS: bool, default=true
+  loginRequired: bool, default=false
+  settingsPassword: String, default="changeme"

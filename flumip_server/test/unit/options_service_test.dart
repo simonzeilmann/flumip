@@ -1,3 +1,4 @@
+import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/options_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -8,8 +9,9 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 void main() {
 
   withServerpod('Create', (sessionBuilder, endpoints) {
+    setup();
     var session = sessionBuilder.build();
-    final optionsService = OptionsService();
+    final optionsService = sl<OptionsService>();
 
     test(
       'calling `create options` should return the an options object',

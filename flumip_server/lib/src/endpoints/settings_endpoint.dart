@@ -6,16 +6,18 @@ import '../services/settings_service.dart';
 
 /// Endpoint for handling settings-related operations.
 class SettingsEndpoint extends Endpoint {
-  get settingsService => SettingsService();
+  /// Instance of the settings service.
+  SettingsService get settingsService => SettingsService();
 
   /// Retrieves the settings.
   ///
   /// \param session The current session.
+  /// \param password The password for authentication.
   /// \returns The retrieved [Settings] object.
-  Future<Settings> getSettings(Session session) async {
+  Future<Settings> getSettings(Session session, String password) async {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
-      return settingsService.getSettings(session);
+      return settingsService.getSettingsExternal(session, password);
     } catch (e) {
       session.log("Error retrieving settings",
           level: LogLevel.error, exception: e);

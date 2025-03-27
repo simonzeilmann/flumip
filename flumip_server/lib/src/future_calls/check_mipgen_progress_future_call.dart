@@ -1,19 +1,20 @@
 import 'package:serverpod/serverpod.dart';
 
+import '../../service_locator.dart';
 import '../generated/project.dart';
 import '../services/mipgen_service.dart';
 import '../services/process_service.dart';
 
 class CheckMipgenProgressFutureCall extends FutureCall<Project> {
-  final processService = ProcessService();
-  final mipgenService = MipgenService();
+  final processService = sl<ProcessService>();
+  final mipgenService = sl<MipgenService>();
 
   @override
   Future<void> invoke(Session session, Project? object) async {
     session.log(
         "Checking MIP generation progress for project ID: ${object?.id}",
         level: LogLevel.info);
-    if (await processService.checkIfProcessIsRunning(session, object!)) {
+    if (await processService.checkIfMipgenProcessIsRunning(session, object!)) {
       session.log(
           "MIP generation process is still running for project ID: ${object.id}",
           level: LogLevel.info);

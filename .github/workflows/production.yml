@@ -29,16 +29,6 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: Install serverpod
-        run: |
-          dart pub global activate serverpod_cli
-          serverpod version
-
-      - name: Generate serverpod files
-        run: |
-          cd flumip_server
-          serverpod generate
-
       - name: Analyze code
         run: |
           cd flumip_server && flutter analyze
@@ -74,16 +64,6 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: Install serverpod
-        run: |
-          dart pub global activate serverpod_cli
-          serverpod version
-
-      - name: Generate serverpod files
-        run: |
-          cd flumip_server
-          serverpod generate
-
       - name: Inject passwords.yaml
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
@@ -116,17 +96,6 @@ jobs:
         run: |
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
-
-      - name: Install serverpod
-        run: |
-          dart pub global activate serverpod_cli
-          serverpod version
-
-      - name: Generate serverpod files
-        run: |
-          cd flumip_server
-          serverpod generate
-          serverpod create-migration
 
       - name: Inject passwords.yaml
         run: |
@@ -195,23 +164,13 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: Install serverpod
-        run: |
-          dart pub global activate serverpod_cli
-          serverpod version
-
-      - name: Generate serverpod files
-        run: |
-          cd flumip_server
-          serverpod generate
-
       - name: Set api endpoint and website name
         run: |
           sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
           sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
-          sed -i 's/http:/https:/' flumip_flutter/lib/project_tile.dart
-          sed -i 's/localhost:8082/app.flumip.simonzeilmann.com/' flumip_flutter/lib/project_tile.dart
+          sed -i 's/http:/https:/' flumip_flutter/lib/project/project_tile.dart
+          sed -i 's/localhost:8082/app.flumip.simonzeilmann.com/' flumip_flutter/lib/project/project_tile.dart
 
       - name: Build
         run: |

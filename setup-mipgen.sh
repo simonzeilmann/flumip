@@ -32,22 +32,22 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check if hg38.fa file exists
-FA_FILE="/opt/mipgen/data/genes/human/hg38/fa/hg38.fa"
+FA_FILE="/opt/flumip/data/genomes/human/hg38/fa/hg38.fa"
 FA_EXISTS=false
 if [[ -f "$FA_FILE" ]]; then
   FA_EXISTS=true
 fi
 
 # Check if refGene.txt file exists
-REFGENE_FILE="/opt/mipgen/data/genes/human/hg38/refGene.txt"
+REFGENE_FILE="/opt/flumip/data/genomes/human/hg38/refGene.txt"
 REFGENE_EXISTS=false
 if [[ -f "$REFGENE_FILE" ]]; then
   REFGENE_EXISTS=true
 fi
 
 # Check if SNP files exist
-SNP1_FILE="/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz"
-SNP2_FILE="/opt/mipgen/data/genes/human/hg38/snp/00-common_all.vcf.gz.tbi"
+SNP1_FILE="/opt/flumip/data/genomes/human/hg38/snp/00-common_all/00-common_all.vcf.gz"
+SNP2_FILE="/opt/flumip/data/genomes/human/hg38/snp/00-common_all/00-common_all.vcf.gz.tbi"
 SNP_EXISTS=false
 if [[ -f "$SNP1_FILE" ]] && [[ -f "$SNP2_FILE" ]]; then
   SNP_EXISTS=true
@@ -59,9 +59,9 @@ if $INDEX && ! $DOWNLOAD && ! $FA_EXISTS; then
   exit 1
 fi
 
-# Update and upgrade system packages
-echo -e "\n${GREEN}Updating and upgrading system packages...${NC}\n"
-sudo apt update && sudo apt upgrade -y
+# Update system package repository
+echo -e "\n${GREEN}Updating system packages...${NC}\n"
+sudo apt update
 
 # Install required packages
 echo -e "\n${GREEN}Installing required packages: build-essential, tabix, samtools, bwa, trf...${NC}\n"
@@ -69,9 +69,9 @@ sudo apt install build-essential tabix samtools bwa trf python-is-python3 -y
 
 # Create the mipgen directory and clone the MIPGEN repository
 echo -e "\n${GREEN}Creating 'mipgen' directory and cloning MIPGEN repository...${NC}\n"
-sudo mkdir -p /opt/mipgen
-sudo chown $USER:$USER /opt/mipgen
-cd /opt/mipgen
+sudo mkdir -p /opt/flumip
+sudo chown $USER:$USER /opt/flumip
+cd /opt/flumip
 if [ ! -d "MIPGEN" ]; then
   git clone https://github.com/simonzeilmann/MIPGEN.git
 fi
@@ -86,15 +86,31 @@ chmod +x tools/extract_coding_gene_exons.sh
 chmod +x tools/generate_ucsc_track.py
 cd ..
 
-# Create the directory structure for data etc.
+# Create the base directory structure.
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
-mkdir -p /opt/mipgen/data/genes/human/hg38/{fa,snp} /opt/mipgen/{projects,log}
+mkdir -p /opt/flumip/data/genomes/
+mkdir -p /opt/flumip/projects
+mkdir -p /opt/flumip/tools
+mkdir -p /opt/flumip/data/custom_snp/{common,private}
+
+# Download and activate bigGenePredToGenePred
+echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
+cd /opt/flumip/tools
+wget -N http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
+chmod +x bigGenePredToGenePred
+
+if $DOWNLOAD; then
+  # Create the directory structure for the downloads.
+  echo -e "\n${GREEN}Setting up gene directories...${NC}\n"
+  mkdir -p /opt/flumip/data/genomes/human/hg38/{fa,snp/00-common_all}
+  mkdir -p /opt/flumip/data/genomes/human/hg38/snp/00-common_all
+fi
 
 if $DOWNLOAD; then
   # Download and extract refGene file if not already present
   if ! $REFGENE_EXISTS; then
     echo -e "\n${GREEN}Downloading and extracting refGene data...${NC}\n"
-    cd /opt/mipgen/data/genes/human/hg38
+    cd /opt/flumip/data/genomes/human/hg38
     wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
     gunzip -f refGene.txt.gz
   fi
@@ -102,7 +118,7 @@ if $DOWNLOAD; then
   # Download and extract snp data if not already present
   if ! $SNP_EXISTS; then
     echo -e "\n${GREEN}Downloading SNP files...${NC}\n"
-    cd /opt/mipgen/data/genes/human/hg38/snp
+    cd /opt/flumip/data/genomes/human/hg38/snp/00-common_all
     wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz
     wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz.tbi
   fi
@@ -110,7 +126,7 @@ if $DOWNLOAD; then
   # Download and extract hg38 genome sequence if not already present
   if ! $FA_EXISTS; then
     echo -e "\n${GREEN}Downloading and extracting hg38 genome sequence...${NC}\n"
-    cd /opt/mipgen/data/genes/human/hg38/fa
+    cd /opt/flumip/data/genomes/human/hg38/fa
     wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
     gunzip -f hg38.fa.gz
   fi
