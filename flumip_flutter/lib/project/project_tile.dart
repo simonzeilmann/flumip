@@ -25,9 +25,9 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
-  late Genome genome = Genome(name: '');
+  late Genome genome = Genome(name: 'default');
   late Snp snp =
-      Snp(name: '', vcfPath: '', tbiPath: '', folder: '', active: false);
+      Snp(name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -51,8 +51,9 @@ class _ProjectTileState extends State<ProjectTile> {
   void _toggleExpand() async {
     setState(() {
       _isExpanded = !_isExpanded;
-      genome = Genome(name: '');
-      snp = Snp(name: '', vcfPath: '', tbiPath: '', folder: '', active: false);
+      genome = Genome(name: 'default');
+      snp = Snp(
+          name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -409,7 +410,9 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<List<String>> getGeneCategories() async {
     try {
-      return await client.genome.getCategories();
+      var cat = await client.genome.getCategories();
+      cat.sort((a, b) => a.compareTo(b));
+      return cat;
     } catch (e) {
       _errorMessage = 'Failed to load gene categories: $e';
       return [];
@@ -503,21 +506,29 @@ class _ProjectTileState extends State<ProjectTile> {
                           ),
                         if (widget.project.genome == null)
                           buildGenomeSelector(),
-                        if (widget.project.genome != null)
+                        if (widget.project.genome != null) ...[
                           Text('Genome:',
                               style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(genome.name),
-                        SizedBox(height: 10),
+                          if (genome.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(genome.name),
+                          SizedBox(height: 10),
+                        ],
                         if (widget.project.genome != null &&
                             genome.snp != null &&
                             widget.project.snp == null &&
                             !widget.project.active &&
                             widget.project.completedIn == null)
                           buildSnpSelector(),
-                        if (widget.project.snp != null)
+                        if (widget.project.snp != null) ...[
                           Text('Snp:',
                               style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(snp.name),
+                          if (snp.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(snp.name),
+                        ],
                         SizedBox(height: 60),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
@@ -593,6 +604,7 @@ class _ProjectTileState extends State<ProjectTile> {
                 onChanged: (String? category) {
                   if (category != null) {
                     getGenomeByCategory(category).then((genomes) {
+                      genomes.sort((a, b) => a.name.compareTo(b.name));
                       if (context.mounted) {
                         showDialog(
                           context: context,
