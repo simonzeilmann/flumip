@@ -90,7 +90,14 @@ cd ..
 echo -e "\n${GREEN}Setting up data directories...${NC}\n"
 mkdir -p /opt/flumip/data/genomes/
 mkdir -p /opt/flumip/projects
+mkdir -p /opt/flumip/tools
 mkdir -p /opt/flumip/data/custom_snp/{common,private}
+
+# Download and activate bigGenePredToGenePred
+echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
+cd /opt/flumip/tools
+wget -N http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
+chmod +x bigGenePredToGenePred
 
 if $DOWNLOAD; then
   # Create the directory structure for the downloads.
