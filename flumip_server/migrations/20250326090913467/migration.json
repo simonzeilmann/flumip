@@ -1,0 +1,371 @@
+{
+  "actions": [
+    {
+      "type": "deleteTable",
+      "deleteTable": "gene"
+    },
+    {
+      "type": "createTable",
+      "createTable": {
+        "name": "genome",
+        "dartName": "Genome",
+        "module": "flumip",
+        "schema": "public",
+        "columns": [
+          {
+            "name": "id",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "nextval('genome_id_seq'::regclass)",
+            "dartType": "int?"
+          },
+          {
+            "name": "name",
+            "columnType": 0,
+            "isNullable": false,
+            "dartType": "String"
+          },
+          {
+            "name": "description",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "''::text",
+            "dartType": "String"
+          },
+          {
+            "name": "path",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "name": "fastaPath",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "name": "refPath",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "name": "snpFolder",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "name": "snp",
+            "columnType": 8,
+            "isNullable": true,
+            "dartType": "List<int>?"
+          },
+          {
+            "name": "category",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "name": "active",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "true",
+            "dartType": "bool"
+          },
+          {
+            "name": "indexed",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "false",
+            "dartType": "bool"
+          },
+          {
+            "name": "indexing",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "false",
+            "dartType": "bool"
+          },
+          {
+            "name": "indexPID",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "0",
+            "dartType": "int"
+          },
+          {
+            "name": "indexResults",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "''::text",
+            "dartType": "String"
+          }
+        ],
+        "foreignKeys": [],
+        "indexes": [
+          {
+            "indexName": "genome_pkey",
+            "elements": [
+              {
+                "type": 0,
+                "definition": "id"
+              }
+            ],
+            "type": "btree",
+            "isUnique": true,
+            "isPrimary": true
+          }
+        ],
+        "managed": true
+      }
+    },
+    {
+      "type": "alterTable",
+      "alterTable": {
+        "name": "project",
+        "schema": "public",
+        "addColumns": [
+          {
+            "name": "genome",
+            "columnType": 6,
+            "isNullable": true,
+            "dartType": "int?"
+          }
+        ],
+        "deleteColumns": [
+          "gene"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "type": "tableDropped",
+            "message": "Table \"gene\" will be dropped.",
+            "table": "gene",
+            "columns": [],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"gene\" of table \"project\" will be dropped.",
+            "table": "project",
+            "columns": [
+              "gene"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"fasta\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "fasta"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"snp\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "snp"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"geneDir\" of table \"settings\" will be dropped.",
+            "table": "settings",
+            "columns": [
+              "geneDir"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "alterTable",
+      "alterTable": {
+        "name": "project_options",
+        "schema": "public",
+        "addColumns": [],
+        "deleteColumns": [
+          "fasta",
+          "snp"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "type": "tableDropped",
+            "message": "Table \"gene\" will be dropped.",
+            "table": "gene",
+            "columns": [],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"gene\" of table \"project\" will be dropped.",
+            "table": "project",
+            "columns": [
+              "gene"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"fasta\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "fasta"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"snp\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "snp"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"geneDir\" of table \"settings\" will be dropped.",
+            "table": "settings",
+            "columns": [
+              "geneDir"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "alterTable",
+      "alterTable": {
+        "name": "settings",
+        "schema": "public",
+        "addColumns": [
+          {
+            "name": "genomeDir",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "'/opt/flumip/data/genomes'::text",
+            "dartType": "String"
+          }
+        ],
+        "deleteColumns": [
+          "geneDir"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "type": "tableDropped",
+            "message": "Table \"gene\" will be dropped.",
+            "table": "gene",
+            "columns": [],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"gene\" of table \"project\" will be dropped.",
+            "table": "project",
+            "columns": [
+              "gene"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"fasta\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "fasta"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"snp\" of table \"project_options\" will be dropped.",
+            "table": "project_options",
+            "columns": [
+              "snp"
+            ],
+            "destrucive": true
+          },
+          {
+            "type": "columnDropped",
+            "message": "Column \"geneDir\" of table \"settings\" will be dropped.",
+            "table": "settings",
+            "columns": [
+              "geneDir"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "type": "tableDropped",
+      "message": "Table \"gene\" will be dropped.",
+      "table": "gene",
+      "columns": [],
+      "destrucive": true
+    },
+    {
+      "type": "columnDropped",
+      "message": "Column \"gene\" of table \"project\" will be dropped.",
+      "table": "project",
+      "columns": [
+        "gene"
+      ],
+      "destrucive": true
+    },
+    {
+      "type": "columnDropped",
+      "message": "Column \"fasta\" of table \"project_options\" will be dropped.",
+      "table": "project_options",
+      "columns": [
+        "fasta"
+      ],
+      "destrucive": true
+    },
+    {
+      "type": "columnDropped",
+      "message": "Column \"snp\" of table \"project_options\" will be dropped.",
+      "table": "project_options",
+      "columns": [
+        "snp"
+      ],
+      "destrucive": true
+    },
+    {
+      "type": "columnDropped",
+      "message": "Column \"geneDir\" of table \"settings\" will be dropped.",
+      "table": "settings",
+      "columns": [
+        "geneDir"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}
