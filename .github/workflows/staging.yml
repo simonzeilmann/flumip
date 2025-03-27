@@ -126,7 +126,6 @@ jobs:
         run: |
           cd flumip_server
           serverpod generate
-          serverpod create-migration
 
       - name: Inject passwords.yaml
         run: |
