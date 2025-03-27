@@ -7,7 +7,7 @@ class GenomeTab extends StatefulWidget {
   const GenomeTab({super.key});
 
   @override
-  _GenomeTabState createState() => _GenomeTabState();
+  State<GenomeTab> createState() => _GenomeTabState();
 }
 
 class _GenomeTabState extends State<GenomeTab> {

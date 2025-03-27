@@ -9,7 +9,7 @@ class ProjectsTab extends StatefulWidget {
   const ProjectsTab({super.key});
 
   @override
-  _ProjectsTabState createState() => _ProjectsTabState();
+  State<ProjectsTab> createState() => _ProjectsTabState();
 }
 
 class _ProjectsTabState extends State<ProjectsTab> {
