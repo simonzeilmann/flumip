@@ -104,20 +104,27 @@ class _GenomeTabState extends State<GenomeTab> {
                   child: Center(
                     child: Column(
                       children: [
-                        Text("Categories:", style: Theme.of(context).textTheme.titleLarge),
+                        Text("Categories:",
+                            style: Theme.of(context).textTheme.titleLarge),
                         ...categories.map((category) => GestureDetector(
-                          onTap: () => _fetchGenomes(category),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: selectedCategory == category ? Colors.blue[100] : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey),
-                            ),
-                            child: Text(category, style: TextStyle(color: selectedCategory == category ? Colors.blue : Colors.black)),
-                          ),
-                        )),
+                              onTap: () => _fetchGenomes(category),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: selectedCategory == category
+                                      ? Colors.blue[100]
+                                      : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: Text(category,
+                                    style: TextStyle(
+                                        color: selectedCategory == category
+                                            ? Colors.blue
+                                            : Colors.black)),
+                              ),
+                            )),
                       ],
                     ),
                   ),
@@ -127,20 +134,28 @@ class _GenomeTabState extends State<GenomeTab> {
                     child: Center(
                       child: Column(
                         children: [
-                          Text("Genomes for $selectedCategory:", style: Theme.of(context).textTheme.titleLarge),
+                          Text("Genomes for $selectedCategory:",
+                              style: Theme.of(context).textTheme.titleLarge),
                           ...genomes.map((genome) => GestureDetector(
-                            onTap: () => _fetchGenome(genome.id!),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: selectedGenome?.id == genome.id ? Colors.blue[100] : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey),
-                              ),
-                              child: Text(genome.name, style: TextStyle(color: selectedGenome?.id == genome.id ? Colors.blue : Colors.black)),
-                            ),
-                          )),
+                                onTap: () => _fetchGenome(genome.id!),
+                                child: Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: selectedGenome?.id == genome.id
+                                        ? Colors.blue[100]
+                                        : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey),
+                                  ),
+                                  child: Text(genome.name,
+                                      style: TextStyle(
+                                          color: selectedGenome?.id == genome.id
+                                              ? Colors.blue
+                                              : Colors.black)),
+                                ),
+                              )),
                         ],
                       ),
                     ),
@@ -150,10 +165,12 @@ class _GenomeTabState extends State<GenomeTab> {
                     child: Center(
                       child: Column(
                         children: [
-                          Text("Details for ${selectedGenome!.name}:", style: Theme.of(context).textTheme.titleLarge),
+                          Text("Details for ${selectedGenome!.name}:",
+                              style: Theme.of(context).textTheme.titleLarge),
                           Text("ID: ${selectedGenome!.id}"),
                           Text("Description: ${selectedGenome!.description}"),
-                          ElevatedButton(onPressed: _indexGenome, child: Text('index')),
+                          ElevatedButton(
+                              onPressed: _indexGenome, child: Text('index')),
                         ],
                       ),
                     ),

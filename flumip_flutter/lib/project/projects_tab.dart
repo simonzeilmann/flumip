@@ -72,9 +72,9 @@ class _ProjectsTabState extends State<ProjectsTab> {
           if (!_showCreateProject)
             Center(
               child: ElevatedButton(
-                  onPressed: _toggleCreateProject,
-                  child: const Text('Create Project'),
-                ),
+                onPressed: _toggleCreateProject,
+                child: const Text('Create Project'),
+              ),
             ),
           if (_showCreateProject)
             CreateProjectWidget(
