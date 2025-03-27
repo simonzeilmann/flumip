@@ -5,6 +5,15 @@ fields:
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"
   customSnpDir: String, default="/opt/flumip/data/custom_snp"
+  toolsDir: String, default="/opt/flumip/tools"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
   ucscTrackGenerator: String, default="/opt/flumip/MIPGEN/tools/generate_ucsc_track.py"
+  mailActive: bool, default=false
+  smtpServer: String, default="localhost"
+  smtpPort: int, default=25
+  smtpUser: String, default=""
+  smtpPassword: String, default=""
+  smtpFrom: String, default="flumip@localhost"
+  startTLS: bool, default=true
+  loginRequired: bool, default=false
