@@ -98,6 +98,7 @@ class _GenomeTabState extends State<GenomeTab> {
   void _collectGenomes() async {
     try {
       await client.genome.collectGenomes();
+      _fetchCategories();
     } catch (e) {
       setState(() {
         _errorMessage = '$e';
