@@ -127,10 +127,10 @@ class Protocol extends _i1.SerializationManagerServer {
         ),
         _i2.ColumnDefinition(
           name: 'indexResults',
-          columnType: _i2.ColumnType.text,
+          columnType: _i2.ColumnType.bigint,
           isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'\'::text',
+          dartType: 'int',
+          columnDefault: '0',
         ),
       ],
       foreignKeys: [],
