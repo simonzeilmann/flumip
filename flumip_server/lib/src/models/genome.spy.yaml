@@ -13,4 +13,4 @@ fields:
   indexed: bool, default=false
   indexing: bool, default=false
   indexPID: int, default=0
-  indexResults: String, default=''
+  indexResults: int, default=0

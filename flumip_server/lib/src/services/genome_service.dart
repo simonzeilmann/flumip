@@ -124,7 +124,7 @@ class GenomeService {
     for (var genomeFile in genomeFolder.listSync().whereType<Directory>()) {
       if (genomeFile.path.endsWith("fa")) {
         var faFilesString = Directory(genomeFile.path).listSync().toString();
-        if (_containsFaFiles(faFilesString)) {
+        if (_containsFaIndexFiles(faFilesString)) {
           existingGenome.indexed = true;
         }
       } else if (genomeFile.path.endsWith("snp")) {
@@ -188,7 +188,7 @@ class GenomeService {
       } else if (genomeFile is Directory) {
         if (genomeFile.path.endsWith("fa")) {
           genome.fastaPath = _getFilePath(genomeFile, ".fa");
-          if (_containsFaFiles(
+          if (_containsFaIndexFiles(
               Directory(genomeFile.path).listSync().toString())) {
             genome.indexed = true;
           }
@@ -237,11 +237,11 @@ class GenomeService {
     return snps;
   }
 
-  /// Checks if the specified files string contains FA files.
+  /// Checks if the specified files string contains FA index files.
   ///
   /// \param filesString The string containing file names.
   /// \returns A boolean indicating if the string contains FA files.
-  bool _containsFaFiles(String filesString) {
+  bool _containsFaIndexFiles(String filesString) {
     return filesString.contains(".fa.amb") &&
         filesString.contains(".fa.pac") &&
         filesString.contains(".fa.sa") &&
@@ -317,10 +317,16 @@ class GenomeService {
     session.log("Indexing finished for genome with ID: ${object.id}",
         level: LogLevel.info);
     var faFilesString =
-        Directory(object.fastaPath + "/fa").listSync().toString();
-    if (_containsFaFiles(faFilesString)) {
+        Directory(object.path + "/fa").listSync().toString();
+    if (_containsFaIndexFiles(faFilesString)) {
       object.indexed = true;
+      object.indexResults = 0;
     }
+    else {
+      object.indexed = false;
+      object.indexResults = 1;
+    }
+
     object.indexing = false;
     object.indexPID = 0;
     await Genome.db.updateRow(session, object);
