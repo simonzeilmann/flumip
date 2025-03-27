@@ -34,5 +34,13 @@ INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
     ON CONFLICT ("module")
     DO UPDATE SET "version" = '20240516151843329', "timestamp" = now();
 
+--
+-- MIGRATION VERSION FOR _repair
+--
+INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
+    VALUES ('_repair', '20250327131306778', now())
+    ON CONFLICT ("module")
+    DO UPDATE SET "version" = '20250327131306778', "timestamp" = now();
+
 
 COMMIT;

@@ -93,10 +93,10 @@
         },
         {
           "name": "indexResults",
-          "columnType": 0,
+          "columnType": 6,
           "isNullable": false,
-          "columnDefault": "''::text",
-          "dartType": "String"
+          "columnDefault": "0",
+          "dartType": "int"
         }
       ],
       "foreignKeys": [],
@@ -556,6 +556,13 @@
           "dartType": "String"
         },
         {
+          "name": "toolsDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/tools'::text",
+          "dartType": "String"
+        },
+        {
           "name": "mipgenExecutable",
           "columnType": 0,
           "isNullable": false,
@@ -575,6 +582,62 @@
           "isNullable": false,
           "columnDefault": "'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py'::text",
           "dartType": "String"
+        },
+        {
+          "name": "mailActive",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "smtpServer",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'localhost'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpPort",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "25",
+          "dartType": "int"
+        },
+        {
+          "name": "smtpUser",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpPassword",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpFrom",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'flumip@localhost'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "startTLS",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "name": "loginRequired",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
         }
       ],
       "foreignKeys": [],
@@ -674,10 +737,6 @@
     {
       "module": "serverpod",
       "version": "20240516151843329"
-    },
-    {
-      "module": "flumip",
-      "version": "20250324153447427"
     }
   ],
   "migrationApiVersion": 1

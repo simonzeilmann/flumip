@@ -362,9 +362,9 @@ ALTER TABLE ONLY "serverpod_query_log"
 -- MIGRATION VERSION FOR flumip
 --
 INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
-    VALUES ('flumip', '20250327084157458', now())
+    VALUES ('flumip', '20250327131424363', now())
     ON CONFLICT ("module")
-    DO UPDATE SET "version" = '20250327084157458', "timestamp" = now();
+    DO UPDATE SET "version" = '20250327131424363', "timestamp" = now();
 
 --
 -- MIGRATION VERSION FOR serverpod

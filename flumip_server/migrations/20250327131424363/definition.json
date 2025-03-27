@@ -2,8 +2,8 @@
   "moduleName": "flumip",
   "tables": [
     {
-      "name": "gene",
-      "dartName": "Gene",
+      "name": "genome",
+      "dartName": "Genome",
       "module": "flumip",
       "schema": "public",
       "columns": [
@@ -11,7 +11,7 @@
           "name": "id",
           "columnType": 6,
           "isNullable": false,
-          "columnDefault": "nextval('gene_id_seq'::regclass)",
+          "columnDefault": "nextval('genome_id_seq'::regclass)",
           "dartType": "int?"
         },
         {
@@ -93,16 +93,16 @@
         },
         {
           "name": "indexResults",
-          "columnType": 0,
+          "columnType": 6,
           "isNullable": false,
-          "columnDefault": "''::text",
-          "dartType": "String"
+          "columnDefault": "0",
+          "dartType": "int"
         }
       ],
       "foreignKeys": [],
       "indexes": [
         {
-          "indexName": "gene_pkey",
+          "indexName": "genome_pkey",
           "elements": [
             {
               "type": 0,
@@ -149,7 +149,7 @@
           "dartType": "String"
         },
         {
-          "name": "gene",
+          "name": "genome",
           "columnType": 6,
           "isNullable": true,
           "dartType": "int?"
@@ -286,18 +286,6 @@
           "columnType": 6,
           "isNullable": false,
           "columnDefault": "nextval('project_options_id_seq'::regclass)",
-          "dartType": "int?"
-        },
-        {
-          "name": "fasta",
-          "columnType": 6,
-          "isNullable": true,
-          "dartType": "int?"
-        },
-        {
-          "name": "snp",
-          "columnType": 6,
-          "isNullable": true,
           "dartType": "int?"
         },
         {
@@ -554,10 +542,24 @@
           "dartType": "String"
         },
         {
-          "name": "geneDir",
+          "name": "genomeDir",
           "columnType": 0,
           "isNullable": false,
-          "columnDefault": "'/opt/flumip/genes'::text",
+          "columnDefault": "'/opt/flumip/data/genomes'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "customSnpDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/data/custom_snp'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "toolsDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/tools'::text",
           "dartType": "String"
         },
         {
@@ -580,6 +582,62 @@
           "isNullable": false,
           "columnDefault": "'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py'::text",
           "dartType": "String"
+        },
+        {
+          "name": "mailActive",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "name": "smtpServer",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'localhost'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpPort",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "25",
+          "dartType": "int"
+        },
+        {
+          "name": "smtpUser",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpPassword",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''::text",
+          "dartType": "String"
+        },
+        {
+          "name": "smtpFrom",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'flumip@localhost'::text",
+          "dartType": "String"
+        },
+        {
+          "name": "startTLS",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "name": "loginRequired",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
         }
       ],
       "foreignKeys": [],
@@ -1815,7 +1873,7 @@
   "installedModules": [
     {
       "module": "flumip",
-      "version": "20250324152132638"
+      "version": "20250327131424363"
     },
     {
       "module": "serverpod",
