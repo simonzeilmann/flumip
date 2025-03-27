@@ -168,9 +168,16 @@ class _GenomeTabState extends State<GenomeTab> {
                           Text("Details for ${selectedGenome!.name}:",
                               style: Theme.of(context).textTheme.titleLarge),
                           Text("ID: ${selectedGenome!.id}"),
-                          Text("Description: ${selectedGenome!.description}"),
-                          ElevatedButton(
-                              onPressed: _indexGenome, child: Text('index')),
+                          if(selectedGenome!.description != '')
+                            Text("Description: ${selectedGenome!.description}"),
+                          Text("Indexed: ${selectedGenome!.indexed}"),
+                          if (selectedGenome!.indexing)
+                            Text("Indexing: ${selectedGenome!.indexing}"),
+                          if (!selectedGenome!.indexed &&
+                              !selectedGenome!.indexing) ...[
+                            ElevatedButton(
+                                onPressed: _indexGenome, child: Text('index')),
+                          ],
                         ],
                       ),
                     ),
