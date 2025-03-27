@@ -39,7 +39,8 @@ class GenomeService {
       }
     }
 
-    session.log('Genomes retrieved by category: $category', level: LogLevel.info);
+    session.log('Genomes retrieved by category: $category',
+        level: LogLevel.info);
     return genomes;
   }
 
@@ -99,7 +100,7 @@ class GenomeService {
 
     for (var category in categoryFolder.listSync().whereType<Directory>()) {
       for (var genomeFolder
-      in Directory(category.path).listSync().whereType<Directory>()) {
+          in Directory(category.path).listSync().whereType<Directory>()) {
         var existingGenome = await _genomeExists(session, genomeFolder.path);
         if (existingGenome != null) {
           await _processGenomeFolder(session, existingGenome, genomeFolder);
@@ -281,27 +282,31 @@ class GenomeService {
           level: LogLevel.error);
       throw ArgumentError();
     }
-    if(genome.indexed) {
+    if (genome.indexed) {
       session.log("Genome already indexed with ID: $id", level: LogLevel.error);
       throw ArgumentError();
     }
-    if(genome.indexing) {
-      session.log("Genome already indexing with ID: $id", level: LogLevel.error);
+    if (genome.indexing) {
+      session.log("Genome already indexing with ID: $id",
+          level: LogLevel.error);
       throw ArgumentError();
     }
-    if(genome.fastaPath == null) {
-      session.log("Genome has no FASTA file with ID: $id", level: LogLevel.error);
+    if (genome.fastaPath == null) {
+      session.log("Genome has no FASTA file with ID: $id",
+          level: LogLevel.error);
       throw ArgumentError();
     }
 
-    Process.start("bwa", [genome.fastaPath!], runInShell: true);
+    await Process.start("bwa",["index", genome.fastaPath!],
+        workingDirectory: "${genome.path}/fa", runInShell: true);
     genome.indexing = true;
     genome.indexPID = await sl<ProcessService>()
         .getProcessPID(session, "bwa", genome.fastaPath!);
     await Genome.db.updateRow(session, genome);
     await session.serverpod.futureCallWithDelay(
         'checkIndexProgress', genome, const Duration(seconds: 30));
-    session.log("Indexing started for genome with ID: $id", level: LogLevel.info);
+    session.log("Indexing started for genome with ID: $id",
+        level: LogLevel.info);
   }
 
   /// Marks the indexing as finished for a genome.
@@ -312,7 +317,7 @@ class GenomeService {
     session.log("Indexing finished for genome with ID: ${object.id}",
         level: LogLevel.info);
     var faFilesString =
-    Directory(object.fastaPath + "/fa").listSync().toString();
+        Directory(object.fastaPath + "/fa").listSync().toString();
     if (_containsFaFiles(faFilesString)) {
       object.indexed = true;
     }
@@ -424,7 +429,7 @@ class GenomeService {
     session.log("Checking if genome exists with path: $path",
         level: LogLevel.info);
     var genome =
-    await Genome.db.find(session, where: (t) => t.path.equals(path));
+        await Genome.db.find(session, where: (t) => t.path.equals(path));
     return genome.isNotEmpty ? genome.first : null;
   }
 
