@@ -65,16 +65,6 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
-      - name: Install serverpod
-        run: |
-          dart pub global activate serverpod_cli
-          serverpod version
-
-      - name: Generate serverpod files
-        run: |
-          cd flumip_server
-          serverpod generate
-
       - name: Inject passwords.yaml
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
