@@ -304,7 +304,7 @@ class GenomeService {
         .getProcessPID(session, "bwa", genome.fastaPath!);
     await Genome.db.updateRow(session, genome);
     await session.serverpod.futureCallWithDelay(
-        'checkIndexProgress', genome, const Duration(seconds: 30));
+        'checkIndexProgress', genome, const Duration(minutes: 1));
     session.log("Indexing started for genome with ID: $id",
         level: LogLevel.info);
   }

@@ -19,7 +19,7 @@ class CheckIndexProgressFutureCall extends FutureCall<Genome> {
           "BWA index process is still running for gene ID: ${object.id}",
           level: LogLevel.info);
       await session.serverpod.futureCallWithDelay(
-          'checkIndexProgress', object, const Duration(seconds: 30));
+          'checkIndexProgress', object, const Duration(minutes: 1));
     } else {
       session.log(
           "BWA index process has finished for project ID: ${object.id}",
