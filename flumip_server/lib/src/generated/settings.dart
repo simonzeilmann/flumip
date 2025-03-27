@@ -30,6 +30,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
+    String? settingsPassword,
   })  : baseDir = baseDir ?? '/opt/flumip',
         projectDir = projectDir ?? '/opt/flumip/projects',
         genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
@@ -41,13 +42,14 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
         ucscTrackGenerator = ucscTrackGenerator ??
             '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
         mailActive = mailActive ?? false,
-        smtpServer = smtpServer ?? 'localhost',
+        smtpServer = smtpServer ?? '',
         smtpPort = smtpPort ?? 25,
         smtpUser = smtpUser ?? '',
         smtpPassword = smtpPassword ?? '',
-        smtpFrom = smtpFrom ?? 'flumip@localhost',
+        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
         startTLS = startTLS ?? true,
-        loginRequired = loginRequired ?? false;
+        loginRequired = loginRequired ?? false,
+        settingsPassword = settingsPassword ?? 'changeme';
 
   factory Settings({
     int? id,
@@ -67,6 +69,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
+    String? settingsPassword,
   }) = _SettingsImpl;
 
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -88,6 +91,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       smtpFrom: jsonSerialization['smtpFrom'] as String,
       startTLS: jsonSerialization['startTLS'] as bool,
       loginRequired: jsonSerialization['loginRequired'] as bool,
+      settingsPassword: jsonSerialization['settingsPassword'] as String,
     );
   }
 
@@ -130,6 +134,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
 
   bool loginRequired;
 
+  String settingsPassword;
+
   @override
   _i1.Table get table => t;
 
@@ -154,6 +160,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
+    String? settingsPassword,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -175,6 +182,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
+      'settingsPassword': settingsPassword,
     };
   }
 
@@ -198,6 +206,7 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
+      'settingsPassword': settingsPassword,
     };
   }
 
@@ -252,6 +261,7 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
+    String? settingsPassword,
   }) : super._(
           id: id,
           baseDir: baseDir,
@@ -270,6 +280,7 @@ class _SettingsImpl extends Settings {
           smtpFrom: smtpFrom,
           startTLS: startTLS,
           loginRequired: loginRequired,
+          settingsPassword: settingsPassword,
         );
 
   /// Returns a shallow copy of this [Settings]
@@ -294,6 +305,7 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
+    String? settingsPassword,
   }) {
     return Settings(
       id: id is int? ? id : this.id,
@@ -313,6 +325,7 @@ class _SettingsImpl extends Settings {
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
+      settingsPassword: settingsPassword ?? this.settingsPassword,
     );
   }
 }
@@ -399,6 +412,11 @@ class SettingsTable extends _i1.Table {
       this,
       hasDefault: true,
     );
+    settingsPassword = _i1.ColumnString(
+      'settingsPassword',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final _i1.ColumnString baseDir;
@@ -433,6 +451,8 @@ class SettingsTable extends _i1.Table {
 
   late final _i1.ColumnBool loginRequired;
 
+  late final _i1.ColumnString settingsPassword;
+
   @override
   List<_i1.Column> get columns => [
         id,
@@ -452,6 +472,7 @@ class SettingsTable extends _i1.Table {
         smtpFrom,
         startTLS,
         loginRequired,
+        settingsPassword,
       ];
 }
 

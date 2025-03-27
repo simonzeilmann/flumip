@@ -27,6 +27,14 @@ class SettingsService {
     return settings.first;
   }
 
+  Future<Settings> getSettingsExternal(Session session, String password) async {
+    var settings = await getSettings(session);
+    if (settings.settingsPassword != password) {
+      throw Exception('Invalid password');
+    }
+    return settings;
+  }
+
   /// Checks if the settings exist in the database and creates them if they do not.
   ///
   /// \param session The current session.

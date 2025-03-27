@@ -634,7 +634,7 @@ class Protocol extends _i1.SerializationManagerServer {
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'localhost\'::text',
+          columnDefault: '\'\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'smtpPort',
@@ -662,7 +662,7 @@ class Protocol extends _i1.SerializationManagerServer {
           columnType: _i2.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'flumip@localhost\'::text',
+          columnDefault: '\'flumip@yourdomain.com\'::text',
         ),
         _i2.ColumnDefinition(
           name: 'startTLS',
@@ -677,6 +677,13 @@ class Protocol extends _i1.SerializationManagerServer {
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'settingsPassword',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'changeme\'::text',
         ),
       ],
       foreignKeys: [],

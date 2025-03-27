@@ -524,12 +524,13 @@ class EndpointSettings extends _i1.EndpointRef {
   /// Retrieves the settings.
   ///
   /// \param session The current session.
+  /// \param password The password for authentication.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i7.Settings> getSettings() =>
+  _i2.Future<_i7.Settings> getSettings(String password) =>
       caller.callServerEndpoint<_i7.Settings>(
         'settings',
         'getSettings',
-        {},
+        {'password': password},
       );
 
   /// Updates the settings.

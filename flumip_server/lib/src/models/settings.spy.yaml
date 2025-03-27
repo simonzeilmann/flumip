@@ -10,10 +10,11 @@ fields:
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
   ucscTrackGenerator: String, default="/opt/flumip/MIPGEN/tools/generate_ucsc_track.py"
   mailActive: bool, default=false
-  smtpServer: String, default="localhost"
+  smtpServer: String, default=""
   smtpPort: int, default=25
   smtpUser: String, default=""
   smtpPassword: String, default=""
-  smtpFrom: String, default="flumip@localhost"
+  smtpFrom: String, default="flumip@yourdomain.com"
   startTLS: bool, default=true
   loginRequired: bool, default=false
+  settingsPassword: String, default="changeme"
