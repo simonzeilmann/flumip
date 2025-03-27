@@ -1233,7 +1233,9 @@ class _SettingsEndpoint {
   final _i2.SerializationManager _serializationManager;
 
   _i3.Future<_i8.Settings> getSettings(
-      _i1.TestSessionBuilder sessionBuilder) async {
+    _i1.TestSessionBuilder sessionBuilder,
+    String password,
+  ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
@@ -1245,7 +1247,7 @@ class _SettingsEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'settings',
           methodName: 'getSettings',
-          parameters: _i1.testObjectToJson({}),
+          parameters: _i1.testObjectToJson({'password': password}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(
