@@ -10,13 +10,11 @@ import 'package:flutter/services.dart';
 class ProjectTile extends StatefulWidget {
   Project project;
   final VoidCallback onDelete;
-  final Future<void> Function(List<String>) onCreateGeneFile;
 
   ProjectTile({
     super.key,
     required this.project,
     required this.onDelete,
-    required this.onCreateGeneFile,
   });
 
   @override
@@ -27,8 +25,9 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _isExpanded = false;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
-  late Genome genome;
-  late Snp snp;
+  late Genome genome = Genome(name: 'default');
+  late Snp snp =
+      Snp(name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -52,6 +51,9 @@ class _ProjectTileState extends State<ProjectTile> {
   void _toggleExpand() async {
     setState(() {
       _isExpanded = !_isExpanded;
+      genome = Genome(name: 'default');
+      snp = Snp(
+          name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -408,7 +410,9 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<List<String>> getGeneCategories() async {
     try {
-      return await client.genome.getCategories();
+      var cat = await client.genome.getCategories();
+      cat.sort((a, b) => a.compareTo(b));
+      return cat;
     } catch (e) {
       _errorMessage = 'Failed to load gene categories: $e';
       return [];
@@ -500,16 +504,32 @@ class _ProjectTileState extends State<ProjectTile> {
                             _errorMessage!,
                             style: TextStyle(color: Colors.red),
                           ),
-                        if (widget.project.genome == null) buildGeneSelector(),
-                        if (widget.project.genome != null)
-                          Text('Genome: ${genome.name}'),
-                        SizedBox(height: 10),
+                        if (widget.project.genome == null)
+                          buildGenomeSelector(),
+                        if (widget.project.genome != null) ...[
+                          Text('Genome:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (genome.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(genome.name),
+                          SizedBox(height: 10),
+                        ],
                         if (widget.project.genome != null &&
-                            widget.project.snp == null)
+                            genome.snp != null &&
+                            widget.project.snp == null &&
+                            !widget.project.active &&
+                            widget.project.completedIn == null)
                           buildSnpSelector(),
-                        if (widget.project.snp != null)
-                          Text('Snp: ${snp.name}'),
-                        SizedBox(height: 10),
+                        if (widget.project.snp != null) ...[
+                          Text('Snp:',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          if (snp.name == 'default')
+                            Text('loading...')
+                          else
+                            Text(snp.name),
+                        ],
+                        SizedBox(height: 60),
                         if (widget.project.genes != null &&
                             widget.project.genes!.isNotEmpty)
                           buildGeneColumn(),
@@ -526,7 +546,6 @@ class _ProjectTileState extends State<ProjectTile> {
                       ),
                     ],
                   )),
-                  SizedBox(height: 5),
                   if (widget.project.genes?.isNotEmpty == true &&
                       widget.project.bedFileCreated == false)
                     Center(
@@ -571,7 +590,7 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Column buildGeneSelector() {
+  Column buildGenomeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -584,24 +603,40 @@ class _ProjectTileState extends State<ProjectTile> {
                 value: null,
                 onChanged: (String? category) {
                   if (category != null) {
-                    getGenomeByCategory(category).then((genes) {
+                    getGenomeByCategory(category).then((genomes) {
+                      genomes.sort((a, b) => a.name.compareTo(b.name));
                       if (context.mounted) {
                         showDialog(
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: Text('Select Gene'),
+                              title: Text('Select Genome:'),
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  for (var gene in genes)
-                                    ListTile(
-                                      title: Text(gene.name),
-                                      onTap: () {
-                                        setGene(gene.id!);
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
+                                  for (var selectedGenome in genomes)
+                                    if (selectedGenome.indexed) ...[
+                                      ListTile(
+                                        title: Text(selectedGenome.name),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ] else ...[
+                                      ListTile(
+                                        title: Text(
+                                            "${selectedGenome.name} (not indexed)"),
+                                        onTap: () {
+                                          genome = selectedGenome;
+                                          setGene(selectedGenome.id!);
+                                          _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ],
                                 ],
                               ),
                             );
@@ -633,16 +668,18 @@ class _ProjectTileState extends State<ProjectTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Select SNP:"),
+        Text("Select SNP (optional):"),
         FutureBuilder<List<Snp>>(
           future: getSnpForGene(genome.id!),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return DropdownButton<Snp>(
                 value: null,
-                onChanged: (Snp? snp) {
-                  if (snp != null) {
-                    setSnp(snp.id!);
+                onChanged: (Snp? selectedSnp) {
+                  if (selectedSnp != null) {
+                    snp = selectedSnp;
+                    setSnp(selectedSnp.id!);
+                    _reloadProject();
                   }
                 },
                 items: snapshot.data!

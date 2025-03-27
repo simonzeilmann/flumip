@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/services.dart';
 
-import 'main.dart';
+import '../main.dart';
 
 class CreateProjectWidget extends StatefulWidget {
   final VoidCallback onProjectCreated;
@@ -180,7 +180,6 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       _nameController.clear();
       _descriptionController.clear();
       widget.onProjectCreated();
-      _initializeDefaultOptions();
     } catch (e) {
       setState(() {
         _errorMessage = '$e';

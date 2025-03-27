@@ -78,7 +78,7 @@ class ProcessService {
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
-        if (lines[1].contains(genome.fastaPath)) {
+        if (lines[1].contains(genome.indexPID.toString()) && lines[1].contains("bwa")) {
           session.log("Process is running for gene ID: ${genomeModel.id}",
               level: LogLevel.info);
           return true;
