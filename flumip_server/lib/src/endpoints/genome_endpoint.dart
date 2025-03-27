@@ -184,7 +184,7 @@ class GenomeEndpoint extends Endpoint {
     session.log('Retrieving genomes for category: $category',
         level: LogLevel.info);
     try {
-      return genomeService._getGenomeByCategory(session, category);
+      return genomeService.getGenomeByCategory(session, category);
     } catch (e) {
       session.log('Error retrieving genomes for category: $category',
           level: LogLevel.error, exception: e);
