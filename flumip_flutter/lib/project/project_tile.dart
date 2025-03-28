@@ -510,7 +510,7 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Future<List<String>> getGeneCategories() async {
+  Future<List<String>> getGenomeCategories() async {
     try {
       var cat = await client.genome.getCategories();
       cat.sort((a, b) => a.compareTo(b));
@@ -539,7 +539,7 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> setGene(int geneId) async {
+  Future<void> setGenome(int geneId) async {
     try {
       await client.project.setGeneById(widget.project.id!, geneId);
       await _reloadProject();
@@ -698,7 +698,7 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text("Select Category:"),
         FutureBuilder<List<String>>(
-          future: getGeneCategories(),
+          future: getGenomeCategories(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return DropdownButton<String>(
@@ -722,8 +722,18 @@ class _ProjectTileState extends State<ProjectTile> {
                                         title: Text(selectedGenome.name),
                                         onTap: () {
                                           genome = selectedGenome;
-                                          setGene(selectedGenome.id!);
+                                          setGenome(selectedGenome.id!);
                                           _reloadProject();
+                                          Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ] else if (selectedGenome.indexing) ...[
+                                      ListTile(
+                                        title: Text(
+                                            "${selectedGenome.name} (indexing)"),
+                                        subtitle: Text(
+                                            "Genome is currently unavailable"),
+                                        onTap: () {
                                           Navigator.of(context).pop();
                                         },
                                       ),
@@ -733,12 +743,12 @@ class _ProjectTileState extends State<ProjectTile> {
                                             "${selectedGenome.name} (not indexed)"),
                                         onTap: () {
                                           genome = selectedGenome;
-                                          setGene(selectedGenome.id!);
+                                          setGenome(selectedGenome.id!);
                                           _reloadProject();
                                           Navigator.of(context).pop();
                                         },
                                       ),
-                                    ],
+                                    ]
                                 ],
                               ),
                             );
