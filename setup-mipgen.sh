@@ -84,6 +84,7 @@ echo -e "\n${GREEN}Setting execute permissions...${NC}\n"
 chmod +x mipgen
 chmod +x tools/extract_coding_gene_exons.sh
 chmod +x tools/generate_ucsc_track.py
+chmod +x tools/add_bins_to_refgene.py
 cd ..
 
 # Create the base directory structure.
