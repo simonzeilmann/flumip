@@ -706,8 +706,8 @@ class _ProjectTileState extends State<ProjectTile> {
                 onChanged: (String? category) {
                   if (category != null) {
                     getGenomeByCategory(category).then((genomes) {
-                      genomes.sort((a, b) => a.name.compareTo(b.name));
                       if (context.mounted) {
+                        genomes.sort((a, b) => a.name.compareTo(b.name));
                         showDialog(
                           context: context,
                           builder: (context) {
@@ -717,37 +717,39 @@ class _ProjectTileState extends State<ProjectTile> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   for (var selectedGenome in genomes)
-                                    if (selectedGenome.indexed) ...[
-                                      ListTile(
-                                        title: Text(selectedGenome.name),
-                                        onTap: () {
-                                          genome = selectedGenome;
-                                          setGenome(selectedGenome.id!);
-                                          _reloadProject();
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ] else if (selectedGenome.indexing) ...[
-                                      ListTile(
-                                        title: Text(
-                                            "${selectedGenome.name} (indexing)"),
-                                        subtitle: Text(
-                                            "Genome is currently unavailable"),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ] else ...[
-                                      ListTile(
-                                        title: Text(
-                                            "${selectedGenome.name} (not indexed)"),
-                                        onTap: () {
-                                          genome = selectedGenome;
-                                          setGenome(selectedGenome.id!);
-                                          _reloadProject();
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
+                                    if (selectedGenome.active) ...[
+                                      if (selectedGenome.indexed) ...[
+                                        ListTile(
+                                          title: Text(selectedGenome.name),
+                                          onTap: () {
+                                            genome = selectedGenome;
+                                            setGenome(selectedGenome.id!);
+                                            _reloadProject();
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ] else if (selectedGenome.indexing) ...[
+                                        ListTile(
+                                          title: Text(
+                                              "${selectedGenome.name} (indexing)"),
+                                          subtitle: Text(
+                                              "Genome is currently unavailable"),
+                                          onTap: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ] else ...[
+                                        ListTile(
+                                          title: Text(
+                                              "${selectedGenome.name} (not indexed)"),
+                                          onTap: () {
+                                            genome = selectedGenome;
+                                            setGenome(selectedGenome.id!);
+                                            _reloadProject();
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ]
                                     ]
                                 ],
                               ),
