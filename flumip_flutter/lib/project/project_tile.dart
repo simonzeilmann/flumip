@@ -6,6 +6,14 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
 
+class Truple {
+  final String name;
+  int start;
+  int end;
+
+  Truple(this.name, this.start, this.end);
+}
+
 //ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
   Project project;
@@ -313,6 +321,69 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
+  List<Truple> _getGenomeRanges(List<String> ucscTrack) {
+    Set<String> uniqueNames = {};
+    for (var line in ucscTrack) {
+      if (line.startsWith('chr')) {
+        var parts = line.split('\t');
+        if (parts.length >= 3) {
+          var name = parts[0];
+          uniqueNames.add(name);
+        }
+      }
+    }
+    List<Truple> ranges = [];
+    for (var name in uniqueNames) {
+      var result = Truple(name, 0x20000000000000, 0);
+      for (var line in ucscTrack) {
+        if (line.startsWith(name)) {
+          var parts = line.split('\t');
+          if (parts.length >= 3) {
+            var start = int.parse(parts[1]);
+            var end = int.parse(parts[2]);
+            if (result.start > start) {
+              result.start = start;
+            }
+            if (result.end < end) {
+              result.end = end;
+            }
+          }
+        }
+      }
+      ranges.add(result);
+    }
+
+    return ranges;
+  }
+
+  Map<String, String> _generateUCSCTrackUrl(List<String> track) {
+    String url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?';
+    switch (genome.name) {
+      case 'hg18':
+        url += 'db=hg18';
+        break;
+      case 'hg19':
+        url += 'db=hg19';
+        break;
+      case 'hs1':
+        url += 'db=hs1';
+        break;
+      default:
+        url += 'db=hg38';
+        break;
+    }
+
+    var map = <String, String>{};
+
+    var genomeRanges = _getGenomeRanges(track);
+    for (var range in genomeRanges) {
+      map[range.name] = url +=
+          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}';
+    }
+
+    return map;
+  }
+
   Future<void> _showUSCSTrack() async {
     try {
       final result = await client.file.showUSCSTrack(widget.project.id!);
@@ -341,9 +412,40 @@ class _ProjectTileState extends State<ProjectTile> {
                 if (result.isNotEmpty)
                   TextButton(
                     onPressed: () async {
-                      web.window.window.open(
-                          'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:1-1000000&hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}',
-                          'new tab');
+                      var ucscTrack = _generateUCSCTrackUrl(result);
+                      if (ucscTrack.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("No UCSC Track found")));
+                        return;
+                      }
+                      if (ucscTrack.length == 1) {
+                        web.window.window
+                            .open(ucscTrack.values.first, 'new tab');
+                      } else {
+                        if (mounted) {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Select UCSC Track'),
+                                  content: SingleChildScrollView(
+                                    child: ListBody(
+                                      children: ucscTrack.entries
+                                          .map((entry) => TextButton(
+                                                onPressed: () {
+                                                  web.window.window.open(
+                                                      entry.value, 'new tab');
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text(entry.key),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ),
+                                );
+                              });
+                        }
+                      }
                     },
                     child: Text('Open in UCSC Track browser'),
                   ),
