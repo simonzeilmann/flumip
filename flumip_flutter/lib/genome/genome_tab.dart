@@ -223,8 +223,9 @@ class _GenomeTabState extends State<GenomeTab> {
                           Text("ID: ${selectedGenome!.id}"),
                           if(selectedGenome!.description != '')
                             Text("Description: ${selectedGenome!.description}"),
+
                           if (selectedGenome!.indexing)
-                            Text("Indexing: ${selectedGenome!.indexing}")
+                            Text("Indexing: ${selectedGenome!.indexing}...")
                           else
                             Text("Indexed: ${selectedGenome!.indexed}"),
                           if(selectedGenome!.indexed && !selectedGenome!.indexing)
