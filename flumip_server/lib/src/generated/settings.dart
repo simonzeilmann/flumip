@@ -22,6 +22,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? mipgenExecutable,
     String? exonExtractScript,
     String? ucscTrackGenerator,
+    String? binCreationScript,
+    String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
     int? smtpPort,
@@ -41,6 +43,10 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
             '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
         ucscTrackGenerator = ucscTrackGenerator ??
             '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
+        binCreationScript = binCreationScript ??
+            '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
+        bigGenePredToGenePredExecutable = bigGenePredToGenePredExecutable ??
+            '/opt/flumip/tools/bigGenePredToGenePred',
         mailActive = mailActive ?? false,
         smtpServer = smtpServer ?? '',
         smtpPort = smtpPort ?? 25,
@@ -61,6 +67,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? mipgenExecutable,
     String? exonExtractScript,
     String? ucscTrackGenerator,
+    String? binCreationScript,
+    String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
     int? smtpPort,
@@ -83,6 +91,9 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       mipgenExecutable: jsonSerialization['mipgenExecutable'] as String,
       exonExtractScript: jsonSerialization['exonExtractScript'] as String,
       ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String,
+      binCreationScript: jsonSerialization['binCreationScript'] as String,
+      bigGenePredToGenePredExecutable:
+          jsonSerialization['bigGenePredToGenePredExecutable'] as String,
       mailActive: jsonSerialization['mailActive'] as bool,
       smtpServer: jsonSerialization['smtpServer'] as String,
       smtpPort: jsonSerialization['smtpPort'] as int,
@@ -118,6 +129,10 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
 
   String ucscTrackGenerator;
 
+  String binCreationScript;
+
+  String bigGenePredToGenePredExecutable;
+
   bool mailActive;
 
   String smtpServer;
@@ -152,6 +167,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
     String? mipgenExecutable,
     String? exonExtractScript,
     String? ucscTrackGenerator,
+    String? binCreationScript,
+    String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
     int? smtpPort,
@@ -174,6 +191,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
       'ucscTrackGenerator': ucscTrackGenerator,
+      'binCreationScript': binCreationScript,
+      'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
       'mailActive': mailActive,
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
@@ -198,6 +217,8 @@ abstract class Settings implements _i1.TableRow, _i1.ProtocolSerialization {
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
       'ucscTrackGenerator': ucscTrackGenerator,
+      'binCreationScript': binCreationScript,
+      'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
       'mailActive': mailActive,
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
@@ -253,6 +274,8 @@ class _SettingsImpl extends Settings {
     String? mipgenExecutable,
     String? exonExtractScript,
     String? ucscTrackGenerator,
+    String? binCreationScript,
+    String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
     int? smtpPort,
@@ -272,6 +295,8 @@ class _SettingsImpl extends Settings {
           mipgenExecutable: mipgenExecutable,
           exonExtractScript: exonExtractScript,
           ucscTrackGenerator: ucscTrackGenerator,
+          binCreationScript: binCreationScript,
+          bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
           mailActive: mailActive,
           smtpServer: smtpServer,
           smtpPort: smtpPort,
@@ -297,6 +322,8 @@ class _SettingsImpl extends Settings {
     String? mipgenExecutable,
     String? exonExtractScript,
     String? ucscTrackGenerator,
+    String? binCreationScript,
+    String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
     int? smtpPort,
@@ -317,6 +344,9 @@ class _SettingsImpl extends Settings {
       mipgenExecutable: mipgenExecutable ?? this.mipgenExecutable,
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
       ucscTrackGenerator: ucscTrackGenerator ?? this.ucscTrackGenerator,
+      binCreationScript: binCreationScript ?? this.binCreationScript,
+      bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable ??
+          this.bigGenePredToGenePredExecutable,
       mailActive: mailActive ?? this.mailActive,
       smtpServer: smtpServer ?? this.smtpServer,
       smtpPort: smtpPort ?? this.smtpPort,
@@ -369,6 +399,16 @@ class SettingsTable extends _i1.Table {
     );
     ucscTrackGenerator = _i1.ColumnString(
       'ucscTrackGenerator',
+      this,
+      hasDefault: true,
+    );
+    binCreationScript = _i1.ColumnString(
+      'binCreationScript',
+      this,
+      hasDefault: true,
+    );
+    bigGenePredToGenePredExecutable = _i1.ColumnString(
+      'bigGenePredToGenePredExecutable',
       this,
       hasDefault: true,
     );
@@ -435,6 +475,10 @@ class SettingsTable extends _i1.Table {
 
   late final _i1.ColumnString ucscTrackGenerator;
 
+  late final _i1.ColumnString binCreationScript;
+
+  late final _i1.ColumnString bigGenePredToGenePredExecutable;
+
   late final _i1.ColumnBool mailActive;
 
   late final _i1.ColumnString smtpServer;
@@ -464,6 +508,8 @@ class SettingsTable extends _i1.Table {
         mipgenExecutable,
         exonExtractScript,
         ucscTrackGenerator,
+        binCreationScript,
+        bigGenePredToGenePredExecutable,
         mailActive,
         smtpServer,
         smtpPort,

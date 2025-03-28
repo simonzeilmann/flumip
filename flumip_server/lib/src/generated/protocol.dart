@@ -623,6 +623,21 @@ class Protocol extends _i1.SerializationManagerServer {
               '\'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py\'::text',
         ),
         _i2.ColumnDefinition(
+          name: 'binCreationScript',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault:
+              '\'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'bigGenePredToGenePredExecutable',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'/opt/flumip/tools/bigGenePredToGenePred\'::text',
+        ),
+        _i2.ColumnDefinition(
           name: 'mailActive',
           columnType: _i2.ColumnType.boolean,
           isNullable: false,
