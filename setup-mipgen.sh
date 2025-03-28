@@ -198,7 +198,7 @@ if $DOWNLOAD; then
       fi
 
       # Set up SNP directory for hs1 with the new name and download SNP files.
-      SNP_DIR="$BASE_DIR/dbSNPv155"
+      SNP_DIR="$BASE_DIR/snp/dbSNPv155"
       mkdir -p "$SNP_DIR"
       SNP1_FILE="$SNP_DIR/chm13v2.0_dbSNPv155.vcf.gz"
       SNP2_FILE="$SNP_DIR/chm13v2.0_dbSNPv155.vcf.gz.tbi"
