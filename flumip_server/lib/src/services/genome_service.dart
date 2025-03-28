@@ -127,6 +127,9 @@ class GenomeService {
         if (_containsFaIndexFiles(faFilesString)) {
           existingGenome.indexed = true;
         }
+        else if (_isIndexing(faFilesString)) {
+          existingGenome.indexing = true;
+        }
       } else if (genomeFile.path.endsWith("snp")) {
         await _processSnpFolder(session, existingGenome, genomeFile);
       }
@@ -246,6 +249,14 @@ class GenomeService {
         filesString.contains(".fa.pac") &&
         filesString.contains(".fa.sa") &&
         filesString.contains(".fa.bwt") &&
+        filesString.contains(".fa.ann");
+  }
+
+  bool _isIndexing(String filesString) {
+    return filesString.contains(".fa.amb") ||
+        filesString.contains(".fa.pac") ||
+        filesString.contains(".fa.sa") ||
+        filesString.contains(".fa.bwt") ||
         filesString.contains(".fa.ann");
   }
 
