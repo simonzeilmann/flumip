@@ -204,7 +204,8 @@ class GenomeEndpoint extends Endpoint {
   }
 
   Future<void> deleteFastaIndex(Session session, int id) async {
-    session.log('Deleting fasta index for genome with ID: $id', level: LogLevel.info);
+    session.log('Deleting fasta index for genome with ID: $id',
+        level: LogLevel.info);
     try {
       return genomeService.deleteFastaIndex(session, id);
     } catch (e) {

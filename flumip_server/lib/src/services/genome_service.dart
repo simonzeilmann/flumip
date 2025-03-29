@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -127,10 +128,14 @@ class GenomeService {
         if (_containsFaIndexFiles(faFilesString)) {
           existingGenome.indexed = true;
         }
+        else if (_isIndexing(faFilesString)) {
+          existingGenome.indexing = true;
+        }
       } else if (genomeFile.path.endsWith("snp")) {
         await _processSnpFolder(session, existingGenome, genomeFile);
       }
     }
+    existingGenome.size = await sl<FileService>().getDirSize(genomeFolder.path);
     await Genome.db.updateRow(session, existingGenome);
     session.log("Genome folder processed: ${genomeFolder.path}",
         level: LogLevel.info);
@@ -154,6 +159,7 @@ class GenomeService {
           tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
           folder: snpDir.path,
           active: true,
+          size: await sl<FileService>().getDirSize(snpDir.path),
         );
         var existingSnp = await _snpExists(session, snpDir.path);
         if (existingSnp == null) {
@@ -204,6 +210,7 @@ class GenomeService {
         genome.snp ??= <int>[];
         genome.snp?.add(snpRet.id!);
       }
+      genome.size = await sl<FileService>().getDirSize(genomeFolder.path);
       await Genome.db.insertRow(session, genome);
     }
     session.log("New genome created from folder: ${genomeFolder.path}",
@@ -229,6 +236,7 @@ class GenomeService {
           tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
           folder: snpDir.path,
           active: true,
+          size: await sl<FileService>().getDirSize(snpDir.path),
         ));
       }
     }
@@ -246,6 +254,14 @@ class GenomeService {
         filesString.contains(".fa.pac") &&
         filesString.contains(".fa.sa") &&
         filesString.contains(".fa.bwt") &&
+        filesString.contains(".fa.ann");
+  }
+
+  bool _isIndexing(String filesString) {
+    return filesString.contains(".fa.amb") ||
+        filesString.contains(".fa.pac") ||
+        filesString.contains(".fa.sa") ||
+        filesString.contains(".fa.bwt") ||
         filesString.contains(".fa.ann");
   }
 
