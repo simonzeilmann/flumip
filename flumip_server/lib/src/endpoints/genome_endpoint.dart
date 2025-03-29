@@ -123,18 +123,6 @@ class GenomeEndpoint extends Endpoint {
     }
   }
 
-  Future<List<Snp>> getSnpsForGenome(Session session, int genomeId) async {
-    session.log('Retrieving SNPs for genome with ID: $genomeId',
-        level: LogLevel.info);
-    try {
-      return genomeService.getSnpForGenome(session, genomeId);
-    } catch (e) {
-      session.log('Error retrieving SNPs for genome with ID: $genomeId',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
-
   /// Retrieves all SNPs for a specific genome.
   ///
   /// \param session The current session.

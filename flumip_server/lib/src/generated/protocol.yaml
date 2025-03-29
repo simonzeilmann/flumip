@@ -12,7 +12,6 @@ genome:
   - indexGenome:
   - deleteGenomeIndex:
   - getSnp:
-  - getSnpsForGenome:
   - getAllSnpForGenome:
   - updateSnp:
   - getCategories:

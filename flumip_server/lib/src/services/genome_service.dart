@@ -394,24 +394,6 @@ class GenomeService {
     return snp;
   }
 
-  Future<List<Snp>> getSnpsForGenome(Session session, int genomeId) async {
-    session.log("Retrieving SNPs for genome with ID: $genomeId",
-        level: LogLevel.info);
-    var genome = await Genome.db.findById(session, genomeId);
-    if (genome == null) {
-      session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
-    }
-    List<Snp> snps = [];
-    for (var snpId in genome.snp!) {
-      var snp = await Snp.db.findById(session, snpId);
-      if (snp != null) {
-        snps.add(snp);
-      }
-    }
-    return snps;
-  }
-
   /// Retrieves all SNPs.
   ///
   /// \param session The current session.
