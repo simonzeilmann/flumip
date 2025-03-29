@@ -26,6 +26,8 @@ class _SettingsTabState extends State<SettingsTab> {
   TextEditingController();
   final TextEditingController _ucscTrackGeneratorController =
   TextEditingController();
+  final TextEditingController _bigGenePredToGenePredExecutable = TextEditingController();
+  final TextEditingController _binCreationScript = TextEditingController();
   final TextEditingController _smtpServerController = TextEditingController();
   final TextEditingController _smtpPortController = TextEditingController();
   final TextEditingController _smtpUserController = TextEditingController();
@@ -53,6 +55,8 @@ class _SettingsTabState extends State<SettingsTab> {
     _mipgenExecutableController.dispose();
     _exonExtractScriptController.dispose();
     _ucscTrackGeneratorController.dispose();
+    _bigGenePredToGenePredExecutable.dispose();
+    _binCreationScript.dispose();
     _smtpServerController.dispose();
     _smtpPortController.dispose();
     _smtpUserController.dispose();
@@ -80,6 +84,8 @@ class _SettingsTabState extends State<SettingsTab> {
         _mipgenExecutableController.text = settings.mipgenExecutable;
         _exonExtractScriptController.text = settings.exonExtractScript;
         _ucscTrackGeneratorController.text = settings.ucscTrackGenerator;
+        _bigGenePredToGenePredExecutable.text = settings.bigGenePredToGenePredExecutable;
+        _binCreationScript.text = settings.binCreationScript;
         _smtpServerController.text = settings.smtpServer;
         _smtpPortController.text = settings.smtpPort.toString();
         _smtpUserController.text = settings.smtpUser;
@@ -109,6 +115,8 @@ class _SettingsTabState extends State<SettingsTab> {
         mipgenExecutable: _mipgenExecutableController.text,
         exonExtractScript: _exonExtractScriptController.text,
         ucscTrackGenerator: _ucscTrackGeneratorController.text,
+        bigGenePredToGenePredExecutable: _bigGenePredToGenePredExecutable.text,
+        binCreationScript: _binCreationScript.text,
         mailActive: _mailActiveNotifier.value,
         smtpServer: _smtpServerController.text,
         smtpPort: int.parse(_smtpPortController.text),
@@ -219,6 +227,17 @@ class _SettingsTabState extends State<SettingsTab> {
                     controller: _ucscTrackGeneratorController,
                     decoration:
                     InputDecoration(labelText: 'UCSC track generator'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  TextField(
+                    controller: _bigGenePredToGenePredExecutable,
+                    decoration:
+                    InputDecoration(labelText: 'BigGenePred to GenePred executable'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  TextField(
+                    controller: _binCreationScript,
+                    decoration: InputDecoration(labelText: 'Bin creation script'),
                     keyboardType: TextInputType.text,
                   ),
                   Row(
