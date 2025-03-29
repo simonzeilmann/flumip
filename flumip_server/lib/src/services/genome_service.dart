@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -134,6 +135,7 @@ class GenomeService {
         await _processSnpFolder(session, existingGenome, genomeFile);
       }
     }
+    existingGenome.size = await sl<FileService>().getDirSize(genomeFolder.path);
     await Genome.db.updateRow(session, existingGenome);
     session.log("Genome folder processed: ${genomeFolder.path}",
         level: LogLevel.info);
@@ -157,6 +159,7 @@ class GenomeService {
           tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
           folder: snpDir.path,
           active: true,
+          size: await sl<FileService>().getDirSize(snpDir.path),
         );
         var existingSnp = await _snpExists(session, snpDir.path);
         if (existingSnp == null) {
@@ -207,6 +210,7 @@ class GenomeService {
         genome.snp ??= <int>[];
         genome.snp?.add(snpRet.id!);
       }
+      genome.size = await sl<FileService>().getDirSize(genomeFolder.path);
       await Genome.db.insertRow(session, genome);
     }
     session.log("New genome created from folder: ${genomeFolder.path}",
@@ -232,6 +236,7 @@ class GenomeService {
           tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
           folder: snpDir.path,
           active: true,
+          size: await sl<FileService>().getDirSize(snpDir.path),
         ));
       }
     }
@@ -387,6 +392,24 @@ class GenomeService {
     }
     session.log("SNP retrieved with ID: $id", level: LogLevel.info);
     return snp;
+  }
+
+  Future<List<Snp>> getSnpsForGenome(Session session, int genomeId) async {
+    session.log("Retrieving SNPs for genome with ID: $genomeId",
+        level: LogLevel.info);
+    var genome = await Genome.db.findById(session, genomeId);
+    if (genome == null) {
+      session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
+      throw FileNotFoundException(message: 'Genome not found');
+    }
+    List<Snp> snps = [];
+    for (var snpId in genome.snp!) {
+      var snp = await Snp.db.findById(session, snpId);
+      if (snp != null) {
+        snps.add(snp);
+      }
+    }
+    return snps;
   }
 
   /// Retrieves all SNPs.

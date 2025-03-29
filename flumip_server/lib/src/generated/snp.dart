@@ -21,8 +21,10 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
     required this.folder,
     required this.active,
     bool? private,
+    int? size,
   })  : description = description ?? '',
-        private = private ?? false;
+        private = private ?? false,
+        size = size ?? 0;
 
   factory Snp({
     int? id,
@@ -33,6 +35,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
     required String folder,
     required bool active,
     bool? private,
+    int? size,
   }) = _SnpImpl;
 
   factory Snp.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -45,6 +48,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
       folder: jsonSerialization['folder'] as String,
       active: jsonSerialization['active'] as bool,
       private: jsonSerialization['private'] as bool,
+      size: jsonSerialization['size'] as int,
     );
   }
 
@@ -69,6 +73,8 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
 
   bool private;
 
+  int size;
+
   @override
   _i1.Table get table => t;
 
@@ -84,6 +90,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
     String? folder,
     bool? active,
     bool? private,
+    int? size,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -96,6 +103,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
       'folder': folder,
       'active': active,
       'private': private,
+      'size': size,
     };
   }
 
@@ -110,6 +118,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
       'folder': folder,
       'active': active,
       'private': private,
+      'size': size,
     };
   }
 
@@ -155,6 +164,7 @@ class _SnpImpl extends Snp {
     required String folder,
     required bool active,
     bool? private,
+    int? size,
   }) : super._(
           id: id,
           name: name,
@@ -164,6 +174,7 @@ class _SnpImpl extends Snp {
           folder: folder,
           active: active,
           private: private,
+          size: size,
         );
 
   /// Returns a shallow copy of this [Snp]
@@ -179,6 +190,7 @@ class _SnpImpl extends Snp {
     String? folder,
     bool? active,
     bool? private,
+    int? size,
   }) {
     return Snp(
       id: id is int? ? id : this.id,
@@ -189,6 +201,7 @@ class _SnpImpl extends Snp {
       folder: folder ?? this.folder,
       active: active ?? this.active,
       private: private ?? this.private,
+      size: size ?? this.size,
     );
   }
 }
@@ -225,6 +238,11 @@ class SnpTable extends _i1.Table {
       this,
       hasDefault: true,
     );
+    size = _i1.ColumnInt(
+      'size',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final _i1.ColumnString name;
@@ -241,6 +259,8 @@ class SnpTable extends _i1.Table {
 
   late final _i1.ColumnBool private;
 
+  late final _i1.ColumnInt size;
+
   @override
   List<_i1.Column> get columns => [
         id,
@@ -251,6 +271,7 @@ class SnpTable extends _i1.Table {
         folder,
         active,
         private,
+        size,
       ];
 }
 

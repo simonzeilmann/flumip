@@ -177,6 +177,13 @@ class EndpointGenome extends _i1.EndpointRef {
         {'id': id},
       );
 
+  _i2.Future<List<_i4.Snp>> getSnpsForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_i4.Snp>>(
+        'genome',
+        'getSnpsForGenome',
+        {'genomeId': genomeId},
+      );
+
   /// Retrieves all SNPs for a specific genome.
   ///
   /// \param session The current session.

@@ -123,6 +123,18 @@ class GenomeEndpoint extends Endpoint {
     }
   }
 
+  Future<List<Snp>> getSnpsForGenome(Session session, int genomeId) async {
+    session.log('Retrieving SNPs for genome with ID: $genomeId',
+        level: LogLevel.info);
+    try {
+      return genomeService.getSnpForGenome(session, genomeId);
+    } catch (e) {
+      session.log('Error retrieving SNPs for genome with ID: $genomeId',
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
+
   /// Retrieves all SNPs for a specific genome.
   ///
   /// \param session The current session.
@@ -204,7 +216,8 @@ class GenomeEndpoint extends Endpoint {
   }
 
   Future<void> deleteFastaIndex(Session session, int id) async {
-    session.log('Deleting fasta index for genome with ID: $id', level: LogLevel.info);
+    session.log('Deleting fasta index for genome with ID: $id',
+        level: LogLevel.info);
     try {
       return genomeService.deleteFastaIndex(session, id);
     } catch (e) {
