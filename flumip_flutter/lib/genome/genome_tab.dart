@@ -366,7 +366,7 @@ class _GenomeTabState extends State<GenomeTab> {
                                                           color:
                                                               Colors.black54)),
                                                 Text(
-                                                  'Size: ${_truncateToDecimalPlaces(snp.size, 2)} Gb',
+                                                  'Size: ${_truncateToDecimalPlaces(snp.size / 1000000000, 2)} Gb',
                                                   style: TextStyle(
                                                       color: Colors.black54),
                                                 ),
