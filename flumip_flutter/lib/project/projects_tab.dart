@@ -68,6 +68,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
+        spacing: 10,
         children: [
           if (!_showCreateProject)
             Center(
@@ -81,7 +82,6 @@ class _ProjectsTabState extends State<ProjectsTab> {
               onProjectCreated: _onProjectCreated,
               onAbort: _onAbort,
             ),
-          const SizedBox(height: 30),
           if (_errorMessage != null)
             Container(
               color: Colors.red[300],

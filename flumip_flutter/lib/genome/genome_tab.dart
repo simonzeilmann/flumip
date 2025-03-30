@@ -371,7 +371,8 @@ class _GenomeTabState extends State<GenomeTab> {
                                                       color: Colors.black54),
                                                 ),
                                               ],
-                                            )),
+                                            )
+                                        ),
                                       );
                                     },
                                   );
