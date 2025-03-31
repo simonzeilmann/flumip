@@ -88,7 +88,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
               padding: const EdgeInsets.all(8),
               child: Text(_errorMessage!),
             ),
-          if (_projects != null)
+          if (!_showCreateProject && _projects != null)
             Expanded(
               child: ListView.builder(
                 itemCount: _projects!.length,
