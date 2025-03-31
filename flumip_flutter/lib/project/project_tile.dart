@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class Truple {
   final String name;
@@ -587,9 +588,17 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
             title: Text(widget.project.name),
             subtitle: Text(widget.project.description),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: _showDeleteConfirmationDialog,
+            trailing: Wrap(
+              spacing: 12,
+              children: <Widget>[
+                Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
+                Text(
+                    '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: _showDeleteConfirmationDialog,
+                ),
+              ],
             ),
           ),
           if (_isExpanded)
