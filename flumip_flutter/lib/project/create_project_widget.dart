@@ -189,76 +189,95 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (_errorMessage != null)
-          Container(
-            color: Colors.red[300],
-            padding: const EdgeInsets.all(8),
-            child: Text(_errorMessage!),
-          ),
-        TextField(
-          controller: _nameController,
-          decoration: InputDecoration(labelText: 'Project Name (required)'),
-        ),
-        TextField(
-          controller: _descriptionController,
-          decoration:
-              InputDecoration(labelText: 'Project Description (optional)'),
-        ),
-        SizedBox(height: 5),
-        Row(
-          children: [
-            Text('Show Options'),
-            SizedBox(width: 10),
-            Switch(
-              value: _showOptions,
-              onChanged: (value) {
-                setState(() {
-                  _showOptions = value;
-                });
-              },
-            ),
-          ],
-        ),
-        if (_showOptions) ...[
-          Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
+    bool isScreenWide = MediaQuery.sizeOf(context).width >= 1020;
+    return Flexible(
+        fit: FlexFit.tight,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              if (_errorMessage != null)
+                Container(
+                  color: Colors.red[300],
+                  padding: const EdgeInsets.all(8),
+                  child: Text(_errorMessage!),
+                ),
+              SizedBox(height: 5),
+              TextField(
+                controller: _nameController,
+                decoration:
+                    InputDecoration(labelText: 'Project Name (required)'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                    labelText: 'Project Description (optional)'),
+              ),
+              SizedBox(height: 15),
+              Row(
                 children: [
-                  SizedBox(height: 25),
-                  Expanded(child: buildFirstOptionsColumn()),
-                  SizedBox(width: 35),
-                  Expanded(child: buildSecondOptionsColumn()),
-                  SizedBox(width: 35),
-                  Expanded(child: buildThirdOptionsColumn()),
-                  SizedBox(height: 35),
+                  Text('Show Options'),
+                  SizedBox(width: 10),
+                  Switch(
+                    value: _showOptions,
+                    onChanged: (value) {
+                      setState(() {
+                        _showOptions = value;
+                      });
+                    },
+                  ),
                 ],
-              ))
-
-          // Add more fields as needed
-        ],
-        SizedBox(height: 35),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: widget.onAbort,
-              child: Text('Cancel'),
-            ),
-            SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: _createProject,
-              child: Text('Create Project'),
-            ),
-          ],
-        ),
-      ],
-    );
+              ),
+              if (_showOptions) ...[
+                if (isScreenWide) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      spacing: 10,
+                      children: [
+                        Expanded(child: buildFirstOptionsColumn()),
+                        Expanded(child: buildSecondOptionsColumn()),
+                        Expanded(child: buildThirdOptionsColumn()),
+                      ],
+                    ),
+                  )
+                ] else ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      spacing: 10,
+                      children: [
+                        buildFirstOptionsColumn(),
+                        buildSecondOptionsColumn(),
+                        buildThirdOptionsColumn(),
+                      ],
+                    ),
+                  )
+                ],
+              ],
+              SizedBox(height: 35),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: widget.onAbort,
+                    child: Text('Cancel'),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _createProject,
+                    child: Text('Create Project'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ));
   }
 
-  Column buildFirstOptionsColumn() {
+  Widget buildFirstOptionsColumn() {
     return Column(
+      spacing: 5,
       children: [
         TextField(
           controller: _minCaptureSizeController,
@@ -321,8 +340,9 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
     );
   }
 
-  Column buildSecondOptionsColumn() {
+  Widget buildSecondOptionsColumn() {
     return Column(
+      spacing: 5,
       children: [
         TextField(
           controller: _targetArmCopyController,
@@ -406,8 +426,9 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
     );
   }
 
-  Column buildThirdOptionsColumn() {
+  Widget buildThirdOptionsColumn() {
     return Column(
+      spacing: 5,
       children: [
         Row(
           children: [

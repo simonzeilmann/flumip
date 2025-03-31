@@ -68,6 +68,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
+        spacing: 10,
         children: [
           if (!_showCreateProject)
             Center(
@@ -81,14 +82,13 @@ class _ProjectsTabState extends State<ProjectsTab> {
               onProjectCreated: _onProjectCreated,
               onAbort: _onAbort,
             ),
-          const SizedBox(height: 30),
           if (_errorMessage != null)
             Container(
               color: Colors.red[300],
               padding: const EdgeInsets.all(8),
               child: Text(_errorMessage!),
             ),
-          if (_projects != null)
+          if (!_showCreateProject && _projects != null)
             Expanded(
               child: ListView.builder(
                 itemCount: _projects!.length,

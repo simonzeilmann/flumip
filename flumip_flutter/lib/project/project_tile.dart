@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class Truple {
   final String name;
@@ -419,8 +420,7 @@ class _ProjectTileState extends State<ProjectTile> {
                         return;
                       }
                       if (ucscTrack.length == 1) {
-                        web.window.window
-                            .open(ucscTrack.values.first, 'new tab');
+                        web.window.open(ucscTrack.values.first, 'new tab');
                       } else {
                         if (mounted) {
                           showDialog(
@@ -433,7 +433,7 @@ class _ProjectTileState extends State<ProjectTile> {
                                       children: ucscTrack.entries
                                           .map((entry) => TextButton(
                                                 onPressed: () {
-                                                  web.window.window.open(
+                                                  web.window.open(
                                                       entry.value, 'new tab');
                                                   Navigator.of(context).pop();
                                                 },
@@ -571,6 +571,7 @@ class _ProjectTileState extends State<ProjectTile> {
   
   @override
   Widget build(BuildContext context) {
+    bool isScreenWide = MediaQuery.sizeOf(context).width >= 670;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -587,108 +588,153 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
             title: Text(widget.project.name),
             subtitle: Text(widget.project.description),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: _showDeleteConfirmationDialog,
+            trailing: Wrap(
+              spacing: 12,
+              children: <Widget>[
+                Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
+                Text(
+                    '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: _showDeleteConfirmationDialog,
+                ),
+              ],
             ),
           ),
           if (_isExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_errorMessage != null)
-                          Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        if (widget.project.genome == null)
-                          buildGenomeSelector(),
-                        if (widget.project.genome != null) ...[
-                          Text('Genome:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          if (genome.name == 'default')
-                            Text('loading...')
-                          else
-                            Text(genome.name),
-                          SizedBox(height: 10),
-                        ],
-                        if (widget.project.genome != null &&
-                            genome.snp != null &&
-                            widget.project.snp == null &&
-                            !widget.project.active &&
-                            widget.project.completedIn == null)
-                          buildSnpSelector(),
-                        if (widget.project.snp != null) ...[
-                          Text('Snp:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          if (snp.name == 'default')
-                            Text('loading...')
-                          else
-                            Text(snp.name),
-                        ],
-                        SizedBox(height: 60),
-                        if (widget.project.genes != null &&
-                            widget.project.genes!.isNotEmpty)
-                          buildGeneColumn(),
-                        if (widget.project.bedFileCreated == false)
-                          buildAddGeneRow(),
-                      ],
+            if (isScreenWide) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    Expanded(
+                      child: buildGenomeSelectorColumn(),
                     ),
-                  ),
-                  Expanded(
-                      child: Row(
-                    children: [
-                      Expanded(
-                        child: buildProjectOptionsColumn(),
-                      ),
-                    ],
-                  )),
-                  if (widget.project.genes?.isNotEmpty == true &&
-                      widget.project.bedFileCreated == false)
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _createBedFile,
-                        child: Text('Create BED File'),
-                      ),
+                    Expanded(
+                      child: buildProjectOptionsColumn(),
                     ),
-                  SizedBox(height: 5),
-                  if (widget.project.bedFileCreated == true &&
-                      widget.project.active == false &&
-                      widget.project.completedIn == null)
-                    Center(
-                      child: buildMipgenStartColumn(),
-                    ),
-                  SizedBox(height: 5),
-                  if (widget.project.active == true &&
-                      widget.project.completedIn == null)
-                    Center(
-                      child: buildMipgenProgressColumn(),
-                    ),
-                  if (widget.project.active == false &&
-                      widget.project.completedIn != null &&
-                      widget.project.error.isEmpty)
-                    Center(
-                      child: buildMipgenResultColumn(),
-                    ),
-                  if (widget.project.active == false &&
-                      widget.project.completedIn != null &&
-                      widget.project.error.isNotEmpty)
-                    Center(
-                      child: Text(
-                        'Error: ${widget.project.error}',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    )
-                ],
+                    Expanded(child: buildProjectActionColumn())
+                  ],
+                ),
               ),
-            ),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  spacing: 10,
+                  children: [
+                    buildGenomeSelectorColumn(),
+                    buildProjectOptionsColumn(),
+                    buildProjectActionColumn()
+                  ],
+                ),
+              ),
+            ]
         ],
       ),
+    );
+  }
+
+  Column buildProjectActionColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.project.genes?.isNotEmpty == true &&
+            widget.project.bedFileCreated == false)
+          Center(
+            child: ElevatedButton(
+              onPressed: _createBedFile,
+              child: Text('Create BED File'),
+            ),
+          ),
+        SizedBox(height: 5),
+        if (widget.project.bedFileCreated == true &&
+            widget.project.active == false &&
+            widget.project.completedIn == null)
+          Center(
+            child: buildMipgenStartColumn(),
+          ),
+        SizedBox(height: 5),
+        if (widget.project.active == true && widget.project.completedIn == null)
+          Center(
+            child: buildMipgenProgressColumn(),
+          ),
+        if (widget.project.active == false &&
+            widget.project.completedIn != null &&
+            widget.project.error.isEmpty)
+          Center(
+            child: buildMipgenResultColumn(),
+          ),
+        if (widget.project.active == false &&
+            widget.project.completedIn != null &&
+            widget.project.error.isNotEmpty)
+          Center(
+            child: Text(
+              'Error: ${widget.project.error}',
+              style: TextStyle(color: Colors.red),
+            ),
+          )
+      ],
+    );
+  }
+
+  Column buildGenomeSelectorColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_errorMessage != null)
+          Center(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        if (widget.project.genome == null)
+          Center(
+            child: buildGenomeSelector(),
+          ),
+        if (widget.project.genome != null) ...[
+          Center(
+              child: Text('Genome:',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          if (genome.name == 'default') ...[
+            Center(child: Text('loading...')),
+          ] else ...[
+            Center(
+              child: Text(genome.name),
+            )
+          ],
+          SizedBox(height: 10),
+        ],
+        if (widget.project.genome != null &&
+            genome.snp != null &&
+            widget.project.snp == null &&
+            !widget.project.active &&
+            widget.project.completedIn == null)
+          Center(
+            child: buildSnpSelector(),
+          ),
+        if (widget.project.snp != null) ...[
+          Center(
+            child: Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          if (snp.name == 'default') ...[
+            Center(child: Text('loading...')),
+          ] else ...[
+            Center(child: Text(snp.name)),
+          ]
+        ],
+        SizedBox(height: 30),
+        if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
+          Center(
+            child: buildGeneColumn(),
+          ),
+        if (widget.project.bedFileCreated == false)
+          Center(
+            child: buildAddGeneColumn(),
+          ),
+      ],
     );
   }
 
@@ -877,18 +923,16 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildGeneColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
+        //TODO: Center this map
         ...widget.project.genes!.map(
           (gene) => Row(
             children: [
-              Center(
-                child: Text(
-                  gene,
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
+              Text(
+                gene,
+                style: TextStyle(fontStyle: FontStyle.italic),
               ),
               if (widget.project.bedFileCreated == false)
                 IconButton(
@@ -902,29 +946,26 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Row buildAddGeneRow() {
-    return Row(
+  Column buildAddGeneColumn() {
+    return Column(
       children: [
-        Expanded(
-          child: TextField(
-            controller: _genesController,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'add gene',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              filled: true,
-              fillColor: Colors.grey[200],
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        TextField(
+          controller: _genesController,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'add gene',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-            keyboardType: TextInputType.text,
-            onSubmitted: (value) {
-              _addGene(value);
-              _genesController.clear();
-            },
+            filled: true,
+            fillColor: Colors.grey[200],
+            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           ),
+          keyboardType: TextInputType.text,
+          onSubmitted: (value) {
+            _addGene(value);
+            _genesController.clear();
+          },
         ),
         SizedBox(width: 15),
         IconButton(
