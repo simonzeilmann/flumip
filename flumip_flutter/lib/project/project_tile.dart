@@ -933,20 +933,28 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
-        //TODO: Center this map
-        ...widget.project.genes!.map((gene) => Row(
-              children: [
-                Text(
-                  gene,
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-                if (widget.project.bedFileCreated == false)
-                  IconButton(
-                    icon: Icon(Icons.remove_circle_outline),
-                    onPressed: () => _removeGene(gene),
+        SizedBox(
+          height: 50,
+          child: ListView.builder(
+            itemCount: widget.project.genes!.length,
+            itemBuilder: (context, index) {
+              return Row(
+                children: [
+                  Text(
+                    widget.project.genes![index],
+                    style: TextStyle(fontStyle: FontStyle.italic),
                   ),
-              ],
-            )),
+                  if (widget.project.bedFileCreated == false)
+                    IconButton(
+                      icon: Icon(Icons.remove_circle_outline),
+                      onPressed: () =>
+                          _removeGene(widget.project.genes![index]),
+                    ),
+                ],
+              );
+            },
+          ),
+        )
       ],
     );
   }
