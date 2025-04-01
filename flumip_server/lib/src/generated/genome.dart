@@ -27,12 +27,14 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
     bool? indexing,
     int? indexPID,
     int? indexResults,
+    int? size,
   })  : description = description ?? '',
         active = active ?? true,
         indexed = indexed ?? false,
         indexing = indexing ?? false,
         indexPID = indexPID ?? 0,
-        indexResults = indexResults ?? 0;
+        indexResults = indexResults ?? 0,
+        size = size ?? 0;
 
   factory Genome({
     int? id,
@@ -49,6 +51,7 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
     bool? indexing,
     int? indexPID,
     int? indexResults,
+    int? size,
   }) = _GenomeImpl;
 
   factory Genome.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -67,6 +70,7 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
       indexing: jsonSerialization['indexing'] as bool,
       indexPID: jsonSerialization['indexPID'] as int,
       indexResults: jsonSerialization['indexResults'] as int,
+      size: jsonSerialization['size'] as int,
     );
   }
 
@@ -103,6 +107,8 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
 
   int indexResults;
 
+  int size;
+
   @override
   _i1.Table get table => t;
 
@@ -124,6 +130,7 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
     bool? indexing,
     int? indexPID,
     int? indexResults,
+    int? size,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -142,6 +149,7 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
       'indexing': indexing,
       'indexPID': indexPID,
       'indexResults': indexResults,
+      'size': size,
     };
   }
 
@@ -162,6 +170,7 @@ abstract class Genome implements _i1.TableRow, _i1.ProtocolSerialization {
       'indexing': indexing,
       'indexPID': indexPID,
       'indexResults': indexResults,
+      'size': size,
     };
   }
 
@@ -213,6 +222,7 @@ class _GenomeImpl extends Genome {
     bool? indexing,
     int? indexPID,
     int? indexResults,
+    int? size,
   }) : super._(
           id: id,
           name: name,
@@ -228,6 +238,7 @@ class _GenomeImpl extends Genome {
           indexing: indexing,
           indexPID: indexPID,
           indexResults: indexResults,
+          size: size,
         );
 
   /// Returns a shallow copy of this [Genome]
@@ -249,6 +260,7 @@ class _GenomeImpl extends Genome {
     bool? indexing,
     int? indexPID,
     int? indexResults,
+    int? size,
   }) {
     return Genome(
       id: id is int? ? id : this.id,
@@ -265,6 +277,7 @@ class _GenomeImpl extends Genome {
       indexing: indexing ?? this.indexing,
       indexPID: indexPID ?? this.indexPID,
       indexResults: indexResults ?? this.indexResults,
+      size: size ?? this.size,
     );
   }
 }
@@ -329,6 +342,11 @@ class GenomeTable extends _i1.Table {
       this,
       hasDefault: true,
     );
+    size = _i1.ColumnInt(
+      'size',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final _i1.ColumnString name;
@@ -357,6 +375,8 @@ class GenomeTable extends _i1.Table {
 
   late final _i1.ColumnInt indexResults;
 
+  late final _i1.ColumnInt size;
+
   @override
   List<_i1.Column> get columns => [
         id,
@@ -373,6 +393,7 @@ class GenomeTable extends _i1.Table {
         indexing,
         indexPID,
         indexResults,
+        size,
       ];
 }
 

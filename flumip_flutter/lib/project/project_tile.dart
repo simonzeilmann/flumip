@@ -5,6 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+
+class Truple {
+  final String name;
+  int start;
+  int end;
+
+  Truple(this.name, this.start, this.end);
+}
 
 //ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
@@ -313,6 +322,69 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
+  List<Truple> _getGenomeRanges(List<String> ucscTrack) {
+    Set<String> uniqueNames = {};
+    for (var line in ucscTrack) {
+      if (line.startsWith('chr')) {
+        var parts = line.split('\t');
+        if (parts.length >= 3) {
+          var name = parts[0];
+          uniqueNames.add(name);
+        }
+      }
+    }
+    List<Truple> ranges = [];
+    for (var name in uniqueNames) {
+      var result = Truple(name, 0x20000000000000, 0);
+      for (var line in ucscTrack) {
+        if (line.startsWith(name)) {
+          var parts = line.split('\t');
+          if (parts.length >= 3) {
+            var start = int.parse(parts[1]);
+            var end = int.parse(parts[2]);
+            if (result.start > start) {
+              result.start = start;
+            }
+            if (result.end < end) {
+              result.end = end;
+            }
+          }
+        }
+      }
+      ranges.add(result);
+    }
+
+    return ranges;
+  }
+
+  Map<String, String> _generateUCSCTrackUrl(List<String> track) {
+    String url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?';
+    switch (genome.name) {
+      case 'hg18':
+        url += 'db=hg18';
+        break;
+      case 'hg19':
+        url += 'db=hg19';
+        break;
+      case 'hs1':
+        url += 'db=hs1';
+        break;
+      default:
+        url += 'db=hg38';
+        break;
+    }
+
+    var map = <String, String>{};
+
+    var genomeRanges = _getGenomeRanges(track);
+    for (var range in genomeRanges) {
+      map[range.name] = url +=
+          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}';
+    }
+
+    return map;
+  }
+
   Future<void> _showUSCSTrack() async {
     try {
       final result = await client.file.showUSCSTrack(widget.project.id!);
@@ -341,9 +413,39 @@ class _ProjectTileState extends State<ProjectTile> {
                 if (result.isNotEmpty)
                   TextButton(
                     onPressed: () async {
-                      web.window.window.open(
-                          'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:1-1000000&hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}',
-                          'new tab');
+                      var ucscTrack = _generateUCSCTrackUrl(result);
+                      if (ucscTrack.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("No UCSC Track found")));
+                        return;
+                      }
+                      if (ucscTrack.length == 1) {
+                        web.window.open(ucscTrack.values.first, 'new tab');
+                      } else {
+                        if (mounted) {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Select UCSC Track'),
+                                  content: SingleChildScrollView(
+                                    child: ListBody(
+                                      children: ucscTrack.entries
+                                          .map((entry) => TextButton(
+                                                onPressed: () {
+                                                  web.window.open(
+                                                      entry.value, 'new tab');
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text(entry.key),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ),
+                                );
+                              });
+                        }
+                      }
                     },
                     child: Text('Open in UCSC Track browser'),
                   ),
@@ -408,7 +510,7 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Future<List<String>> getGeneCategories() async {
+  Future<List<String>> getGenomeCategories() async {
     try {
       var cat = await client.genome.getCategories();
       cat.sort((a, b) => a.compareTo(b));
@@ -437,7 +539,7 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> setGene(int geneId) async {
+  Future<void> setGenome(int geneId) async {
     try {
       await client.project.setGeneById(widget.project.id!, geneId);
       await _reloadProject();
@@ -469,6 +571,7 @@ class _ProjectTileState extends State<ProjectTile> {
   
   @override
   Widget build(BuildContext context) {
+    bool isScreenWide = MediaQuery.sizeOf(context).width >= 670;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -485,108 +588,153 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
             title: Text(widget.project.name),
             subtitle: Text(widget.project.description),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: _showDeleteConfirmationDialog,
+            trailing: Wrap(
+              spacing: 12,
+              children: <Widget>[
+                Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
+                Text(
+                    '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: _showDeleteConfirmationDialog,
+                ),
+              ],
             ),
           ),
           if (_isExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_errorMessage != null)
-                          Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        if (widget.project.genome == null)
-                          buildGenomeSelector(),
-                        if (widget.project.genome != null) ...[
-                          Text('Genome:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          if (genome.name == 'default')
-                            Text('loading...')
-                          else
-                            Text(genome.name),
-                          SizedBox(height: 10),
-                        ],
-                        if (widget.project.genome != null &&
-                            genome.snp != null &&
-                            widget.project.snp == null &&
-                            !widget.project.active &&
-                            widget.project.completedIn == null)
-                          buildSnpSelector(),
-                        if (widget.project.snp != null) ...[
-                          Text('Snp:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          if (snp.name == 'default')
-                            Text('loading...')
-                          else
-                            Text(snp.name),
-                        ],
-                        SizedBox(height: 60),
-                        if (widget.project.genes != null &&
-                            widget.project.genes!.isNotEmpty)
-                          buildGeneColumn(),
-                        if (widget.project.bedFileCreated == false)
-                          buildAddGeneRow(),
-                      ],
+            if (isScreenWide) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  spacing: 10,
+                  children: [
+                    Expanded(
+                      child: buildGenomeSelectorColumn(),
                     ),
-                  ),
-                  Expanded(
-                      child: Row(
-                    children: [
-                      Expanded(
-                        child: buildProjectOptionsColumn(),
-                      ),
-                    ],
-                  )),
-                  if (widget.project.genes?.isNotEmpty == true &&
-                      widget.project.bedFileCreated == false)
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _createBedFile,
-                        child: Text('Create BED File'),
-                      ),
+                    Expanded(
+                      child: buildProjectOptionsColumn(),
                     ),
-                  SizedBox(height: 5),
-                  if (widget.project.bedFileCreated == true &&
-                      widget.project.active == false &&
-                      widget.project.completedIn == null)
-                    Center(
-                      child: buildMipgenStartColumn(),
-                    ),
-                  SizedBox(height: 5),
-                  if (widget.project.active == true &&
-                      widget.project.completedIn == null)
-                    Center(
-                      child: buildMipgenProgressColumn(),
-                    ),
-                  if (widget.project.active == false &&
-                      widget.project.completedIn != null &&
-                      widget.project.error.isEmpty)
-                    Center(
-                      child: buildMipgenResultColumn(),
-                    ),
-                  if (widget.project.active == false &&
-                      widget.project.completedIn != null &&
-                      widget.project.error.isNotEmpty)
-                    Center(
-                      child: Text(
-                        'Error: ${widget.project.error}',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    )
-                ],
+                    Expanded(child: buildProjectActionColumn())
+                  ],
+                ),
               ),
-            ),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  spacing: 10,
+                  children: [
+                    buildGenomeSelectorColumn(),
+                    buildProjectOptionsColumn(),
+                    buildProjectActionColumn()
+                  ],
+                ),
+              ),
+            ]
         ],
       ),
+    );
+  }
+
+  Column buildProjectActionColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.project.genes?.isNotEmpty == true &&
+            widget.project.bedFileCreated == false)
+          Center(
+            child: ElevatedButton(
+              onPressed: _createBedFile,
+              child: Text('Create BED File'),
+            ),
+          ),
+        SizedBox(height: 5),
+        if (widget.project.bedFileCreated == true &&
+            widget.project.active == false &&
+            widget.project.completedIn == null)
+          Center(
+            child: buildMipgenStartColumn(),
+          ),
+        SizedBox(height: 5),
+        if (widget.project.active == true && widget.project.completedIn == null)
+          Center(
+            child: buildMipgenProgressColumn(),
+          ),
+        if (widget.project.active == false &&
+            widget.project.completedIn != null &&
+            widget.project.error.isEmpty)
+          Center(
+            child: buildMipgenResultColumn(),
+          ),
+        if (widget.project.active == false &&
+            widget.project.completedIn != null &&
+            widget.project.error.isNotEmpty)
+          Center(
+            child: Text(
+              'Error: ${widget.project.error}',
+              style: TextStyle(color: Colors.red),
+            ),
+          )
+      ],
+    );
+  }
+
+  Column buildGenomeSelectorColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_errorMessage != null)
+          Center(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        if (widget.project.genome == null)
+          Center(
+            child: buildGenomeSelector(),
+          ),
+        if (widget.project.genome != null) ...[
+          Center(
+              child: Text('Genome:',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
+          if (genome.name == 'default') ...[
+            Center(child: Text('loading...')),
+          ] else ...[
+            Center(
+              child: Text(genome.name),
+            )
+          ],
+          SizedBox(height: 10),
+        ],
+        if (widget.project.genome != null &&
+            genome.snp != null &&
+            widget.project.snp == null &&
+            !widget.project.active &&
+            widget.project.completedIn == null)
+          Center(
+            child: buildSnpSelector(),
+          ),
+        if (widget.project.snp != null) ...[
+          Center(
+            child: Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          if (snp.name == 'default') ...[
+            Center(child: Text('loading...')),
+          ] else ...[
+            Center(child: Text(snp.name)),
+          ]
+        ],
+        SizedBox(height: 30),
+        if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
+          Center(
+            child: buildGeneColumn(),
+          ),
+        if (widget.project.bedFileCreated == false)
+          Center(
+            child: buildAddGeneColumn(),
+          )
+      ],
     );
   }
 
@@ -596,63 +744,81 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text("Select Category:"),
         FutureBuilder<List<String>>(
-          future: getGeneCategories(),
+          future: getGenomeCategories(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return DropdownButton<String>(
-                value: null,
-                onChanged: (String? category) {
-                  if (category != null) {
-                    getGenomeByCategory(category).then((genomes) {
-                      genomes.sort((a, b) => a.name.compareTo(b.name));
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text('Select Genome:'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (var selectedGenome in genomes)
-                                    if (selectedGenome.indexed) ...[
-                                      ListTile(
-                                        title: Text(selectedGenome.name),
-                                        onTap: () {
-                                          genome = selectedGenome;
-                                          setGene(selectedGenome.id!);
-                                          _reloadProject();
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ] else ...[
-                                      ListTile(
-                                        title: Text(
-                                            "${selectedGenome.name} (not indexed)"),
-                                        onTap: () {
-                                          genome = selectedGenome;
-                                          setGene(selectedGenome.id!);
-                                          _reloadProject();
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ],
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    });
-                  }
-                },
-                items: snapshot.data!
-                    .map((category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ))
-                    .toList(),
-              );
+              if (snapshot.data!.isNotEmpty) {
+                return DropdownButton<String>(
+                  value: null,
+                  onChanged: (String? category) {
+                    if (category != null) {
+                      getGenomeByCategory(category).then((genomes) {
+                        if (context.mounted) {
+                          genomes.sort((a, b) => a.name.compareTo(b.name));
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Select Genome:'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (var selectedGenome in genomes)
+                                      if (selectedGenome.active) ...[
+                                        if (selectedGenome.indexed) ...[
+                                          ListTile(
+                                            title: Text(selectedGenome.name),
+                                            onTap: () {
+                                              genome = selectedGenome;
+                                              setGenome(selectedGenome.id!);
+                                              _reloadProject();
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ] else if (selectedGenome.indexing) ...[
+                                          ListTile(
+                                            title: Text(
+                                                "${selectedGenome.name} (indexing)"),
+                                            subtitle: Text(
+                                                "Genome is currently unavailable"),
+                                            onTap: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ] else ...[
+                                          ListTile(
+                                            title: Text(
+                                                "${selectedGenome.name} (not indexed)"),
+                                            onTap: () {
+                                              genome = selectedGenome;
+                                              setGenome(selectedGenome.id!);
+                                              _reloadProject();
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ]
+                                      ]
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      });
+                    } else {
+                      Text("No genomes available");
+                    }
+                  },
+                  items: snapshot.data!
+                      .map((category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(category),
+                          ))
+                      .toList(),
+                );
+              } else {
+                return Text("No categories available");
+              }
             } else if (snapshot.hasError) {
               return Text('Failed to load gene categories: ${snapshot.error}');
             } else {
@@ -702,6 +868,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildProjectOptionsColumn() {
     return Column(
+      spacing: 3,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Options:', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -763,64 +930,67 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildGeneColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
-        ...widget.project.genes!.map(
-          (gene) => Row(
-            children: [
-              Center(
-                child: Text(
+        Column(
+          children: widget.project.genes!.map((gene) {
+            return Row(
+              children: [
+                Text(
                   gene,
                   style: TextStyle(fontStyle: FontStyle.italic),
                 ),
-              ),
-              if (widget.project.bedFileCreated == false)
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline),
-                  onPressed: () => _removeGene(gene),
-                ),
-            ],
-          ),
+                if (widget.project.bedFileCreated == false)
+                  IconButton(
+                    icon: Icon(Icons.remove_circle_outline),
+                    onPressed: () => _removeGene(gene),
+                  ),
+              ],
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  Row buildAddGeneRow() {
-    return Row(
+  Column buildAddGeneColumn() {
+    return Column(
       children: [
-        Expanded(
-          child: TextField(
-            controller: _genesController,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'add gene',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+        SizedBox(height: 15),
+        Row(
+          spacing: 10,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _genesController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'add gene',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                ),
+                keyboardType: TextInputType.text,
+                onSubmitted: (value) {
+                  _addGene(value);
+                  _genesController.clear();
+                },
               ),
-              filled: true,
-              fillColor: Colors.grey[200],
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 10, horizontal: 15),
             ),
-            keyboardType: TextInputType.text,
-            onSubmitted: (value) {
-              _addGene(value);
-              _genesController.clear();
-            },
-          ),
-        ),
-        SizedBox(width: 15),
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: () {
-            _addGene(_genesController.text);
-            _genesController.clear();
-          },
-        ),
-        SizedBox(width: 20),
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () {
+                _addGene(_genesController.text);
+                _genesController.clear();
+              },
+            ),
+          ],
+        )
       ],
     );
   }

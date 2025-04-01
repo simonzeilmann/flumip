@@ -8,3 +8,4 @@ fields:
   folder: String
   active: bool
   private: bool, default=false
+  size: int, default=0

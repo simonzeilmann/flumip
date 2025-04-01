@@ -1,0 +1,36 @@
+{
+  "actions": [
+    {
+      "type": "alterTable",
+      "alterTable": {
+        "name": "settings",
+        "schema": "public",
+        "addColumns": [
+          {
+            "name": "binCreationScript",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py'::text",
+            "dartType": "String"
+          },
+          {
+            "name": "bigGenePredToGenePredExecutable",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "'/opt/flumip/tools/bigGenePredToGenePred'::text",
+            "dartType": "String"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": []
+      }
+    }
+  ],
+  "warnings": [],
+  "migrationApiVersion": 1
+}

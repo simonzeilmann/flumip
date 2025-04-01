@@ -21,8 +21,10 @@ abstract class Snp implements _i1.SerializableModel {
     required this.folder,
     required this.active,
     bool? private,
+    int? size,
   })  : description = description ?? '',
-        private = private ?? false;
+        private = private ?? false,
+        size = size ?? 0;
 
   factory Snp({
     int? id,
@@ -33,6 +35,7 @@ abstract class Snp implements _i1.SerializableModel {
     required String folder,
     required bool active,
     bool? private,
+    int? size,
   }) = _SnpImpl;
 
   factory Snp.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -45,6 +48,7 @@ abstract class Snp implements _i1.SerializableModel {
       folder: jsonSerialization['folder'] as String,
       active: jsonSerialization['active'] as bool,
       private: jsonSerialization['private'] as bool,
+      size: jsonSerialization['size'] as int,
     );
   }
 
@@ -67,6 +71,8 @@ abstract class Snp implements _i1.SerializableModel {
 
   bool private;
 
+  int size;
+
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -79,6 +85,7 @@ abstract class Snp implements _i1.SerializableModel {
     String? folder,
     bool? active,
     bool? private,
+    int? size,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -91,6 +98,7 @@ abstract class Snp implements _i1.SerializableModel {
       'folder': folder,
       'active': active,
       'private': private,
+      'size': size,
     };
   }
 
@@ -112,6 +120,7 @@ class _SnpImpl extends Snp {
     required String folder,
     required bool active,
     bool? private,
+    int? size,
   }) : super._(
           id: id,
           name: name,
@@ -121,6 +130,7 @@ class _SnpImpl extends Snp {
           folder: folder,
           active: active,
           private: private,
+          size: size,
         );
 
   /// Returns a shallow copy of this [Snp]
@@ -136,6 +146,7 @@ class _SnpImpl extends Snp {
     String? folder,
     bool? active,
     bool? private,
+    int? size,
   }) {
     return Snp(
       id: id is int? ? id : this.id,
@@ -146,6 +157,7 @@ class _SnpImpl extends Snp {
       folder: folder ?? this.folder,
       active: active ?? this.active,
       private: private ?? this.private,
+      size: size ?? this.size,
     );
   }
 }

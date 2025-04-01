@@ -14,3 +14,4 @@ fields:
   indexing: bool, default=false
   indexPID: int, default=0
   indexResults: int, default=0
+  size: int, default=0

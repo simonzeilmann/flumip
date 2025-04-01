@@ -21,11 +21,14 @@ class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _customSnpDirController = TextEditingController();
   final TextEditingController _toolsDirController = TextEditingController();
   final TextEditingController _mipgenExecutableController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _exonExtractScriptController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _ucscTrackGeneratorController =
-  TextEditingController();
+      TextEditingController();
+  final TextEditingController _bigGenePredToGenePredExecutable =
+      TextEditingController();
+  final TextEditingController _binCreationScript = TextEditingController();
   final TextEditingController _smtpServerController = TextEditingController();
   final TextEditingController _smtpPortController = TextEditingController();
   final TextEditingController _smtpUserController = TextEditingController();
@@ -53,6 +56,8 @@ class _SettingsTabState extends State<SettingsTab> {
     _mipgenExecutableController.dispose();
     _exonExtractScriptController.dispose();
     _ucscTrackGeneratorController.dispose();
+    _bigGenePredToGenePredExecutable.dispose();
+    _binCreationScript.dispose();
     _smtpServerController.dispose();
     _smtpPortController.dispose();
     _smtpUserController.dispose();
@@ -68,7 +73,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _loadSettings() async {
     try {
       final settings =
-      await client.settings.getSettings(_passwordController.text);
+          await client.settings.getSettings(_passwordController.text);
       setState(() {
         _errorMessage = null;
         this.settings = settings;
@@ -80,6 +85,9 @@ class _SettingsTabState extends State<SettingsTab> {
         _mipgenExecutableController.text = settings.mipgenExecutable;
         _exonExtractScriptController.text = settings.exonExtractScript;
         _ucscTrackGeneratorController.text = settings.ucscTrackGenerator;
+        _bigGenePredToGenePredExecutable.text =
+            settings.bigGenePredToGenePredExecutable;
+        _binCreationScript.text = settings.binCreationScript;
         _smtpServerController.text = settings.smtpServer;
         _smtpPortController.text = settings.smtpPort.toString();
         _smtpUserController.text = settings.smtpUser;
@@ -109,6 +117,8 @@ class _SettingsTabState extends State<SettingsTab> {
         mipgenExecutable: _mipgenExecutableController.text,
         exonExtractScript: _exonExtractScriptController.text,
         ucscTrackGenerator: _ucscTrackGeneratorController.text,
+        bigGenePredToGenePredExecutable: _bigGenePredToGenePredExecutable.text,
+        binCreationScript: _binCreationScript.text,
         mailActive: _mailActiveNotifier.value,
         smtpServer: _smtpServerController.text,
         smtpPort: int.parse(_smtpPortController.text),
@@ -140,8 +150,8 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        spacing: 30,
         children: [
-          SizedBox(height: 30),
           if (_errorMessage != null)
             Container(
               color: Colors.red[300],
@@ -155,6 +165,7 @@ class _SettingsTabState extends State<SettingsTab> {
           SizedBox(height: 20),
           if (settings == null) ...[
             Row(
+              spacing: 10,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
@@ -169,7 +180,6 @@ class _SettingsTabState extends State<SettingsTab> {
                     onSubmitted: (_) => _loadSettings(),
                   ),
                 ),
-                SizedBox(width: 10),
                 ElevatedButton(
                     onPressed: _loadSettings, child: Text('Load settings')),
               ],
@@ -178,6 +188,7 @@ class _SettingsTabState extends State<SettingsTab> {
             SizedBox(
               width: 400,
               child: Column(
+                spacing: 3,
                 children: [
                   TextField(
                     controller: _baseDirController,
@@ -197,7 +208,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   TextField(
                     controller: _customSnpDirController,
                     decoration:
-                    InputDecoration(labelText: 'Custom SNP directory'),
+                        InputDecoration(labelText: 'Custom SNP directory'),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
@@ -212,13 +223,26 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   TextField(
                     controller: _exonExtractScriptController,
-                    decoration: InputDecoration(labelText: 'Exon extract script'),
+                    decoration:
+                        InputDecoration(labelText: 'Exon extract script'),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
                     controller: _ucscTrackGeneratorController,
                     decoration:
-                    InputDecoration(labelText: 'UCSC track generator'),
+                        InputDecoration(labelText: 'UCSC track generator'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  TextField(
+                    controller: _bigGenePredToGenePredExecutable,
+                    decoration: InputDecoration(
+                        labelText: 'BigGenePred to GenePred executable'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  TextField(
+                    controller: _binCreationScript,
+                    decoration:
+                        InputDecoration(labelText: 'Bin creation script'),
                     keyboardType: TextInputType.text,
                   ),
                   Row(
@@ -312,7 +336,6 @@ class _SettingsTabState extends State<SettingsTab> {
                 ],
               ),
             ),
-            SizedBox(height: 20),
             Center(
               child: ElevatedButton(
                 onPressed: updateSettings,
