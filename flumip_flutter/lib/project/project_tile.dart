@@ -747,7 +747,8 @@ class _ProjectTileState extends State<ProjectTile> {
           future: getGenomeCategories(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return DropdownButton<String>(
+              if(snapshot.data!.isNotEmpty) {
+                return DropdownButton<String>(
                 value: null,
                 onChanged: (String? category) {
                   if (category != null) {
@@ -805,6 +806,9 @@ class _ProjectTileState extends State<ProjectTile> {
                       }
                     });
                   }
+                  else {
+                    Text("No genomes available");
+                  }
                 },
                 items: snapshot.data!
                     .map((category) => DropdownMenuItem(
@@ -813,6 +817,9 @@ class _ProjectTileState extends State<ProjectTile> {
                         ))
                     .toList(),
               );
+              } else {
+                return Text("No categories available");
+              }
             } else if (snapshot.hasError) {
               return Text('Failed to load gene categories: ${snapshot.error}');
             } else {
@@ -927,21 +934,19 @@ class _ProjectTileState extends State<ProjectTile> {
         Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         //TODO: Center this map
-        ...widget.project.genes!.map(
-          (gene) => Row(
-            children: [
-              Text(
-                gene,
-                style: TextStyle(fontStyle: FontStyle.italic),
-              ),
-              if (widget.project.bedFileCreated == false)
-                IconButton(
-                  icon: Icon(Icons.remove_circle_outline),
-                  onPressed: () => _removeGene(gene),
-                ),
-            ],
-          ),
-        ),
+        ...widget.project.genes!.map((gene) => Row(
+                children: [
+                  Text(
+                    gene,
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                  if (widget.project.bedFileCreated == false)
+                    IconButton(
+                      icon: Icon(Icons.remove_circle_outline),
+                      onPressed: () => _removeGene(gene),
+                    ),
+                ],
+            )),
       ],
     );
   }
