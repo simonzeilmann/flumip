@@ -747,76 +747,75 @@ class _ProjectTileState extends State<ProjectTile> {
           future: getGenomeCategories(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              if(snapshot.data!.isNotEmpty) {
+              if (snapshot.data!.isNotEmpty) {
                 return DropdownButton<String>(
-                value: null,
-                onChanged: (String? category) {
-                  if (category != null) {
-                    getGenomeByCategory(category).then((genomes) {
-                      if (context.mounted) {
-                        genomes.sort((a, b) => a.name.compareTo(b.name));
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text('Select Genome:'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (var selectedGenome in genomes)
-                                    if (selectedGenome.active) ...[
-                                      if (selectedGenome.indexed) ...[
-                                        ListTile(
-                                          title: Text(selectedGenome.name),
-                                          onTap: () {
-                                            genome = selectedGenome;
-                                            setGenome(selectedGenome.id!);
-                                            _reloadProject();
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ] else if (selectedGenome.indexing) ...[
-                                        ListTile(
-                                          title: Text(
-                                              "${selectedGenome.name} (indexing)"),
-                                          subtitle: Text(
-                                              "Genome is currently unavailable"),
-                                          onTap: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ] else ...[
-                                        ListTile(
-                                          title: Text(
-                                              "${selectedGenome.name} (not indexed)"),
-                                          onTap: () {
-                                            genome = selectedGenome;
-                                            setGenome(selectedGenome.id!);
-                                            _reloadProject();
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
+                  value: null,
+                  onChanged: (String? category) {
+                    if (category != null) {
+                      getGenomeByCategory(category).then((genomes) {
+                        if (context.mounted) {
+                          genomes.sort((a, b) => a.name.compareTo(b.name));
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Select Genome:'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (var selectedGenome in genomes)
+                                      if (selectedGenome.active) ...[
+                                        if (selectedGenome.indexed) ...[
+                                          ListTile(
+                                            title: Text(selectedGenome.name),
+                                            onTap: () {
+                                              genome = selectedGenome;
+                                              setGenome(selectedGenome.id!);
+                                              _reloadProject();
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ] else if (selectedGenome.indexing) ...[
+                                          ListTile(
+                                            title: Text(
+                                                "${selectedGenome.name} (indexing)"),
+                                            subtitle: Text(
+                                                "Genome is currently unavailable"),
+                                            onTap: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ] else ...[
+                                          ListTile(
+                                            title: Text(
+                                                "${selectedGenome.name} (not indexed)"),
+                                            onTap: () {
+                                              genome = selectedGenome;
+                                              setGenome(selectedGenome.id!);
+                                              _reloadProject();
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
+                                        ]
                                       ]
-                                    ]
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    });
-                  }
-                  else {
-                    Text("No genomes available");
-                  }
-                },
-                items: snapshot.data!
-                    .map((category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ))
-                    .toList(),
-              );
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      });
+                    } else {
+                      Text("No genomes available");
+                    }
+                  },
+                  items: snapshot.data!
+                      .map((category) => DropdownMenuItem(
+                            value: category,
+                            child: Text(category),
+                          ))
+                      .toList(),
+                );
               } else {
                 return Text("No categories available");
               }
@@ -869,6 +868,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildProjectOptionsColumn() {
     return Column(
+      spacing: 3,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Options:', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -935,17 +935,17 @@ class _ProjectTileState extends State<ProjectTile> {
         SizedBox(height: 5),
         //TODO: Center this map
         ...widget.project.genes!.map((gene) => Row(
-                children: [
-                  Text(
-                    gene,
-                    style: TextStyle(fontStyle: FontStyle.italic),
+              children: [
+                Text(
+                  gene,
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+                if (widget.project.bedFileCreated == false)
+                  IconButton(
+                    icon: Icon(Icons.remove_circle_outline),
+                    onPressed: () => _removeGene(gene),
                   ),
-                  if (widget.project.bedFileCreated == false)
-                    IconButton(
-                      icon: Icon(Icons.remove_circle_outline),
-                      onPressed: () => _removeGene(gene),
-                    ),
-                ],
+              ],
             )),
       ],
     );
@@ -954,33 +954,40 @@ class _ProjectTileState extends State<ProjectTile> {
   Column buildAddGeneColumn() {
     return Column(
       children: [
-        TextField(
-          controller: _genesController,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: 'add gene',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+        SizedBox(height: 15),
+        Row(
+          spacing: 10,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _genesController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'add gene',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                ),
+                keyboardType: TextInputType.text,
+                onSubmitted: (value) {
+                  _addGene(value);
+                  _genesController.clear();
+                },
+              ),
             ),
-            filled: true,
-            fillColor: Colors.grey[200],
-            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-          ),
-          keyboardType: TextInputType.text,
-          onSubmitted: (value) {
-            _addGene(value);
-            _genesController.clear();
-          },
-        ),
-        SizedBox(width: 15),
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: () {
-            _addGene(_genesController.text);
-            _genesController.clear();
-          },
-        ),
-        SizedBox(width: 20),
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () {
+                _addGene(_genesController.text);
+                _genesController.clear();
+              },
+            ),
+          ],
+        )
       ],
     );
   }
