@@ -642,11 +642,24 @@ class _ProjectTileState extends State<ProjectTile> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (widget.project.genes?.isNotEmpty == true &&
-            widget.project.bedFileCreated == false)
+            widget.project.genome != null &&
+            widget.project.bedFileCreated == false) ...[
           ElevatedButton(
             onPressed: _createBedFile,
             child: Text('Create BED File'),
           ),
+        ],
+        if (widget.project.bedFileCreated == false &&
+            (widget.project.genes == null || widget.project.genes?.isEmpty == true ||
+                widget.project.genome == null)) ...[
+          Tooltip(
+            message: "Select a genome and add genes to create a BED file.",
+            child: ElevatedButton(
+              onPressed: null,
+              child: Text('Create BED File'),
+            ),
+          )
+        ],
         SizedBox(height: 5),
         if (widget.project.bedFileCreated == true &&
             widget.project.active == false &&
