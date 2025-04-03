@@ -571,7 +571,7 @@ class _ProjectTileState extends State<ProjectTile> {
 
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 670;
+    bool isScreenWide = MediaQuery.sizeOf(context).width >= 795;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -622,7 +622,7 @@ class _ProjectTileState extends State<ProjectTile> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
-                  spacing: 10,
+                  spacing: 25,
                   children: [
                     buildGenomeSelectorColumn(),
                     buildProjectOptionsColumn(),
@@ -638,109 +638,84 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildProjectActionColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (widget.project.genes?.isNotEmpty == true &&
             widget.project.bedFileCreated == false)
-          Center(
-            child: ElevatedButton(
-              onPressed: _createBedFile,
-              child: Text('Create BED File'),
-            ),
+          ElevatedButton(
+            onPressed: _createBedFile,
+            child: Text('Create BED File'),
           ),
         SizedBox(height: 5),
         if (widget.project.bedFileCreated == true &&
             widget.project.active == false &&
             widget.project.completedIn == null)
-          Center(
-            child: buildMipgenStartColumn(),
-          ),
+          buildMipgenStartColumn(),
         SizedBox(height: 5),
         if (widget.project.active == true && widget.project.completedIn == null)
-          Center(
-            child: buildMipgenProgressColumn(),
-          ),
+          buildMipgenProgressColumn(),
         if (widget.project.active == false &&
             widget.project.completedIn != null &&
             widget.project.error.isEmpty)
-          Center(
-            child: buildMipgenResultColumn(),
-          ),
+          buildMipgenResultColumn(),
         if (widget.project.active == false &&
             widget.project.completedIn != null &&
             widget.project.error.isNotEmpty)
-          Center(
-            child: Text(
-              'Error: ${widget.project.error}',
-              style: TextStyle(color: Colors.red),
-            ),
-          )
+          Text(
+            'Error: ${widget.project.error}',
+            style: TextStyle(color: Colors.red),
+          ),
       ],
     );
   }
 
   Column buildGenomeSelectorColumn() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (_errorMessage != null)
-          Center(
-            child: Text(
-              _errorMessage!,
-              style: TextStyle(color: Colors.red),
-            ),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Colors.red),
           ),
-        if (widget.project.genome == null)
-          Center(
-            child: buildGenomeSelector(),
-          ),
+        if (widget.project.genome == null) buildGenomeSelector(),
         if (widget.project.genome != null) ...[
-          Center(
-              child: Text('Genome:',
-                  style: TextStyle(fontWeight: FontWeight.bold))),
+          Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
           if (genome.name == 'default') ...[
-            Center(child: Text('loading...')),
+            Text('loading...'),
           ] else ...[
-            Center(
-              child: Text(genome.name),
-            )
+            Text(genome.name),
           ],
-          SizedBox(height: 10),
         ],
+        SizedBox(height: 10),
         if (widget.project.genome != null &&
             genome.snp != null &&
             widget.project.snp == null &&
             !widget.project.active &&
             widget.project.completedIn == null)
-          Center(
-            child: buildSnpSelector(),
-          ),
+          buildSnpSelector(),
         if (widget.project.snp != null) ...[
-          Center(
-            child: Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
+          Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
           if (snp.name == 'default') ...[
-            Center(child: Text('loading...')),
+            Text('loading...'),
           ] else ...[
-            Center(child: Text(snp.name)),
+            Text(snp.name),
           ]
         ],
-        SizedBox(height: 30),
+        SizedBox(height: 10),
         if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
-          Center(
-            child: buildGeneColumn(),
-          ),
-        if (widget.project.bedFileCreated == false)
-          Center(
-            child: buildAddGeneColumn(),
-          )
+          buildGeneColumn(),
+        if (widget.project.bedFileCreated == false) buildAddGeneColumn(),
       ],
     );
   }
 
   Column buildGenomeSelector() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text("Select Category:"),
         FutureBuilder<List<String>>(
@@ -832,7 +807,8 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildSnpSelector() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text("Select SNP (optional):"),
         FutureBuilder<List<Snp>>(
@@ -869,9 +845,10 @@ class _ProjectTileState extends State<ProjectTile> {
   Column buildProjectOptionsColumn() {
     return Column(
       spacing: 3,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('Options:', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text('Project Options:', style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 5),
         Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
         Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
@@ -936,6 +913,8 @@ class _ProjectTileState extends State<ProjectTile> {
         Column(
           children: widget.project.genes!.map((gene) {
             return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   gene,
@@ -998,8 +977,11 @@ class _ProjectTileState extends State<ProjectTile> {
   Column buildMipgenStartColumn() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Checkbox(
               value: _deleteExcessFiles,
@@ -1023,6 +1005,8 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildMipgenProgressColumn() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         ElevatedButton(
           onPressed: _showProgress,
@@ -1035,6 +1019,8 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Column buildMipgenResultColumn() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
         SizedBox(height: 10),
