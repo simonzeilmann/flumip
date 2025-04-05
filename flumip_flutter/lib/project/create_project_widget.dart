@@ -358,7 +358,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         ),
         Row(
           children: [
-            Text('TRF'),
+            Text('Tandem Repeat Finder'),
             SizedBox(width: 10),
             Switch(
               value: _trf,
