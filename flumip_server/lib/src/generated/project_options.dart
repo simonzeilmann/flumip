@@ -13,7 +13,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import 'score_method.dart' as _i2;
 
 abstract class ProjectOptions
-    implements _i1.TableRow, _i1.ProtocolSerialization {
+    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   ProjectOptions._({
     this.id,
     int? minCaptureSize,
@@ -220,7 +220,7 @@ abstract class ProjectOptions
   int bwaThreads;
 
   @override
-  _i1.Table get table => t;
+  _i1.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [ProjectOptions]
   /// with some or all fields replaced by the given arguments.
@@ -507,7 +507,7 @@ class _ProjectOptionsImpl extends ProjectOptions {
   }
 }
 
-class ProjectOptionsTable extends _i1.Table {
+class ProjectOptionsTable extends _i1.Table<int?> {
   ProjectOptionsTable({super.tableRelation})
       : super(tableName: 'project_options') {
     minCaptureSize = _i1.ColumnInt(
@@ -764,7 +764,7 @@ class ProjectOptionsInclude extends _i1.IncludeObject {
   Map<String, _i1.Include?> get includes => {};
 
   @override
-  _i1.Table get table => ProjectOptions.t;
+  _i1.Table<int?> get table => ProjectOptions.t;
 }
 
 class ProjectOptionsIncludeList extends _i1.IncludeList {
@@ -784,7 +784,7 @@ class ProjectOptionsIncludeList extends _i1.IncludeList {
   Map<String, _i1.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table get table => ProjectOptions.t;
+  _i1.Table<int?> get table => ProjectOptions.t;
 }
 
 class ProjectOptionsRepository {
