@@ -1,0 +1,13 @@
+[Unit]
+Description=Flumip Production Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/flumip_production/backend
+ExecStart=/var/www/flumip_production/backend/server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations
+Restart=always
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

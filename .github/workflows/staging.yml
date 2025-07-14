@@ -128,16 +128,13 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/flumip_staging/backend_pid.txt) || true
-            rm ~/flumip_staging/backend_pid.txt || true
             docker stop postgres_staging || true
             docker rm postgres_staging || true
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
-            cd /var/www/flumip_staging/backend
-            nohup ./server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/flumip_staging/backend_pid.txt
+            systemctl daemon-reload
+            systemctl restart flumip_staging_backend
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
@@ -194,10 +191,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/flumip_staging/frontend_pid.txt) || true
-            rm ~/flumip_staging/frontend_pid.txt || true
             rm -rf /var/www/flumip_staging/frontend
             mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
-            cd /var/www/flumip_staging/frontend/flumip_flutter/build/web
-            nohup python -m http.server 9999 > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/flumip_staging/frontend_pid.txt
+            systemctl daemon-reload
+            systemctl restart flumip_staging_frontend
