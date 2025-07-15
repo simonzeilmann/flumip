@@ -3,7 +3,7 @@ import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/root.dart';
-import 'package:flumip_server/src/web/routes/uscs_track.dart';
+import 'package:flumip_server/src/web/routes/ucsc_track.dart';
 
 import 'src/generated/protocol.dart';
 import 'src/generated/endpoints.dart';

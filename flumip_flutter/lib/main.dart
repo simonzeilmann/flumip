@@ -50,6 +50,7 @@ class MyHomePageState extends State<MyHomePage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
+          centerTitle: true,
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Projects', icon: Icon(Icons.folder)),

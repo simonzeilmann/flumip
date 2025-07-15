@@ -24,7 +24,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  serverpod_flutter: 2.4.0
+  serverpod_flutter: 2.9.1
   flumip_client:
     path: ../flumip_client
 

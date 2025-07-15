@@ -1,0 +1,13 @@
+[Unit]
+Description=Flumip Staging Frontend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/flumip_staging/frontend/flumip_flutter/build/web
+ExecStart=/usr/bin/python3 -m http.server 9999
+Restart=always
+User=www-data
+
+[Install]
+WantedBy=multi-user.target
