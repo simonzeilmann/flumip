@@ -133,8 +133,8 @@ jobs:
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             rm -rf /var/www/flumip_staging/backend
             mv ~/flumip_staging/backend/flumip_server/app /var/www/flumip_staging/backend
-            systemctl daemon-reload
-            systemctl restart flumip_staging_backend
+            sudo systemctl daemon-reload
+            sudo systemctl restart flumip_staging_backend
 
   deploy-frontend-to-server:
     runs-on: ubuntu-latest
