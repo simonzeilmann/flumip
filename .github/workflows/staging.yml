@@ -193,5 +193,5 @@ jobs:
             #!/bin/bash
             rm -rf /var/www/flumip_staging/frontend
             mv ~/flumip_staging/frontend /var/www/flumip_staging/frontend
-            systemctl daemon-reload
-            systemctl restart flumip_staging_frontend
+            sudo systemctl daemon-reload
+            sudo systemctl restart flumip_staging_frontend
