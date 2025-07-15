@@ -194,10 +194,7 @@ jobs:
           key: ${{ secrets.REMOTE_SSH_KEY }}
           script: |
             #!/bin/bash
-            kill $(cat ~/flumip_production/frontend_pid.txt) || true
-            rm ~/flumip_production/frontend_pid.txt || true
             rm -rf /var/www/flumip_production/frontend
             mv ~/flumip_production/frontend /var/www/flumip_production/frontend
-            cd /var/www/flumip_production/frontend/flumip_flutter/build/web
-            nohup python -m http.server 8888 > nohup.out 2> nohup.err < /dev/null &
-            echo $! > ~/flumip_production/frontend_pid.txt
+            systemctl daemon-reload
+            systemctl restart flumip_production_frontend

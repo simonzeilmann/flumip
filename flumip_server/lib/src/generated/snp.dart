@@ -11,7 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 
-abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
+abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   Snp._({
     this.id,
     required this.name,
@@ -76,7 +76,7 @@ abstract class Snp implements _i1.TableRow, _i1.ProtocolSerialization {
   int size;
 
   @override
-  _i1.Table get table => t;
+  _i1.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
@@ -206,7 +206,7 @@ class _SnpImpl extends Snp {
   }
 }
 
-class SnpTable extends _i1.Table {
+class SnpTable extends _i1.Table<int?> {
   SnpTable({super.tableRelation}) : super(tableName: 'snp') {
     name = _i1.ColumnString(
       'name',
@@ -282,7 +282,7 @@ class SnpInclude extends _i1.IncludeObject {
   Map<String, _i1.Include?> get includes => {};
 
   @override
-  _i1.Table get table => Snp.t;
+  _i1.Table<int?> get table => Snp.t;
 }
 
 class SnpIncludeList extends _i1.IncludeList {
@@ -302,7 +302,7 @@ class SnpIncludeList extends _i1.IncludeList {
   Map<String, _i1.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table get table => Snp.t;
+  _i1.Table<int?> get table => Snp.t;
 }
 
 class SnpRepository {

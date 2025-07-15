@@ -385,7 +385,7 @@ class _ProjectTileState extends State<ProjectTile> {
     return map;
   }
 
-  Future<void> _showUSCSTrack() async {
+  Future<void> _showUCSCTrack() async {
     try {
       final result = await client.file.showUSCSTrack(widget.project.id!);
       if (mounted) {
@@ -1051,7 +1051,7 @@ class _ProjectTileState extends State<ProjectTile> {
         ),
         SizedBox(height: 10),
         ElevatedButton(
-            onPressed: _showUSCSTrack, child: Text('Show UCSC Track')),
+            onPressed: _showUCSCTrack, child: Text('Show UCSC Track')),
         SizedBox(height: 10),
       ],
     );
