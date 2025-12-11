@@ -147,5 +147,6 @@ jobs:
             rm -rf /var/www/flumip_production
             mv ~/flumip_production/flumip_server/app /var/www/flumip_production
             echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_production/deployment/flumip_production.service /etc/systemd/system/
+            echo ${{ secrets.USERPWD }} | sudo -S systemctl enable flumip_production
             echo ${{ secrets.USERPWD }} | sudo -S systemctl daemon-reload
             echo ${{ secrets.USERPWD }} | sudo -S systemctl restart flumip_production

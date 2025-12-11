@@ -147,5 +147,6 @@ jobs:
             rm -rf /var/www/flumip_staging
             mv ~/flumip_staging/flumip_server/app /var/www/flumip_staging
             echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_staging/deployment/flumip_staging.service /etc/systemd/system/
+            echo ${{ secrets.USERPWD }} | sudo -S systemctl enable flumip_staging
             echo ${{ secrets.USERPWD }} | sudo -S systemctl daemon-reload
             echo ${{ secrets.USERPWD }} | sudo -S systemctl restart flumip_staging
