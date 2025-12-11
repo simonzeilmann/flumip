@@ -33,7 +33,7 @@ void run(List<String> args) async {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
     print('Build your Flutter app and copy it to web/app/');
   } else {
-    pod.webServer.addRoute(FlutterRoute(flutterAppDir), '/**');
+    pod.webServer.addRoute(FlutterRoute(flutterAppDir));
   }
 
   pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:id');
