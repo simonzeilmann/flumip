@@ -121,7 +121,7 @@ jobs:
           cp -r config app/config
           cp -r migrations app/migrations
           cp -r web app/web
-          cp -r deployment app/deployment
+          cp -r ../deployment app/deployment
 
       - name: Transfer app to remote server
         uses: appleboy/scp-action@v0.1.1
