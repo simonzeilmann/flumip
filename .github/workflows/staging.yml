@@ -130,7 +130,7 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
-          source: "app"
+          source: "flumip_server/app"
           target: "~/flumip_staging"
 
       - name: Execute remote script
