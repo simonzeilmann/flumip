@@ -146,6 +146,6 @@ jobs:
             docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5432:5432 --restart unless-stopped postgres:16.3
             rm -rf /var/www/flumip_production
             mv ~/flumip_production/flumip_server/app /var/www/flumip_production
-            sudo cp ~/flumip_staging/flumip_server/app/deployment/flumip_production.service /etc/systemd/system/
+            cp ~/flumip_staging/flumip_server/app/deployment/flumip_production.service /etc/systemd/system/
             sudo systemctl daemon-reload
             sudo systemctl restart flumip_production
