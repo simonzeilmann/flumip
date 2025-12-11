@@ -146,6 +146,6 @@ jobs:
             docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:16.3
             rm -rf /var/www/flumip_staging
             mv ~/flumip_staging/flumip_server/app /var/www/flumip_staging
-            cp ~/flumip_staging/flumip_server/app/deployment/flumip_staging.service /etc/systemd/system/
+            cp /var/www/flumip_staging/deployment/flumip_staging.service /etc/systemd/system/
             sudo systemctl daemon-reload
             sudo systemctl restart flumip_staging
