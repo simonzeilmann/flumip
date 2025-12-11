@@ -1,33 +1,36 @@
-import 'dart:io';
-
 import 'package:flumip_server/src/services/file_service.dart';
-import 'package:flumip_server/src/web/widgets/default_page_widget.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../services/project_service.dart';
 
-class UCSCTrackRoute extends WidgetRoute {
+class UCSCTrackRoute extends Route {
+  UCSCTrackRoute() : super(methods: {Method.get});
   final projectService = ProjectService();
   final fileService = FileService();
+  static const _idParam = IntPathParam(#id);
 
   @override
-  Future<Widget> build(Session session, HttpRequest request) async {
-    var requestUrl = request.requestedUri.toString();
-    var projectId = int.tryParse(requestUrl.split('/').last);
+  Future<Result> handleCall(Session session, Request request) async {
+    var projectId = request.pathParameters.get(_idParam);
     session.log(
-        'UCSC Track for project $projectId requested by ${request.remoteIpAddress}');
-    var project = await projectService.getProject(session, projectId!);
+        'UCSC Track for project $projectId requested by ${request.connectionInfo.remote.address}');
+    var project = await projectService.getProject(session, projectId);
     if (project.id == null) {
       session.log("Project ID does not exist: $projectId",
           level: LogLevel.error);
       throw ArgumentError('Project id does not exist');
     }
-    var track = await fileService.returnFile(
-        session, projectId, "ucsc_track.bed");
 
-    await track.pipe(request.response);
+    var track = await fileService.readFileAsString(session, projectId, "ucsc_track.bed");
+    if (track.isEmpty) {
+      return Response.notFound();
+    }
 
-    //TODO: Rework so no exception gets shot into the ether
-    return DefaultPageWidget();
+    return Response.ok(
+      body: Body.fromString(
+        track,
+        mimeType: MimeType.plainText,
+      ),
+    );
   }
 }

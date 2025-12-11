@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
@@ -34,29 +35,33 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
-  })  : baseDir = baseDir ?? '/opt/flumip',
-        projectDir = projectDir ?? '/opt/flumip/projects',
-        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
-        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
-        toolsDir = toolsDir ?? '/opt/flumip/tools',
-        mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
-        exonExtractScript = exonExtractScript ??
-            '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
-        ucscTrackGenerator = ucscTrackGenerator ??
-            '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
-        binCreationScript = binCreationScript ??
-            '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
-        bigGenePredToGenePredExecutable = bigGenePredToGenePredExecutable ??
-            '/opt/flumip/tools/bigGenePredToGenePred',
-        mailActive = mailActive ?? false,
-        smtpServer = smtpServer ?? '',
-        smtpPort = smtpPort ?? 25,
-        smtpUser = smtpUser ?? '',
-        smtpPassword = smtpPassword ?? '',
-        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
-        startTLS = startTLS ?? true,
-        loginRequired = loginRequired ?? false,
-        settingsPassword = settingsPassword ?? 'changeme';
+  }) : baseDir = baseDir ?? '/opt/flumip',
+       projectDir = projectDir ?? '/opt/flumip/projects',
+       genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
+       customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
+       toolsDir = toolsDir ?? '/opt/flumip/tools',
+       mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
+       exonExtractScript =
+           exonExtractScript ??
+           '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
+       ucscTrackGenerator =
+           ucscTrackGenerator ??
+           '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
+       binCreationScript =
+           binCreationScript ??
+           '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
+       bigGenePredToGenePredExecutable =
+           bigGenePredToGenePredExecutable ??
+           '/opt/flumip/tools/bigGenePredToGenePred',
+       mailActive = mailActive ?? false,
+       smtpServer = smtpServer ?? '',
+       smtpPort = smtpPort ?? 25,
+       smtpUser = smtpUser ?? '',
+       smtpPassword = smtpPassword ?? '',
+       smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
+       startTLS = startTLS ?? true,
+       loginRequired = loginRequired ?? false,
+       settingsPassword = settingsPassword ?? 'changeme';
 
   factory Settings({
     int? id,
@@ -183,6 +188,7 @@ abstract class Settings
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Settings',
       if (id != null) 'id': id,
       'baseDir': baseDir,
       'projectDir': projectDir,
@@ -209,6 +215,7 @@ abstract class Settings
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
+      '__className__': 'Settings',
       if (id != null) 'id': id,
       'baseDir': baseDir,
       'projectDir': projectDir,
@@ -287,27 +294,27 @@ class _SettingsImpl extends Settings {
     bool? loginRequired,
     String? settingsPassword,
   }) : super._(
-          id: id,
-          baseDir: baseDir,
-          projectDir: projectDir,
-          genomeDir: genomeDir,
-          customSnpDir: customSnpDir,
-          toolsDir: toolsDir,
-          mipgenExecutable: mipgenExecutable,
-          exonExtractScript: exonExtractScript,
-          ucscTrackGenerator: ucscTrackGenerator,
-          binCreationScript: binCreationScript,
-          bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
-          mailActive: mailActive,
-          smtpServer: smtpServer,
-          smtpPort: smtpPort,
-          smtpUser: smtpUser,
-          smtpPassword: smtpPassword,
-          smtpFrom: smtpFrom,
-          startTLS: startTLS,
-          loginRequired: loginRequired,
-          settingsPassword: settingsPassword,
-        );
+         id: id,
+         baseDir: baseDir,
+         projectDir: projectDir,
+         genomeDir: genomeDir,
+         customSnpDir: customSnpDir,
+         toolsDir: toolsDir,
+         mipgenExecutable: mipgenExecutable,
+         exonExtractScript: exonExtractScript,
+         ucscTrackGenerator: ucscTrackGenerator,
+         binCreationScript: binCreationScript,
+         bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
+         mailActive: mailActive,
+         smtpServer: smtpServer,
+         smtpPort: smtpPort,
+         smtpUser: smtpUser,
+         smtpPassword: smtpPassword,
+         smtpFrom: smtpFrom,
+         startTLS: startTLS,
+         loginRequired: loginRequired,
+         settingsPassword: settingsPassword,
+       );
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
@@ -346,7 +353,8 @@ class _SettingsImpl extends Settings {
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
       ucscTrackGenerator: ucscTrackGenerator ?? this.ucscTrackGenerator,
       binCreationScript: binCreationScript ?? this.binCreationScript,
-      bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable ??
+      bigGenePredToGenePredExecutable:
+          bigGenePredToGenePredExecutable ??
           this.bigGenePredToGenePredExecutable,
       mailActive: mailActive ?? this.mailActive,
       smtpServer: smtpServer ?? this.smtpServer,
@@ -361,8 +369,115 @@ class _SettingsImpl extends Settings {
   }
 }
 
+class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
+  SettingsUpdateTable(super.table);
+
+  _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
+    table.baseDir,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> projectDir(String value) => _i1.ColumnValue(
+    table.projectDir,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> genomeDir(String value) => _i1.ColumnValue(
+    table.genomeDir,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> customSnpDir(String value) => _i1.ColumnValue(
+    table.customSnpDir,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> toolsDir(String value) => _i1.ColumnValue(
+    table.toolsDir,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> mipgenExecutable(String value) =>
+      _i1.ColumnValue(
+        table.mipgenExecutable,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> exonExtractScript(String value) =>
+      _i1.ColumnValue(
+        table.exonExtractScript,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> ucscTrackGenerator(String value) =>
+      _i1.ColumnValue(
+        table.ucscTrackGenerator,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> binCreationScript(String value) =>
+      _i1.ColumnValue(
+        table.binCreationScript,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> bigGenePredToGenePredExecutable(
+    String value,
+  ) => _i1.ColumnValue(
+    table.bigGenePredToGenePredExecutable,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> mailActive(bool value) => _i1.ColumnValue(
+    table.mailActive,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> smtpServer(String value) => _i1.ColumnValue(
+    table.smtpServer,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> smtpPort(int value) => _i1.ColumnValue(
+    table.smtpPort,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> smtpUser(String value) => _i1.ColumnValue(
+    table.smtpUser,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> smtpPassword(String value) => _i1.ColumnValue(
+    table.smtpPassword,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> smtpFrom(String value) => _i1.ColumnValue(
+    table.smtpFrom,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> startTLS(bool value) => _i1.ColumnValue(
+    table.startTLS,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> loginRequired(bool value) => _i1.ColumnValue(
+    table.loginRequired,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> settingsPassword(String value) =>
+      _i1.ColumnValue(
+        table.settingsPassword,
+        value,
+      );
+}
+
 class SettingsTable extends _i1.Table<int?> {
   SettingsTable({super.tableRelation}) : super(tableName: 'settings') {
+    updateTable = SettingsUpdateTable(this);
     baseDir = _i1.ColumnString(
       'baseDir',
       this,
@@ -460,6 +575,8 @@ class SettingsTable extends _i1.Table<int?> {
     );
   }
 
+  late final SettingsUpdateTable updateTable;
+
   late final _i1.ColumnString baseDir;
 
   late final _i1.ColumnString projectDir;
@@ -500,27 +617,27 @@ class SettingsTable extends _i1.Table<int?> {
 
   @override
   List<_i1.Column> get columns => [
-        id,
-        baseDir,
-        projectDir,
-        genomeDir,
-        customSnpDir,
-        toolsDir,
-        mipgenExecutable,
-        exonExtractScript,
-        ucscTrackGenerator,
-        binCreationScript,
-        bigGenePredToGenePredExecutable,
-        mailActive,
-        smtpServer,
-        smtpPort,
-        smtpUser,
-        smtpPassword,
-        smtpFrom,
-        startTLS,
-        loginRequired,
-        settingsPassword,
-      ];
+    id,
+    baseDir,
+    projectDir,
+    genomeDir,
+    customSnpDir,
+    toolsDir,
+    mipgenExecutable,
+    exonExtractScript,
+    ucscTrackGenerator,
+    binCreationScript,
+    bigGenePredToGenePredExecutable,
+    mailActive,
+    smtpServer,
+    smtpPort,
+    smtpUser,
+    smtpPassword,
+    smtpFrom,
+    startTLS,
+    loginRequired,
+    settingsPassword,
+  ];
 }
 
 class SettingsInclude extends _i1.IncludeObject {
@@ -708,6 +825,46 @@ class SettingsRepository {
     return session.db.updateRow<Settings>(
       row,
       columns: columns?.call(Settings.t),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates a single [Settings] by its [id] with the specified [columnValues].
+  /// Returns the updated row or null if no row with the given id exists.
+  Future<Settings?> updateById(
+    _i1.Session session,
+    int id, {
+    required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateById<Settings>(
+      id,
+      columnValues: columnValues(Settings.t.updateTable),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates all [Settings]s matching the [where] expression with the specified [columnValues].
+  /// Returns the list of updated rows.
+  Future<List<Settings>> updateWhere(
+    _i1.Session session, {
+    required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
+    required _i1.WhereExpressionBuilder<SettingsTable> where,
+    int? limit,
+    int? offset,
+    _i1.OrderByBuilder<SettingsTable>? orderBy,
+    _i1.OrderByListBuilder<SettingsTable>? orderByList,
+    bool orderDescending = false,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateWhere<Settings>(
+      columnValues: columnValues(Settings.t.updateTable),
+      where: where(Settings.t),
+      limit: limit,
+      offset: offset,
+      orderBy: orderBy?.call(Settings.t),
+      orderByList: orderByList?.call(Settings.t),
+      orderDescending: orderDescending,
       transaction: transaction,
     );
   }

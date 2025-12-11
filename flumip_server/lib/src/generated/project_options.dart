@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
@@ -46,34 +47,34 @@ abstract class ProjectOptions
     double? svrPriorityScore,
     bool? silentMode,
     int? bwaThreads,
-  })  : minCaptureSize = minCaptureSize ?? 162,
-        maxCaptureSize = maxCaptureSize ?? 162,
-        armLengthSums = armLengthSums ?? '40,41,42,43,44,45',
-        extMinLength = extMinLength ?? 16,
-        extMaxLength = extMaxLength ?? 18,
-        ligMinLength = ligMinLength ?? 18,
-        tagSizes = tagSizes ?? '5,0',
-        maskedArmThreshold = maskedArmThreshold ?? 0.5,
-        targetArmCopy = targetArmCopy ?? 20,
-        maxArmCopyProduct = maxArmCopyProduct ?? 75,
-        trf = trf ?? false,
-        featureFlank = featureFlank ?? 0,
-        captureIncrement = captureIncrement ?? 5,
-        logisticHeuristic = logisticHeuristic ?? false,
-        maxMipOverlap = maxMipOverlap ?? 30,
-        startingMipOverlap = startingMipOverlap ?? 0,
-        checkCopyNumber = checkCopyNumber ?? true,
-        sealBothStrands = sealBothStrands ?? false,
-        halfSealBothStrands = halfSealBothStrands ?? false,
-        doubleTileStrandUnaware = doubleTileStrandUnaware ?? false,
-        doubleTileStrandsSeparately = doubleTileStrandsSeparately ?? false,
-        scoreMethod = scoreMethod ?? _i2.ScoreMethod.logistic,
-        logisticOptimalScore = logisticOptimalScore ?? 0.98,
-        svrOptimalScore = svrOptimalScore ?? 2.2,
-        logisticPriorityScore = logisticPriorityScore ?? 0.9,
-        svrPriorityScore = svrPriorityScore ?? 1.5,
-        silentMode = silentMode ?? false,
-        bwaThreads = bwaThreads ?? 1;
+  }) : minCaptureSize = minCaptureSize ?? 162,
+       maxCaptureSize = maxCaptureSize ?? 162,
+       armLengthSums = armLengthSums ?? '40,41,42,43,44,45',
+       extMinLength = extMinLength ?? 16,
+       extMaxLength = extMaxLength ?? 18,
+       ligMinLength = ligMinLength ?? 18,
+       tagSizes = tagSizes ?? '5,0',
+       maskedArmThreshold = maskedArmThreshold ?? 0.5,
+       targetArmCopy = targetArmCopy ?? 20,
+       maxArmCopyProduct = maxArmCopyProduct ?? 75,
+       trf = trf ?? false,
+       featureFlank = featureFlank ?? 0,
+       captureIncrement = captureIncrement ?? 5,
+       logisticHeuristic = logisticHeuristic ?? false,
+       maxMipOverlap = maxMipOverlap ?? 30,
+       startingMipOverlap = startingMipOverlap ?? 0,
+       checkCopyNumber = checkCopyNumber ?? true,
+       sealBothStrands = sealBothStrands ?? false,
+       halfSealBothStrands = halfSealBothStrands ?? false,
+       doubleTileStrandUnaware = doubleTileStrandUnaware ?? false,
+       doubleTileStrandsSeparately = doubleTileStrandsSeparately ?? false,
+       scoreMethod = scoreMethod ?? _i2.ScoreMethod.logistic,
+       logisticOptimalScore = logisticOptimalScore ?? 0.98,
+       svrOptimalScore = svrOptimalScore ?? 2.2,
+       logisticPriorityScore = logisticPriorityScore ?? 0.9,
+       svrPriorityScore = svrPriorityScore ?? 1.5,
+       silentMode = silentMode ?? false,
+       bwaThreads = bwaThreads ?? 1;
 
   factory ProjectOptions({
     int? id,
@@ -120,8 +121,8 @@ abstract class ProjectOptions
       extMaxLength: jsonSerialization['extMaxLength'] as int,
       ligMinLength: jsonSerialization['ligMinLength'] as int,
       tagSizes: jsonSerialization['tagSizes'] as String,
-      maskedArmThreshold:
-          (jsonSerialization['maskedArmThreshold'] as num).toDouble(),
+      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num)
+          .toDouble(),
       targetArmCopy: jsonSerialization['targetArmCopy'] as int,
       maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int,
       trf: jsonSerialization['trf'] as bool,
@@ -139,14 +140,15 @@ abstract class ProjectOptions
       doubleTileStrandsSeparately:
           jsonSerialization['doubleTileStrandsSeparately'] as bool,
       scoreMethod: _i2.ScoreMethod.fromJson(
-          (jsonSerialization['scoreMethod'] as String)),
-      logisticOptimalScore:
-          (jsonSerialization['logisticOptimalScore'] as num).toDouble(),
+        (jsonSerialization['scoreMethod'] as String),
+      ),
+      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num)
+          .toDouble(),
       svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num).toDouble(),
-      logisticPriorityScore:
-          (jsonSerialization['logisticPriorityScore'] as num).toDouble(),
-      svrPriorityScore:
-          (jsonSerialization['svrPriorityScore'] as num).toDouble(),
+      logisticPriorityScore: (jsonSerialization['logisticPriorityScore'] as num)
+          .toDouble(),
+      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num)
+          .toDouble(),
       silentMode: jsonSerialization['silentMode'] as bool,
       bwaThreads: jsonSerialization['bwaThreads'] as int,
     );
@@ -261,6 +263,7 @@ abstract class ProjectOptions
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'ProjectOptions',
       if (id != null) 'id': id,
       'minCaptureSize': minCaptureSize,
       'maxCaptureSize': maxCaptureSize,
@@ -298,6 +301,7 @@ abstract class ProjectOptions
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
+      '__className__': 'ProjectOptions',
       if (id != null) 'id': id,
       'minCaptureSize': minCaptureSize,
       'maxCaptureSize': maxCaptureSize,
@@ -398,38 +402,38 @@ class _ProjectOptionsImpl extends ProjectOptions {
     bool? silentMode,
     int? bwaThreads,
   }) : super._(
-          id: id,
-          minCaptureSize: minCaptureSize,
-          maxCaptureSize: maxCaptureSize,
-          armLengths: armLengths,
-          armLengthSums: armLengthSums,
-          extMinLength: extMinLength,
-          extMaxLength: extMaxLength,
-          ligMinLength: ligMinLength,
-          tagSizes: tagSizes,
-          maskedArmThreshold: maskedArmThreshold,
-          targetArmCopy: targetArmCopy,
-          maxArmCopyProduct: maxArmCopyProduct,
-          trf: trf,
-          genomeDir: genomeDir,
-          featureFlank: featureFlank,
-          captureIncrement: captureIncrement,
-          logisticHeuristic: logisticHeuristic,
-          maxMipOverlap: maxMipOverlap,
-          startingMipOverlap: startingMipOverlap,
-          checkCopyNumber: checkCopyNumber,
-          sealBothStrands: sealBothStrands,
-          halfSealBothStrands: halfSealBothStrands,
-          doubleTileStrandUnaware: doubleTileStrandUnaware,
-          doubleTileStrandsSeparately: doubleTileStrandsSeparately,
-          scoreMethod: scoreMethod,
-          logisticOptimalScore: logisticOptimalScore,
-          svrOptimalScore: svrOptimalScore,
-          logisticPriorityScore: logisticPriorityScore,
-          svrPriorityScore: svrPriorityScore,
-          silentMode: silentMode,
-          bwaThreads: bwaThreads,
-        );
+         id: id,
+         minCaptureSize: minCaptureSize,
+         maxCaptureSize: maxCaptureSize,
+         armLengths: armLengths,
+         armLengthSums: armLengthSums,
+         extMinLength: extMinLength,
+         extMaxLength: extMaxLength,
+         ligMinLength: ligMinLength,
+         tagSizes: tagSizes,
+         maskedArmThreshold: maskedArmThreshold,
+         targetArmCopy: targetArmCopy,
+         maxArmCopyProduct: maxArmCopyProduct,
+         trf: trf,
+         genomeDir: genomeDir,
+         featureFlank: featureFlank,
+         captureIncrement: captureIncrement,
+         logisticHeuristic: logisticHeuristic,
+         maxMipOverlap: maxMipOverlap,
+         startingMipOverlap: startingMipOverlap,
+         checkCopyNumber: checkCopyNumber,
+         sealBothStrands: sealBothStrands,
+         halfSealBothStrands: halfSealBothStrands,
+         doubleTileStrandUnaware: doubleTileStrandUnaware,
+         doubleTileStrandsSeparately: doubleTileStrandsSeparately,
+         scoreMethod: scoreMethod,
+         logisticOptimalScore: logisticOptimalScore,
+         svrOptimalScore: svrOptimalScore,
+         logisticPriorityScore: logisticPriorityScore,
+         svrPriorityScore: svrPriorityScore,
+         silentMode: silentMode,
+         bwaThreads: bwaThreads,
+       );
 
   /// Returns a shallow copy of this [ProjectOptions]
   /// with some or all fields replaced by the given arguments.
@@ -507,9 +511,175 @@ class _ProjectOptionsImpl extends ProjectOptions {
   }
 }
 
+class ProjectOptionsUpdateTable extends _i1.UpdateTable<ProjectOptionsTable> {
+  ProjectOptionsUpdateTable(super.table);
+
+  _i1.ColumnValue<int, int> minCaptureSize(int value) => _i1.ColumnValue(
+    table.minCaptureSize,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> maxCaptureSize(int value) => _i1.ColumnValue(
+    table.maxCaptureSize,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> armLengths(String? value) => _i1.ColumnValue(
+    table.armLengths,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> armLengthSums(String value) =>
+      _i1.ColumnValue(
+        table.armLengthSums,
+        value,
+      );
+
+  _i1.ColumnValue<int, int> extMinLength(int value) => _i1.ColumnValue(
+    table.extMinLength,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> extMaxLength(int value) => _i1.ColumnValue(
+    table.extMaxLength,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> ligMinLength(int value) => _i1.ColumnValue(
+    table.ligMinLength,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> tagSizes(String value) => _i1.ColumnValue(
+    table.tagSizes,
+    value,
+  );
+
+  _i1.ColumnValue<double, double> maskedArmThreshold(double value) =>
+      _i1.ColumnValue(
+        table.maskedArmThreshold,
+        value,
+      );
+
+  _i1.ColumnValue<int, int> targetArmCopy(int value) => _i1.ColumnValue(
+    table.targetArmCopy,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> maxArmCopyProduct(int value) => _i1.ColumnValue(
+    table.maxArmCopyProduct,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> trf(bool value) => _i1.ColumnValue(
+    table.trf,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> genomeDir(String? value) => _i1.ColumnValue(
+    table.genomeDir,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> featureFlank(int value) => _i1.ColumnValue(
+    table.featureFlank,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> captureIncrement(int value) => _i1.ColumnValue(
+    table.captureIncrement,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> logisticHeuristic(bool value) => _i1.ColumnValue(
+    table.logisticHeuristic,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> maxMipOverlap(int value) => _i1.ColumnValue(
+    table.maxMipOverlap,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> startingMipOverlap(int value) => _i1.ColumnValue(
+    table.startingMipOverlap,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> checkCopyNumber(bool value) => _i1.ColumnValue(
+    table.checkCopyNumber,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> sealBothStrands(bool value) => _i1.ColumnValue(
+    table.sealBothStrands,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> halfSealBothStrands(bool value) =>
+      _i1.ColumnValue(
+        table.halfSealBothStrands,
+        value,
+      );
+
+  _i1.ColumnValue<bool, bool> doubleTileStrandUnaware(bool value) =>
+      _i1.ColumnValue(
+        table.doubleTileStrandUnaware,
+        value,
+      );
+
+  _i1.ColumnValue<bool, bool> doubleTileStrandsSeparately(bool value) =>
+      _i1.ColumnValue(
+        table.doubleTileStrandsSeparately,
+        value,
+      );
+
+  _i1.ColumnValue<_i2.ScoreMethod, _i2.ScoreMethod> scoreMethod(
+    _i2.ScoreMethod value,
+  ) => _i1.ColumnValue(
+    table.scoreMethod,
+    value,
+  );
+
+  _i1.ColumnValue<double, double> logisticOptimalScore(double value) =>
+      _i1.ColumnValue(
+        table.logisticOptimalScore,
+        value,
+      );
+
+  _i1.ColumnValue<double, double> svrOptimalScore(double value) =>
+      _i1.ColumnValue(
+        table.svrOptimalScore,
+        value,
+      );
+
+  _i1.ColumnValue<double, double> logisticPriorityScore(double value) =>
+      _i1.ColumnValue(
+        table.logisticPriorityScore,
+        value,
+      );
+
+  _i1.ColumnValue<double, double> svrPriorityScore(double value) =>
+      _i1.ColumnValue(
+        table.svrPriorityScore,
+        value,
+      );
+
+  _i1.ColumnValue<bool, bool> silentMode(bool value) => _i1.ColumnValue(
+    table.silentMode,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> bwaThreads(int value) => _i1.ColumnValue(
+    table.bwaThreads,
+    value,
+  );
+}
+
 class ProjectOptionsTable extends _i1.Table<int?> {
   ProjectOptionsTable({super.tableRelation})
-      : super(tableName: 'project_options') {
+    : super(tableName: 'project_options') {
+    updateTable = ProjectOptionsUpdateTable(this);
     minCaptureSize = _i1.ColumnInt(
       'minCaptureSize',
       this,
@@ -661,6 +831,8 @@ class ProjectOptionsTable extends _i1.Table<int?> {
     );
   }
 
+  late final ProjectOptionsUpdateTable updateTable;
+
   late final _i1.ColumnInt minCaptureSize;
 
   late final _i1.ColumnInt maxCaptureSize;
@@ -723,38 +895,38 @@ class ProjectOptionsTable extends _i1.Table<int?> {
 
   @override
   List<_i1.Column> get columns => [
-        id,
-        minCaptureSize,
-        maxCaptureSize,
-        armLengths,
-        armLengthSums,
-        extMinLength,
-        extMaxLength,
-        ligMinLength,
-        tagSizes,
-        maskedArmThreshold,
-        targetArmCopy,
-        maxArmCopyProduct,
-        trf,
-        genomeDir,
-        featureFlank,
-        captureIncrement,
-        logisticHeuristic,
-        maxMipOverlap,
-        startingMipOverlap,
-        checkCopyNumber,
-        sealBothStrands,
-        halfSealBothStrands,
-        doubleTileStrandUnaware,
-        doubleTileStrandsSeparately,
-        scoreMethod,
-        logisticOptimalScore,
-        svrOptimalScore,
-        logisticPriorityScore,
-        svrPriorityScore,
-        silentMode,
-        bwaThreads,
-      ];
+    id,
+    minCaptureSize,
+    maxCaptureSize,
+    armLengths,
+    armLengthSums,
+    extMinLength,
+    extMaxLength,
+    ligMinLength,
+    tagSizes,
+    maskedArmThreshold,
+    targetArmCopy,
+    maxArmCopyProduct,
+    trf,
+    genomeDir,
+    featureFlank,
+    captureIncrement,
+    logisticHeuristic,
+    maxMipOverlap,
+    startingMipOverlap,
+    checkCopyNumber,
+    sealBothStrands,
+    halfSealBothStrands,
+    doubleTileStrandUnaware,
+    doubleTileStrandsSeparately,
+    scoreMethod,
+    logisticOptimalScore,
+    svrOptimalScore,
+    logisticPriorityScore,
+    svrPriorityScore,
+    silentMode,
+    bwaThreads,
+  ];
 }
 
 class ProjectOptionsInclude extends _i1.IncludeObject {
@@ -942,6 +1114,46 @@ class ProjectOptionsRepository {
     return session.db.updateRow<ProjectOptions>(
       row,
       columns: columns?.call(ProjectOptions.t),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates a single [ProjectOptions] by its [id] with the specified [columnValues].
+  /// Returns the updated row or null if no row with the given id exists.
+  Future<ProjectOptions?> updateById(
+    _i1.Session session,
+    int id, {
+    required _i1.ColumnValueListBuilder<ProjectOptionsUpdateTable> columnValues,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateById<ProjectOptions>(
+      id,
+      columnValues: columnValues(ProjectOptions.t.updateTable),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates all [ProjectOptions]s matching the [where] expression with the specified [columnValues].
+  /// Returns the list of updated rows.
+  Future<List<ProjectOptions>> updateWhere(
+    _i1.Session session, {
+    required _i1.ColumnValueListBuilder<ProjectOptionsUpdateTable> columnValues,
+    required _i1.WhereExpressionBuilder<ProjectOptionsTable> where,
+    int? limit,
+    int? offset,
+    _i1.OrderByBuilder<ProjectOptionsTable>? orderBy,
+    _i1.OrderByListBuilder<ProjectOptionsTable>? orderByList,
+    bool orderDescending = false,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateWhere<ProjectOptions>(
+      columnValues: columnValues(ProjectOptions.t.updateTable),
+      where: where(ProjectOptions.t),
+      limit: limit,
+      offset: offset,
+      orderBy: orderBy?.call(ProjectOptions.t),
+      orderByList: orderByList?.call(ProjectOptions.t),
+      orderDescending: orderDescending,
       transaction: transaction,
     );
   }

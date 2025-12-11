@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
@@ -19,8 +20,8 @@ abstract class GeneExtractionException
   GeneExtractionException._({
     String? message,
     int? errorCode,
-  })  : message = message ?? 'Bed File Could not be created',
-        errorCode = errorCode ?? 1000;
+  }) : message = message ?? 'Bed File Could not be created',
+       errorCode = errorCode ?? 1000;
 
   factory GeneExtractionException({
     String? message,
@@ -28,7 +29,8 @@ abstract class GeneExtractionException
   }) = _GeneExtractionExceptionImpl;
 
   factory GeneExtractionException.fromJson(
-      Map<String, dynamic> jsonSerialization) {
+    Map<String, dynamic> jsonSerialization,
+  ) {
     return GeneExtractionException(
       message: jsonSerialization['message'] as String,
       errorCode: jsonSerialization['errorCode'] as int,
@@ -49,6 +51,7 @@ abstract class GeneExtractionException
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'GeneExtractionException',
       'message': message,
       'errorCode': errorCode,
     };
@@ -57,6 +60,7 @@ abstract class GeneExtractionException
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
+      '__className__': 'GeneExtractionException',
       'message': message,
       'errorCode': errorCode,
     };
@@ -64,7 +68,7 @@ abstract class GeneExtractionException
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return 'GeneExtractionException(message: $message, errorCode: $errorCode)';
   }
 }
 
@@ -73,9 +77,9 @@ class _GeneExtractionExceptionImpl extends GeneExtractionException {
     String? message,
     int? errorCode,
   }) : super._(
-          message: message,
-          errorCode: errorCode,
-        );
+         message: message,
+         errorCode: errorCode,
+       );
 
   /// Returns a shallow copy of this [GeneExtractionException]
   /// with some or all fields replaced by the given arguments.

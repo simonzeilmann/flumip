@@ -24,6 +24,12 @@
       <excludeFolder url="file://$MODULE_DIR$/flumip_server/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/flumip_server/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/flumip_server/build" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
+      <excludeFolder url="file://$MODULE_DIR$/flumip_flutter/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/flumip_flutter/ios/Flutter/ephemeral" />
+      <excludeFolder url="file://$MODULE_DIR$/flumip_flutter/linux/flutter/ephemeral" />
+      <excludeFolder url="file://$MODULE_DIR$/flumip_flutter/macos/Flutter/ephemeral" />
+      <excludeFolder url="file://$MODULE_DIR$/flumip_flutter/windows/flutter/ephemeral" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

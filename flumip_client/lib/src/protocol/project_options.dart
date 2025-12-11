@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
@@ -45,34 +46,34 @@ abstract class ProjectOptions implements _i1.SerializableModel {
     double? svrPriorityScore,
     bool? silentMode,
     int? bwaThreads,
-  })  : minCaptureSize = minCaptureSize ?? 162,
-        maxCaptureSize = maxCaptureSize ?? 162,
-        armLengthSums = armLengthSums ?? '40,41,42,43,44,45',
-        extMinLength = extMinLength ?? 16,
-        extMaxLength = extMaxLength ?? 18,
-        ligMinLength = ligMinLength ?? 18,
-        tagSizes = tagSizes ?? '5,0',
-        maskedArmThreshold = maskedArmThreshold ?? 0.5,
-        targetArmCopy = targetArmCopy ?? 20,
-        maxArmCopyProduct = maxArmCopyProduct ?? 75,
-        trf = trf ?? false,
-        featureFlank = featureFlank ?? 0,
-        captureIncrement = captureIncrement ?? 5,
-        logisticHeuristic = logisticHeuristic ?? false,
-        maxMipOverlap = maxMipOverlap ?? 30,
-        startingMipOverlap = startingMipOverlap ?? 0,
-        checkCopyNumber = checkCopyNumber ?? true,
-        sealBothStrands = sealBothStrands ?? false,
-        halfSealBothStrands = halfSealBothStrands ?? false,
-        doubleTileStrandUnaware = doubleTileStrandUnaware ?? false,
-        doubleTileStrandsSeparately = doubleTileStrandsSeparately ?? false,
-        scoreMethod = scoreMethod ?? _i2.ScoreMethod.logistic,
-        logisticOptimalScore = logisticOptimalScore ?? 0.98,
-        svrOptimalScore = svrOptimalScore ?? 2.2,
-        logisticPriorityScore = logisticPriorityScore ?? 0.9,
-        svrPriorityScore = svrPriorityScore ?? 1.5,
-        silentMode = silentMode ?? false,
-        bwaThreads = bwaThreads ?? 1;
+  }) : minCaptureSize = minCaptureSize ?? 162,
+       maxCaptureSize = maxCaptureSize ?? 162,
+       armLengthSums = armLengthSums ?? '40,41,42,43,44,45',
+       extMinLength = extMinLength ?? 16,
+       extMaxLength = extMaxLength ?? 18,
+       ligMinLength = ligMinLength ?? 18,
+       tagSizes = tagSizes ?? '5,0',
+       maskedArmThreshold = maskedArmThreshold ?? 0.5,
+       targetArmCopy = targetArmCopy ?? 20,
+       maxArmCopyProduct = maxArmCopyProduct ?? 75,
+       trf = trf ?? false,
+       featureFlank = featureFlank ?? 0,
+       captureIncrement = captureIncrement ?? 5,
+       logisticHeuristic = logisticHeuristic ?? false,
+       maxMipOverlap = maxMipOverlap ?? 30,
+       startingMipOverlap = startingMipOverlap ?? 0,
+       checkCopyNumber = checkCopyNumber ?? true,
+       sealBothStrands = sealBothStrands ?? false,
+       halfSealBothStrands = halfSealBothStrands ?? false,
+       doubleTileStrandUnaware = doubleTileStrandUnaware ?? false,
+       doubleTileStrandsSeparately = doubleTileStrandsSeparately ?? false,
+       scoreMethod = scoreMethod ?? _i2.ScoreMethod.logistic,
+       logisticOptimalScore = logisticOptimalScore ?? 0.98,
+       svrOptimalScore = svrOptimalScore ?? 2.2,
+       logisticPriorityScore = logisticPriorityScore ?? 0.9,
+       svrPriorityScore = svrPriorityScore ?? 1.5,
+       silentMode = silentMode ?? false,
+       bwaThreads = bwaThreads ?? 1;
 
   factory ProjectOptions({
     int? id,
@@ -119,8 +120,8 @@ abstract class ProjectOptions implements _i1.SerializableModel {
       extMaxLength: jsonSerialization['extMaxLength'] as int,
       ligMinLength: jsonSerialization['ligMinLength'] as int,
       tagSizes: jsonSerialization['tagSizes'] as String,
-      maskedArmThreshold:
-          (jsonSerialization['maskedArmThreshold'] as num).toDouble(),
+      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num)
+          .toDouble(),
       targetArmCopy: jsonSerialization['targetArmCopy'] as int,
       maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int,
       trf: jsonSerialization['trf'] as bool,
@@ -138,14 +139,15 @@ abstract class ProjectOptions implements _i1.SerializableModel {
       doubleTileStrandsSeparately:
           jsonSerialization['doubleTileStrandsSeparately'] as bool,
       scoreMethod: _i2.ScoreMethod.fromJson(
-          (jsonSerialization['scoreMethod'] as String)),
-      logisticOptimalScore:
-          (jsonSerialization['logisticOptimalScore'] as num).toDouble(),
+        (jsonSerialization['scoreMethod'] as String),
+      ),
+      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num)
+          .toDouble(),
       svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num).toDouble(),
-      logisticPriorityScore:
-          (jsonSerialization['logisticPriorityScore'] as num).toDouble(),
-      svrPriorityScore:
-          (jsonSerialization['svrPriorityScore'] as num).toDouble(),
+      logisticPriorityScore: (jsonSerialization['logisticPriorityScore'] as num)
+          .toDouble(),
+      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num)
+          .toDouble(),
       silentMode: jsonSerialization['silentMode'] as bool,
       bwaThreads: jsonSerialization['bwaThreads'] as int,
     );
@@ -255,6 +257,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'ProjectOptions',
       if (id != null) 'id': id,
       'minCaptureSize': minCaptureSize,
       'maxCaptureSize': maxCaptureSize,
@@ -331,38 +334,38 @@ class _ProjectOptionsImpl extends ProjectOptions {
     bool? silentMode,
     int? bwaThreads,
   }) : super._(
-          id: id,
-          minCaptureSize: minCaptureSize,
-          maxCaptureSize: maxCaptureSize,
-          armLengths: armLengths,
-          armLengthSums: armLengthSums,
-          extMinLength: extMinLength,
-          extMaxLength: extMaxLength,
-          ligMinLength: ligMinLength,
-          tagSizes: tagSizes,
-          maskedArmThreshold: maskedArmThreshold,
-          targetArmCopy: targetArmCopy,
-          maxArmCopyProduct: maxArmCopyProduct,
-          trf: trf,
-          genomeDir: genomeDir,
-          featureFlank: featureFlank,
-          captureIncrement: captureIncrement,
-          logisticHeuristic: logisticHeuristic,
-          maxMipOverlap: maxMipOverlap,
-          startingMipOverlap: startingMipOverlap,
-          checkCopyNumber: checkCopyNumber,
-          sealBothStrands: sealBothStrands,
-          halfSealBothStrands: halfSealBothStrands,
-          doubleTileStrandUnaware: doubleTileStrandUnaware,
-          doubleTileStrandsSeparately: doubleTileStrandsSeparately,
-          scoreMethod: scoreMethod,
-          logisticOptimalScore: logisticOptimalScore,
-          svrOptimalScore: svrOptimalScore,
-          logisticPriorityScore: logisticPriorityScore,
-          svrPriorityScore: svrPriorityScore,
-          silentMode: silentMode,
-          bwaThreads: bwaThreads,
-        );
+         id: id,
+         minCaptureSize: minCaptureSize,
+         maxCaptureSize: maxCaptureSize,
+         armLengths: armLengths,
+         armLengthSums: armLengthSums,
+         extMinLength: extMinLength,
+         extMaxLength: extMaxLength,
+         ligMinLength: ligMinLength,
+         tagSizes: tagSizes,
+         maskedArmThreshold: maskedArmThreshold,
+         targetArmCopy: targetArmCopy,
+         maxArmCopyProduct: maxArmCopyProduct,
+         trf: trf,
+         genomeDir: genomeDir,
+         featureFlank: featureFlank,
+         captureIncrement: captureIncrement,
+         logisticHeuristic: logisticHeuristic,
+         maxMipOverlap: maxMipOverlap,
+         startingMipOverlap: startingMipOverlap,
+         checkCopyNumber: checkCopyNumber,
+         sealBothStrands: sealBothStrands,
+         halfSealBothStrands: halfSealBothStrands,
+         doubleTileStrandUnaware: doubleTileStrandUnaware,
+         doubleTileStrandsSeparately: doubleTileStrandsSeparately,
+         scoreMethod: scoreMethod,
+         logisticOptimalScore: logisticOptimalScore,
+         svrOptimalScore: svrOptimalScore,
+         logisticPriorityScore: logisticPriorityScore,
+         svrPriorityScore: svrPriorityScore,
+         silentMode: silentMode,
+         bwaThreads: bwaThreads,
+       );
 
   /// Returns a shallow copy of this [ProjectOptions]
   /// with some or all fields replaced by the given arguments.

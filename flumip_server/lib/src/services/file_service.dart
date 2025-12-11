@@ -261,6 +261,26 @@ class FileService {
     return Stream.empty();
   }
 
+  Future<String> readFileAsString(Session session, int projectID, String fileName) async {
+    session.log("Reading file $fileName as string for project ID: $projectID",
+        level: LogLevel.info);
+    List<FileSystemEntity> dir = await _getFileList(session, projectID);
+
+    for (var d in dir) {
+      if (d.path.endsWith(fileName)) {
+        File f = File(d.path);
+        String content = await f.readAsString();
+        session.log("File $fileName read as string for project ID: $projectID",
+            level: LogLevel.info);
+        return content;
+      }
+    }
+
+    session.log("No file $fileName found for project ID: $projectID",
+        level: LogLevel.warning);
+    return '';
+  }
+
   /// Checks if the project directory exists for the specified project.
   ///
   /// \param session The current session.

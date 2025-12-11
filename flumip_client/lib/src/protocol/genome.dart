@@ -7,9 +7,11 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
 
 abstract class Genome implements _i1.SerializableModel {
   Genome._({
@@ -28,13 +30,13 @@ abstract class Genome implements _i1.SerializableModel {
     int? indexPID,
     int? indexResults,
     int? size,
-  })  : description = description ?? '',
-        active = active ?? true,
-        indexed = indexed ?? false,
-        indexing = indexing ?? false,
-        indexPID = indexPID ?? 0,
-        indexResults = indexResults ?? 0,
-        size = size ?? 0;
+  }) : description = description ?? '',
+       active = active ?? true,
+       indexed = indexed ?? false,
+       indexing = indexing ?? false,
+       indexPID = indexPID ?? 0,
+       indexResults = indexResults ?? 0,
+       size = size ?? 0;
 
   factory Genome({
     int? id,
@@ -63,7 +65,9 @@ abstract class Genome implements _i1.SerializableModel {
       fastaPath: jsonSerialization['fastaPath'] as String?,
       refPath: jsonSerialization['refPath'] as String?,
       snpFolder: jsonSerialization['snpFolder'] as String?,
-      snp: (jsonSerialization['snp'] as List?)?.map((e) => e as int).toList(),
+      snp: jsonSerialization['snp'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<int>>(jsonSerialization['snp']),
       category: jsonSerialization['category'] as String?,
       active: jsonSerialization['active'] as bool,
       indexed: jsonSerialization['indexed'] as bool,
@@ -130,6 +134,7 @@ abstract class Genome implements _i1.SerializableModel {
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Genome',
       if (id != null) 'id': id,
       'name': name,
       'description': description,
@@ -174,22 +179,22 @@ class _GenomeImpl extends Genome {
     int? indexResults,
     int? size,
   }) : super._(
-          id: id,
-          name: name,
-          description: description,
-          path: path,
-          fastaPath: fastaPath,
-          refPath: refPath,
-          snpFolder: snpFolder,
-          snp: snp,
-          category: category,
-          active: active,
-          indexed: indexed,
-          indexing: indexing,
-          indexPID: indexPID,
-          indexResults: indexResults,
-          size: size,
-        );
+         id: id,
+         name: name,
+         description: description,
+         path: path,
+         fastaPath: fastaPath,
+         refPath: refPath,
+         snpFolder: snpFolder,
+         snp: snp,
+         category: category,
+         active: active,
+         indexed: indexed,
+         indexing: indexing,
+         indexPID: indexPID,
+         indexResults: indexResults,
+         size: size,
+       );
 
   /// Returns a shallow copy of this [Genome]
   /// with some or all fields replaced by the given arguments.
