@@ -13,11 +13,16 @@ class UCSCTrackRoute extends Route {
   Future<Result> handleCall(Session session, Request request) async {
     var projectId = request.pathParameters.get(_idParam);
     session.log(
-        'UCSC Track for project $projectId requested by ${request.connectionInfo.remote.address}');
+      'UCSC Track for project $projectId requested by ${request.connectionInfo.remote.address}',
+    );
 
     String track;
     try {
-      track = await fileService.readFileAsString(session, projectId, "ucsc_track.bed");
+      track = await fileService.readFileAsString(
+        session,
+        projectId,
+        "ucsc_track.bed",
+      );
     } catch (e) {
       return Response.notFound(body: Body.fromString("UCSC track not found"));
     }
@@ -27,10 +32,7 @@ class UCSCTrackRoute extends Route {
     }
 
     return Response.ok(
-      body: Body.fromString(
-        track,
-        mimeType: MimeType.plainText,
-      ),
+      body: Body.fromString(track, mimeType: MimeType.plainText),
     );
   }
 }
