@@ -1,12 +1,12 @@
 import 'package:flumip_server/src/services/file_service.dart';
+import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/serverpod.dart';
-
-import '../../services/project_service.dart';
+import 'package:flumip_server/service_locator.dart';
 
 class UCSCTrackRoute extends Route {
   UCSCTrackRoute() : super(methods: {Method.get});
-  final projectService = ProjectService();
-  final fileService = FileService();
+  final projectService = sl<ProjectService>();
+  final fileService = sl<FileService>();
   static const _idParam = IntPathParam(#id);
 
   @override

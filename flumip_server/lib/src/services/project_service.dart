@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
-import '../generated/protocol.dart';
 import 'package:uuid/uuid.dart';
 
 /// A service class for handling project-related operations.
 class ProjectService {
   ProjectService();
+
+  ProcessService processService = sl<ProcessService>();
 
   /// Retrieves a project by its ID.
   ///
@@ -37,20 +39,26 @@ class ProjectService {
   /// \returns The created [Project] object.
   /// \throws [ArgumentError] if the project name is empty.
   Future<Project> createProject(
-      Session session, String projectName, ProjectOptions options,
-      [String? desc]) async {
-    session.log("Creating project with name: $projectName",
-        level: LogLevel.info);
+    Session session,
+    String projectName,
+    ProjectOptions options, [
+    String? desc,
+  ]) async {
+    session.log(
+      "Creating project with name: $projectName",
+      level: LogLevel.info,
+    );
     if (projectName == '') {
       session.log("Project name cannot be empty", level: LogLevel.error);
       throw ArgumentError('Project name cannot be empty');
     }
 
     var projectRow = Project(
-        name: projectName,
-        description: desc,
-        folderName: Uuid().v7(),
-        options: options.id!);
+      name: projectName,
+      description: desc,
+      folderName: Uuid().v7(),
+      options: options.id!,
+    );
     var project = await Project.db.insertRow(session, projectRow);
 
     var settings = await SettingsService().getSettings(session);
@@ -77,12 +85,13 @@ class ProjectService {
         where: (t) => t.id.equals(project.options),
       );
 
-      if(project.active && project.pid != null && project.pid! > 0) {
-        await sl<ProcessService>().terminateProcess(session, project.pid!);
+      if (project.active && project.pid != null && project.pid! > 0) {
+        await processService.terminateProcess(session, project.pid!);
       }
       var settings = await SettingsService().getSettings(session);
-      Directory("${settings.projectDir}/${project.folderName}")
-          .delete(recursive: true);
+      Directory(
+        "${settings.projectDir}/${project.folderName}",
+      ).delete(recursive: true);
       session.log("Project deleted with ID: $id", level: LogLevel.info);
     }
   }
@@ -103,8 +112,10 @@ class ProjectService {
       throw FileNotFoundException(message: 'Project not found');
     }
     if (project.genes != null && project.genes!.contains(gene)) {
-      session.log("Gene already exists in project with ID: $id",
-          level: LogLevel.error);
+      session.log(
+        "Gene already exists in project with ID: $id",
+        level: LogLevel.error,
+      );
       throw Exception('Gene already exists in project');
     }
     if (gene.isEmpty || gene == '') {
@@ -117,8 +128,10 @@ class ProjectService {
       await Project.db.updateRow(session, project);
       session.log("Gene added to project with ID: $id", level: LogLevel.info);
     } else {
-      session.log("Gene name contains invalid characters",
-          level: LogLevel.error);
+      session.log(
+        "Gene name contains invalid characters",
+        level: LogLevel.error,
+      );
       throw ArgumentError('Gene name contains invalid characters');
     }
   }
@@ -131,9 +144,14 @@ class ProjectService {
   /// \throws [FileNotFoundException] if the project is not found.
   /// \throws [Exception] if the project does not have any genes.
   Future<void> removeGeneFromProject(
-      Session session, int id, String gene) async {
-    session.log("Removing gene from project with ID: $id",
-        level: LogLevel.info);
+    Session session,
+    int id,
+    String gene,
+  ) async {
+    session.log(
+      "Removing gene from project with ID: $id",
+      level: LogLevel.info,
+    );
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
@@ -145,8 +163,10 @@ class ProjectService {
       }
       project.genes!.remove(gene);
       await Project.db.updateRow(session, project);
-      session.log("Gene removed from project with ID: $id",
-          level: LogLevel.info);
+      session.log(
+        "Gene removed from project with ID: $id",
+        level: LogLevel.info,
+      );
     }
   }
 
@@ -158,9 +178,14 @@ class ProjectService {
   /// \throws [FileNotFoundException] if the project is not found.
   /// \throws [ArgumentError] if any gene is empty or contains invalid characters.
   Future<void> addGenesToProject(
-      Session session, int id, List<String> genes) async {
-    session.log("Adding multiple genes to project with ID: $id",
-        level: LogLevel.info);
+    Session session,
+    int id,
+    List<String> genes,
+  ) async {
+    session.log(
+      "Adding multiple genes to project with ID: $id",
+      level: LogLevel.info,
+    );
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
@@ -172,15 +197,19 @@ class ProjectService {
           throw ArgumentError('Supplied gene empty');
         }
         if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
-          session.log("Gene name contains invalid characters",
-              level: LogLevel.error);
+          session.log(
+            "Gene name contains invalid characters",
+            level: LogLevel.error,
+          );
           throw ArgumentError('Gene name contains invalid characters');
         }
       }
       project.genes = genes;
       await Project.db.updateRow(session, project);
-      session.log("Multiple genes added to project with ID: $id",
-          level: LogLevel.info);
+      session.log(
+        "Multiple genes added to project with ID: $id",
+        level: LogLevel.info,
+      );
     }
   }
 
@@ -190,10 +219,7 @@ class ProjectService {
   /// \returns A list of [Project] objects.
   Future<List<Project>> getProjects(Session session) async {
     session.log("Retrieving all projects", level: LogLevel.info);
-    var projects = await Project.db.find(
-      session,
-      where: (t) => t.id > 0,
-    );
+    var projects = await Project.db.find(session, where: (t) => t.id > 0);
     session.log("Projects retrieved", level: LogLevel.info);
     return projects;
   }
@@ -203,8 +229,10 @@ class ProjectService {
   /// \param session The current session.
   /// \param project The [Project] object to update.
   Future<void> updateProject(Session session, Project project) async {
-    session.log("Updating project with ID: ${project.id}",
-        level: LogLevel.info);
+    session.log(
+      "Updating project with ID: ${project.id}",
+      level: LogLevel.info,
+    );
     await Project.db.updateRow(session, project);
     session.log("Project updated with ID: ${project.id}", level: LogLevel.info);
   }

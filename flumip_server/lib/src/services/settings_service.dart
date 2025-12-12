@@ -1,7 +1,6 @@
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
-
-import '../generated/protocol.dart';
 
 /// A service class for handling settings-related operations.
 class SettingsService {
@@ -15,10 +14,7 @@ class SettingsService {
   Future<Settings> getSettings(Session session) async {
     session.log("Retrieving settings", level: LogLevel.info);
     await _checkAndCreateSettings(session);
-    var settings = await Settings.db.find(
-      session,
-      where: (t) => t.id > 0,
-    );
+    var settings = await Settings.db.find(session, where: (t) => t.id > 0);
     if (settings.isEmpty || settings.length != 1) {
       session.log("Failed to load settings", level: LogLevel.error);
       throw Exception('Failed to load settings');
@@ -39,20 +35,17 @@ class SettingsService {
   ///
   /// \param session The current session.
   Future<void> _checkAndCreateSettings(Session session) async {
-    session.log("Checking and creating settings if necessary",
-        level: LogLevel.info);
-    var settings = await Settings.db.find(
-      session,
-      where: (t) => t.id > 0,
+    session.log(
+      "Checking and creating settings if necessary",
+      level: LogLevel.info,
     );
+    var settings = await Settings.db.find(session, where: (t) => t.id > 0);
     if (settings.isEmpty || settings.length != 1) {
       session.log(
-          "Settings not found or multiple settings found, resetting settings",
-          level: LogLevel.warning);
-      await Settings.db.deleteWhere(
-        session,
-        where: (t) => t.id > 0,
+        "Settings not found or multiple settings found, resetting settings",
+        level: LogLevel.warning,
       );
+      await Settings.db.deleteWhere(session, where: (t) => t.id > 0);
       await Settings.db.insertRow(session, Settings());
       session.log("Settings created successfully", level: LogLevel.info);
     }

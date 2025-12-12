@@ -1,14 +1,18 @@
 import 'dart:io';
+import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
-import '../../service_locator.dart';
-import '../generated/protocol.dart';
 
 class GenomeService {
   GenomeService();
+
+  SettingsService settingsService = sl<SettingsService>();
+  FileService fileService = sl<FileService>();
+  ProcessService processService = sl<ProcessService>();
 
   /// Retrieves the list of genome categories.
   ///
@@ -31,7 +35,9 @@ class GenomeService {
   /// \param category The category to filter genomes by.
   /// \returns A list of genomes in the specified category.
   Future<List<Genome>> getGenomeByCategory(
-      Session session, String category) async {
+    Session session,
+    String category,
+  ) async {
     var allGenomes = await getAllGenomes(session);
     var genomes = <Genome>[];
     for (var genome in allGenomes) {
@@ -40,8 +46,10 @@ class GenomeService {
       }
     }
 
-    session.log('Genomes retrieved by category: $category',
-        level: LogLevel.info);
+    session.log(
+      'Genomes retrieved by category: $category',
+      level: LogLevel.info,
+    );
     return genomes;
   }
 
@@ -91,7 +99,7 @@ class GenomeService {
   /// \param session The current session.
   Future<void> collectGenomes(Session session) async {
     session.log("Collecting genomes", level: LogLevel.info);
-    final settings = await sl.get<SettingsService>().getSettings(session);
+    final settings = await settingsService.getSettings(session);
     var categoryFolder = Directory(settings.genomeDir);
 
     if (!await categoryFolder.exists()) {
@@ -100,8 +108,9 @@ class GenomeService {
     }
 
     for (var category in categoryFolder.listSync().whereType<Directory>()) {
-      for (var genomeFolder
-          in Directory(category.path).listSync().whereType<Directory>()) {
+      for (var genomeFolder in Directory(
+        category.path,
+      ).listSync().whereType<Directory>()) {
         var existingGenome = await _genomeExists(session, genomeFolder.path);
         if (existingGenome != null) {
           await _processGenomeFolder(session, existingGenome, genomeFolder);
@@ -119,26 +128,32 @@ class GenomeService {
   /// \param existingGenome The existing genome data.
   /// \param genomeFolder The genome folder to process.
   Future<void> _processGenomeFolder(
-      Session session, Genome existingGenome, Directory genomeFolder) async {
-    session.log("Processing genome folder: ${genomeFolder.path}",
-        level: LogLevel.info);
+    Session session,
+    Genome existingGenome,
+    Directory genomeFolder,
+  ) async {
+    session.log(
+      "Processing genome folder: ${genomeFolder.path}",
+      level: LogLevel.info,
+    );
     for (var genomeFile in genomeFolder.listSync().whereType<Directory>()) {
       if (genomeFile.path.endsWith("fa")) {
         var faFilesString = Directory(genomeFile.path).listSync().toString();
         if (_containsFaIndexFiles(faFilesString)) {
           existingGenome.indexed = true;
-        }
-        else if (_isIndexing(faFilesString)) {
+        } else if (_isIndexing(faFilesString)) {
           existingGenome.indexing = true;
         }
       } else if (genomeFile.path.endsWith("snp")) {
         await _processSnpFolder(session, existingGenome, genomeFile);
       }
     }
-    existingGenome.size = await sl<FileService>().getDirSize(genomeFolder.path);
+    existingGenome.size = await fileService.getDirSize(genomeFolder.path);
     await Genome.db.updateRow(session, existingGenome);
-    session.log("Genome folder processed: ${genomeFolder.path}",
-        level: LogLevel.info);
+    session.log(
+      "Genome folder processed: ${genomeFolder.path}",
+      level: LogLevel.info,
+    );
   }
 
   /// Processes an SNP folder.
@@ -147,9 +162,14 @@ class GenomeService {
   /// \param existingGenome The existing genome data.
   /// \param snpFolder The SNP folder to process.
   Future<void> _processSnpFolder(
-      Session session, Genome existingGenome, Directory snpFolder) async {
-    session.log("Processing SNP folder: ${snpFolder.path}",
-        level: LogLevel.info);
+    Session session,
+    Genome existingGenome,
+    Directory snpFolder,
+  ) async {
+    session.log(
+      "Processing SNP folder: ${snpFolder.path}",
+      level: LogLevel.info,
+    );
     for (var snpDir in snpFolder.listSync().whereType<Directory>()) {
       var snpFilesString = Directory(snpDir.path).listSync().toString();
       if (_containsSnpFiles(snpFilesString)) {
@@ -159,7 +179,7 @@ class GenomeService {
           tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
           folder: snpDir.path,
           active: true,
-          size: await sl<FileService>().getDirSize(snpDir.path),
+          size: await fileService.getDirSize(snpDir.path),
         );
         var existingSnp = await _snpExists(session, snpDir.path);
         if (existingSnp == null) {
@@ -169,8 +189,10 @@ class GenomeService {
         }
       }
     }
-    session.log("SNP folder processed: ${snpFolder.path}",
-        level: LogLevel.info);
+    session.log(
+      "SNP folder processed: ${snpFolder.path}",
+      level: LogLevel.info,
+    );
   }
 
   /// Creates a new genome from a folder.
@@ -179,9 +201,14 @@ class GenomeService {
   /// \param category The category directory.
   /// \param genomeFolder The genome folder to create the genome from.
   Future<void> _createNewGenome(
-      Session session, Directory category, Directory genomeFolder) async {
-    session.log("Creating new genome from folder: ${genomeFolder.path}",
-        level: LogLevel.info);
+    Session session,
+    Directory category,
+    Directory genomeFolder,
+  ) async {
+    session.log(
+      "Creating new genome from folder: ${genomeFolder.path}",
+      level: LogLevel.info,
+    );
     var genome = Genome(
       name: genomeFolder.path.split('/').last,
       category: category.path.split('/').last,
@@ -195,7 +222,8 @@ class GenomeService {
         if (genomeFile.path.endsWith("fa")) {
           genome.fastaPath = _getFilePath(genomeFile, ".fa");
           if (_containsFaIndexFiles(
-              Directory(genomeFile.path).listSync().toString())) {
+            Directory(genomeFile.path).listSync().toString(),
+          )) {
             genome.indexed = true;
           }
         } else if (genomeFile.path.endsWith("snp")) {
@@ -210,11 +238,13 @@ class GenomeService {
         genome.snp ??= <int>[];
         genome.snp?.add(snpRet.id!);
       }
-      genome.size = await sl<FileService>().getDirSize(genomeFolder.path);
+      genome.size = await fileService.getDirSize(genomeFolder.path);
       await Genome.db.insertRow(session, genome);
     }
-    session.log("New genome created from folder: ${genomeFolder.path}",
-        level: LogLevel.info);
+    session.log(
+      "New genome created from folder: ${genomeFolder.path}",
+      level: LogLevel.info,
+    );
   }
 
   /// Creates SNPs from a folder.
@@ -223,25 +253,33 @@ class GenomeService {
   /// \param snpFolder The SNP folder to create SNPs from.
   /// \returns A list of created SNPs.
   Future<List<Snp>> _createSnpsFromFolder(
-      Session session, Directory snpFolder) async {
-    session.log("Creating SNPs from folder: ${snpFolder.path}",
-        level: LogLevel.info);
+    Session session,
+    Directory snpFolder,
+  ) async {
+    session.log(
+      "Creating SNPs from folder: ${snpFolder.path}",
+      level: LogLevel.info,
+    );
     List<Snp> snps = [];
     for (var snpDir in snpFolder.listSync().whereType<Directory>()) {
       var snpFilesString = Directory(snpDir.path).listSync().toString();
       if (_containsSnpFiles(snpFilesString)) {
-        snps.add(Snp(
-          name: snpDir.path.split('/').last,
-          vcfPath: _getFilePath(snpDir, ".vcf.gz"),
-          tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
-          folder: snpDir.path,
-          active: true,
-          size: await sl<FileService>().getDirSize(snpDir.path),
-        ));
+        snps.add(
+          Snp(
+            name: snpDir.path.split('/').last,
+            vcfPath: _getFilePath(snpDir, ".vcf.gz"),
+            tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
+            folder: snpDir.path,
+            active: true,
+            size: await fileService.getDirSize(snpDir.path),
+          ),
+        );
       }
     }
-    session.log("SNPs created from folder: ${snpFolder.path}",
-        level: LogLevel.info);
+    session.log(
+      "SNPs created from folder: ${snpFolder.path}",
+      level: LogLevel.info,
+    );
     return snps;
   }
 
@@ -294,8 +332,10 @@ class GenomeService {
     session.log("Indexing Fasta for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
     if (genome == null) {
-      session.log("Invalid genome state for indexing with ID: $id",
-          level: LogLevel.error);
+      session.log(
+        "Invalid genome state for indexing with ID: $id",
+        level: LogLevel.error,
+      );
       throw ArgumentError();
     }
     if (genome.indexed) {
@@ -303,26 +343,42 @@ class GenomeService {
       throw ArgumentError();
     }
     if (genome.indexing) {
-      session.log("Genome already indexing with ID: $id",
-          level: LogLevel.error);
+      session.log(
+        "Genome already indexing with ID: $id",
+        level: LogLevel.error,
+      );
       throw ArgumentError();
     }
     if (genome.fastaPath == null) {
-      session.log("Genome has no FASTA file with ID: $id",
-          level: LogLevel.error);
+      session.log(
+        "Genome has no FASTA file with ID: $id",
+        level: LogLevel.error,
+      );
       throw ArgumentError();
     }
 
-    await Process.start("bwa",["index", genome.fastaPath!],
-        workingDirectory: "${genome.path}/fa", runInShell: true);
+    await Process.start(
+      "bwa",
+      ["index", genome.fastaPath!],
+      workingDirectory: "${genome.path}/fa",
+      runInShell: true,
+    );
     genome.indexing = true;
-    genome.indexPID = await sl<ProcessService>()
-        .getProcessPID(session, "bwa", genome.fastaPath!);
+    genome.indexPID = await processService.getProcessPID(
+      session,
+      "bwa",
+      genome.fastaPath!,
+    );
     await Genome.db.updateRow(session, genome);
     await session.serverpod.futureCallWithDelay(
-        'checkIndexProgress', genome, const Duration(minutes: 1));
-    session.log("Indexing started for genome with ID: $id",
-        level: LogLevel.info);
+      'checkIndexProgress',
+      genome,
+      const Duration(minutes: 1),
+    );
+    session.log(
+      "Indexing started for genome with ID: $id",
+      level: LogLevel.info,
+    );
   }
 
   /// Marks the indexing as finished for a genome.
@@ -330,15 +386,15 @@ class GenomeService {
   /// \param session The current session.
   /// \param object The genome object.
   Future<void> indexIsFinished(Session session, object) async {
-    session.log("Indexing finished for genome with ID: ${object.id}",
-        level: LogLevel.info);
-    var faFilesString =
-        Directory(object.path + "/fa").listSync().toString();
+    session.log(
+      "Indexing finished for genome with ID: ${object.id}",
+      level: LogLevel.info,
+    );
+    var faFilesString = Directory(object.path + "/fa").listSync().toString();
     if (_containsFaIndexFiles(faFilesString)) {
       object.indexed = true;
       object.indexResults = 0;
-    }
-    else {
+    } else {
       object.indexed = false;
       object.indexResults = 1;
     }
@@ -346,8 +402,10 @@ class GenomeService {
     object.indexing = false;
     object.indexPID = 0;
     await Genome.db.updateRow(session, object);
-    session.log("Indexing marked as finished for genome with ID: ${object.id}",
-        level: LogLevel.info);
+    session.log(
+      "Indexing marked as finished for genome with ID: ${object.id}",
+      level: LogLevel.info,
+    );
   }
 
   /// Deletes the FASTA index for a genome.
@@ -358,8 +416,10 @@ class GenomeService {
     session.log("Deleting index for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
     if (genome == null || !genome.indexed || genome.indexing) {
-      session.log("Invalid genome state for deleting index with ID: $id",
-          level: LogLevel.error);
+      session.log(
+        "Invalid genome state for deleting index with ID: $id",
+        level: LogLevel.error,
+      );
       throw ArgumentError();
     }
 
@@ -409,8 +469,10 @@ class GenomeService {
   /// \param genomeId The ID of the genome to retrieve SNPs for.
   /// \returns A list of SNPs for the specified genome.
   Future<List<Snp>> getAllSnpForGenome(Session session, int genomeId) async {
-    session.log("Retrieving all SNPs for genome with ID: $genomeId",
-        level: LogLevel.info);
+    session.log(
+      "Retrieving all SNPs for genome with ID: $genomeId",
+      level: LogLevel.info,
+    );
     var genome = await Genome.db.findById(session, genomeId);
     if (genome == null) {
       session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
@@ -448,10 +510,14 @@ class GenomeService {
   /// \param path The path of the genome to check.
   /// \returns The genome if it exists, otherwise null.
   Future<Genome?> _genomeExists(Session session, String path) async {
-    session.log("Checking if genome exists with path: $path",
-        level: LogLevel.info);
-    var genome =
-        await Genome.db.find(session, where: (t) => t.path.equals(path));
+    session.log(
+      "Checking if genome exists with path: $path",
+      level: LogLevel.info,
+    );
+    var genome = await Genome.db.find(
+      session,
+      where: (t) => t.path.equals(path),
+    );
     return genome.isNotEmpty ? genome.first : null;
   }
 
@@ -461,8 +527,10 @@ class GenomeService {
   /// \param path The path of the SNP to check.
   /// \returns The SNP if it exists, otherwise null.
   Future<Snp?> _snpExists(Session session, String path) async {
-    session.log("Checking if SNP exists with path: $path",
-        level: LogLevel.info);
+    session.log(
+      "Checking if SNP exists with path: $path",
+      level: LogLevel.info,
+    );
     var snp = await Snp.db.find(session, where: (t) => t.folder.equals(path));
     return snp.isNotEmpty ? snp.first : null;
   }
