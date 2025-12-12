@@ -1,7 +1,6 @@
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:serverpod/serverpod.dart';
 
-import '../../generated/project.dart';
 import '../../services/project_service.dart';
 
 class UCSCTrackRoute extends Route {
