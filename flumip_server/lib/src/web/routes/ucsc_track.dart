@@ -1,6 +1,7 @@
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+import '../../generated/project.dart';
 import '../../services/project_service.dart';
 
 class UCSCTrackRoute extends Route {
@@ -14,16 +15,16 @@ class UCSCTrackRoute extends Route {
     var projectId = request.pathParameters.get(_idParam);
     session.log(
         'UCSC Track for project $projectId requested by ${request.connectionInfo.remote.address}');
-    var project = await projectService.getProject(session, projectId);
-    if (project.id == null) {
-      session.log("Project ID does not exist: $projectId",
-          level: LogLevel.error);
-      throw ArgumentError('Project id does not exist');
+
+    String track;
+    try {
+      track = await fileService.readFileAsString(session, projectId, "ucsc_track.bed");
+    } catch (e) {
+      return Response.notFound(body: Body.fromString("UCSC track not found"));
     }
 
-    var track = await fileService.readFileAsString(session, projectId, "ucsc_track.bed");
     if (track.isEmpty) {
-      return Response.notFound();
+      return Response.notFound(body: Body.fromString("UCSC track is empty"));
     }
 
     return Response.ok(
