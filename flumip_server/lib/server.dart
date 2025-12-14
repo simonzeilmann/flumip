@@ -15,20 +15,18 @@ import 'src/generated/endpoints.dart';
 
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
-  final pod = Serverpod(
-    args,
-    Protocol(),
-    Endpoints(),
-  );
+  final pod = Serverpod(args, Protocol(), Endpoints());
 
   // If you are using any future calls, they need to be registered here.
   pod.registerFutureCall(
-      CheckMipgenProgressFutureCall(), 'checkMipgenProgress');
+    CheckMipgenProgressFutureCall(),
+    'checkMipgenProgress',
+  );
   pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
 
   // Setup the flutter project server.
   final flutterAppDir = Directory('web/app');
-  final indexHtmlFile = File('web/app/index.html');
+  //final indexHtmlFile = File('web/app/index.html');
 
   if (!flutterAppDir.existsSync()) {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
