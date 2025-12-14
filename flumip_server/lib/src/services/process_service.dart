@@ -12,9 +12,6 @@ import 'package:serverpod/server.dart';
 class ProcessService {
   ProcessService();
 
-  GenomeService genomeService = sl<GenomeService>();
-  ProjectService projectService = sl<ProjectService>();
-
   /// Checks if the process is running for the specified project.
   ///
   /// Throws an [ArgumentError] if the project ID does not exist.
@@ -26,6 +23,8 @@ class ProcessService {
     Session session,
     Project projectModel,
   ) async {
+    ProjectService projectService = sl<ProjectService>();
+
     session.log(
       "Checking if process is running for project ID: ${projectModel.id}",
       level: LogLevel.info,
@@ -76,6 +75,8 @@ class ProcessService {
     Session session,
     Genome genomeModel,
   ) async {
+    GenomeService genomeService = sl<GenomeService>();
+
     session.log(
       "Checking if index process is running for gene ID: ${genomeModel.id}",
       level: LogLevel.info,

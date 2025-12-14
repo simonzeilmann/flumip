@@ -11,8 +11,6 @@ import 'package:uuid/uuid.dart';
 class ProjectService {
   ProjectService();
 
-  ProcessService processService = sl<ProcessService>();
-
   /// Retrieves a project by its ID.
   ///
   /// \param session The current session.
@@ -73,6 +71,8 @@ class ProjectService {
   /// \param id The ID of the project to delete.
   /// \throws [FileNotFoundException] if the project is not found.
   Future<void> deleteProject(Session session, int id) async {
+    ProcessService processService = sl<ProcessService>();
+
     session.log("Deleting project with ID: $id", level: LogLevel.info);
     var project = await Project.db.findById(session, id);
     if (project == null) {

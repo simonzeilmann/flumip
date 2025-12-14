@@ -9,8 +9,6 @@ import 'dart:io';
 class FileService {
   FileService();
 
-  SettingsService settingsService = sl<SettingsService>();
-
   /// Creates a gene file for the specified project.
   ///
   /// \param session The current session.
@@ -22,6 +20,8 @@ class FileService {
     int projectID,
     List<String> genes,
   ) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     session.log(
       "Starting createGeneFile for project ID: $projectID",
       level: LogLevel.info,
@@ -72,6 +72,8 @@ class FileService {
   /// \returns A boolean indicating whether the BED file exists and is larger than 1024 bytes.
   /// \throws [ArgumentError] if the project directory or project ID does not exist.
   Future<bool> checkBedFileExists(Session session, int projectID) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     session.log(
       "Checking if BED file exists for project ID: $projectID",
       level: LogLevel.info,
@@ -158,6 +160,8 @@ class FileService {
   /// \param projectID The ID of the project.
   /// \throws [ArgumentError] if the project ID does not exist.
   Future<void> deleteGeneFile(Session session, int projectID) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     session.log(
       "Starting deleteGeneFile for project ID: $projectID",
       level: LogLevel.info,
@@ -374,6 +378,8 @@ class FileService {
   /// \returns A boolean indicating whether the project directory exists.
   /// \throws [FileNotFoundException] if the project is not found.
   Future<bool> _checkProjectDirectoryExists(Session session, int id) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     session.log(
       "Checking if project directory exists for project ID: $id",
       level: LogLevel.info,
@@ -403,6 +409,7 @@ class FileService {
     Session session,
     int projectID,
   ) async {
+    SettingsService settingsService = sl<SettingsService>();
     session.log(
       "Getting file list for project ID: $projectID",
       level: LogLevel.info,

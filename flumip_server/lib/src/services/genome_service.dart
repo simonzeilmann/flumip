@@ -10,10 +10,6 @@ import 'package:serverpod/server.dart';
 class GenomeService {
   GenomeService();
 
-  SettingsService settingsService = sl<SettingsService>();
-  FileService fileService = sl<FileService>();
-  ProcessService processService = sl<ProcessService>();
-
   /// Retrieves the list of genome categories.
   ///
   /// \param session The current session.
@@ -98,6 +94,8 @@ class GenomeService {
   ///
   /// \param session The current session.
   Future<void> collectGenomes(Session session) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     session.log("Collecting genomes", level: LogLevel.info);
     final settings = await settingsService.getSettings(session);
     var categoryFolder = Directory(settings.genomeDir);
@@ -132,6 +130,8 @@ class GenomeService {
     Genome existingGenome,
     Directory genomeFolder,
   ) async {
+    FileService fileService = sl<FileService>();
+
     session.log(
       "Processing genome folder: ${genomeFolder.path}",
       level: LogLevel.info,
@@ -166,6 +166,8 @@ class GenomeService {
     Genome existingGenome,
     Directory snpFolder,
   ) async {
+    FileService fileService = sl<FileService>();
+
     session.log(
       "Processing SNP folder: ${snpFolder.path}",
       level: LogLevel.info,
@@ -205,6 +207,7 @@ class GenomeService {
     Directory category,
     Directory genomeFolder,
   ) async {
+    FileService fileService = sl<FileService>();
     session.log(
       "Creating new genome from folder: ${genomeFolder.path}",
       level: LogLevel.info,
@@ -256,6 +259,8 @@ class GenomeService {
     Session session,
     Directory snpFolder,
   ) async {
+    FileService fileService = sl<FileService>();
+
     session.log(
       "Creating SNPs from folder: ${snpFolder.path}",
       level: LogLevel.info,
@@ -329,6 +334,8 @@ class GenomeService {
   /// \param session The current session.
   /// \param id The ID of the genome to index.
   Future<void> indexFasta(Session session, int id) async {
+    ProcessService processService = sl<ProcessService>();
+
     session.log("Indexing Fasta for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
     if (genome == null) {

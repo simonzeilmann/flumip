@@ -15,13 +15,6 @@ class MipgenService {
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
   MipgenService();
 
-  ProjectService projectService = sl<ProjectService>();
-  GenomeService genomeService = sl<GenomeService>();
-  SettingsService settingsService = sl<SettingsService>();
-  FileService fileService = sl<FileService>();
-  OptionsService optionsService = sl<OptionsService>();
-  ProcessService processService = sl<ProcessService>();
-
   /// Creates a BED file for the specified project.
   ///
   /// Throws an [ArgumentError] if the project ID does not exist or if no genes are found in the project.
@@ -29,6 +22,11 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectID The ID of the project for which to create the BED file.
   Future<void> createBedFile(Session session, int projectID) async {
+    ProjectService projectService = sl<ProjectService>();
+    GenomeService genomeService = sl<GenomeService>();
+    SettingsService settingsService = sl<SettingsService>();
+    FileService fileService = sl<FileService>();
+
     session.log(
       "Starting createBedFile for project ID: $projectID",
       level: LogLevel.info,
@@ -116,6 +114,12 @@ class MipgenService {
     int projectID,
     bool deleteExcessFiles,
   ) async {
+    GenomeService genomeService = sl<GenomeService>();
+    ProjectService projectService = sl<ProjectService>();
+    SettingsService settingsService = sl<SettingsService>();
+    OptionsService optionsService = sl<OptionsService>();
+    ProcessService processService = sl<ProcessService>();
+
     session.log(
       "Starting generateMips for project ID: $projectID",
       level: LogLevel.info,
@@ -250,6 +254,10 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectModel The project model to update.
   Future<void> mipgenIsFinished(Session session, Project projectModel) async {
+    ProjectService projectService = sl<ProjectService>();
+    SettingsService settingsService = sl<SettingsService>();
+    FileService fileService = sl<FileService>();
+
     final settings = await settingsService.getSettings(session);
     session.log(
       "Finishing MIP generation for project ID: ${projectModel.id}",
@@ -302,6 +310,8 @@ class MipgenService {
   /// \param project The project for which to generate the UCSC track.
   /// \returns A future that completes when the UCSC track generation process is finished.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
+    SettingsService settingsService = sl<SettingsService>();
+
     var settings = await settingsService.getSettings(session);
     var projectDir = "${settings.projectDir}/${project.folderName}";
 
