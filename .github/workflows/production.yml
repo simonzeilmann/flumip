@@ -103,11 +103,11 @@ jobs:
 
       - name: Set api endpoint, https and website name
         run: |
-          sed -i 's/$localhost:8080/${{ variables.PRODUCTION_API_URL }}/' flumip_flutter/lib/main.dart
+          sed -i 's/$localhost:8080/${{ vars.PRODUCTION_API_URL }}/' flumip_flutter/lib/main.dart
           sed -i 's/http/https/' flumip_flutter/lib/main.dart
           sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
           sed -i 's/http:/https:/' flumip_flutter/lib/project/project_tile.dart
-          sed -i 's/localhost:8082/${{ variables.PRODUCTION_URL }}/' flumip_flutter/lib/project/project_tile.dart
+          sed -i 's/localhost:8082/${{ vars.PRODUCTION_URL }}/' flumip_flutter/lib/project/project_tile.dart
 
       - name: Build and inject frontend
         run: |
