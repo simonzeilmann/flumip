@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/genome.dart';
+import 'package:flumip_server/src/generated/project.dart';
+import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
-
-import '../generated/protocol.dart';
-import 'genome_service.dart';
 
 /// Service class for handling process-related operations.
 class ProcessService {
@@ -20,34 +20,46 @@ class ProcessService {
   /// \param projectModel The project model to check.
   /// \returns A boolean indicating whether the process is running.
   Future<bool> checkIfMipgenProcessIsRunning(
-      Session session, Project projectModel) async {
+    Session session,
+    Project projectModel,
+  ) async {
+    ProjectService projectService = sl<ProjectService>();
+
     session.log(
-        "Checking if process is running for project ID: ${projectModel.id}",
-        level: LogLevel.info);
-    var project = await sl<ProjectService>().getProject(session, projectModel.id!);
+      "Checking if process is running for project ID: ${projectModel.id}",
+      level: LogLevel.info,
+    );
+    var project = await projectService.getProject(session, projectModel.id!);
     if (project.id == null) {
-      session.log("Project ID does not exist: ${projectModel.id}",
-          level: LogLevel.error);
+      session.log(
+        "Project ID does not exist: ${projectModel.id}",
+        level: LogLevel.error,
+      );
       throw ArgumentError('Project id does not exist');
     }
     var process = await Process.run("ps", ["-p", project.pid.toString()]);
     if (process.exitCode > 1) {
       session.log(
-          "Error running process check for project ID: ${projectModel.id}",
-          level: LogLevel.error);
+        "Error running process check for project ID: ${projectModel.id}",
+        level: LogLevel.error,
+      );
       //TODO: error handling
       throw ();
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
         if (lines[1].contains("mipgen")) {
-          session.log("Process is running for project ID: ${projectModel.id}",
-              level: LogLevel.info);
+          session.log(
+            "Process is running for project ID: ${projectModel.id}",
+            level: LogLevel.info,
+          );
           return true;
         }
       }
-      session.log("Process is not running for project ID: ${projectModel.id}",
-          level: LogLevel.info);
+      session.log(
+        "Process is not running for project ID: ${projectModel.id}",
+        level: LogLevel.info,
+      );
       return false;
     }
   }
@@ -60,32 +72,46 @@ class ProcessService {
   /// \param geneModel The gene model to check.
   /// \returns A boolean indicating whether the BWA process is running.
   Future<bool> checkIfIndexProcessIsRunning(
-      Session session, Genome genomeModel) async {
+    Session session,
+    Genome genomeModel,
+  ) async {
+    GenomeService genomeService = sl<GenomeService>();
+
     session.log(
-        "Checking if index process is running for gene ID: ${genomeModel.id}",
-        level: LogLevel.info);
-    var genome = await sl<GenomeService>().getGenome(session, genomeModel.id!);
+      "Checking if index process is running for gene ID: ${genomeModel.id}",
+      level: LogLevel.info,
+    );
+    var genome = await genomeService.getGenome(session, genomeModel.id!);
     if (genome.id == null) {
-      session.log("Gene ID does not exist: ${genomeModel.id}",
-          level: LogLevel.error);
+      session.log(
+        "Gene ID does not exist: ${genomeModel.id}",
+        level: LogLevel.error,
+      );
       throw ArgumentError('Gene id does not exist');
     }
     var process = await Process.run("ps", ["-p", genome.indexPID.toString()]);
     if (process.exitCode > 1) {
-      session.log("Error running process check for gene ID: ${genomeModel.id}",
-          level: LogLevel.error);
+      session.log(
+        "Error running process check for gene ID: ${genomeModel.id}",
+        level: LogLevel.error,
+      );
       throw ();
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
-        if (lines[1].contains(genome.indexPID.toString()) && lines[1].contains("bwa")) {
-          session.log("Process is running for gene ID: ${genomeModel.id}",
-              level: LogLevel.info);
+        if (lines[1].contains(genome.indexPID.toString()) &&
+            lines[1].contains("bwa")) {
+          session.log(
+            "Process is running for gene ID: ${genomeModel.id}",
+            level: LogLevel.info,
+          );
           return true;
         }
       }
-      session.log("Process is not running for gene ID: ${genomeModel.id}",
-          level: LogLevel.info);
+      session.log(
+        "Process is not running for gene ID: ${genomeModel.id}",
+        level: LogLevel.info,
+      );
       return false;
     }
   }
@@ -97,9 +123,14 @@ class ProcessService {
   /// \param processSearch The search string to identify the specific process.
   /// \returns The PID of the process.
   Future<int> getProcessPID(
-      Session session, String processName, String processSearch) async {
-    session.log("Getting process PID for process name: $processName",
-        level: LogLevel.info);
+    Session session,
+    String processName,
+    String processSearch,
+  ) async {
+    session.log(
+      "Getting process PID for process name: $processName",
+      level: LogLevel.info,
+    );
     int processPID = 0;
 
     var process = await Process.run("pgrep", ["--list-full", processName]);
@@ -108,8 +139,10 @@ class ProcessService {
       return processPID;
     }
     if (process.exitCode > 1) {
-      session.log("Error running pgrep for process name: $processName",
-          level: LogLevel.error);
+      session.log(
+        "Error running pgrep for process name: $processName",
+        level: LogLevel.error,
+      );
       //TODO: error handling
       throw ();
     } else {
@@ -117,8 +150,10 @@ class ProcessService {
       for (var line in lines) {
         if (line.contains(processSearch)) {
           processPID = int.parse(line.split(" ")[0]);
-          session.log("Found PID $processPID for process name: $processName",
-              level: LogLevel.info);
+          session.log(
+            "Found PID $processPID for process name: $processName",
+            level: LogLevel.info,
+          );
           break;
         }
       }
@@ -131,8 +166,10 @@ class ProcessService {
     session.log("Terminating process with PID: $pid", level: LogLevel.info);
     var process = await Process.run("kill", ["-9", pid.toString()]);
     if (process.exitCode > 1) {
-      session.log("Error terminating process with PID: $pid",
-          level: LogLevel.error);
+      session.log(
+        "Error terminating process with PID: $pid",
+        level: LogLevel.error,
+      );
     }
   }
 }

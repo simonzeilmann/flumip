@@ -4,7 +4,7 @@
 # Supported genomes: hg18, hg19, hg38, hs1.
 #
 # Usage:
-#   ./setup.sh -download [genome1 genome2 ...]
+#   ./setup.sh [-download [genome1 genome2 ...]]
 # If no genome is specified, defaults to hg38.
 
 # Exit immediately if a command exits with a non-zero status.
@@ -18,6 +18,7 @@ NC='\033[0m'  # No Color
 # Default flags.
 DOWNLOAD=false
 GENOMES=()
+SERVICE_USER="www-data"
 
 # Parse command-line arguments.
 while [[ "$#" -gt 0 ]]; do
@@ -49,8 +50,8 @@ echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages.
-echo -e "\n${GREEN}Installing required packages: build-essential, tabix, samtools, bwa, trf, python-is-python3...${NC}\n"
-sudo apt install build-essential tabix samtools bwa trf python-is-python3 -y
+echo -e "\n${GREEN}Installing required packages: build-essential, tabix, samtools, bwa, trf, python-is-python3, acl...${NC}\n"
+sudo apt install build-essential tabix samtools bwa trf python-is-python3 acl -y
 
 # Create the mipgen directory and clone the MIPGEN repository.
 echo -e "\n${GREEN}Creating '/opt/flumip' directory and cloning MIPGEN repository...${NC}\n"
@@ -213,6 +214,26 @@ if $DOWNLOAD; then
       echo -e "${RED}Invalid genome option: $GENOME. Skipping.${NC}"
     fi
   done
+fi
+
+# Set permissions for www-data service user and maintain current user access
+echo -e "\n${GREEN}Setting permissions for service user ${SERVICE_USER}...${NC}\n"
+# Check if www-data user exists
+if id "$SERVICE_USER" &>/dev/null; then
+  # Set group to www-data
+  sudo chgrp -R "$SERVICE_USER" /opt/flumip
+  # Set permissions to allow both owner and group to have full access
+  sudo chmod -R 775 /opt/flumip
+  # Ensure future files created will inherit the group
+  sudo chmod -R g+s /opt/flumip
+  # Optionally add the current user to the www-data group to ensure continued access
+  sudo usermod -a -G "$SERVICE_USER" "$USER"
+  echo -e "${GREEN}Full access granted to ${SERVICE_USER} for /opt/flumip${NC}"
+  echo -e "${GREEN}Current user ${USER} added to ${SERVICE_USER} group${NC}"
+  echo -e "${GREEN}You may need to log out and back in for group changes to take effect${NC}\n"
+else
+  echo -e "${RED}User ${SERVICE_USER} does not exist. Permissions not changed.${NC}\n"
+  exit 1
 fi
 
 echo -e "\n${GREEN}Setup completed successfully for genomes: ${GENOMES[*]}.${NC}\n"

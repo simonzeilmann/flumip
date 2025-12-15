@@ -1,8 +1,9 @@
+import 'dart:io';
+
 import 'package:flumip_server/src/future_calls/check_index_progress_future_call.dart';
 import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
 import 'package:serverpod/serverpod.dart';
 
-import 'package:flumip_server/src/web/routes/root.dart';
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
 
 import 'src/generated/protocol.dart';
@@ -14,26 +15,29 @@ import 'src/generated/endpoints.dart';
 
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
-  final pod = Serverpod(
-    args,
-    Protocol(),
-    Endpoints(),
-  );
+  final pod = Serverpod(args, Protocol(), Endpoints());
 
   // If you are using any future calls, they need to be registered here.
   pod.registerFutureCall(
-      CheckMipgenProgressFutureCall(), 'checkMipgenProgress');
+    CheckMipgenProgressFutureCall(),
+    'checkMipgenProgress',
+  );
   pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
 
-  // Setup a default page at the web root.
-  pod.webServer.addRoute(RouteRoot(), '/');
-  pod.webServer.addRoute(RouteRoot(), '/index.html');
-  // Serve all files in the /static directory.
-  pod.webServer.addRoute(
-    RouteStaticDirectory(serverDirectory: 'static', basePath: '/'),
-    '/*',
-  );
-  pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/*');
+  // Setup the flutter project server.
+  final flutterAppDir = Directory('web/app');
+  final indexHtmlFile = File('web/app/index.html');
+
+  if (!flutterAppDir.existsSync()) {
+    print('Warning: Flutter web app not found at ${flutterAppDir.path}');
+    print('Build your Flutter app and copy it to web/app/');
+  } else {
+    pod.webServer.addRoute(StaticRoute.file(indexHtmlFile), '/');
+
+    pod.webServer.addRoute(FlutterRoute(flutterAppDir), '/**');
+  }
+
+  pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:id');
 
   // Start the server.
   await pod.start();

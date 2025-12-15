@@ -1,33 +1,38 @@
-import 'dart:io';
-
 import 'package:flumip_server/src/services/file_service.dart';
-import 'package:flumip_server/src/web/widgets/default_page_widget.dart';
+import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:flumip_server/service_locator.dart';
 
-import '../../services/project_service.dart';
-
-class UCSCTrackRoute extends WidgetRoute {
-  final projectService = ProjectService();
-  final fileService = FileService();
+class UCSCTrackRoute extends Route {
+  UCSCTrackRoute() : super(methods: {Method.get});
+  final projectService = sl<ProjectService>();
+  final fileService = sl<FileService>();
+  static const _idParam = IntPathParam(#id);
 
   @override
-  Future<Widget> build(Session session, HttpRequest request) async {
-    var requestUrl = request.requestedUri.toString();
-    var projectId = int.tryParse(requestUrl.split('/').last);
+  Future<Result> handleCall(Session session, Request request) async {
+    var projectId = request.pathParameters.get(_idParam);
     session.log(
-        'UCSC Track for project $projectId requested by ${request.remoteIpAddress}');
-    var project = await projectService.getProject(session, projectId!);
-    if (project.id == null) {
-      session.log("Project ID does not exist: $projectId",
-          level: LogLevel.error);
-      throw ArgumentError('Project id does not exist');
+      'UCSC Track for project $projectId requested by ${request.connectionInfo.remote.address}',
+    );
+
+    String track;
+    try {
+      track = await fileService.readFileAsString(
+        session,
+        projectId,
+        "ucsc_track.bed",
+      );
+    } catch (e) {
+      return Response.notFound(body: Body.fromString("UCSC track not found"));
     }
-    var track = await fileService.returnFile(
-        session, projectId, "ucsc_track.bed");
 
-    await track.pipe(request.response);
+    if (track.isEmpty) {
+      return Response.notFound(body: Body.fromString("UCSC track is empty"));
+    }
 
-    //TODO: Rework so no exception gets shot into the ether
-    return DefaultPageWidget();
+    return Response.ok(
+      body: Body.fromString(track, mimeType: MimeType.plainText),
+    );
   }
 }

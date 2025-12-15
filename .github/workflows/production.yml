@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
@@ -45,10 +45,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
@@ -72,16 +72,16 @@ jobs:
         run: |
           cd flumip_server && dart test --tags "unit && action"
 
-  deploy-backend-to-server:
+  deploy-production-to-server:
     runs-on: ubuntu-latest
     needs: unit-tests
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
@@ -101,6 +101,18 @@ jobs:
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
 
+      - name: Set api endpoint, https and website name
+        run: |
+          sed -i 's/$localhost:8080/${{ vars.PRODUCTION_API_URL }}/' flumip_flutter/lib/main.dart
+          sed -i 's/http/https/' flumip_flutter/lib/main.dart
+          sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
+          sed -i 's/http:/https:/' flumip_flutter/lib/project/project_tile.dart
+          sed -i 's/localhost:8082/${{ vars.PRODUCTION_URL }}/' flumip_flutter/lib/project/project_tile.dart
+
+      - name: Build and inject frontend
+        run: |
+          cd flumip_flutter && flutter build web --release --wasm --output ../flumip_server/web/app
+
       - name: Build server
         run: |
           cd flumip_server
@@ -109,16 +121,17 @@ jobs:
           cp -r config app/config
           cp -r migrations app/migrations
           cp -r web app/web
+          cp -r ../deployment app/deployment
 
       - name: Transfer app to remote server
-        uses: appleboy/scp-action@v0.1.1
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           rm: true
           source: "flumip_server/app"
-          target: "~/flumip_production/backend"
+          target: "~/flumip_production"
 
       - name: Execute remote script
         uses: appleboy/ssh-action@v1.2.0
@@ -131,67 +144,9 @@ jobs:
             docker stop postgres_production || true
             docker rm postgres_production || true
             docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5432:5432 --restart unless-stopped postgres:16.3
-            rm -rf /var/www/flumip_production/backend
-            mv ~/flumip_production/backend/flumip_server/app /var/www/flumip_production/backend
-            sudo systemctl daemon-reload
-            sudo systemctl restart flumip_production_backend
-
-  deploy-frontend-to-server:
-    runs-on: ubuntu-latest
-    needs: deploy-backend-to-server
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'oracle' # See 'Supported distributions' for available options
-          java-version: '21'
-
-      - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
-        id: flutter-action
-        with:
-          channel: 'stable'
-
-      - name: Get dependencies
-        run: |
-          cd flumip_server && flutter pub get
-          cd ../flumip_flutter && flutter pub get
-
-      - name: Set api endpoint and website name
-        run: |
-          sed -i 's/$localhost:8080/api.flumip.simonzeilmann.com/' flumip_flutter/lib/main.dart
-          sed -i 's/http/https/' flumip_flutter/lib/main.dart
-          sed -i 's/Flumip Development/Flumip/' flumip_flutter/lib/main.dart
-          sed -i 's/http:/https:/' flumip_flutter/lib/project/project_tile.dart
-          sed -i 's/localhost:8082/app.flumip.simonzeilmann.com/' flumip_flutter/lib/project/project_tile.dart
-
-      - name: Build
-        run: |
-          cd flumip_flutter && flutter build web --release
-
-      - name: Transfer frontend to remote server
-        uses: appleboy/scp-action@v0.1.1
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
-          rm: true
-          source: "flumip_flutter/build/web"
-          target: "~/flumip_production/frontend"
-
-      - name: Execute remote script
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
-          script: |
-            #!/bin/bash
-            rm -rf /var/www/flumip_production/frontend
-            mv ~/flumip_production/frontend /var/www/flumip_production/frontend
-            sudo systemctl daemon-reload
-            sudo systemctl restart flumip_production_frontend
+            rm -rf /var/www/flumip_production
+            mv ~/flumip_production/flumip_server/app /var/www/flumip_production
+            echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_production/deployment/flumip_production.service /etc/systemd/system/
+            echo ${{ secrets.USERPWD }} | sudo -S systemctl enable flumip_production
+            echo ${{ secrets.USERPWD }} | sudo -S systemctl daemon-reload
+            echo ${{ secrets.USERPWD }} | sudo -S systemctl restart flumip_production

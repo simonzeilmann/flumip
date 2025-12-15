@@ -1,0 +1,13 @@
+[Unit]
+Description=Flumip Production
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/flumip_production
+ExecStart=/var/www/flumip_production/server --mode=production --server-id=production --logging=normal --role=monolith
+Restart=always
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

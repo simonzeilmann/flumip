@@ -6,7 +6,6 @@ import 'package:serverpod/server.dart';
 class OptionsService {
   OptionsService();
 
-
   /// Creates a new project options entry.
   ///
   /// \param session The current session.
@@ -23,7 +22,9 @@ class OptionsService {
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
   Future<ProjectOptions> insertProjectOptions(
-      Session session, ProjectOptions options) async {
+    Session session,
+    ProjectOptions options,
+  ) async {
     var projectOptions = await ProjectOptions.db.insertRow(session, options);
     return projectOptions;
   }
@@ -49,7 +50,10 @@ class OptionsService {
   /// \param options The updated [ProjectOptions] object.
   /// \throws [FileNotFoundException] if the project options are not found.
   Future<void> updateProjectOptions(
-      Session session, int id, ProjectOptions options) async {
+    Session session,
+    int id,
+    ProjectOptions options,
+  ) async {
     var projectOptions = await ProjectOptions.db.findById(session, id);
     if (projectOptions == null) {
       throw FileNotFoundException(message: 'Project options not found');

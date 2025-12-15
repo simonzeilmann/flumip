@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
@@ -22,9 +23,9 @@ abstract class Snp implements _i1.SerializableModel {
     required this.active,
     bool? private,
     int? size,
-  })  : description = description ?? '',
-        private = private ?? false,
-        size = size ?? 0;
+  }) : description = description ?? '',
+       private = private ?? false,
+       size = size ?? 0;
 
   factory Snp({
     int? id,
@@ -90,6 +91,7 @@ abstract class Snp implements _i1.SerializableModel {
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Snp',
       if (id != null) 'id': id,
       'name': name,
       'description': description,
@@ -122,16 +124,16 @@ class _SnpImpl extends Snp {
     bool? private,
     int? size,
   }) : super._(
-          id: id,
-          name: name,
-          description: description,
-          vcfPath: vcfPath,
-          tbiPath: tbiPath,
-          folder: folder,
-          active: active,
-          private: private,
-          size: size,
-        );
+         id: id,
+         name: name,
+         description: description,
+         vcfPath: vcfPath,
+         tbiPath: tbiPath,
+         folder: folder,
+         active: active,
+         private: private,
+         size: size,
+       );
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.

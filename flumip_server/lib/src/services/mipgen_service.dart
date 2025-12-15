@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/file_service.dart';
+import 'package:flumip_server/src/services/genome_service.dart';
+import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
-
-import 'file_service.dart';
-import 'genome_service.dart';
-import 'options_service.dart';
 
 /// Service class for handling MIP generation related operations.
 class MipgenService {
@@ -23,63 +22,86 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectID The ID of the project for which to create the BED file.
   Future<void> createBedFile(Session session, int projectID) async {
-    session.log("Starting createBedFile for project ID: $projectID",
-        level: LogLevel.info);
-    var project = await sl<ProjectService>().getProject(session, projectID);
+    ProjectService projectService = sl<ProjectService>();
+    GenomeService genomeService = sl<GenomeService>();
+    SettingsService settingsService = sl<SettingsService>();
+    FileService fileService = sl<FileService>();
+
+    session.log(
+      "Starting createBedFile for project ID: $projectID",
+      level: LogLevel.info,
+    );
+    var project = await projectService.getProject(session, projectID);
     if (project.id == null) {
-      session.log("Project ID does not exist: $projectID",
-          level: LogLevel.error);
+      session.log(
+        "Project ID does not exist: $projectID",
+        level: LogLevel.error,
+      );
       throw ArgumentError('Project id does not exist');
     }
     if (project.genome == null) {
-      session.log("No genome found in project ID: $projectID",
-          level: LogLevel.error);
+      session.log(
+        "No genome found in project ID: $projectID",
+        level: LogLevel.error,
+      );
       throw ArgumentError('No genome found in project');
     }
-    var genome = await sl<GenomeService>().getGenome(session, project.genome!);
+    var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.refPath == null || genome.refPath!.isEmpty) {
-      session.log("No reference path found in genome ID: ${project.genome}",
-          level: LogLevel.error);
+      session.log(
+        "No reference path found in genome ID: ${project.genome}",
+        level: LogLevel.error,
+      );
       throw ArgumentError('No reference path found in genome');
     }
     if (project.genes == null || project.genes!.isEmpty) {
-      session.log("No genes found in project ID: $projectID",
-          level: LogLevel.error);
+      session.log(
+        "No genes found in project ID: $projectID",
+        level: LogLevel.error,
+      );
       throw ArgumentError('No genes found in project');
     }
 
-    var settings = await sl<SettingsService>().getSettings(session);
+    var settings = await settingsService.getSettings(session);
 
     String geneFile = "${settings.projectDir}/${project.folderName}/genes.txt";
     String bedFile = "${settings.projectDir}/${project.folderName}/genes.bed";
     if (await File(geneFile).exists()) {
-      session.log("Gene file exists, deleting: $geneFile",
-          level: LogLevel.warning);
-      await sl<FileService>().deleteGeneFile(session, projectID);
+      session.log(
+        "Gene file exists, deleting: $geneFile",
+        level: LogLevel.warning,
+      );
+      await fileService.deleteGeneFile(session, projectID);
     }
     session.log("Creating gene file: $geneFile", level: LogLevel.info);
-    await sl<FileService>().createGeneFile(session, projectID, project.genes!);
+    await fileService.createGeneFile(session, projectID, project.genes!);
     List<String> arg = [];
     arg.add(geneFile);
     arg.add(genome.refPath!);
 
-    session.log("Running exon extract script with arguments: $arg",
-        level: LogLevel.info);
+    session.log(
+      "Running exon extract script with arguments: $arg",
+      level: LogLevel.info,
+    );
     var process = await Process.run(settings.exonExtractScript, arg);
 
     if (process.exitCode != 0 || process.stdout == "") {
-      session.log("Failed to extract genes for project ID: $projectID",
-          level: LogLevel.error);
+      session.log(
+        "Failed to extract genes for project ID: $projectID",
+        level: LogLevel.error,
+      );
       throw ArgumentError("Genes could not be extracted");
     }
 
     session.log("Writing BED file: $bedFile", level: LogLevel.info);
-    sl<FileService>().writeStringToFile(session, bedFile, process.stdout);
+    fileService.writeStringToFile(session, bedFile, process.stdout);
 
     project.bedFileCreated = true;
-    await sl<ProjectService>().updateProject(session, project);
-    session.log("BED file created successfully for project ID: $projectID",
-        level: LogLevel.info);
+    await projectService.updateProject(session, project);
+    session.log(
+      "BED file created successfully for project ID: $projectID",
+      level: LogLevel.info,
+    );
   }
 
   /// Generates MIPs for the specified project.
@@ -88,24 +110,39 @@ class MipgenService {
   /// \param projectID The ID of the project for which to generate MIPs.
   /// \param deleteExcessFiles Whether to delete excess files after MIP generation.
   Future<void> generateMips(
-      Session session, int projectID, bool deleteExcessFiles) async {
-    session.log("Starting generateMips for project ID: $projectID",
-        level: LogLevel.info);
-    var project = await sl<ProjectService>().getProject(session, projectID);
-    var options =
-        await sl<OptionsService>().getProjectOptions(session, project.options);
+    Session session,
+    int projectID,
+    bool deleteExcessFiles,
+  ) async {
+    GenomeService genomeService = sl<GenomeService>();
+    ProjectService projectService = sl<ProjectService>();
+    SettingsService settingsService = sl<SettingsService>();
+    OptionsService optionsService = sl<OptionsService>();
+    ProcessService processService = sl<ProcessService>();
 
-    var settings = await sl<SettingsService>().getSettings(session);
+    session.log(
+      "Starting generateMips for project ID: $projectID",
+      level: LogLevel.info,
+    );
+    var project = await projectService.getProject(session, projectID);
+    var options = await optionsService.getProjectOptions(
+      session,
+      project.options,
+    );
 
-    var genome = await sl<GenomeService>().getGenome(session, project.genome!);
+    var settings = await settingsService.getSettings(session);
+
+    var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.fastaPath == null || genome.fastaPath!.isEmpty) {
-      session.log("No fasta path found in genome ID: ${project.genome}",
-          level: LogLevel.error);
+      session.log(
+        "No fasta path found in genome ID: ${project.genome}",
+        level: LogLevel.error,
+      );
       throw ArgumentError('No fasta path found in genome');
     }
     Snp? snp;
     if (project.snp != null) {
-      snp = await sl<GenomeService>().getSnp(session, project.snp!);
+      snp = await genomeService.getSnp(session, project.snp!);
     }
 
     List<String> arg = [
@@ -117,7 +154,7 @@ class MipgenService {
       genome.fastaPath!,
       if (snp != null && snp.vcfPath.isNotEmpty && snp.tbiPath.isNotEmpty) ...[
         "-snp_file",
-        snp.vcfPath
+        snp.vcfPath,
       ],
       "-min_capture_size",
       options.minCaptureSize.toString(),
@@ -125,7 +162,7 @@ class MipgenService {
       options.maxCaptureSize.toString(),
       if (options.armLengths!.isNotEmpty) ...[
         "-arm_lengths",
-        options.armLengths!
+        options.armLengths!,
       ],
       "-arm_length_sums",
       options.armLengthSums.toString(),
@@ -177,27 +214,39 @@ class MipgenService {
       "-silent_mode",
       options.silentMode == true ? "on" : "off",
       "-bwa_threads",
-      options.bwaThreads.toString()
+      options.bwaThreads.toString(),
     ];
 
-    session.log("Starting MIP generation process with arguments: $arg",
-        level: LogLevel.info);
-    await Process.start(settings.mipgenExecutable, arg,
-        workingDirectory: "${settings.projectDir}/${project.folderName}",
-        runInShell: true);
+    session.log(
+      "Starting MIP generation process with arguments: $arg",
+      level: LogLevel.info,
+    );
+    await Process.start(
+      settings.mipgenExecutable,
+      arg,
+      workingDirectory: "${settings.projectDir}/${project.folderName}",
+      runInShell: true,
+    );
     project.started = DateTime.now();
     project.active = true;
-    var mipgenPID = await sl<ProcessService>()
-        .getProcessPID(session, "mipgen", "-project_name ${project.name}");
+    var mipgenPID = await processService.getProcessPID(
+      session,
+      "mipgen",
+      "-project_name ${project.name}",
+    );
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;
-    await sl<ProjectService>().updateProject(session, project);
+    await projectService.updateProject(session, project);
     session.log(
-        "MIP generation started with PID: $mipgenPID for project ID: $projectID",
-        level: LogLevel.info);
+      "MIP generation started with PID: $mipgenPID for project ID: $projectID",
+      level: LogLevel.info,
+    );
 
     await session.serverpod.futureCallWithDelay(
-        'checkMipgenProgress', project, const Duration(seconds: 15));
+      'checkMipgenProgress',
+      project,
+      const Duration(seconds: 15),
+    );
   }
 
   /// Marks the MIP generation process as finished for the specified project.
@@ -205,41 +254,54 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectModel The project model to update.
   Future<void> mipgenIsFinished(Session session, Project projectModel) async {
-    final settings = await sl<SettingsService>().getSettings(session);
-    session.log("Finishing MIP generation for project ID: ${projectModel.id}",
-        level: LogLevel.info);
-    var project =
-        await sl<ProjectService>().getProject(session, projectModel.id!);
+    ProjectService projectService = sl<ProjectService>();
+    SettingsService settingsService = sl<SettingsService>();
+    FileService fileService = sl<FileService>();
+
+    final settings = await settingsService.getSettings(session);
+    session.log(
+      "Finishing MIP generation for project ID: ${projectModel.id}",
+      level: LogLevel.info,
+    );
+    var project = await projectService.getProject(session, projectModel.id!);
     if (project.id == null) {
-      session.log("Project ID does not exist: ${projectModel.id}",
-          level: LogLevel.error);
+      session.log(
+        "Project ID does not exist: ${projectModel.id}",
+        level: LogLevel.error,
+      );
       throw ArgumentError('Project id does not exist');
     }
 
     if (project.cleanup) {
-      session.log("Deleting byproducts for project ID: ${project.id}",
-          level: LogLevel.info);
-      await sl<FileService>().deleteByproducts(session, project.id!);
+      session.log(
+        "Deleting byproducts for project ID: ${project.id}",
+        level: LogLevel.info,
+      );
+      await fileService.deleteByproducts(session, project.id!);
     }
-    
+
     //TODO: better errors handling
-    var progress =
-        await sl<FileService>().showMipsProgress(session, project.id!);
+    var progress = await fileService.showMipsProgress(session, project.id!);
     if (progress.isEmpty) {
-      session.log("MIP generation failed for project ID: ${project.id}",
-          level: LogLevel.warning);
+      session.log(
+        "MIP generation failed for project ID: ${project.id}",
+        level: LogLevel.warning,
+      );
       project.error = "MIP generation failed";
     } else {
-      project.size = await sl<FileService>()
-          .getDirSize("${settings.projectDir}/${project.folderName!}");
+      project.size = await fileService.getDirSize(
+        "${settings.projectDir}/${project.folderName!}",
+      );
       project.pid = 0;
       project.completedIn = DateTime.now().difference(project.started!);
       await _generateUCSCTrack(session, project);
-      session.log("MIP generation finished for project ID: ${project.id}",
-          level: LogLevel.info);
+      session.log(
+        "MIP generation finished for project ID: ${project.id}",
+        level: LogLevel.info,
+      );
     }
     project.active = false;
-    await sl<ProjectService>().updateProject(session, project);
+    await projectService.updateProject(session, project);
   }
 
   /// Generates a UCSC track for the specified project.
@@ -248,7 +310,9 @@ class MipgenService {
   /// \param project The project for which to generate the UCSC track.
   /// \returns A future that completes when the UCSC track generation process is finished.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
-    var settings = await sl<SettingsService>().getSettings(session);
+    SettingsService settingsService = sl<SettingsService>();
+
+    var settings = await settingsService.getSettings(session);
     var projectDir = "${settings.projectDir}/${project.folderName}";
 
     List<String> arg = [];
@@ -256,14 +320,22 @@ class MipgenService {
     arg.add("$projectDir/${project.name}.picked_mips.txt");
     arg.add("${project.name}_ucsc_track");
 
-    session.log("Starting UCSC track generation process with arguments: $arg",
-        level: LogLevel.info);
-    var process = await Process.run("python", arg,
-        workingDirectory: projectDir, runInShell: true);
+    session.log(
+      "Starting UCSC track generation process with arguments: $arg",
+      level: LogLevel.info,
+    );
+    var process = await Process.run(
+      "python",
+      arg,
+      workingDirectory: projectDir,
+      runInShell: true,
+    );
 
     if (process.exitCode != 0) {
-      session.log("UCSC track generation failed for project ID: ${project.id}",
-          level: LogLevel.error);
+      session.log(
+        "UCSC track generation failed for project ID: ${project.id}",
+        level: LogLevel.error,
+      );
     }
   }
 }

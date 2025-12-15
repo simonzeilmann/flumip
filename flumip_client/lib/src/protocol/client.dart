@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
@@ -123,25 +124,24 @@ class EndpointGenome extends _i1.EndpointRef {
   _i2.Future<void> updateGenome(
     int id,
     _i3.Genome genome,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'genome',
-        'updateGenome',
-        {
-          'id': id,
-          'genome': genome,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'genome',
+    'updateGenome',
+    {
+      'id': id,
+      'genome': genome,
+    },
+  );
 
   /// Collects genomes from the genome directory.
   ///
   /// \param session The current session.
   /// \throws Exception if an error occurs during collection.
   _i2.Future<void> collectGenomes() => caller.callServerEndpoint<void>(
-        'genome',
-        'collectGenomes',
-        {},
-      );
+    'genome',
+    'collectGenomes',
+    {},
+  );
 
   /// Indexes the FA file for the specified genome.
   ///
@@ -149,10 +149,10 @@ class EndpointGenome extends _i1.EndpointRef {
   /// \param id The ID of the genome to index.
   /// \throws Exception if an error occurs during indexing.
   _i2.Future<void> indexGenome(int id) => caller.callServerEndpoint<void>(
-        'genome',
-        'indexGenome',
-        {'id': id},
-      );
+    'genome',
+    'indexGenome',
+    {'id': id},
+  );
 
   /// Deletes the index for the specified genome.
   ///
@@ -160,10 +160,10 @@ class EndpointGenome extends _i1.EndpointRef {
   /// \param id The ID of the genome to delete the index for.
   /// \throws Exception if an error occurs during deletion.
   _i2.Future<void> deleteGenomeIndex(int id) => caller.callServerEndpoint<void>(
-        'genome',
-        'deleteGenomeIndex',
-        {'id': id},
-      );
+    'genome',
+    'deleteGenomeIndex',
+    {'id': id},
+  );
 
   /// Retrieves an SNP by its ID.
   ///
@@ -172,10 +172,10 @@ class EndpointGenome extends _i1.EndpointRef {
   /// \returns The SNP with the specified ID.
   /// \throws Exception if an error occurs during retrieval.
   _i2.Future<_i4.Snp> getSnp(int id) => caller.callServerEndpoint<_i4.Snp>(
-        'genome',
-        'getSnp',
-        {'id': id},
-      );
+    'genome',
+    'getSnp',
+    {'id': id},
+  );
 
   /// Retrieves all SNPs for a specific genome.
   ///
@@ -199,15 +199,14 @@ class EndpointGenome extends _i1.EndpointRef {
   _i2.Future<void> updateSnp(
     int id,
     _i4.Snp snp,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'genome',
-        'updateSnp',
-        {
-          'id': id,
-          'snp': snp,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'genome',
+    'updateSnp',
+    {
+      'id': id,
+      'snp': snp,
+    },
+  );
 
   /// Retrieves all genome categories.
   ///
@@ -235,16 +234,16 @@ class EndpointGenome extends _i1.EndpointRef {
       );
 
   _i2.Future<void> indexFasta(int id) => caller.callServerEndpoint<void>(
-        'genome',
-        'indexFasta',
-        {'id': id},
-      );
+    'genome',
+    'indexFasta',
+    {'id': id},
+  );
 
   _i2.Future<void> deleteFastaIndex(int id) => caller.callServerEndpoint<void>(
-        'genome',
-        'deleteFastaIndex',
-        {'id': id},
-      );
+    'genome',
+    'deleteFastaIndex',
+    {'id': id},
+  );
 }
 
 /// Endpoint for handling MIP generation-related operations.
@@ -274,15 +273,14 @@ class EndpointMipgen extends _i1.EndpointRef {
   _i2.Future<void> generateMips(
     int projectID,
     bool deleteExcessFiles,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'generateMips',
-        {
-          'projectID': projectID,
-          'deleteExcessFiles': deleteExcessFiles,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'mipgen',
+    'generateMips',
+    {
+      'projectID': projectID,
+      'deleteExcessFiles': deleteExcessFiles,
+    },
+  );
 }
 
 /// Endpoint for handling project options-related operations.
@@ -310,12 +308,12 @@ class EndpointOptions extends _i1.EndpointRef {
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
   _i2.Future<_i5.ProjectOptions> insertProjectOptions(
-          _i5.ProjectOptions options) =>
-      caller.callServerEndpoint<_i5.ProjectOptions>(
-        'options',
-        'insertProjectOptions',
-        {'options': options},
-      );
+    _i5.ProjectOptions options,
+  ) => caller.callServerEndpoint<_i5.ProjectOptions>(
+    'options',
+    'insertProjectOptions',
+    {'options': options},
+  );
 
   /// Retrieves project options by ID.
   ///
@@ -337,15 +335,14 @@ class EndpointOptions extends _i1.EndpointRef {
   _i2.Future<void> updateProjectOptions(
     int id,
     _i5.ProjectOptions options,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'options',
-        'updateProjectOptions',
-        {
-          'id': id,
-          'options': options,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'options',
+    'updateProjectOptions',
+    {
+      'id': id,
+      'options': options,
+    },
+  );
 
   /// Deletes project options by ID.
   ///
@@ -378,26 +375,25 @@ class EndpointProject extends _i1.EndpointRef {
     String name,
     _i5.ProjectOptions options, [
     String? description,
-  ]) =>
-      caller.callServerEndpoint<_i6.Project>(
-        'project',
-        'createProject',
-        {
-          'name': name,
-          'options': options,
-          'description': description,
-        },
-      );
+  ]) => caller.callServerEndpoint<_i6.Project>(
+    'project',
+    'createProject',
+    {
+      'name': name,
+      'options': options,
+      'description': description,
+    },
+  );
 
   /// Deletes a project by ID.
   ///
   /// \param session The current session.
   /// \param id The ID of the project to delete.
   _i2.Future<void> deleteProject(int id) => caller.callServerEndpoint<void>(
-        'project',
-        'deleteProject',
-        {'id': id},
-      );
+    'project',
+    'deleteProject',
+    {'id': id},
+  );
 
   /// Retrieves all projects.
   ///
@@ -430,15 +426,14 @@ class EndpointProject extends _i1.EndpointRef {
   _i2.Future<void> addGeneToProject(
     int id,
     String gene,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'addGeneToProject',
-        {
-          'id': id,
-          'gene': gene,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'addGeneToProject',
+    {
+      'id': id,
+      'gene': gene,
+    },
+  );
 
   /// Removes a gene from a project.
   ///
@@ -448,15 +443,14 @@ class EndpointProject extends _i1.EndpointRef {
   _i2.Future<void> removeGeneFromProject(
     int id,
     String gene,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'removeGeneFromProject',
-        {
-          'id': id,
-          'gene': gene,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'removeGeneFromProject',
+    {
+      'id': id,
+      'gene': gene,
+    },
+  );
 
   /// Adds multiple genes to a project.
   ///
@@ -466,15 +460,14 @@ class EndpointProject extends _i1.EndpointRef {
   _i2.Future<void> addGenesToProject(
     int id,
     List<String> genes,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'addGenesToProject',
-        {
-          'id': id,
-          'genes': genes,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'addGenesToProject',
+    {
+      'id': id,
+      'genes': genes,
+    },
+  );
 
   /// Sets the genome for a project by its ID.
   ///
@@ -484,15 +477,14 @@ class EndpointProject extends _i1.EndpointRef {
   _i2.Future<void> setGeneById(
     int id,
     int genomeId,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'setGeneById',
-        {
-          'id': id,
-          'genomeId': genomeId,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'setGeneById',
+    {
+      'id': id,
+      'genomeId': genomeId,
+    },
+  );
 
   /// Sets the SNP for a project by its ID.
   ///
@@ -502,15 +494,14 @@ class EndpointProject extends _i1.EndpointRef {
   _i2.Future<void> setSnpById(
     int id,
     int snpId,
-  ) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'setSnpById',
-        {
-          'id': id,
-          'snpId': snpId,
-        },
-      );
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'setSnpById',
+    {
+      'id': id,
+      'snpId': snpId,
+    },
+  );
 }
 
 /// Endpoint for handling settings-related operations.
@@ -549,28 +540,31 @@ class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
     dynamic securityContext,
-    _i1.AuthenticationKeyManager? authenticationKeyManager,
+    @Deprecated(
+      'Use authKeyProvider instead. This will be removed in future releases.',
+    )
+    super.authenticationKeyManager,
     Duration? streamingConnectionTimeout,
     Duration? connectionTimeout,
     Function(
       _i1.MethodCallContext,
       Object,
       StackTrace,
-    )? onFailedCall,
+    )?
+    onFailedCall,
     Function(_i1.MethodCallContext)? onSucceededCall,
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
-          host,
-          _i8.Protocol(),
-          securityContext: securityContext,
-          authenticationKeyManager: authenticationKeyManager,
-          streamingConnectionTimeout: streamingConnectionTimeout,
-          connectionTimeout: connectionTimeout,
-          onFailedCall: onFailedCall,
-          onSucceededCall: onSucceededCall,
-          disconnectStreamsOnLostInternetConnection:
-              disconnectStreamsOnLostInternetConnection,
-        ) {
+         host,
+         _i8.Protocol(),
+         securityContext: securityContext,
+         streamingConnectionTimeout: streamingConnectionTimeout,
+         connectionTimeout: connectionTimeout,
+         onFailedCall: onFailedCall,
+         onSucceededCall: onSucceededCall,
+         disconnectStreamsOnLostInternetConnection:
+             disconnectStreamsOnLostInternetConnection,
+       ) {
     file = EndpointFile(this);
     genome = EndpointGenome(this);
     mipgen = EndpointMipgen(this);
@@ -593,13 +587,13 @@ class Client extends _i1.ServerpodClientShared {
 
   @override
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
-        'file': file,
-        'genome': genome,
-        'mipgen': mipgen,
-        'options': options,
-        'project': project,
-        'settings': settings,
-      };
+    'file': file,
+    'genome': genome,
+    'mipgen': mipgen,
+    'options': options,
+    'project': project,
+    'settings': settings,
+  };
 
   @override
   Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {};

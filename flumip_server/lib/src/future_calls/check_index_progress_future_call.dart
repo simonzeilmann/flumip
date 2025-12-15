@@ -1,9 +1,8 @@
+import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/genome.dart';
+import 'package:flumip_server/src/services/genome_service.dart';
+import 'package:flumip_server/src/services/process_service.dart';
 import 'package:serverpod/serverpod.dart';
-
-import '../../service_locator.dart';
-import '../generated/protocol.dart';
-import '../services/genome_service.dart';
-import '../services/process_service.dart';
 
 class CheckIndexProgressFutureCall extends FutureCall<Genome> {
   final processService = sl<ProcessService>();

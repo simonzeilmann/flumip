@@ -287,6 +287,7 @@ class _GenomeTabState extends State<GenomeTab> {
                   Expanded(
                     child: Center(
                       child: Column(
+                        spacing: 10,
                         children: [
                           Text("Details for ${selectedGenome!.name}:",
                               style: Theme.of(context).textTheme.titleLarge),
@@ -305,7 +306,6 @@ class _GenomeTabState extends State<GenomeTab> {
                               );
                             },
                           ),
-                          Text('Active'),
                           if (selectedGenome!.indexing)
                             Text("Indexing: ${selectedGenome!.indexing}...")
                           else

@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
@@ -33,29 +34,33 @@ abstract class Settings implements _i1.SerializableModel {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
-  })  : baseDir = baseDir ?? '/opt/flumip',
-        projectDir = projectDir ?? '/opt/flumip/projects',
-        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
-        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
-        toolsDir = toolsDir ?? '/opt/flumip/tools',
-        mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
-        exonExtractScript = exonExtractScript ??
-            '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
-        ucscTrackGenerator = ucscTrackGenerator ??
-            '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
-        binCreationScript = binCreationScript ??
-            '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
-        bigGenePredToGenePredExecutable = bigGenePredToGenePredExecutable ??
-            '/opt/flumip/tools/bigGenePredToGenePred',
-        mailActive = mailActive ?? false,
-        smtpServer = smtpServer ?? '',
-        smtpPort = smtpPort ?? 25,
-        smtpUser = smtpUser ?? '',
-        smtpPassword = smtpPassword ?? '',
-        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
-        startTLS = startTLS ?? true,
-        loginRequired = loginRequired ?? false,
-        settingsPassword = settingsPassword ?? 'changeme';
+  }) : baseDir = baseDir ?? '/opt/flumip',
+       projectDir = projectDir ?? '/opt/flumip/projects',
+       genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
+       customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
+       toolsDir = toolsDir ?? '/opt/flumip/tools',
+       mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
+       exonExtractScript =
+           exonExtractScript ??
+           '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
+       ucscTrackGenerator =
+           ucscTrackGenerator ??
+           '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
+       binCreationScript =
+           binCreationScript ??
+           '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
+       bigGenePredToGenePredExecutable =
+           bigGenePredToGenePredExecutable ??
+           '/opt/flumip/tools/bigGenePredToGenePred',
+       mailActive = mailActive ?? false,
+       smtpServer = smtpServer ?? '',
+       smtpPort = smtpPort ?? 25,
+       smtpUser = smtpUser ?? '',
+       smtpPassword = smtpPassword ?? '',
+       smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
+       startTLS = startTLS ?? true,
+       loginRequired = loginRequired ?? false,
+       settingsPassword = settingsPassword ?? 'changeme';
 
   factory Settings({
     int? id,
@@ -177,6 +182,7 @@ abstract class Settings implements _i1.SerializableModel {
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Settings',
       if (id != null) 'id': id,
       'baseDir': baseDir,
       'projectDir': projectDir,
@@ -231,27 +237,27 @@ class _SettingsImpl extends Settings {
     bool? loginRequired,
     String? settingsPassword,
   }) : super._(
-          id: id,
-          baseDir: baseDir,
-          projectDir: projectDir,
-          genomeDir: genomeDir,
-          customSnpDir: customSnpDir,
-          toolsDir: toolsDir,
-          mipgenExecutable: mipgenExecutable,
-          exonExtractScript: exonExtractScript,
-          ucscTrackGenerator: ucscTrackGenerator,
-          binCreationScript: binCreationScript,
-          bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
-          mailActive: mailActive,
-          smtpServer: smtpServer,
-          smtpPort: smtpPort,
-          smtpUser: smtpUser,
-          smtpPassword: smtpPassword,
-          smtpFrom: smtpFrom,
-          startTLS: startTLS,
-          loginRequired: loginRequired,
-          settingsPassword: settingsPassword,
-        );
+         id: id,
+         baseDir: baseDir,
+         projectDir: projectDir,
+         genomeDir: genomeDir,
+         customSnpDir: customSnpDir,
+         toolsDir: toolsDir,
+         mipgenExecutable: mipgenExecutable,
+         exonExtractScript: exonExtractScript,
+         ucscTrackGenerator: ucscTrackGenerator,
+         binCreationScript: binCreationScript,
+         bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
+         mailActive: mailActive,
+         smtpServer: smtpServer,
+         smtpPort: smtpPort,
+         smtpUser: smtpUser,
+         smtpPassword: smtpPassword,
+         smtpFrom: smtpFrom,
+         startTLS: startTLS,
+         loginRequired: loginRequired,
+         settingsPassword: settingsPassword,
+       );
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
@@ -290,7 +296,8 @@ class _SettingsImpl extends Settings {
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
       ucscTrackGenerator: ucscTrackGenerator ?? this.ucscTrackGenerator,
       binCreationScript: binCreationScript ?? this.binCreationScript,
-      bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable ??
+      bigGenePredToGenePredExecutable:
+          bigGenePredToGenePredExecutable ??
           this.bigGenePredToGenePredExecutable,
       mailActive: mailActive ?? this.mailActive,
       smtpServer: smtpServer ?? this.smtpServer,

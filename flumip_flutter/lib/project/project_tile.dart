@@ -7,12 +7,12 @@ import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-class Truple {
+class GenomeRange {
   final String name;
   int start;
   int end;
 
-  Truple(this.name, this.start, this.end);
+  GenomeRange(this.name, this.start, this.end);
 }
 
 //ignore: must_be_immutable
@@ -20,11 +20,7 @@ class ProjectTile extends StatefulWidget {
   Project project;
   final VoidCallback onDelete;
 
-  ProjectTile({
-    super.key,
-    required this.project,
-    required this.onDelete,
-  });
+  ProjectTile({super.key, required this.project, required this.onDelete});
 
   @override
   State<ProjectTile> createState() => _ProjectTileState();
@@ -35,8 +31,13 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
   late Genome genome = Genome(name: 'default');
-  late Snp snp =
-      Snp(name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
+  late Snp snp = Snp(
+    name: 'default',
+    vcfPath: '',
+    tbiPath: '',
+    folder: '',
+    active: false,
+  );
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -62,7 +63,12 @@ class _ProjectTileState extends State<ProjectTile> {
       _isExpanded = !_isExpanded;
       genome = Genome(name: 'default');
       snp = Snp(
-          name: 'default', vcfPath: '', tbiPath: '', folder: '', active: false);
+        name: 'default',
+        vcfPath: '',
+        tbiPath: '',
+        folder: '',
+        active: false,
+      );
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -72,8 +78,9 @@ class _ProjectTileState extends State<ProjectTile> {
   Future<void> _reloadProject() async {
     try {
       var projectUpdate = await client.project.getProject(widget.project.id!);
-      final options =
-          await client.options.getProjectOptions(widget.project.options);
+      final options = await client.options.getProjectOptions(
+        widget.project.options,
+      );
       Genome? genomeUpdate;
       if (widget.project.genome != null) {
         genomeUpdate = await client.genome.getGenome(widget.project.genome!);
@@ -105,9 +112,9 @@ class _ProjectTileState extends State<ProjectTile> {
       await _reloadProject();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add gene: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to add gene: $e')));
       }
     }
   }
@@ -118,9 +125,9 @@ class _ProjectTileState extends State<ProjectTile> {
       await _reloadProject();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove gene: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to remove gene: $e')));
       }
     }
   }
@@ -160,9 +167,9 @@ class _ProjectTileState extends State<ProjectTile> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate MIPs: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to generate MIPs: $e')));
       }
     }
   }
@@ -196,11 +203,12 @@ class _ProjectTileState extends State<ProjectTile> {
                   TextButton(
                     onPressed: () async {
                       await Clipboard.setData(
-                              ClipboardData(text: result.join('\n')))
-                          .then((_) {
+                        ClipboardData(text: result.join('\n')),
+                      ).then((_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("MIPs copied to clipboard")));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("MIPs copied to clipboard")),
+                          );
                         }
                       });
                     },
@@ -255,11 +263,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   TextButton(
                     onPressed: () async {
                       await Clipboard.setData(
-                              ClipboardData(text: result.join('\n')))
-                          .then((_) {
+                        ClipboardData(text: result.join('\n')),
+                      ).then((_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Snp MIPs copied to clipboard")));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Snp MIPs copied to clipboard"),
+                            ),
+                          );
                         }
                       });
                     },
@@ -315,14 +326,14 @@ class _ProjectTileState extends State<ProjectTile> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load progress: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load progress: $e')));
       }
     }
   }
 
-  List<Truple> _getGenomeRanges(List<String> ucscTrack) {
+  List<GenomeRange> _getGenomeRanges(List<String> ucscTrack) {
     Set<String> uniqueNames = {};
     for (var line in ucscTrack) {
       if (line.startsWith('chr')) {
@@ -333,9 +344,9 @@ class _ProjectTileState extends State<ProjectTile> {
         }
       }
     }
-    List<Truple> ranges = [];
+    List<GenomeRange> ranges = [];
     for (var name in uniqueNames) {
-      var result = Truple(name, 0x20000000000000, 0);
+      var result = GenomeRange(name, 0x20000000000000, 0);
       for (var line in ucscTrack) {
         if (line.startsWith(name)) {
           var parts = line.split('\t');
@@ -397,7 +408,7 @@ class _ProjectTileState extends State<ProjectTile> {
               content: SingleChildScrollView(
                 child: ListBody(
                   children: result.isEmpty
-                      ? [Text('No USCS Track file found.')]
+                      ? [Text('No UCSC Track file found.')]
                       : [
                           SelectableText.rich(
                             TextSpan(
@@ -416,7 +427,8 @@ class _ProjectTileState extends State<ProjectTile> {
                       var ucscTrack = _generateUCSCTrackUrl(result);
                       if (ucscTrack.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("No UCSC Track found")));
+                          SnackBar(content: Text("No UCSC Track found")),
+                        );
                         return;
                       }
                       if (ucscTrack.length == 1) {
@@ -424,26 +436,31 @@ class _ProjectTileState extends State<ProjectTile> {
                       } else {
                         if (mounted) {
                           showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Select UCSC Track'),
-                                  content: SingleChildScrollView(
-                                    child: ListBody(
-                                      children: ucscTrack.entries
-                                          .map((entry) => TextButton(
-                                                onPressed: () {
-                                                  web.window.open(
-                                                      entry.value, 'new tab');
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: Text(entry.key),
-                                              ))
-                                          .toList(),
-                                    ),
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('Select UCSC Track'),
+                                content: SingleChildScrollView(
+                                  child: ListBody(
+                                    children: ucscTrack.entries
+                                        .map(
+                                          (entry) => TextButton(
+                                            onPressed: () {
+                                              web.window.open(
+                                                entry.value,
+                                                'new tab',
+                                              );
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: Text(entry.key),
+                                          ),
+                                        )
+                                        .toList(),
                                   ),
-                                );
-                              });
+                                ),
+                              );
+                            },
+                          );
                         }
                       }
                     },
@@ -453,11 +470,14 @@ class _ProjectTileState extends State<ProjectTile> {
                   TextButton(
                     onPressed: () async {
                       await Clipboard.setData(
-                              ClipboardData(text: result.join('\n')))
-                          .then((_) {
+                        ClipboardData(text: result.join('\n')),
+                      ).then((_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Snp MIPs copied to clipboard")));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Snp MIPs copied to clipboard"),
+                            ),
+                          );
                         }
                       });
                     },
@@ -568,7 +588,7 @@ class _ProjectTileState extends State<ProjectTile> {
   double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
       (value * pow(10, fractionalDigits)).truncate() /
       pow(10, fractionalDigits);
-  
+
   @override
   Widget build(BuildContext context) {
     bool isScreenWide = MediaQuery.sizeOf(context).width >= 795;
@@ -583,7 +603,8 @@ class _ProjectTileState extends State<ProjectTile> {
           ListTile(
             leading: IconButton(
               icon: Icon(
-                  _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down),
+                _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+              ),
               onPressed: _toggleExpand,
             ),
             title: Text(widget.project.name),
@@ -593,7 +614,8 @@ class _ProjectTileState extends State<ProjectTile> {
               children: <Widget>[
                 Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
                 Text(
-                    '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+                  '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
+                ),
                 IconButton(
                   icon: Icon(Icons.delete),
                   onPressed: _showDeleteConfirmationDialog,
@@ -608,13 +630,9 @@ class _ProjectTileState extends State<ProjectTile> {
                 child: Row(
                   spacing: 10,
                   children: [
-                    Expanded(
-                      child: buildGenomeSelectorColumn(),
-                    ),
-                    Expanded(
-                      child: buildProjectOptionsColumn(),
-                    ),
-                    Expanded(child: buildProjectActionColumn())
+                    Expanded(child: buildGenomeSelectorColumn()),
+                    Expanded(child: buildProjectOptionsColumn()),
+                    Expanded(child: buildProjectActionColumn()),
                   ],
                 ),
               ),
@@ -626,11 +644,11 @@ class _ProjectTileState extends State<ProjectTile> {
                   children: [
                     buildGenomeSelectorColumn(),
                     buildProjectOptionsColumn(),
-                    buildProjectActionColumn()
+                    buildProjectActionColumn(),
                   ],
                 ),
               ),
-            ]
+            ],
         ],
       ),
     );
@@ -650,7 +668,8 @@ class _ProjectTileState extends State<ProjectTile> {
           ),
         ],
         if (widget.project.bedFileCreated == false &&
-            (widget.project.genes == null || widget.project.genes?.isEmpty == true ||
+            (widget.project.genes == null ||
+                widget.project.genes?.isEmpty == true ||
                 widget.project.genome == null)) ...[
           Tooltip(
             message: "Select a genome and add genes to create a BED file.",
@@ -658,7 +677,7 @@ class _ProjectTileState extends State<ProjectTile> {
               onPressed: null,
               child: Text('Create BED File'),
             ),
-          )
+          ),
         ],
         SizedBox(height: 5),
         if (widget.project.bedFileCreated == true &&
@@ -689,10 +708,7 @@ class _ProjectTileState extends State<ProjectTile> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (_errorMessage != null)
-          Text(
-            _errorMessage!,
-            style: TextStyle(color: Colors.red),
-          ),
+          Text(_errorMessage!, style: TextStyle(color: Colors.red)),
         if (widget.project.genome == null) buildGenomeSelector(),
         if (widget.project.genome != null) ...[
           Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -715,7 +731,7 @@ class _ProjectTileState extends State<ProjectTile> {
             Text('loading...'),
           ] else ...[
             Text(snp.name),
-          ]
+          ],
         ],
         SizedBox(height: 10),
         if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
@@ -766,9 +782,11 @@ class _ProjectTileState extends State<ProjectTile> {
                                         ] else if (selectedGenome.indexing) ...[
                                           ListTile(
                                             title: Text(
-                                                "${selectedGenome.name} (indexing)"),
+                                              "${selectedGenome.name} (indexing)",
+                                            ),
                                             subtitle: Text(
-                                                "Genome is currently unavailable"),
+                                              "Genome is currently unavailable",
+                                            ),
                                             onTap: () {
                                               Navigator.of(context).pop();
                                             },
@@ -776,7 +794,8 @@ class _ProjectTileState extends State<ProjectTile> {
                                         ] else ...[
                                           ListTile(
                                             title: Text(
-                                                "${selectedGenome.name} (not indexed)"),
+                                              "${selectedGenome.name} (not indexed)",
+                                            ),
                                             onTap: () {
                                               genome = selectedGenome;
                                               setGenome(selectedGenome.id!);
@@ -784,8 +803,8 @@ class _ProjectTileState extends State<ProjectTile> {
                                               Navigator.of(context).pop();
                                             },
                                           ),
-                                        ]
-                                      ]
+                                        ],
+                                      ],
                                   ],
                                 ),
                               );
@@ -798,10 +817,12 @@ class _ProjectTileState extends State<ProjectTile> {
                     }
                   },
                   items: snapshot.data!
-                      .map((category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ))
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ),
+                      )
                       .toList(),
                 );
               } else {
@@ -838,10 +859,10 @@ class _ProjectTileState extends State<ProjectTile> {
                   }
                 },
                 items: snapshot.data!
-                    .map((snp) => DropdownMenuItem(
-                          value: snp,
-                          child: Text(snp.name),
-                        ))
+                    .map(
+                      (snp) =>
+                          DropdownMenuItem(value: snp, child: Text(snp.name)),
+                    )
                     .toList(),
               );
             } else if (snapshot.hasError) {
@@ -911,7 +932,8 @@ class _ProjectTileState extends State<ProjectTile> {
         Text('Logistic Optimal Score: ${projectOptions.logisticOptimalScore}'),
         Text('SVR Optimal Score: ${projectOptions.svrOptimalScore}'),
         Text(
-            'Logistic Priority Score: ${projectOptions.logisticPriorityScore}'),
+          'Logistic Priority Score: ${projectOptions.logisticPriorityScore}',
+        ),
         Text('SVR Priority Score: ${projectOptions.svrPriorityScore}'),
         SizedBox(height: 5),
       ],
@@ -929,10 +951,7 @@ class _ProjectTileState extends State<ProjectTile> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  gene,
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
+                Text(gene, style: TextStyle(fontStyle: FontStyle.italic)),
                 if (widget.project.bedFileCreated == false)
                   IconButton(
                     icon: Icon(Icons.remove_circle_outline),
@@ -964,8 +983,10 @@ class _ProjectTileState extends State<ProjectTile> {
                   ),
                   filled: true,
                   fillColor: Colors.grey[200],
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 15,
+                  ),
                 ),
                 keyboardType: TextInputType.text,
                 onSubmitted: (value) {
@@ -982,7 +1003,7 @@ class _ProjectTileState extends State<ProjectTile> {
               },
             ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -1008,10 +1029,7 @@ class _ProjectTileState extends State<ProjectTile> {
           ],
         ),
         SizedBox(width: 10),
-        ElevatedButton(
-          onPressed: _generateMips,
-          child: Text('Generate MIPs'),
-        ),
+        ElevatedButton(onPressed: _generateMips, child: Text('Generate MIPs')),
       ],
     );
   }
@@ -1021,10 +1039,7 @@ class _ProjectTileState extends State<ProjectTile> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        ElevatedButton(
-          onPressed: _showProgress,
-          child: Text('Show Progress'),
-        ),
+        ElevatedButton(onPressed: _showProgress, child: Text('Show Progress')),
         SizedBox(height: 10),
       ],
     );
@@ -1038,7 +1053,8 @@ class _ProjectTileState extends State<ProjectTile> {
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
         SizedBox(height: 10),
         Text(
-            'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB'),
+          'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
+        ),
         SizedBox(height: 10),
         ElevatedButton(
           onPressed: _showMipsResult,
@@ -1051,7 +1067,9 @@ class _ProjectTileState extends State<ProjectTile> {
         ),
         SizedBox(height: 10),
         ElevatedButton(
-            onPressed: _showUCSCTrack, child: Text('Show UCSC Track')),
+          onPressed: _showUCSCTrack,
+          child: Text('Show UCSC Track'),
+        ),
         SizedBox(height: 10),
       ],
     );

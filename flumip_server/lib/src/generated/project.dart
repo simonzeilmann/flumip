@@ -7,9 +7,11 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:flumip_server/src/generated/protocol.dart' as _i2;
 
 abstract class Project
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
@@ -35,14 +37,14 @@ abstract class Project
     this.completedIn,
     String? error,
     bool? cleanup,
-  })  : description = description ?? '',
-        created = created ?? DateTime.now(),
-        bedFileCreated = bedFileCreated ?? false,
-        active = active ?? false,
-        size = size ?? 0,
-        emailNotification = emailNotification ?? false,
-        error = error ?? '',
-        cleanup = cleanup ?? false;
+  }) : description = description ?? '',
+       created = created ?? DateTime.now(),
+       bedFileCreated = bedFileCreated ?? false,
+       active = active ?? false,
+       size = size ?? 0,
+       emailNotification = emailNotification ?? false,
+       error = error ?? '',
+       cleanup = cleanup ?? false;
 
   factory Project({
     int? id,
@@ -76,15 +78,17 @@ abstract class Project
       description: jsonSerialization['description'] as String,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
-      tags: (jsonSerialization['tags'] as List?)
-          ?.map((e) => e as String)
-          .toList(),
+      tags: jsonSerialization['tags'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       created: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
-      genes: (jsonSerialization['genes'] as List?)
-          ?.map((e) => e as String)
-          .toList(),
+      genes: jsonSerialization['genes'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['genes'],
+            ),
       bedFileCreated: jsonSerialization['bedFileCreated'] as bool,
       active: jsonSerialization['active'] as bool,
       pid: jsonSerialization['pid'] as int?,
@@ -97,7 +101,8 @@ abstract class Project
       completedIn: jsonSerialization['completedIn'] == null
           ? null
           : _i1.DurationJsonExtension.fromJson(
-              jsonSerialization['completedIn']),
+              jsonSerialization['completedIn'],
+            ),
       error: jsonSerialization['error'] as String,
       cleanup: jsonSerialization['cleanup'] as bool,
     );
@@ -182,6 +187,7 @@ abstract class Project
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Project',
       if (id != null) 'id': id,
       'name': name,
       if (folderName != null) 'folderName': folderName,
@@ -209,6 +215,7 @@ abstract class Project
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
+      '__className__': 'Project',
       if (id != null) 'id': id,
       'name': name,
       'description': description,
@@ -287,28 +294,28 @@ class _ProjectImpl extends Project {
     String? error,
     bool? cleanup,
   }) : super._(
-          id: id,
-          name: name,
-          folderName: folderName,
-          description: description,
-          genome: genome,
-          snp: snp,
-          tags: tags,
-          created: created,
-          owner: owner,
-          department: department,
-          genes: genes,
-          bedFileCreated: bedFileCreated,
-          active: active,
-          pid: pid,
-          size: size,
-          emailNotification: emailNotification,
-          options: options,
-          started: started,
-          completedIn: completedIn,
-          error: error,
-          cleanup: cleanup,
-        );
+         id: id,
+         name: name,
+         folderName: folderName,
+         description: description,
+         genome: genome,
+         snp: snp,
+         tags: tags,
+         created: created,
+         owner: owner,
+         department: department,
+         genes: genes,
+         bedFileCreated: bedFileCreated,
+         active: active,
+         pid: pid,
+         size: size,
+         emailNotification: emailNotification,
+         options: options,
+         started: started,
+         completedIn: completedIn,
+         error: error,
+         cleanup: cleanup,
+       );
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
@@ -348,8 +355,9 @@ class _ProjectImpl extends Project {
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is int? ? department : this.department,
-      genes:
-          genes is List<String>? ? genes : this.genes?.map((e0) => e0).toList(),
+      genes: genes is List<String>?
+          ? genes
+          : this.genes?.map((e0) => e0).toList(),
       bedFileCreated: bedFileCreated ?? this.bedFileCreated,
       active: active ?? this.active,
       pid: pid is int? ? pid : this.pid,
@@ -364,8 +372,118 @@ class _ProjectImpl extends Project {
   }
 }
 
+class ProjectUpdateTable extends _i1.UpdateTable<ProjectTable> {
+  ProjectUpdateTable(super.table);
+
+  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
+    table.name,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> folderName(String? value) => _i1.ColumnValue(
+    table.folderName,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
+    table.description,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> genome(int? value) => _i1.ColumnValue(
+    table.genome,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> snp(int? value) => _i1.ColumnValue(
+    table.snp,
+    value,
+  );
+
+  _i1.ColumnValue<List<String>, List<String>> tags(List<String>? value) =>
+      _i1.ColumnValue(
+        table.tags,
+        value,
+      );
+
+  _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
+      _i1.ColumnValue(
+        table.created,
+        value,
+      );
+
+  _i1.ColumnValue<int, int> owner(int? value) => _i1.ColumnValue(
+    table.owner,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> department(int? value) => _i1.ColumnValue(
+    table.department,
+    value,
+  );
+
+  _i1.ColumnValue<List<String>, List<String>> genes(List<String>? value) =>
+      _i1.ColumnValue(
+        table.genes,
+        value,
+      );
+
+  _i1.ColumnValue<bool, bool> bedFileCreated(bool value) => _i1.ColumnValue(
+    table.bedFileCreated,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
+    table.active,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> pid(int? value) => _i1.ColumnValue(
+    table.pid,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
+    table.size,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> emailNotification(bool value) => _i1.ColumnValue(
+    table.emailNotification,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> options(int value) => _i1.ColumnValue(
+    table.options,
+    value,
+  );
+
+  _i1.ColumnValue<DateTime, DateTime> started(DateTime? value) =>
+      _i1.ColumnValue(
+        table.started,
+        value,
+      );
+
+  _i1.ColumnValue<Duration, Duration> completedIn(Duration? value) =>
+      _i1.ColumnValue(
+        table.completedIn,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> error(String value) => _i1.ColumnValue(
+    table.error,
+    value,
+  );
+
+  _i1.ColumnValue<bool, bool> cleanup(bool value) => _i1.ColumnValue(
+    table.cleanup,
+    value,
+  );
+}
+
 class ProjectTable extends _i1.Table<int?> {
   ProjectTable({super.tableRelation}) : super(tableName: 'project') {
+    updateTable = ProjectUpdateTable(this);
     name = _i1.ColumnString(
       'name',
       this,
@@ -387,7 +505,7 @@ class ProjectTable extends _i1.Table<int?> {
       'snp',
       this,
     );
-    tags = _i1.ColumnSerializable(
+    tags = _i1.ColumnSerializable<List<String>>(
       'tags',
       this,
     );
@@ -404,7 +522,7 @@ class ProjectTable extends _i1.Table<int?> {
       'department',
       this,
     );
-    genes = _i1.ColumnSerializable(
+    genes = _i1.ColumnSerializable<List<String>>(
       'genes',
       this,
     );
@@ -456,6 +574,8 @@ class ProjectTable extends _i1.Table<int?> {
     );
   }
 
+  late final ProjectUpdateTable updateTable;
+
   late final _i1.ColumnString name;
 
   late final _i1.ColumnString folderName;
@@ -466,7 +586,7 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt snp;
 
-  late final _i1.ColumnSerializable tags;
+  late final _i1.ColumnSerializable<List<String>> tags;
 
   late final _i1.ColumnDateTime created;
 
@@ -474,7 +594,7 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt department;
 
-  late final _i1.ColumnSerializable genes;
+  late final _i1.ColumnSerializable<List<String>> genes;
 
   late final _i1.ColumnBool bedFileCreated;
 
@@ -498,28 +618,28 @@ class ProjectTable extends _i1.Table<int?> {
 
   @override
   List<_i1.Column> get columns => [
-        id,
-        name,
-        folderName,
-        description,
-        genome,
-        snp,
-        tags,
-        created,
-        owner,
-        department,
-        genes,
-        bedFileCreated,
-        active,
-        pid,
-        size,
-        emailNotification,
-        options,
-        started,
-        completedIn,
-        error,
-        cleanup,
-      ];
+    id,
+    name,
+    folderName,
+    description,
+    genome,
+    snp,
+    tags,
+    created,
+    owner,
+    department,
+    genes,
+    bedFileCreated,
+    active,
+    pid,
+    size,
+    emailNotification,
+    options,
+    started,
+    completedIn,
+    error,
+    cleanup,
+  ];
 }
 
 class ProjectInclude extends _i1.IncludeObject {
@@ -707,6 +827,46 @@ class ProjectRepository {
     return session.db.updateRow<Project>(
       row,
       columns: columns?.call(Project.t),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates a single [Project] by its [id] with the specified [columnValues].
+  /// Returns the updated row or null if no row with the given id exists.
+  Future<Project?> updateById(
+    _i1.Session session,
+    int id, {
+    required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateById<Project>(
+      id,
+      columnValues: columnValues(Project.t.updateTable),
+      transaction: transaction,
+    );
+  }
+
+  /// Updates all [Project]s matching the [where] expression with the specified [columnValues].
+  /// Returns the list of updated rows.
+  Future<List<Project>> updateWhere(
+    _i1.Session session, {
+    required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
+    required _i1.WhereExpressionBuilder<ProjectTable> where,
+    int? limit,
+    int? offset,
+    _i1.OrderByBuilder<ProjectTable>? orderBy,
+    _i1.OrderByListBuilder<ProjectTable>? orderByList,
+    bool orderDescending = false,
+    _i1.Transaction? transaction,
+  }) async {
+    return session.db.updateWhere<Project>(
+      columnValues: columnValues(Project.t.updateTable),
+      where: where(Project.t),
+      limit: limit,
+      offset: offset,
+      orderBy: orderBy?.call(Project.t),
+      orderByList: orderByList?.call(Project.t),
+      orderDescending: orderDescending,
       transaction: transaction,
     );
   }

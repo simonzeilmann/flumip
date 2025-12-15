@@ -2,13 +2,11 @@
 
 install_env() {
   ENV="$1"
-  sudo mkdir -p /var/www/flumip_${ENV}/backend
-  sudo mkdir -p /var/www/flumip_${ENV}/frontend
-  sudo cp flumip_${ENV}_backend.service /etc/systemd/system/
-  sudo cp flumip_${ENV}_frontend.service /etc/systemd/system/
+  sudo mkdir -p /var/www/flumip_${ENV}
+  # download and extract the latest build
+  sudo cp flumip_${ENV}.service /etc/systemd/system/
   sudo systemctl daemon-reload
-  sudo systemctl enable flumip_${ENV}_backend
-  sudo systemctl enable flumip_${ENV}_frontend
+  sudo systemctl enable flumip_${ENV}
   echo "Setup complete for $ENV."
 }
 

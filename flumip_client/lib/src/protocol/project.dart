@@ -7,9 +7,11 @@
 // ignore_for_file: public_member_api_docs
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
 
 abstract class Project implements _i1.SerializableModel {
   Project._({
@@ -32,14 +34,14 @@ abstract class Project implements _i1.SerializableModel {
     this.completedIn,
     String? error,
     bool? cleanup,
-  })  : description = description ?? '',
-        created = created ?? DateTime.now(),
-        bedFileCreated = bedFileCreated ?? false,
-        active = active ?? false,
-        size = size ?? 0,
-        emailNotification = emailNotification ?? false,
-        error = error ?? '',
-        cleanup = cleanup ?? false;
+  }) : description = description ?? '',
+       created = created ?? DateTime.now(),
+       bedFileCreated = bedFileCreated ?? false,
+       active = active ?? false,
+       size = size ?? 0,
+       emailNotification = emailNotification ?? false,
+       error = error ?? '',
+       cleanup = cleanup ?? false;
 
   factory Project({
     int? id,
@@ -70,15 +72,17 @@ abstract class Project implements _i1.SerializableModel {
       description: jsonSerialization['description'] as String,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
-      tags: (jsonSerialization['tags'] as List?)
-          ?.map((e) => e as String)
-          .toList(),
+      tags: jsonSerialization['tags'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       created: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
-      genes: (jsonSerialization['genes'] as List?)
-          ?.map((e) => e as String)
-          .toList(),
+      genes: jsonSerialization['genes'] == null
+          ? null
+          : _i2.Protocol().deserialize<List<String>>(
+              jsonSerialization['genes'],
+            ),
       bedFileCreated: jsonSerialization['bedFileCreated'] as bool,
       active: jsonSerialization['active'] as bool,
       size: jsonSerialization['size'] as int,
@@ -90,7 +94,8 @@ abstract class Project implements _i1.SerializableModel {
       completedIn: jsonSerialization['completedIn'] == null
           ? null
           : _i1.DurationJsonExtension.fromJson(
-              jsonSerialization['completedIn']),
+              jsonSerialization['completedIn'],
+            ),
       error: jsonSerialization['error'] as String,
       cleanup: jsonSerialization['cleanup'] as bool,
     );
@@ -164,6 +169,7 @@ abstract class Project implements _i1.SerializableModel {
   @override
   Map<String, dynamic> toJson() {
     return {
+      '__className__': 'Project',
       if (id != null) 'id': id,
       'name': name,
       'description': description,
@@ -216,26 +222,26 @@ class _ProjectImpl extends Project {
     String? error,
     bool? cleanup,
   }) : super._(
-          id: id,
-          name: name,
-          description: description,
-          genome: genome,
-          snp: snp,
-          tags: tags,
-          created: created,
-          owner: owner,
-          department: department,
-          genes: genes,
-          bedFileCreated: bedFileCreated,
-          active: active,
-          size: size,
-          emailNotification: emailNotification,
-          options: options,
-          started: started,
-          completedIn: completedIn,
-          error: error,
-          cleanup: cleanup,
-        );
+         id: id,
+         name: name,
+         description: description,
+         genome: genome,
+         snp: snp,
+         tags: tags,
+         created: created,
+         owner: owner,
+         department: department,
+         genes: genes,
+         bedFileCreated: bedFileCreated,
+         active: active,
+         size: size,
+         emailNotification: emailNotification,
+         options: options,
+         started: started,
+         completedIn: completedIn,
+         error: error,
+         cleanup: cleanup,
+       );
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
@@ -272,8 +278,9 @@ class _ProjectImpl extends Project {
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is int? ? department : this.department,
-      genes:
-          genes is List<String>? ? genes : this.genes?.map((e0) => e0).toList(),
+      genes: genes is List<String>?
+          ? genes
+          : this.genes?.map((e0) => e0).toList(),
       bedFileCreated: bedFileCreated ?? this.bedFileCreated,
       active: active ?? this.active,
       size: size ?? this.size,
