@@ -13,16 +13,18 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
 import 'exceptions.dart' as _i3;
-import 'genome.dart' as _i4;
-import 'project.dart' as _i5;
-import 'project_options.dart' as _i6;
-import 'score_method.dart' as _i7;
-import 'settings.dart' as _i8;
-import 'snp.dart' as _i9;
-import 'package:flumip_server/src/generated/genome.dart' as _i10;
-import 'package:flumip_server/src/generated/snp.dart' as _i11;
-import 'package:flumip_server/src/generated/project.dart' as _i12;
+import 'exceptions/BedCreationException.dart' as _i4;
+import 'genome.dart' as _i5;
+import 'project.dart' as _i6;
+import 'project_options.dart' as _i7;
+import 'score_method.dart' as _i8;
+import 'settings.dart' as _i9;
+import 'snp.dart' as _i10;
+import 'package:flumip_server/src/generated/genome.dart' as _i11;
+import 'package:flumip_server/src/generated/snp.dart' as _i12;
+import 'package:flumip_server/src/generated/project.dart' as _i13;
 export 'exceptions.dart';
+export 'exceptions/BedCreationException.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -845,45 +847,52 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i3.GeneExtractionException) {
       return _i3.GeneExtractionException.fromJson(data) as T;
     }
-    if (t == _i4.Genome) {
-      return _i4.Genome.fromJson(data) as T;
+    if (t == _i4.BedCreationException) {
+      return _i4.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i5.Project) {
-      return _i5.Project.fromJson(data) as T;
+    if (t == _i5.Genome) {
+      return _i5.Genome.fromJson(data) as T;
     }
-    if (t == _i6.ProjectOptions) {
-      return _i6.ProjectOptions.fromJson(data) as T;
+    if (t == _i6.Project) {
+      return _i6.Project.fromJson(data) as T;
     }
-    if (t == _i7.ScoreMethod) {
-      return _i7.ScoreMethod.fromJson(data) as T;
+    if (t == _i7.ProjectOptions) {
+      return _i7.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i8.Settings) {
-      return _i8.Settings.fromJson(data) as T;
+    if (t == _i8.ScoreMethod) {
+      return _i8.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i9.Snp) {
-      return _i9.Snp.fromJson(data) as T;
+    if (t == _i9.Settings) {
+      return _i9.Settings.fromJson(data) as T;
+    }
+    if (t == _i10.Snp) {
+      return _i10.Snp.fromJson(data) as T;
     }
     if (t == _i1.getType<_i3.GeneExtractionException?>()) {
       return (data != null ? _i3.GeneExtractionException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i4.Genome?>()) {
-      return (data != null ? _i4.Genome.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i4.BedCreationException?>()) {
+      return (data != null ? _i4.BedCreationException.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i5.Project?>()) {
-      return (data != null ? _i5.Project.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i5.Genome?>()) {
+      return (data != null ? _i5.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i6.ProjectOptions?>()) {
-      return (data != null ? _i6.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.Project?>()) {
+      return (data != null ? _i6.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.ScoreMethod?>()) {
-      return (data != null ? _i7.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.ProjectOptions?>()) {
+      return (data != null ? _i7.ProjectOptions.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.Settings?>()) {
-      return (data != null ? _i8.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.ScoreMethod?>()) {
+      return (data != null ? _i8.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.Snp?>()) {
-      return (data != null ? _i9.Snp.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.Settings?>()) {
+      return (data != null ? _i9.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i10.Snp?>()) {
+      return (data != null ? _i10.Snp.fromJson(data) : null) as T;
     }
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
@@ -906,15 +915,15 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i10.Genome>) {
-      return (data as List).map((e) => deserialize<_i10.Genome>(e)).toList()
+    if (t == List<_i11.Genome>) {
+      return (data as List).map((e) => deserialize<_i11.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i11.Snp>) {
-      return (data as List).map((e) => deserialize<_i11.Snp>(e)).toList() as T;
+    if (t == List<_i12.Snp>) {
+      return (data as List).map((e) => deserialize<_i12.Snp>(e)).toList() as T;
     }
-    if (t == List<_i12.Project>) {
-      return (data as List).map((e) => deserialize<_i12.Project>(e)).toList()
+    if (t == List<_i13.Project>) {
+      return (data as List).map((e) => deserialize<_i13.Project>(e)).toList()
           as T;
     }
     try {
@@ -926,12 +935,13 @@ class Protocol extends _i1.SerializationManagerServer {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i3.GeneExtractionException => 'GeneExtractionException',
-      _i4.Genome => 'Genome',
-      _i5.Project => 'Project',
-      _i6.ProjectOptions => 'ProjectOptions',
-      _i7.ScoreMethod => 'ScoreMethod',
-      _i8.Settings => 'Settings',
-      _i9.Snp => 'Snp',
+      _i4.BedCreationException => 'BedCreationException',
+      _i5.Genome => 'Genome',
+      _i6.Project => 'Project',
+      _i7.ProjectOptions => 'ProjectOptions',
+      _i8.ScoreMethod => 'ScoreMethod',
+      _i9.Settings => 'Settings',
+      _i10.Snp => 'Snp',
       _ => null,
     };
   }
@@ -948,17 +958,19 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (data) {
       case _i3.GeneExtractionException():
         return 'GeneExtractionException';
-      case _i4.Genome():
+      case _i4.BedCreationException():
+        return 'BedCreationException';
+      case _i5.Genome():
         return 'Genome';
-      case _i5.Project():
+      case _i6.Project():
         return 'Project';
-      case _i6.ProjectOptions():
+      case _i7.ProjectOptions():
         return 'ProjectOptions';
-      case _i7.ScoreMethod():
+      case _i8.ScoreMethod():
         return 'ScoreMethod';
-      case _i8.Settings():
+      case _i9.Settings():
         return 'Settings';
-      case _i9.Snp():
+      case _i10.Snp():
         return 'Snp';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -977,23 +989,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'GeneExtractionException') {
       return deserialize<_i3.GeneExtractionException>(data['data']);
     }
+    if (dataClassName == 'BedCreationException') {
+      return deserialize<_i4.BedCreationException>(data['data']);
+    }
     if (dataClassName == 'Genome') {
-      return deserialize<_i4.Genome>(data['data']);
+      return deserialize<_i5.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i5.Project>(data['data']);
+      return deserialize<_i6.Project>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i6.ProjectOptions>(data['data']);
+      return deserialize<_i7.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i7.ScoreMethod>(data['data']);
+      return deserialize<_i8.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i8.Settings>(data['data']);
+      return deserialize<_i9.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i9.Snp>(data['data']);
+      return deserialize<_i10.Snp>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1011,16 +1026,16 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i4.Genome:
-        return _i4.Genome.t;
-      case _i5.Project:
-        return _i5.Project.t;
-      case _i6.ProjectOptions:
-        return _i6.ProjectOptions.t;
-      case _i8.Settings:
-        return _i8.Settings.t;
-      case _i9.Snp:
-        return _i9.Snp.t;
+      case _i5.Genome:
+        return _i5.Genome.t;
+      case _i6.Project:
+        return _i6.Project.t;
+      case _i7.ProjectOptions:
+        return _i7.ProjectOptions.t;
+      case _i9.Settings:
+        return _i9.Settings.t;
+      case _i10.Snp:
+        return _i10.Snp.t;
     }
     return null;
   }

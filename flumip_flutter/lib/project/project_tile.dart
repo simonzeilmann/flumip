@@ -141,10 +141,10 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('BED file created successfully')),
         );
       }
-    } on ArgumentError {
+    } on BedCreationException catch(e){
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ERROR: The supplied genes cannot be found')),
+          SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {

@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/generated/exceptions/BedCreationException.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -13,9 +14,14 @@ class MipgenEndpoint extends Endpoint {
     session.log("Creating BED file for project ID: $projectID",
         level: LogLevel.info);
     try {
-      return mipgenService.createBedFile(session, projectID);
-    } catch (e) {
+      await mipgenService.createBedFile(session, projectID);
+    } on ArgumentError {
       session.log("Error creating BED file for project ID: $projectID",
+          level: LogLevel.error);
+      throw BedCreationException(message: 'Error: The supplied genes cannot be found');
+    }
+    catch (e) {
+      session.log("Unexpected error creating BED file for project ID: $projectID",
           level: LogLevel.error, exception: e);
       rethrow;
     }
