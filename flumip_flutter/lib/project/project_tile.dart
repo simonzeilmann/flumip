@@ -165,7 +165,22 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('MIPs generation started successfully')),
         );
       }
-    } catch (e) {
+    }
+    on FileNotFoundException catch(e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    }
+    on ArgumentException catch(e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    }
+    catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,

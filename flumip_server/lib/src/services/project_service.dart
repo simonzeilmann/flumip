@@ -3,7 +3,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
-import 'package:serverpod/protocol.dart';
+import 'package:serverpod/protocol.dart' hide FileNotFoundException;
 import 'package:serverpod/server.dart';
 import 'package:uuid/uuid.dart';
 

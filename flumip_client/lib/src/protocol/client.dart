@@ -269,7 +269,7 @@ class EndpointMipgen extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  /// \param deleteExcessFiles Whether to delete excess files after generating MIPs.
+  /// \param deleteExcessFiles Whether to delete intermediate files after generating MIPs.
   _i2.Future<void> generateMips(
     int projectID,
     bool deleteExcessFiles,

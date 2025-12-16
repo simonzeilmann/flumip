@@ -7,7 +7,7 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
-import 'package:serverpod/protocol.dart';
+import 'package:serverpod/protocol.dart' hide FileNotFoundException;
 import 'package:serverpod/server.dart';
 
 /// Service class for handling MIP generation related operations.
@@ -37,14 +37,14 @@ class MipgenService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw ArgumentException(message: 'Project id does not exist');
     }
     if (project.genome == null) {
       session.log(
         "No genome found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('No genome found in project');
+      throw ArgumentException(message: 'No genome found in project');
     }
     var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.refPath == null || genome.refPath!.isEmpty) {
@@ -52,14 +52,14 @@ class MipgenService {
         "No reference path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw ArgumentError('No reference path found in genome');
+      throw ArgumentException(message: 'No reference path found in genome');
     }
     if (project.genes == null || project.genes!.isEmpty) {
       session.log(
         "No genes found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('No genes found in project');
+      throw ArgumentException(message: 'No genes found in project');
     }
 
     var settings = await settingsService.getSettings(session);
@@ -90,7 +90,9 @@ class MipgenService {
         "Failed to extract genes for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError("Genes could not be extracted");
+      throw BedCreationException(
+        message: 'Error: The supplied genes cannot be found',
+      );
     }
 
     session.log("Writing BED file: $bedFile", level: LogLevel.info);
@@ -108,7 +110,7 @@ class MipgenService {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project for which to generate MIPs.
-  /// \param deleteExcessFiles Whether to delete excess files after MIP generation.
+  /// \param deleteExcessFiles Whether to delete intermediate files after MIP generation.
   Future<void> generateMips(
     Session session,
     int projectID,
@@ -138,7 +140,7 @@ class MipgenService {
         "No fasta path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw ArgumentError('No fasta path found in genome');
+      throw FileNotFoundException(message: 'No fasta path found in genome');
     }
     Snp? snp;
     if (project.snp != null) {
@@ -269,7 +271,7 @@ class MipgenService {
         "Project ID does not exist: ${projectModel.id}",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw ArgumentException(message: 'Project id does not exist');
     }
 
     if (project.cleanup) {

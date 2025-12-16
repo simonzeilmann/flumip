@@ -12,18 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'exceptions.dart' as _i2;
-import 'exceptions/BedCreationException.dart' as _i3;
-import 'genome.dart' as _i4;
-import 'project.dart' as _i5;
-import 'project_options.dart' as _i6;
-import 'score_method.dart' as _i7;
-import 'settings.dart' as _i8;
-import 'snp.dart' as _i9;
-import 'package:flumip_client/src/protocol/genome.dart' as _i10;
-import 'package:flumip_client/src/protocol/snp.dart' as _i11;
-import 'package:flumip_client/src/protocol/project.dart' as _i12;
+import 'exceptions/ArgumentException.dart' as _i3;
+import 'exceptions/FileNotFoundException.dart' as _i4;
+import 'exceptions/GenomeExceptions/BedCreationException.dart' as _i5;
+import 'genome.dart' as _i6;
+import 'project.dart' as _i7;
+import 'project_options.dart' as _i8;
+import 'score_method.dart' as _i9;
+import 'settings.dart' as _i10;
+import 'snp.dart' as _i11;
+import 'package:flumip_client/src/protocol/genome.dart' as _i12;
+import 'package:flumip_client/src/protocol/snp.dart' as _i13;
+import 'package:flumip_client/src/protocol/project.dart' as _i14;
 export 'exceptions.dart';
-export 'exceptions/BedCreationException.dart';
+export 'exceptions/ArgumentException.dart';
+export 'exceptions/FileNotFoundException.dart';
+export 'exceptions/GenomeExceptions/BedCreationException.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -69,52 +73,65 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i2.GeneExtractionException) {
       return _i2.GeneExtractionException.fromJson(data) as T;
     }
-    if (t == _i3.BedCreationException) {
-      return _i3.BedCreationException.fromJson(data) as T;
+    if (t == _i3.ArgumentException) {
+      return _i3.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i4.Genome) {
-      return _i4.Genome.fromJson(data) as T;
+    if (t == _i4.FileNotFoundException) {
+      return _i4.FileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i5.Project) {
-      return _i5.Project.fromJson(data) as T;
+    if (t == _i5.BedCreationException) {
+      return _i5.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i6.ProjectOptions) {
-      return _i6.ProjectOptions.fromJson(data) as T;
+    if (t == _i6.Genome) {
+      return _i6.Genome.fromJson(data) as T;
     }
-    if (t == _i7.ScoreMethod) {
-      return _i7.ScoreMethod.fromJson(data) as T;
+    if (t == _i7.Project) {
+      return _i7.Project.fromJson(data) as T;
     }
-    if (t == _i8.Settings) {
-      return _i8.Settings.fromJson(data) as T;
+    if (t == _i8.ProjectOptions) {
+      return _i8.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i9.Snp) {
-      return _i9.Snp.fromJson(data) as T;
+    if (t == _i9.ScoreMethod) {
+      return _i9.ScoreMethod.fromJson(data) as T;
+    }
+    if (t == _i10.Settings) {
+      return _i10.Settings.fromJson(data) as T;
+    }
+    if (t == _i11.Snp) {
+      return _i11.Snp.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.GeneExtractionException?>()) {
       return (data != null ? _i2.GeneExtractionException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i3.BedCreationException?>()) {
-      return (data != null ? _i3.BedCreationException.fromJson(data) : null)
+    if (t == _i1.getType<_i3.ArgumentException?>()) {
+      return (data != null ? _i3.ArgumentException.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i4.FileNotFoundException?>()) {
+      return (data != null ? _i4.FileNotFoundException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i4.Genome?>()) {
-      return (data != null ? _i4.Genome.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i5.BedCreationException?>()) {
+      return (data != null ? _i5.BedCreationException.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i5.Project?>()) {
-      return (data != null ? _i5.Project.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.Genome?>()) {
+      return (data != null ? _i6.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i6.ProjectOptions?>()) {
-      return (data != null ? _i6.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.Project?>()) {
+      return (data != null ? _i7.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.ScoreMethod?>()) {
-      return (data != null ? _i7.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.ProjectOptions?>()) {
+      return (data != null ? _i8.ProjectOptions.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.Settings?>()) {
-      return (data != null ? _i8.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.ScoreMethod?>()) {
+      return (data != null ? _i9.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.Snp?>()) {
-      return (data != null ? _i9.Snp.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.Settings?>()) {
+      return (data != null ? _i10.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i11.Snp?>()) {
+      return (data != null ? _i11.Snp.fromJson(data) : null) as T;
     }
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
@@ -137,15 +154,15 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i10.Genome>) {
-      return (data as List).map((e) => deserialize<_i10.Genome>(e)).toList()
+    if (t == List<_i12.Genome>) {
+      return (data as List).map((e) => deserialize<_i12.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i11.Snp>) {
-      return (data as List).map((e) => deserialize<_i11.Snp>(e)).toList() as T;
+    if (t == List<_i13.Snp>) {
+      return (data as List).map((e) => deserialize<_i13.Snp>(e)).toList() as T;
     }
-    if (t == List<_i12.Project>) {
-      return (data as List).map((e) => deserialize<_i12.Project>(e)).toList()
+    if (t == List<_i14.Project>) {
+      return (data as List).map((e) => deserialize<_i14.Project>(e)).toList()
           as T;
     }
     return super.deserialize<T>(data, t);
@@ -154,13 +171,15 @@ class Protocol extends _i1.SerializationManager {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i2.GeneExtractionException => 'GeneExtractionException',
-      _i3.BedCreationException => 'BedCreationException',
-      _i4.Genome => 'Genome',
-      _i5.Project => 'Project',
-      _i6.ProjectOptions => 'ProjectOptions',
-      _i7.ScoreMethod => 'ScoreMethod',
-      _i8.Settings => 'Settings',
-      _i9.Snp => 'Snp',
+      _i3.ArgumentException => 'ArgumentException',
+      _i4.FileNotFoundException => 'FileNotFoundException',
+      _i5.BedCreationException => 'BedCreationException',
+      _i6.Genome => 'Genome',
+      _i7.Project => 'Project',
+      _i8.ProjectOptions => 'ProjectOptions',
+      _i9.ScoreMethod => 'ScoreMethod',
+      _i10.Settings => 'Settings',
+      _i11.Snp => 'Snp',
       _ => null,
     };
   }
@@ -177,19 +196,23 @@ class Protocol extends _i1.SerializationManager {
     switch (data) {
       case _i2.GeneExtractionException():
         return 'GeneExtractionException';
-      case _i3.BedCreationException():
+      case _i3.ArgumentException():
+        return 'ArgumentException';
+      case _i4.FileNotFoundException():
+        return 'FileNotFoundException';
+      case _i5.BedCreationException():
         return 'BedCreationException';
-      case _i4.Genome():
+      case _i6.Genome():
         return 'Genome';
-      case _i5.Project():
+      case _i7.Project():
         return 'Project';
-      case _i6.ProjectOptions():
+      case _i8.ProjectOptions():
         return 'ProjectOptions';
-      case _i7.ScoreMethod():
+      case _i9.ScoreMethod():
         return 'ScoreMethod';
-      case _i8.Settings():
+      case _i10.Settings():
         return 'Settings';
-      case _i9.Snp():
+      case _i11.Snp():
         return 'Snp';
     }
     return null;
@@ -204,26 +227,32 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'GeneExtractionException') {
       return deserialize<_i2.GeneExtractionException>(data['data']);
     }
+    if (dataClassName == 'ArgumentException') {
+      return deserialize<_i3.ArgumentException>(data['data']);
+    }
+    if (dataClassName == 'FileNotFoundException') {
+      return deserialize<_i4.FileNotFoundException>(data['data']);
+    }
     if (dataClassName == 'BedCreationException') {
-      return deserialize<_i3.BedCreationException>(data['data']);
+      return deserialize<_i5.BedCreationException>(data['data']);
     }
     if (dataClassName == 'Genome') {
-      return deserialize<_i4.Genome>(data['data']);
+      return deserialize<_i6.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i5.Project>(data['data']);
+      return deserialize<_i7.Project>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i6.ProjectOptions>(data['data']);
+      return deserialize<_i8.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i7.ScoreMethod>(data['data']);
+      return deserialize<_i9.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i8.Settings>(data['data']);
+      return deserialize<_i10.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i9.Snp>(data['data']);
+      return deserialize<_i11.Snp>(data['data']);
     }
     return super.deserializeByClassName(data);
   }

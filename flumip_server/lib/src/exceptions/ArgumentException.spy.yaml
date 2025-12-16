@@ -1,0 +1,3 @@
+exception: ArgumentException
+fields:
+  message: String
