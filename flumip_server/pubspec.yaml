@@ -1,6 +1,6 @@
 name: flumip_server
-description: Starting point for a Serverpod server.
-# version: 1.0.0
+description: Mipgen automation backend using Serverpod server.
+version: 0.7.0
 # homepage: https://www.example.com
 
 environment:
