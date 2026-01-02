@@ -166,7 +166,7 @@ class _ProjectTileState extends State<ProjectTile> {
         );
       }
     }
-    on FileNotFoundException catch(e) {
+    on FlumipFileNotFoundException catch(e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message)),

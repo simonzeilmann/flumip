@@ -1,0 +1,3 @@
+exception: FlumipFileNotFoundException
+fields:
+  message: String, default= "The specified file was not found."

@@ -7,7 +7,7 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
-import 'package:serverpod/protocol.dart' hide FileNotFoundException;
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 /// Service class for handling MIP generation related operations.
@@ -140,7 +140,7 @@ class MipgenService {
         "No fasta path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw FileNotFoundException(message: 'No fasta path found in genome');
+      throw FlumipFileNotFoundException(message: 'No fasta path found in genome');
     }
     Snp? snp;
     if (project.snp != null) {

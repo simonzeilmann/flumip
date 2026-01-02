@@ -12,34 +12,35 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 
-abstract class FileNotFoundException
+abstract class FlumipFileNotFoundException
     implements
         _i1.SerializableException,
         _i1.SerializableModel,
         _i1.ProtocolSerialization {
-  FileNotFoundException._({required this.message});
+  FlumipFileNotFoundException._({String? message})
+    : message = message ?? 'The specified file was not found.';
 
-  factory FileNotFoundException({required String message}) =
-      _FileNotFoundExceptionImpl;
+  factory FlumipFileNotFoundException({String? message}) =
+      _FlumipFileNotFoundExceptionImpl;
 
-  factory FileNotFoundException.fromJson(
+  factory FlumipFileNotFoundException.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
-    return FileNotFoundException(
+    return FlumipFileNotFoundException(
       message: jsonSerialization['message'] as String,
     );
   }
 
   String message;
 
-  /// Returns a shallow copy of this [FileNotFoundException]
+  /// Returns a shallow copy of this [FlumipFileNotFoundException]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  FileNotFoundException copyWith({String? message});
+  FlumipFileNotFoundException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'FileNotFoundException',
+      '__className__': 'FlumipFileNotFoundException',
       'message': message,
     };
   }
@@ -47,26 +48,26 @@ abstract class FileNotFoundException
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'FileNotFoundException',
+      '__className__': 'FlumipFileNotFoundException',
       'message': message,
     };
   }
 
   @override
   String toString() {
-    return 'FileNotFoundException(message: $message)';
+    return 'FlumipFileNotFoundException(message: $message)';
   }
 }
 
-class _FileNotFoundExceptionImpl extends FileNotFoundException {
-  _FileNotFoundExceptionImpl({required String message})
+class _FlumipFileNotFoundExceptionImpl extends FlumipFileNotFoundException {
+  _FlumipFileNotFoundExceptionImpl({String? message})
     : super._(message: message);
 
-  /// Returns a shallow copy of this [FileNotFoundException]
+  /// Returns a shallow copy of this [FlumipFileNotFoundException]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  FileNotFoundException copyWith({String? message}) {
-    return FileNotFoundException(message: message ?? this.message);
+  FlumipFileNotFoundException copyWith({String? message}) {
+    return FlumipFileNotFoundException(message: message ?? this.message);
   }
 }

@@ -14,7 +14,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
 import 'exceptions.dart' as _i3;
 import 'exceptions/ArgumentException.dart' as _i4;
-import 'exceptions/FileNotFoundException.dart' as _i5;
+import 'exceptions/FlumipFileNotFoundException.dart' as _i5;
 import 'exceptions/GenomeExceptions/BedCreationException.dart' as _i6;
 import 'genome.dart' as _i7;
 import 'project.dart' as _i8;
@@ -27,7 +27,7 @@ import 'package:flumip_server/src/generated/snp.dart' as _i14;
 import 'package:flumip_server/src/generated/project.dart' as _i15;
 export 'exceptions.dart';
 export 'exceptions/ArgumentException.dart';
-export 'exceptions/FileNotFoundException.dart';
+export 'exceptions/FlumipFileNotFoundException.dart';
 export 'exceptions/GenomeExceptions/BedCreationException.dart';
 export 'genome.dart';
 export 'project.dart';
@@ -854,8 +854,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i4.ArgumentException) {
       return _i4.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i5.FileNotFoundException) {
-      return _i5.FileNotFoundException.fromJson(data) as T;
+    if (t == _i5.FlumipFileNotFoundException) {
+      return _i5.FlumipFileNotFoundException.fromJson(data) as T;
     }
     if (t == _i6.BedCreationException) {
       return _i6.BedCreationException.fromJson(data) as T;
@@ -885,8 +885,10 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i4.ArgumentException?>()) {
       return (data != null ? _i4.ArgumentException.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i5.FileNotFoundException?>()) {
-      return (data != null ? _i5.FileNotFoundException.fromJson(data) : null)
+    if (t == _i1.getType<_i5.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _i5.FlumipFileNotFoundException.fromJson(data)
+              : null)
           as T;
     }
     if (t == _i1.getType<_i6.BedCreationException?>()) {
@@ -953,7 +955,7 @@ class Protocol extends _i1.SerializationManagerServer {
     return switch (type) {
       _i3.GeneExtractionException => 'GeneExtractionException',
       _i4.ArgumentException => 'ArgumentException',
-      _i5.FileNotFoundException => 'FileNotFoundException',
+      _i5.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
       _i6.BedCreationException => 'BedCreationException',
       _i7.Genome => 'Genome',
       _i8.Project => 'Project',
@@ -979,8 +981,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'GeneExtractionException';
       case _i4.ArgumentException():
         return 'ArgumentException';
-      case _i5.FileNotFoundException():
-        return 'FileNotFoundException';
+      case _i5.FlumipFileNotFoundException():
+        return 'FlumipFileNotFoundException';
       case _i6.BedCreationException():
         return 'BedCreationException';
       case _i7.Genome():
@@ -1015,8 +1017,8 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'ArgumentException') {
       return deserialize<_i4.ArgumentException>(data['data']);
     }
-    if (dataClassName == 'FileNotFoundException') {
-      return deserialize<_i5.FileNotFoundException>(data['data']);
+    if (dataClassName == 'FlumipFileNotFoundException') {
+      return deserialize<_i5.FlumipFileNotFoundException>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
       return deserialize<_i6.BedCreationException>(data['data']);

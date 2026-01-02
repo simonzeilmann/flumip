@@ -1,7 +1,7 @@
 import 'package:flumip_server/src/generated/exceptions/ArgumentException.dart';
-import 'package:flumip_server/src/generated/exceptions/FileNotFoundException.dart';
 import 'package:flumip_server/src/generated/exceptions/GenomeExceptions/BedCreationException.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Endpoint for handling MIP generation-related operations.

@@ -4,7 +4,7 @@ import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
-import 'package:serverpod/protocol.dart' hide FileNotFoundException;
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 class GenomeService {
@@ -59,7 +59,7 @@ class GenomeService {
     var genome = await Genome.db.findById(session, id);
     if (genome == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
     session.log("Genome retrieved with ID: $id", level: LogLevel.info);
     return genome;
@@ -84,7 +84,7 @@ class GenomeService {
     var genomeToUpdate = await Genome.db.findById(session, id);
     if (genomeToUpdate == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
     await Genome.db.updateRow(session, genome);
     session.log("Genome updated with ID: $id", level: LogLevel.info);
@@ -102,7 +102,7 @@ class GenomeService {
 
     if (!await categoryFolder.exists()) {
       session.log('Genome folder not found', level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome folder not found');
+      throw FlumipFileNotFoundException(message: 'Genome folder not found');
     }
 
     for (var category in categoryFolder.listSync().whereType<Directory>()) {
@@ -455,7 +455,7 @@ class GenomeService {
     var snp = await Snp.db.findById(session, id);
     if (snp == null) {
       session.log("SNP not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'SNP not found');
+      throw FlumipFileNotFoundException(message: 'SNP not found');
     }
     session.log("SNP retrieved with ID: $id", level: LogLevel.info);
     return snp;
@@ -483,7 +483,7 @@ class GenomeService {
     var genome = await Genome.db.findById(session, genomeId);
     if (genome == null) {
       session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
     List<Snp> snps = [];
     for (var snpId in genome.snp!) {
@@ -505,7 +505,7 @@ class GenomeService {
     var snpToUpdate = await Snp.db.findById(session, id);
     if (snpToUpdate == null) {
       session.log("SNP not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'SNP not found');
+      throw FlumipFileNotFoundException(message: 'SNP not found');
     }
     await Snp.db.updateRow(session, snp);
     session.log("SNP updated with ID: $id", level: LogLevel.info);
