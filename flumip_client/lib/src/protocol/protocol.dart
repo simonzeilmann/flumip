@@ -12,9 +12,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'exceptions.dart' as _i2;
-import 'exceptions/ArgumentException.dart' as _i3;
-import 'exceptions/FlumipFileNotFoundException.dart' as _i4;
-import 'exceptions/GenomeExceptions/BedCreationException.dart' as _i5;
+import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i3;
+import 'exceptions/argument_exception.dart' as _i4;
+import 'exceptions/flumip_file_not_found_exception.dart' as _i5;
 import 'genome.dart' as _i6;
 import 'project.dart' as _i7;
 import 'project_options.dart' as _i8;
@@ -25,9 +25,9 @@ import 'package:flumip_client/src/protocol/genome.dart' as _i12;
 import 'package:flumip_client/src/protocol/snp.dart' as _i13;
 import 'package:flumip_client/src/protocol/project.dart' as _i14;
 export 'exceptions.dart';
-export 'exceptions/ArgumentException.dart';
-export 'exceptions/FlumipFileNotFoundException.dart';
-export 'exceptions/GenomeExceptions/BedCreationException.dart';
+export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
+export 'exceptions/argument_exception.dart';
+export 'exceptions/flumip_file_not_found_exception.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -73,14 +73,14 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i2.GeneExtractionException) {
       return _i2.GeneExtractionException.fromJson(data) as T;
     }
-    if (t == _i3.ArgumentException) {
-      return _i3.ArgumentException.fromJson(data) as T;
+    if (t == _i3.BedCreationException) {
+      return _i3.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i4.FlumipFileNotFoundException) {
-      return _i4.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _i4.ArgumentException) {
+      return _i4.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i5.BedCreationException) {
-      return _i5.BedCreationException.fromJson(data) as T;
+    if (t == _i5.FlumipFileNotFoundException) {
+      return _i5.FlumipFileNotFoundException.fromJson(data) as T;
     }
     if (t == _i6.Genome) {
       return _i6.Genome.fromJson(data) as T;
@@ -104,17 +104,17 @@ class Protocol extends _i1.SerializationManager {
       return (data != null ? _i2.GeneExtractionException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i3.ArgumentException?>()) {
-      return (data != null ? _i3.ArgumentException.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i4.FlumipFileNotFoundException?>()) {
-      return (data != null
-              ? _i4.FlumipFileNotFoundException.fromJson(data)
-              : null)
+    if (t == _i1.getType<_i3.BedCreationException?>()) {
+      return (data != null ? _i3.BedCreationException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i5.BedCreationException?>()) {
-      return (data != null ? _i5.BedCreationException.fromJson(data) : null)
+    if (t == _i1.getType<_i4.ArgumentException?>()) {
+      return (data != null ? _i4.ArgumentException.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _i5.FlumipFileNotFoundException.fromJson(data)
+              : null)
           as T;
     }
     if (t == _i1.getType<_i6.Genome?>()) {
@@ -173,9 +173,9 @@ class Protocol extends _i1.SerializationManager {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i2.GeneExtractionException => 'GeneExtractionException',
-      _i3.ArgumentException => 'ArgumentException',
-      _i4.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
-      _i5.BedCreationException => 'BedCreationException',
+      _i3.BedCreationException => 'BedCreationException',
+      _i4.ArgumentException => 'ArgumentException',
+      _i5.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
       _i6.Genome => 'Genome',
       _i7.Project => 'Project',
       _i8.ProjectOptions => 'ProjectOptions',
@@ -198,12 +198,12 @@ class Protocol extends _i1.SerializationManager {
     switch (data) {
       case _i2.GeneExtractionException():
         return 'GeneExtractionException';
-      case _i3.ArgumentException():
-        return 'ArgumentException';
-      case _i4.FlumipFileNotFoundException():
-        return 'FlumipFileNotFoundException';
-      case _i5.BedCreationException():
+      case _i3.BedCreationException():
         return 'BedCreationException';
+      case _i4.ArgumentException():
+        return 'ArgumentException';
+      case _i5.FlumipFileNotFoundException():
+        return 'FlumipFileNotFoundException';
       case _i6.Genome():
         return 'Genome';
       case _i7.Project():
@@ -229,14 +229,14 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'GeneExtractionException') {
       return deserialize<_i2.GeneExtractionException>(data['data']);
     }
+    if (dataClassName == 'BedCreationException') {
+      return deserialize<_i3.BedCreationException>(data['data']);
+    }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i3.ArgumentException>(data['data']);
+      return deserialize<_i4.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i4.FlumipFileNotFoundException>(data['data']);
-    }
-    if (dataClassName == 'BedCreationException') {
-      return deserialize<_i5.BedCreationException>(data['data']);
+      return deserialize<_i5.FlumipFileNotFoundException>(data['data']);
     }
     if (dataClassName == 'Genome') {
       return deserialize<_i6.Genome>(data['data']);

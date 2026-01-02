@@ -1,5 +1,5 @@
-import 'package:flumip_server/src/generated/exceptions/ArgumentException.dart';
-import 'package:flumip_server/src/generated/exceptions/GenomeExceptions/BedCreationException.dart';
+import 'package:flumip_server/src/generated/exceptions/GenomeExceptions/bed_creation_exception.dart';
+import 'package:flumip_server/src/generated/exceptions/argument_exception.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
