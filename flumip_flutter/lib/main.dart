@@ -21,9 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flumip Development',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const MyHomePage(title: 'Flumip'),
     );
   }
@@ -39,7 +37,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-
   Future<String> _appVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
@@ -79,56 +76,56 @@ class MyHomePageState extends State<MyHomePage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Projects', icon: Icon(Icons.folder)),
-              Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns),),
-              Tab(text: 'Settings', icon: Icon(Icons.settings),),
+              Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns)),
+              Tab(text: 'Settings', icon: Icon(Icons.settings)),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [
-            ProjectsTab(),
-            GenomeTab(),
-            SettingsTab(),
-          ],
+          children: [ProjectsTab(), GenomeTab(), SettingsTab()],
         ),
-        bottomNavigationBar:SizedBox(height: 52, child: BottomAppBar(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-            child: Row(
-              children: [
-                // Fill remaining space so version stays at bottom-right
-                const Spacer(),
-                // Clickable GitHub link
-                InkWell(
-                  onTap: _launchGitHub,
-                  child: Semantics(
-                    button: true,
-                    label: 'Open project on GitHub',
-                    child: Text(
-                      'Github: https://github.com/simonzeilmann/flumip',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(decoration: TextDecoration.underline),
+        bottomNavigationBar: SizedBox(
+          height: 52,
+          child: BottomAppBar(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 6.0,
+              ),
+              child: Row(
+                children: [
+                  // Fill remaining space so version stays at bottom-right
+                  const Spacer(),
+                  // Clickable GitHub link
+                  InkWell(
+                    onTap: _launchGitHub,
+                    child: Semantics(
+                      button: true,
+                      label: 'Open project on GitHub',
+                      child: Text(
+                        'Github: https://github.com/simonzeilmann/flumip',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                FutureBuilder<String>(
-                  future: _appVersion(),
-                  builder: (context, snapshot) {
-                    final version = snapshot.data ?? '';
-                    return Text(
-                      version.isNotEmpty ? 'v$version' : '',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    );
-                  },
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  FutureBuilder<String>(
+                    future: _appVersion(),
+                    builder: (context, snapshot) {
+                      final version = snapshot.data ?? '';
+                      return Text(
+                        version.isNotEmpty ? 'v$version' : '',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
