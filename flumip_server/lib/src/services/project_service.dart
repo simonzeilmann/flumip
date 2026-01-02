@@ -3,7 +3,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
-import 'package:serverpod/protocol.dart' hide FileNotFoundException;
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,7 +22,7 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     }
     session.log("Project retrieved with ID: $id", level: LogLevel.info);
     return project;
@@ -77,7 +77,7 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     } else {
       await Project.db.deleteRow(session, project);
       await ProjectOptions.db.deleteWhere(
@@ -109,7 +109,7 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     }
     if (project.genes != null && project.genes!.contains(gene)) {
       session.log(
@@ -155,7 +155,7 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     } else {
       if (project.genes == null) {
         session.log("Project does not have any genes", level: LogLevel.error);
@@ -189,7 +189,7 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     } else {
       for (var gene in genes) {
         if (gene.isEmpty || gene == '') {
@@ -247,12 +247,12 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     }
     var genome = await Genome.db.findById(session, geneId);
     if (genome == null) {
       session.log("Gene not found with ID: $geneId", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Gene not found');
+      throw FlumipFileNotFoundException(message: 'Gene not found');
     }
     project.genome = geneId;
     await Project.db.updateRow(session, project);
@@ -268,12 +268,12 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(message: 'Project not found');
     }
     var snp = await Snp.db.findById(session, snpId);
     if (snp == null) {
       session.log("Snp not found with ID: $snpId", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Snp not found');
+      throw FlumipFileNotFoundException(message: 'Snp not found');
     }
     project.snp = snpId;
     await Project.db.updateRow(session, project);

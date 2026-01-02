@@ -1,3 +1,0 @@
-exception: FileNotFoundException
-fields:
-  message: String
