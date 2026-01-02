@@ -384,7 +384,7 @@
         <entry key="relic">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/relic-0.13.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/relic-0.14.0/lib" />
             </list>
           </value>
         </entry>
@@ -398,49 +398,49 @@
         <entry key="serverpod">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_client">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_client-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_client-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_flutter">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_flutter-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_flutter-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_lints">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_lints-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_lints-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_serialization">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_serialization-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_serialization-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_shared">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_shared-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_shared-3.1.1/lib" />
             </list>
           </value>
         </entry>
         <entry key="serverpod_test">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_test-3.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_test-3.1.1/lib" />
             </list>
           </value>
         </entry>
@@ -602,7 +602,7 @@
         <entry key="watcher">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/watcher-1.1.4/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/watcher-1.2.0/lib" />
             </list>
           </value>
         </entry>
@@ -703,15 +703,15 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/postgres-3.5.9/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/pub_semver-2.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/redis-4.0.0/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/relic-0.13.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/relic-0.14.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/retry-3.1.2/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_client-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_flutter-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_lints-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_serialization-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_shared-3.0.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_test-3.0.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_client-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_flutter-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_lints-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_serialization-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_shared-3.1.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/serverpod_test-3.1.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shelf-1.4.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shelf_packages_handler-3.0.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shelf_static-1.1.3/lib" />
@@ -734,7 +734,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/uuid-4.5.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vector_math-2.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/vm_service-15.0.2/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/watcher-1.1.4/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/watcher-1.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/web-1.1.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/web_socket-1.0.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3/lib" />
