@@ -101,6 +101,11 @@ jobs:
         run: |
           echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
 
+      - name: Extract APP_VERSION
+        run: |
+          export APP_VERSION=$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
       - name: Set api endpoint, https and website name
         run: |
           sed -i 's/$localhost:8080/${{ vars.PRODUCTION_API_URL }}/' flumip_flutter/lib/main.dart
@@ -111,7 +116,7 @@ jobs:
 
       - name: Build and inject frontend
         run: |
-          cd flumip_flutter && flutter build web --release --wasm --output ../flumip_server/web/app
+          cd flumip_flutter && flutter build web --release --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --output ../flumip_server/web/app
 
       - name: Build server
         run: |

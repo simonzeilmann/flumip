@@ -4,11 +4,15 @@ import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 var client = Client('http://$localhost:8080/')
   ..connectivityMonitor = FlutterConnectivityMonitor();
+
+const String appVersion = String.fromEnvironment(
+  'APP_VERSION',
+  defaultValue: 'debug',
+);
 
 void main() {
   runApp(const MyApp());
@@ -38,12 +42,8 @@ class MyHomePage extends StatefulWidget {
 
 class MyHomePageState extends State<MyHomePage> {
   Future<String> _appVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      return info.version;
-    } catch (e) {
-      return '';
-    }
+    // Dart define is available at compile time, so just return it
+    return appVersion;
   }
 
   // Helper to launch the GitHub URL. Uses url_launcher package.
