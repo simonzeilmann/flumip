@@ -11,18 +11,24 @@ class CheckIndexProgressFutureCall extends FutureCall<Genome> {
   @override
   Future<void> invoke(Session session, Genome? object) async {
     session.log(
-        "Checking BWA index progress for gene ID: ${object?.id}",
-        level: LogLevel.info);
+      "Checking BWA index progress for gene ID: ${object?.id}",
+      level: LogLevel.info,
+    );
     if (await processService.checkIfIndexProcessIsRunning(session, object!)) {
       session.log(
-          "BWA index process is still running for gene ID: ${object.id}",
-          level: LogLevel.info);
+        "BWA index process is still running for gene ID: ${object.id}",
+        level: LogLevel.info,
+      );
       await session.serverpod.futureCallWithDelay(
-          'checkIndexProgress', object, const Duration(minutes: 1));
+        'checkIndexProgress',
+        object,
+        const Duration(minutes: 1),
+      );
     } else {
       session.log(
-          "BWA index process has finished for project ID: ${object.id}",
-          level: LogLevel.info);
+        "BWA index process has finished for project ID: ${object.id}",
+        level: LogLevel.info,
+      );
       await geneService.indexIsFinished(session, object);
     }
   }
