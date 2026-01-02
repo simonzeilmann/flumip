@@ -116,7 +116,7 @@ class MyHomePageState extends State<MyHomePage> {
                     builder: (context, snapshot) {
                       final version = snapshot.data ?? '';
                       return Text(
-                        version.isNotEmpty ? 'v$version' : '',
+                        version.isNotEmpty ? 'v: $version' : '',
                         style: Theme.of(context).textTheme.bodySmall,
                       );
                     },
