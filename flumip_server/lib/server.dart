@@ -26,15 +26,12 @@ void run(List<String> args) async {
 
   // Setup the flutter project server.
   final flutterAppDir = Directory('web/app');
-  final indexHtmlFile = File('web/app/index.html');
 
   if (!flutterAppDir.existsSync()) {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
     print('Build your Flutter app and copy it to web/app/');
   } else {
-    pod.webServer.addRoute(StaticRoute.file(indexHtmlFile), '/');
-
-    pod.webServer.addRoute(FlutterRoute(flutterAppDir), '/**');
+    pod.webServer.addRoute(FlutterRoute(flutterAppDir));
   }
 
   pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:id');
