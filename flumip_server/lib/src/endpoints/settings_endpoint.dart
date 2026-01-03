@@ -18,7 +18,11 @@ class SettingsEndpoint extends Endpoint {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
       return settingsService.getSettingsExternal(session, password);
-    } catch (e) {
+    }
+    on ArgumentException {
+      rethrow;
+    }
+    catch (e) {
       session.log("Error retrieving settings",
           level: LogLevel.error, exception: e);
       rethrow;

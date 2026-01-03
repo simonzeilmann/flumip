@@ -26,7 +26,7 @@ class SettingsService {
   Future<Settings> getSettingsExternal(Session session, String password) async {
     var settings = await getSettings(session);
     if (settings.settingsPassword != password) {
-      throw Exception('Invalid password');
+      throw ArgumentException(message: 'Invalid password');
     }
     return settings;
   }

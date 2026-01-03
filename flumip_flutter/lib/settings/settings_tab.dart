@@ -101,7 +101,13 @@ class _SettingsTabState extends State<SettingsTab> {
         _newPasswordController.text = settings.settingsPassword;
         _demoModeNotifier.value = settings.demoMode;
       });
-    } catch (e) {
+    }
+    on ArgumentException catch (e) {
+      setState(() {
+        _errorMessage = e.message;
+      });
+    }
+    catch (e) {
       setState(() {
         _errorMessage = '$e';
       });
