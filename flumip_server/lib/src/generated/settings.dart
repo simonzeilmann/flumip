@@ -16,6 +16,7 @@ abstract class Settings
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   Settings._({
     this.id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -35,7 +36,8 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
-  }) : baseDir = baseDir ?? '/opt/flumip',
+  }) : demoMode = demoMode ?? false,
+       baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
@@ -65,6 +67,7 @@ abstract class Settings
 
   factory Settings({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -89,6 +92,7 @@ abstract class Settings
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
     return Settings(
       id: jsonSerialization['id'] as int?,
+      demoMode: jsonSerialization['demoMode'] as bool,
       baseDir: jsonSerialization['baseDir'] as String,
       projectDir: jsonSerialization['projectDir'] as String,
       genomeDir: jsonSerialization['genomeDir'] as String,
@@ -118,6 +122,8 @@ abstract class Settings
 
   @override
   int? id;
+
+  bool demoMode;
 
   String baseDir;
 
@@ -165,6 +171,7 @@ abstract class Settings
   @_i1.useResult
   Settings copyWith({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -190,6 +197,7 @@ abstract class Settings
     return {
       '__className__': 'Settings',
       if (id != null) 'id': id,
+      'demoMode': demoMode,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -217,6 +225,7 @@ abstract class Settings
     return {
       '__className__': 'Settings',
       if (id != null) 'id': id,
+      'demoMode': demoMode,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -274,6 +283,7 @@ class _Undefined {}
 class _SettingsImpl extends Settings {
   _SettingsImpl({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -295,6 +305,7 @@ class _SettingsImpl extends Settings {
     String? settingsPassword,
   }) : super._(
          id: id,
+         demoMode: demoMode,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
@@ -322,6 +333,7 @@ class _SettingsImpl extends Settings {
   @override
   Settings copyWith({
     Object? id = _Undefined,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -344,6 +356,7 @@ class _SettingsImpl extends Settings {
   }) {
     return Settings(
       id: id is int? ? id : this.id,
+      demoMode: demoMode ?? this.demoMode,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,
@@ -371,6 +384,11 @@ class _SettingsImpl extends Settings {
 
 class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
   SettingsUpdateTable(super.table);
+
+  _i1.ColumnValue<bool, bool> demoMode(bool value) => _i1.ColumnValue(
+    table.demoMode,
+    value,
+  );
 
   _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
     table.baseDir,
@@ -478,6 +496,11 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
 class SettingsTable extends _i1.Table<int?> {
   SettingsTable({super.tableRelation}) : super(tableName: 'settings') {
     updateTable = SettingsUpdateTable(this);
+    demoMode = _i1.ColumnBool(
+      'demoMode',
+      this,
+      hasDefault: true,
+    );
     baseDir = _i1.ColumnString(
       'baseDir',
       this,
@@ -577,6 +600,8 @@ class SettingsTable extends _i1.Table<int?> {
 
   late final SettingsUpdateTable updateTable;
 
+  late final _i1.ColumnBool demoMode;
+
   late final _i1.ColumnString baseDir;
 
   late final _i1.ColumnString projectDir;
@@ -618,6 +643,7 @@ class SettingsTable extends _i1.Table<int?> {
   @override
   List<_i1.Column> get columns => [
     id,
+    demoMode,
     baseDir,
     projectDir,
     genomeDir,

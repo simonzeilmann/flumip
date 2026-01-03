@@ -39,6 +39,7 @@ class _SettingsTabState extends State<SettingsTab> {
   final ValueNotifier<bool> _mailActiveNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _startTLSNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _loginRequiredNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> _demoModeNotifier = ValueNotifier(false);
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _SettingsTabState extends State<SettingsTab> {
     _mailActiveNotifier.dispose();
     _startTLSNotifier.dispose();
     _loginRequiredNotifier.dispose();
+    _demoModeNotifier.dispose();
     _newPasswordController.dispose();
     super.dispose();
   }
@@ -97,6 +99,7 @@ class _SettingsTabState extends State<SettingsTab> {
         _startTLSNotifier.value = settings.startTLS;
         _loginRequiredNotifier.value = settings.loginRequired;
         _newPasswordController.text = settings.settingsPassword;
+        _demoModeNotifier.value = settings.demoMode;
       });
     } catch (e) {
       setState(() {
@@ -128,6 +131,7 @@ class _SettingsTabState extends State<SettingsTab> {
         startTLS: _startTLSNotifier.value,
         loginRequired: _loginRequiredNotifier.value,
         settingsPassword: _newPasswordController.text,
+        demoMode: _demoModeNotifier.value,
       );
 
       await client.settings.updateSettings(settings);
@@ -332,6 +336,24 @@ class _SettingsTabState extends State<SettingsTab> {
                     autocorrect: false,
                     decoration: InputDecoration(labelText: 'New password'),
                     keyboardType: TextInputType.text,
+                  ),
+                  Row(
+                    children: [
+                      ValueListenableBuilder<bool>(
+                        valueListenable: _demoModeNotifier,
+                        builder: (context, value, child) {
+                          return Checkbox(
+                            value: value,
+                            onChanged: (value) {
+                              setState(() {
+                                _demoModeNotifier.value = value!;
+                              });
+                            },
+                          );
+                        },
+                      ),
+                      Text('Demo mode'),
+                    ],
                   ),
                 ],
               ),

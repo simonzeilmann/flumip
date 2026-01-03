@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flumip_server/src/future_calls/check_index_progress_future_call.dart';
 import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
+import 'package:flumip_server/src/future_calls/demo_mode_cleanup.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
@@ -23,6 +24,7 @@ void run(List<String> args) async {
     'checkMipgenProgress',
   );
   pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
+  pod.registerFutureCall(DemoModeCleanup(), 'demoModeCleanup');
 
   // Setup the flutter project server.
   final flutterAppDir = Directory('web/app');

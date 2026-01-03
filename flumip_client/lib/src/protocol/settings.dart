@@ -15,6 +15,7 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 abstract class Settings implements _i1.SerializableModel {
   Settings._({
     this.id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -34,7 +35,8 @@ abstract class Settings implements _i1.SerializableModel {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
-  }) : baseDir = baseDir ?? '/opt/flumip',
+  }) : demoMode = demoMode ?? false,
+       baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
@@ -64,6 +66,7 @@ abstract class Settings implements _i1.SerializableModel {
 
   factory Settings({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -88,6 +91,7 @@ abstract class Settings implements _i1.SerializableModel {
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
     return Settings(
       id: jsonSerialization['id'] as int?,
+      demoMode: jsonSerialization['demoMode'] as bool,
       baseDir: jsonSerialization['baseDir'] as String,
       projectDir: jsonSerialization['projectDir'] as String,
       genomeDir: jsonSerialization['genomeDir'] as String,
@@ -115,6 +119,8 @@ abstract class Settings implements _i1.SerializableModel {
   /// database or if it has been fetched from the database. Otherwise,
   /// the id will be null.
   int? id;
+
+  bool demoMode;
 
   String baseDir;
 
@@ -159,6 +165,7 @@ abstract class Settings implements _i1.SerializableModel {
   @_i1.useResult
   Settings copyWith({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -184,6 +191,7 @@ abstract class Settings implements _i1.SerializableModel {
     return {
       '__className__': 'Settings',
       if (id != null) 'id': id,
+      'demoMode': demoMode,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -217,6 +225,7 @@ class _Undefined {}
 class _SettingsImpl extends Settings {
   _SettingsImpl({
     int? id,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -238,6 +247,7 @@ class _SettingsImpl extends Settings {
     String? settingsPassword,
   }) : super._(
          id: id,
+         demoMode: demoMode,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
@@ -265,6 +275,7 @@ class _SettingsImpl extends Settings {
   @override
   Settings copyWith({
     Object? id = _Undefined,
+    bool? demoMode,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -287,6 +298,7 @@ class _SettingsImpl extends Settings {
   }) {
     return Settings(
       id: id is int? ? id : this.id,
+      demoMode: demoMode ?? this.demoMode,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,

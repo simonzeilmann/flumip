@@ -59,6 +59,14 @@ class ProjectService {
     );
     var project = await Project.db.insertRow(session, projectRow);
 
+    // Schedule demo mode cleanup
+    await session.serverpod.futureCallWithDelay(
+      'demoModeCleanup',
+      project,
+      const Duration(days: 7),
+      identifier: project.folderName,
+    );
+
     var settings = await SettingsService().getSettings(session);
     await Directory("${settings.projectDir}/${project.folderName}").create();
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
@@ -92,6 +100,8 @@ class ProjectService {
       Directory(
         "${settings.projectDir}/${project.folderName}",
       ).delete(recursive: true);
+      // Cancel any scheduled future calls related to this project
+      await session.serverpod.cancelFutureCall(project.folderName!);
       session.log("Project deleted with ID: $id", level: LogLevel.info);
     }
   }

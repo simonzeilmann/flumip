@@ -1,6 +1,7 @@
 class: Settings
 table: settings
 fields:
+  demoMode: bool, default=false
   baseDir: String, default="/opt/flumip"
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"

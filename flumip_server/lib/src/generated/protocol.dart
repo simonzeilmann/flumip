@@ -581,6 +581,13 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: 'nextval(\'settings_id_seq\'::regclass)',
         ),
         _i2.ColumnDefinition(
+          name: 'demoMode',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
           name: 'baseDir',
           columnType: _i2.ColumnType.text,
           isNullable: false,
