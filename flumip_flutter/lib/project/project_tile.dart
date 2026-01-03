@@ -7,6 +7,11 @@ import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+const String siteUrl = String.fromEnvironment(
+  'SITE_URL',
+  defaultValue: 'http://localhost:8082',
+);
+
 class GenomeRange {
   final String name;
   int start;
@@ -141,11 +146,11 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('BED file created successfully')),
         );
       }
-    } on BedCreationException catch(e){
+    } on BedCreationException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
@@ -165,22 +170,19 @@ class _ProjectTileState extends State<ProjectTile> {
           SnackBar(content: Text('MIPs generation started successfully')),
         );
       }
-    }
-    on FlumipFileNotFoundException catch(e) {
+    } on FlumipFileNotFoundException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
-    }
-    on ArgumentException catch(e) {
+    } on ArgumentException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
-    }
-    catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -405,7 +407,7 @@ class _ProjectTileState extends State<ProjectTile> {
     var genomeRanges = _getGenomeRanges(track);
     for (var range in genomeRanges) {
       map[range.name] = url +=
-          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}';
+          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=$siteUrl/ucsc_track/${widget.project.id}';
     }
 
     return map;

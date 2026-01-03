@@ -6,13 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-var client = Client('http://$localhost:8080/')
-  ..connectivityMonitor = FlutterConnectivityMonitor();
+const String siteTitle = String.fromEnvironment(
+  'SITE_TITLE',
+  defaultValue: 'Flumip Development',
+);
+
+const String apiUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://localhost:8080/',
+);
 
 const String appVersion = String.fromEnvironment(
   'APP_VERSION',
   defaultValue: 'debug',
 );
+
+var client = Client(apiUrl)
+  ..connectivityMonitor = FlutterConnectivityMonitor();
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +34,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flumip Development',
+      title: siteTitle,
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const MyHomePage(title: 'Flumip'),
     );

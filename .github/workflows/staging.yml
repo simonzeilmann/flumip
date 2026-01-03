@@ -106,17 +106,9 @@ jobs:
           export APP_VERSION=$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
-      - name: Set api endpoint, https and website name
-        run: |
-          sed -i 's/$localhost:8080/${{ vars.STAGING_API_URL }}/' flumip_flutter/lib/main.dart
-          sed -i 's/http/https/' flumip_flutter/lib/main.dart
-          sed -i 's/Flumip Development/Flumip Staging/' flumip_flutter/lib/main.dart
-          sed -i 's/http:/https:/' flumip_flutter/lib/project/project_tile.dart
-          sed -i 's/localhost:8082/${{ vars.STAGING_URL }}/' flumip_flutter/lib/project/project_tile.dart
-
       - name: Build and inject frontend
         run: |
-          cd flumip_flutter && flutter build web --debug --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --output ../flumip_server/web/app
+          cd flumip_flutter && flutter build web --debug --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=API_URL=${{ vars.STAGING_API_URL }} --dart-define=SITE_TITLE=${{ vars.STAGING_TITLE }} --dart-define=SITE_URL=${{ vars.STAGING_URL }} --output ../flumip_server/web/app
 
       - name: Build server
         run: |
