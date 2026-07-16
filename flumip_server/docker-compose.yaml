@@ -10,7 +10,7 @@ services:
       POSTGRES_DB: flumip
       POSTGRES_PASSWORD: "Ts9sUjpsxo_I4VGCOcw_UrF3gPrInFqG"
     volumes:
-      - flumip_data:/var/lib/postgresql/data
+      - flumip_data:/var/lib/postgresql
     profiles:
       - '' # Default profile
       - dev
@@ -37,7 +37,7 @@ services:
       POSTGRES_DB: flumip_test
       POSTGRES_PASSWORD: "zxW_YBwuziG0k5ySRDCXfvWI7EsgSVUo"
     volumes:
-      - flumip_test_data:/var/lib/postgresql/data
+      - flumip_test_data:/var/lib/postgresql
     profiles:
       - '' # Default profile
       - test
