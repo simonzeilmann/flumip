@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flumip_server/src/future_calls/check_index_progress_future_call.dart';
-import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
@@ -17,12 +15,8 @@ void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
 
-  // If you are using any future calls, they need to be registered here.
-  pod.registerFutureCall(
-    CheckMipgenProgressFutureCall(),
-    'checkMipgenProgress',
-  );
-  pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
+  // Future calls are defined in lib/src/future_calls/ and are registered
+  // automatically from the generated code.
 
   // Setup the flutter project server.
   final flutterAppDir = Directory('web/app');

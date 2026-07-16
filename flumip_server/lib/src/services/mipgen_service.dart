@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
@@ -242,11 +243,24 @@ class MipgenService {
       level: LogLevel.info,
     );
 
-    await session.serverpod.futureCallWithDelay(
-      'checkMipgenProgress',
+    await scheduleMipgenProgressCheck(
+      session,
       project,
-      const Duration(seconds: 15),
+      delay: const Duration(seconds: 15),
     );
+  }
+
+  /// Schedules a delayed future call that polls the MIP generation progress for
+  /// [project]. Used both to start polling and to reschedule the next check.
+  Future<void> scheduleMipgenProgressCheck(
+    Session session,
+    Project project, {
+    Duration delay = const Duration(seconds: 10),
+  }) async {
+    await session.serverpod.futureCalls
+        .callWithDelay(delay)
+        .checkMipgenProgress
+        .run(project);
   }
 
   /// Marks the MIP generation process as finished for the specified project.

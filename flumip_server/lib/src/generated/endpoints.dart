@@ -21,6 +21,8 @@ import 'package:flumip_server/src/generated/genome.dart' as _i8;
 import 'package:flumip_server/src/generated/snp.dart' as _i9;
 import 'package:flumip_server/src/generated/project_options.dart' as _i10;
 import 'package:flumip_server/src/generated/settings.dart' as _i11;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i12;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -760,5 +762,10 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+  }
+
+  @override
+  _i1.FutureCallDispatch? get futureCalls {
+    return _i12.FutureCalls();
   }
 }

@@ -19,6 +19,7 @@ import 'package:flumip_server/src/generated/snp.dart' as _i5;
 import 'package:flumip_server/src/generated/project_options.dart' as _i6;
 import 'package:flumip_server/src/generated/project.dart' as _i7;
 import 'package:flumip_server/src/generated/settings.dart' as _i8;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i9;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -133,6 +134,8 @@ void withServerpod(
 }
 
 class TestEndpoints {
+  late final futureCalls = _FutureCalls();
+
   late final _FileEndpoint file;
 
   late final _GenomeEndpoint genome;
@@ -178,6 +181,12 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
   }
+}
+
+class _FutureCalls {
+  late final checkIndexProgress = _CheckIndexProgressFutureCall();
+
+  late final checkMipgenProgress = _CheckMipgenProgressFutureCall();
 }
 
 class _FileEndpoint {
@@ -1332,5 +1341,41 @@ class _SettingsEndpoint {
         await _localUniqueSession.close();
       }
     });
+  }
+}
+
+class _CheckIndexProgressFutureCall {
+  Future<void> run(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i4.Genome object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i9.CheckIndexProgressRunFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+}
+
+class _CheckMipgenProgressFutureCall {
+  Future<void> run(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i7.Project object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i9.CheckMipgenProgressRunFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
   }
 }

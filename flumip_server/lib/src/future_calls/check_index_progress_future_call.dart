@@ -8,17 +8,15 @@ class CheckIndexProgressFutureCall extends FutureCall<Genome> {
   final processService = sl<ProcessService>();
   final geneService = sl<GenomeService>();
 
-  @override
-  Future<void> invoke(Session session, Genome? object) async {
+  Future<void> run(Session session, Genome object) async {
     session.log(
-        "Checking BWA index progress for gene ID: ${object?.id}",
+        "Checking BWA index progress for gene ID: ${object.id}",
         level: LogLevel.info);
-    if (await processService.checkIfIndexProcessIsRunning(session, object!)) {
+    if (await processService.checkIfIndexProcessIsRunning(session, object)) {
       session.log(
           "BWA index process is still running for gene ID: ${object.id}",
           level: LogLevel.info);
-      await session.serverpod.futureCallWithDelay(
-          'checkIndexProgress', object, const Duration(minutes: 1));
+      await geneService.scheduleIndexProgressCheck(session, object);
     } else {
       session.log(
           "BWA index process has finished for project ID: ${object.id}",
