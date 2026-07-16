@@ -294,28 +294,43 @@ class MipgenService {
       await fileService.deleteByproducts(session, project.id!);
     }
 
-    //TODO: better errors handling
-    var progress = await fileService.showMipsProgress(session, project.id!);
-    if (progress.isEmpty) {
+    // Finalize the project. Any failure while reading progress, sizing the
+    // output, or generating the UCSC track must not leave the project stuck in
+    // the active state, so the terminal bookkeeping (clearing the pid, marking
+    // the project inactive, and persisting it) always runs in `finally`.
+    try {
+      var progress = await fileService.showMipsProgress(session, project.id!);
+      if (progress.isEmpty) {
+        session.log(
+          "MIP generation failed for project ID: ${project.id}",
+          level: LogLevel.warning,
+        );
+        project.error = "MIP generation failed";
+      } else {
+        project.size = await fileService.getDirSize(
+          "${settings.projectDir}/${project.folderName!}",
+        );
+        if (project.started != null) {
+          project.completedIn = DateTime.now().difference(project.started!);
+        }
+        await _generateUCSCTrack(session, project);
+        session.log(
+          "MIP generation finished for project ID: ${project.id}",
+          level: LogLevel.info,
+        );
+      }
+    } catch (e, stackTrace) {
       session.log(
-        "MIP generation failed for project ID: ${project.id}",
-        level: LogLevel.warning,
+        "Error finalizing MIP generation for project ID: ${project.id}: $e",
+        level: LogLevel.error,
+        stackTrace: stackTrace,
       );
-      project.error = "MIP generation failed";
-    } else {
-      project.size = await fileService.getDirSize(
-        "${settings.projectDir}/${project.folderName!}",
-      );
+      project.error = "MIP generation failed: $e";
+    } finally {
       project.pid = 0;
-      project.completedIn = DateTime.now().difference(project.started!);
-      await _generateUCSCTrack(session, project);
-      session.log(
-        "MIP generation finished for project ID: ${project.id}",
-        level: LogLevel.info,
-      );
+      project.active = false;
+      await projectService.updateProject(session, project);
     }
-    project.active = false;
-    await projectService.updateProject(session, project);
   }
 
   /// Generates a UCSC track for the specified project.
