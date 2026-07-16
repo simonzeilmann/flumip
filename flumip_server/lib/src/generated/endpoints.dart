@@ -229,44 +229,6 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['genome'] as _i3.GenomeEndpoint)
                   .collectGenomes(session),
         ),
-        'indexGenome': _i1.MethodConnector(
-          name: 'indexGenome',
-          params: {
-            'id': _i1.ParameterDescription(
-              name: 'id',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i3.GenomeEndpoint).indexGenome(
-                    session,
-                    params['id'],
-                  ),
-        ),
-        'deleteGenomeIndex': _i1.MethodConnector(
-          name: 'deleteGenomeIndex',
-          params: {
-            'id': _i1.ParameterDescription(
-              name: 'id',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i3.GenomeEndpoint).deleteGenomeIndex(
-                    session,
-                    params['id'],
-                  ),
-        ),
         'getSnp': _i1.MethodConnector(
           name: 'getSnp',
           params: {

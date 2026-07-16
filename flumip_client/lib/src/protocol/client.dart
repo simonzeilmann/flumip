@@ -143,28 +143,6 @@ class EndpointGenome extends _i1.EndpointRef {
     {},
   );
 
-  /// Indexes the FA file for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to index.
-  /// \throws Exception if an error occurs during indexing.
-  _i2.Future<void> indexGenome(int id) => caller.callServerEndpoint<void>(
-    'genome',
-    'indexGenome',
-    {'id': id},
-  );
-
-  /// Deletes the index for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to delete the index for.
-  /// \throws Exception if an error occurs during deletion.
-  _i2.Future<void> deleteGenomeIndex(int id) => caller.callServerEndpoint<void>(
-    'genome',
-    'deleteGenomeIndex',
-    {'id': id},
-  );
-
   /// Retrieves an SNP by its ID.
   ///
   /// \param session The current session.
