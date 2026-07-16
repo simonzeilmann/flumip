@@ -88,26 +88,32 @@ abstract class Settings implements _i1.SerializableModel {
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
     return Settings(
       id: jsonSerialization['id'] as int?,
-      baseDir: jsonSerialization['baseDir'] as String,
-      projectDir: jsonSerialization['projectDir'] as String,
-      genomeDir: jsonSerialization['genomeDir'] as String,
-      customSnpDir: jsonSerialization['customSnpDir'] as String,
-      toolsDir: jsonSerialization['toolsDir'] as String,
-      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String,
-      exonExtractScript: jsonSerialization['exonExtractScript'] as String,
-      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String,
-      binCreationScript: jsonSerialization['binCreationScript'] as String,
+      baseDir: jsonSerialization['baseDir'] as String?,
+      projectDir: jsonSerialization['projectDir'] as String?,
+      genomeDir: jsonSerialization['genomeDir'] as String?,
+      customSnpDir: jsonSerialization['customSnpDir'] as String?,
+      toolsDir: jsonSerialization['toolsDir'] as String?,
+      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
+      exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
+      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String?,
+      binCreationScript: jsonSerialization['binCreationScript'] as String?,
       bigGenePredToGenePredExecutable:
-          jsonSerialization['bigGenePredToGenePredExecutable'] as String,
-      mailActive: jsonSerialization['mailActive'] as bool,
-      smtpServer: jsonSerialization['smtpServer'] as String,
-      smtpPort: jsonSerialization['smtpPort'] as int,
-      smtpUser: jsonSerialization['smtpUser'] as String,
-      smtpPassword: jsonSerialization['smtpPassword'] as String,
-      smtpFrom: jsonSerialization['smtpFrom'] as String,
-      startTLS: jsonSerialization['startTLS'] as bool,
-      loginRequired: jsonSerialization['loginRequired'] as bool,
-      settingsPassword: jsonSerialization['settingsPassword'] as String,
+          jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
+      mailActive: jsonSerialization['mailActive'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+      smtpServer: jsonSerialization['smtpServer'] as String?,
+      smtpPort: jsonSerialization['smtpPort'] as int?,
+      smtpUser: jsonSerialization['smtpUser'] as String?,
+      smtpPassword: jsonSerialization['smtpPassword'] as String?,
+      smtpFrom: jsonSerialization['smtpFrom'] as String?,
+      startTLS: jsonSerialization['startTLS'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+      loginRequired: jsonSerialization['loginRequired'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
+      settingsPassword: jsonSerialization['settingsPassword'] as String?,
     );
   }
 

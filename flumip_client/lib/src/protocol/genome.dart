@@ -60,7 +60,7 @@ abstract class Genome implements _i1.SerializableModel {
     return Genome(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       path: jsonSerialization['path'] as String?,
       fastaPath: jsonSerialization['fastaPath'] as String?,
       refPath: jsonSerialization['refPath'] as String?,
@@ -69,12 +69,18 @@ abstract class Genome implements _i1.SerializableModel {
           ? null
           : _i2.Protocol().deserialize<List<int>>(jsonSerialization['snp']),
       category: jsonSerialization['category'] as String?,
-      active: jsonSerialization['active'] as bool,
-      indexed: jsonSerialization['indexed'] as bool,
-      indexing: jsonSerialization['indexing'] as bool,
-      indexPID: jsonSerialization['indexPID'] as int,
-      indexResults: jsonSerialization['indexResults'] as int,
-      size: jsonSerialization['size'] as int,
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      indexed: jsonSerialization['indexed'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
+      indexing: jsonSerialization['indexing'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
+      indexPID: jsonSerialization['indexPID'] as int?,
+      indexResults: jsonSerialization['indexResults'] as int?,
+      size: jsonSerialization['size'] as int?,
     );
   }
 

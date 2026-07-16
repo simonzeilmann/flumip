@@ -1,7 +1,7 @@
 services:
   # Development services
   postgres:
-    image: postgres:16.3
+    image: postgres:18
     ports:
       - '8090:5432'
     restart: unless-stopped
@@ -15,7 +15,7 @@ services:
       - '' # Default profile
       - dev
   redis:
-    image: redis:6.2.6
+    image: redis:8
     ports:
       - '8091:6379'
     restart: unless-stopped
@@ -28,7 +28,7 @@ services:
 
   # Test services
   postgres_test:
-    image: postgres:16.3
+    image: postgres:18
     ports:
       - '9090:5432'
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
       - '' # Default profile
       - test
   redis_test:
-    image: redis:6.2.6
+    image: redis:8
     ports:
       - '9091:6379'
     restart: unless-stopped

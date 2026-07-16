@@ -89,26 +89,32 @@ abstract class Settings
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
     return Settings(
       id: jsonSerialization['id'] as int?,
-      baseDir: jsonSerialization['baseDir'] as String,
-      projectDir: jsonSerialization['projectDir'] as String,
-      genomeDir: jsonSerialization['genomeDir'] as String,
-      customSnpDir: jsonSerialization['customSnpDir'] as String,
-      toolsDir: jsonSerialization['toolsDir'] as String,
-      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String,
-      exonExtractScript: jsonSerialization['exonExtractScript'] as String,
-      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String,
-      binCreationScript: jsonSerialization['binCreationScript'] as String,
+      baseDir: jsonSerialization['baseDir'] as String?,
+      projectDir: jsonSerialization['projectDir'] as String?,
+      genomeDir: jsonSerialization['genomeDir'] as String?,
+      customSnpDir: jsonSerialization['customSnpDir'] as String?,
+      toolsDir: jsonSerialization['toolsDir'] as String?,
+      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
+      exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
+      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String?,
+      binCreationScript: jsonSerialization['binCreationScript'] as String?,
       bigGenePredToGenePredExecutable:
-          jsonSerialization['bigGenePredToGenePredExecutable'] as String,
-      mailActive: jsonSerialization['mailActive'] as bool,
-      smtpServer: jsonSerialization['smtpServer'] as String,
-      smtpPort: jsonSerialization['smtpPort'] as int,
-      smtpUser: jsonSerialization['smtpUser'] as String,
-      smtpPassword: jsonSerialization['smtpPassword'] as String,
-      smtpFrom: jsonSerialization['smtpFrom'] as String,
-      startTLS: jsonSerialization['startTLS'] as bool,
-      loginRequired: jsonSerialization['loginRequired'] as bool,
-      settingsPassword: jsonSerialization['settingsPassword'] as String,
+          jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
+      mailActive: jsonSerialization['mailActive'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+      smtpServer: jsonSerialization['smtpServer'] as String?,
+      smtpPort: jsonSerialization['smtpPort'] as int?,
+      smtpUser: jsonSerialization['smtpUser'] as String?,
+      smtpPassword: jsonSerialization['smtpPassword'] as String?,
+      smtpFrom: jsonSerialization['smtpFrom'] as String?,
+      startTLS: jsonSerialization['startTLS'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+      loginRequired: jsonSerialization['loginRequired'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
+      settingsPassword: jsonSerialization['settingsPassword'] as String?,
     );
   }
 
@@ -696,7 +702,7 @@ class SettingsRepository {
   /// );
   /// ```
   Future<List<Settings>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     int? offset,
@@ -704,6 +710,8 @@ class SettingsRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<SettingsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Settings>(
       where: where?.call(Settings.t),
@@ -713,6 +721,8 @@ class SettingsRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -734,13 +744,15 @@ class SettingsRepository {
   /// );
   /// ```
   Future<Settings?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? offset,
     _i1.OrderByBuilder<SettingsTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<SettingsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Settings>(
       where: where?.call(Settings.t),
@@ -749,18 +761,24 @@ class SettingsRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Settings] by its [id] or null if no such row exists.
   Future<Settings?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Settings>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -770,14 +788,20 @@ class SettingsRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Settings>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Settings>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -785,7 +809,7 @@ class SettingsRepository {
   ///
   /// The returned [Settings] will have its `id` field set.
   Future<Settings> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
@@ -801,7 +825,7 @@ class SettingsRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Settings>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.ColumnSelections<SettingsTable>? columns,
     _i1.Transaction? transaction,
@@ -817,7 +841,7 @@ class SettingsRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Settings> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.ColumnSelections<SettingsTable>? columns,
     _i1.Transaction? transaction,
@@ -832,7 +856,7 @@ class SettingsRepository {
   /// Updates a single [Settings] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Settings?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -847,7 +871,7 @@ class SettingsRepository {
   /// Updates all [Settings]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Settings>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<SettingsTable> where,
     int? limit,
@@ -873,7 +897,7 @@ class SettingsRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Settings>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -885,7 +909,7 @@ class SettingsRepository {
 
   /// Deletes a single [Settings].
   Future<Settings> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
@@ -897,7 +921,7 @@ class SettingsRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Settings>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<SettingsTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -910,7 +934,7 @@ class SettingsRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -918,6 +942,22 @@ class SettingsRepository {
     return session.db.count<Settings>(
       where: where?.call(Settings.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Settings] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<SettingsTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Settings>(
+      where: where(Settings.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }
