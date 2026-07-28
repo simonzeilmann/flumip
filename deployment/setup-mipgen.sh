@@ -1,11 +1,32 @@
 #!/bin/bash
-# setup.sh - A script to install dependencies, clone MIPGEN, set up data directories,
+# setup-mipgen.sh - A script to install dependencies, clone MIPGEN, set up data directories,
 # and optionally download required reference files for selected genomes.
 # Supported genomes: hg18, hg19, hg38, hs1.
 #
+# The script has two modes:
+#   * Interactive  - run with no selection arguments on a terminal and you will be
+#                    prompted to choose whether to download reference data, which
+#                    genomes to fetch, and the service user.
+#   * Non-interactive (switches) - pass any of the switches below to script the run
+#                    for automated deployments or experienced users. Providing a
+#                    selection switch (or --yes) disables the prompts.
+#
 # Usage:
-#   ./setup.sh [-download [genome1 genome2 ...]]
-# If no genome is specified, defaults to hg38.
+#   ./setup-mipgen.sh [options] [genome ...]
+#
+# Options:
+#   -download, --download        Download reference files for the selected genomes.
+#   --service-user USER          Service user to grant access (default: www-data).
+#   -i, --interactive            Force interactive prompts even if switches are given.
+#   -y, --yes, --non-interactive Never prompt; use defaults/switches (for automation).
+#   -h, --help                   Show this help and exit.
+#
+# Genomes: hg18 hg19 hg38 hs1   (default: hg38)
+#
+# Examples:
+#   ./setup-mipgen.sh                         # interactive on a terminal
+#   ./setup-mipgen.sh -download hg38 hg19     # experienced/scripted, no prompts
+#   ./setup-mipgen.sh --yes                   # automation: install only, no download
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
@@ -13,37 +34,198 @@ set -e
 # Define colors.
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
 NC='\033[0m'  # No Color
+
+# Supported genomes (order defines the interactive menu).
+AVAILABLE_GENOMES=("hg38" "hg19" "hg18" "hs1")
 
 # Default flags.
 DOWNLOAD=false
 GENOMES=()
 SERVICE_USER="www-data"
 
+# Mode tracking.
+INTERACTIVE="auto"     # auto | yes | no
+DOWNLOAD_SET=false     # whether -download was passed explicitly
+GENOMES_SET=false      # whether genomes were passed explicitly
+
+usage() {
+  # Print the comment header (usage block) without the leading '# ',
+  # stopping at the first blank/non-comment line after the shebang.
+  awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"
+}
+
 # Parse command-line arguments.
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-    -download)
+    -download|--download)
       DOWNLOAD=true
+      DOWNLOAD_SET=true
+      ;;
+    --service-user)
+      if [[ -z "$2" ]]; then
+        echo -e "${RED}--service-user requires a value${NC}"
+        exit 1
+      fi
+      SERVICE_USER="$2"
+      shift
+      ;;
+    -i|--interactive)
+      INTERACTIVE="yes"
+      ;;
+    -y|--yes|--non-interactive)
+      INTERACTIVE="no"
+      ;;
+    -h|--help)
+      usage
+      exit 0
       ;;
     -*)
       echo -e "${RED}Unknown option: $1${NC}"
+      echo -e "Run '${0} --help' for usage."
       exit 1
       ;;
     *)
       # Treat as genome name.
       GENOMES+=("$1")
+      GENOMES_SET=true
       ;;
   esac
   shift
 done
+
+# Decide whether to run interactively.
+# - Explicit -i/--interactive or -y/--yes always win.
+# - Otherwise: prompt only when no selection switches were given and we have a TTY.
+if [ "$INTERACTIVE" == "auto" ]; then
+  if $DOWNLOAD_SET || $GENOMES_SET; then
+    INTERACTIVE="no"          # experienced/scripted invocation
+  elif [ -t 0 ]; then
+    INTERACTIVE="yes"
+  else
+    INTERACTIVE="no"          # piped/CI with no switches -> safe defaults
+  fi
+fi
+
+# Guard: cannot prompt without a terminal.
+if [ "$INTERACTIVE" == "yes" ] && [ ! -t 0 ]; then
+  echo -e "${YELLOW}No terminal available for interactive prompts; continuing non-interactively.${NC}"
+  INTERACTIVE="no"
+fi
+
+# --- Interactive helpers -----------------------------------------------------
+
+# Ask a yes/no question. $1 = prompt, $2 = default (y|n). Returns 0 for yes.
+prompt_yes_no() {
+  local prompt="$1" default="$2" hint reply
+  if [ "$default" == "y" ]; then hint="[Y/n]"; else hint="[y/N]"; fi
+  while true; do
+    read -r -p "$(echo -e "${CYAN}${prompt}${NC} ${hint} ")" reply || reply=""
+    reply="${reply:-$default}"
+    case "$reply" in
+      [Yy]*) return 0 ;;
+      [Nn]*) return 1 ;;
+      *) echo -e "${YELLOW}Please answer y or n.${NC}" ;;
+    esac
+  done
+}
+
+# Let the user pick one or more genomes. Sets the global GENOMES array.
+select_genomes() {
+  local i choice tokens token selected=() valid
+  echo -e "\n${CYAN}Select the genome(s) to download:${NC}"
+  for i in "${!AVAILABLE_GENOMES[@]}"; do
+    printf "  %d) %s\n" "$((i + 1))" "${AVAILABLE_GENOMES[$i]}"
+  done
+  echo -e "  a) all"
+  echo -e "${YELLOW}Enter numbers and/or names separated by spaces (default: hg38).${NC}"
+
+  while true; do
+    read -r -p "$(echo -e "${CYAN}Genomes:${NC} ")" -a tokens || tokens=()
+
+    # Default to hg38 when nothing is entered.
+    if [ "${#tokens[@]}" -eq 0 ]; then
+      selected=("hg38")
+      break
+    fi
+
+    selected=()
+    valid=true
+    for token in "${tokens[@]}"; do
+      case "$token" in
+        a|A|all|ALL)
+          selected=("${AVAILABLE_GENOMES[@]}")
+          break
+          ;;
+        [1-9]*)
+          if [ "$token" -ge 1 ] 2>/dev/null && [ "$token" -le "${#AVAILABLE_GENOMES[@]}" ] 2>/dev/null; then
+            selected+=("${AVAILABLE_GENOMES[$((token - 1))]}")
+          else
+            echo -e "${RED}Invalid choice: $token${NC}"; valid=false
+          fi
+          ;;
+        hg18|hg19|hg38|hs1)
+          selected+=("$token")
+          ;;
+        *)
+          echo -e "${RED}Invalid choice: $token${NC}"; valid=false
+          ;;
+      esac
+    done
+
+    $valid && [ "${#selected[@]}" -gt 0 ] && break
+  done
+
+  # De-duplicate while preserving order.
+  GENOMES=()
+  for token in "${selected[@]}"; do
+    if [[ ! " ${GENOMES[*]} " == *" $token "* ]]; then
+      GENOMES+=("$token")
+    fi
+  done
+}
+
+# --- Interactive flow --------------------------------------------------------
+
+if [ "$INTERACTIVE" == "yes" ]; then
+  echo -e "${GREEN}=== FLUMIP / MIPGEN interactive setup ===${NC}"
+  echo -e "Press Enter to accept the [default] shown in each prompt.\n"
+
+  if prompt_yes_no "Download genome reference files now?" "n"; then
+    DOWNLOAD=true
+    select_genomes
+  else
+    DOWNLOAD=false
+    echo -e "${YELLOW}Skipping reference downloads (MIPGEN and directories will still be set up).${NC}"
+  fi
+
+  read -r -p "$(echo -e "${CYAN}Service user${NC} [${SERVICE_USER}]: ")" _svc || _svc=""
+  SERVICE_USER="${_svc:-$SERVICE_USER}"
+fi
 
 # If no genomes specified, default to hg38.
 if [ ${#GENOMES[@]} -eq 0 ]; then
   GENOMES=("hg38")
 fi
 
-echo -e "\n${GREEN}Selected genomes: ${GENOMES[*]}${NC}\n"
+# --- Summary / confirmation --------------------------------------------------
+
+echo -e "\n${GREEN}Configuration:${NC}"
+echo -e "  Download reference data: ${DOWNLOAD}"
+if $DOWNLOAD; then
+  echo -e "  Genomes:                 ${GENOMES[*]}"
+fi
+echo -e "  Service user:            ${SERVICE_USER}"
+echo ""
+
+if [ "$INTERACTIVE" == "yes" ]; then
+  if ! prompt_yes_no "Proceed with this configuration?" "y"; then
+    echo -e "${RED}Aborted by user.${NC}"
+    exit 1
+  fi
+fi
 
 # Update system package repository.
 echo -e "\n${GREEN}Updating system packages...${NC}\n"
@@ -104,7 +286,7 @@ if $DOWNLOAD; then
       if [ ! -f "$REFGENE_FILE" ]; then
         echo -e "\n${GREEN}Downloading refGene for hg38...${NC}\n"
         cd "$BASE_DIR"
-        wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
+        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
         gunzip -f refGene.txt.gz
       fi
 
@@ -122,7 +304,7 @@ if $DOWNLOAD; then
       if [ ! -f "$FA_FILE" ]; then
         echo -e "\n${GREEN}Downloading hg38 genome sequence...${NC}\n"
         cd "$FA_DIR"
-        wget -N https://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
+        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
         gunzip -f hg38.fa.gz
       fi
 
@@ -216,17 +398,17 @@ if $DOWNLOAD; then
   done
 fi
 
-# Set permissions for www-data service user and maintain current user access
+# Set permissions for the service user and maintain current user access
 echo -e "\n${GREEN}Setting permissions for service user ${SERVICE_USER}...${NC}\n"
-# Check if www-data user exists
+# Check if the service user exists
 if id "$SERVICE_USER" &>/dev/null; then
-  # Set group to www-data
+  # Set group to the service user
   sudo chgrp -R "$SERVICE_USER" /opt/flumip
   # Set permissions to allow both owner and group to have full access
   sudo chmod -R 775 /opt/flumip
   # Ensure future files created will inherit the group
   sudo chmod -R g+s /opt/flumip
-  # Optionally add the current user to the www-data group to ensure continued access
+  # Optionally add the current user to the service user group to ensure continued access
   sudo usermod -a -G "$SERVICE_USER" "$USER"
   echo -e "${GREEN}Full access granted to ${SERVICE_USER} for /opt/flumip${NC}"
   echo -e "${GREEN}Current user ${USER} added to ${SERVICE_USER} group${NC}"

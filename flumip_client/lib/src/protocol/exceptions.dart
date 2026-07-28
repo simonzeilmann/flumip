@@ -29,8 +29,8 @@ abstract class GeneExtractionException
     Map<String, dynamic> jsonSerialization,
   ) {
     return GeneExtractionException(
-      message: jsonSerialization['message'] as String,
-      errorCode: jsonSerialization['errorCode'] as int,
+      message: jsonSerialization['message'] as String?,
+      errorCode: jsonSerialization['errorCode'] as int?,
     );
   }
 

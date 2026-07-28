@@ -9,8 +9,6 @@ genome:
   - getAllGenomes:
   - updateGenome:
   - collectGenomes:
-  - indexGenome:
-  - deleteGenomeIndex:
   - getSnp:
   - getAllSnpForGenome:
   - updateSnp:

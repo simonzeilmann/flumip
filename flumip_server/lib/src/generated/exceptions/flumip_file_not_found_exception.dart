@@ -27,7 +27,7 @@ abstract class FlumipFileNotFoundException
     Map<String, dynamic> jsonSerialization,
   ) {
     return FlumipFileNotFoundException(
-      message: jsonSerialization['message'] as String,
+      message: jsonSerialization['message'] as String?,
     );
   }
 

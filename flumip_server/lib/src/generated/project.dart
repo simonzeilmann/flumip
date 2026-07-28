@@ -75,13 +75,15 @@ abstract class Project
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
       folderName: jsonSerialization['folderName'] as String?,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
       tags: jsonSerialization['tags'] == null
           ? null
           : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
-      created: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      created: jsonSerialization['created'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
       genes: jsonSerialization['genes'] == null
@@ -89,11 +91,19 @@ abstract class Project
           : _i2.Protocol().deserialize<List<String>>(
               jsonSerialization['genes'],
             ),
-      bedFileCreated: jsonSerialization['bedFileCreated'] as bool,
-      active: jsonSerialization['active'] as bool,
+      bedFileCreated: jsonSerialization['bedFileCreated'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['bedFileCreated']),
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
       pid: jsonSerialization['pid'] as int?,
-      size: jsonSerialization['size'] as int,
-      emailNotification: jsonSerialization['emailNotification'] as bool,
+      size: jsonSerialization['size'] as int?,
+      emailNotification: jsonSerialization['emailNotification'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['emailNotification'],
+            ),
       options: jsonSerialization['options'] as int,
       started: jsonSerialization['started'] == null
           ? null
@@ -103,8 +113,10 @@ abstract class Project
           : _i1.DurationJsonExtension.fromJson(
               jsonSerialization['completedIn'],
             ),
-      error: jsonSerialization['error'] as String,
-      cleanup: jsonSerialization['cleanup'] as bool,
+      error: jsonSerialization['error'] as String?,
+      cleanup: jsonSerialization['cleanup'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
     );
   }
 
@@ -698,7 +710,7 @@ class ProjectRepository {
   /// );
   /// ```
   Future<List<Project>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? limit,
     int? offset,
@@ -706,6 +718,8 @@ class ProjectRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Project>(
       where: where?.call(Project.t),
@@ -715,6 +729,8 @@ class ProjectRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -736,13 +752,15 @@ class ProjectRepository {
   /// );
   /// ```
   Future<Project?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? offset,
     _i1.OrderByBuilder<ProjectTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Project>(
       where: where?.call(Project.t),
@@ -751,18 +769,24 @@ class ProjectRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Project] by its [id] or null if no such row exists.
   Future<Project?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Project>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -772,14 +796,20 @@ class ProjectRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Project>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Project>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -787,7 +817,7 @@ class ProjectRepository {
   ///
   /// The returned [Project] will have its `id` field set.
   Future<Project> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.Transaction? transaction,
   }) async {
@@ -803,7 +833,7 @@ class ProjectRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Project>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.ColumnSelections<ProjectTable>? columns,
     _i1.Transaction? transaction,
@@ -819,7 +849,7 @@ class ProjectRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Project> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.ColumnSelections<ProjectTable>? columns,
     _i1.Transaction? transaction,
@@ -834,7 +864,7 @@ class ProjectRepository {
   /// Updates a single [Project] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Project?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -849,7 +879,7 @@ class ProjectRepository {
   /// Updates all [Project]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Project>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<ProjectTable> where,
     int? limit,
@@ -875,7 +905,7 @@ class ProjectRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Project>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -887,7 +917,7 @@ class ProjectRepository {
 
   /// Deletes a single [Project].
   Future<Project> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.Transaction? transaction,
   }) async {
@@ -899,7 +929,7 @@ class ProjectRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Project>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<ProjectTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -912,7 +942,7 @@ class ProjectRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -920,6 +950,22 @@ class ProjectRepository {
     return session.db.count<Project>(
       where: where?.call(Project.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Project] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<ProjectTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Project>(
+      where: where(Project.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }

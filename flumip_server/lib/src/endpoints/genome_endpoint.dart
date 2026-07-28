@@ -7,7 +7,7 @@ import '../services/genome_service.dart';
 /// Endpoint for genome-related operations.
 class GenomeEndpoint extends Endpoint {
   /// Instance of the genome service.
-  get genomeService => GenomeService();
+  GenomeService get genomeService => GenomeService();
 
   /// Retrieves a genome by its ID.
   ///
@@ -69,38 +69,6 @@ class GenomeEndpoint extends Endpoint {
       return genomeService.collectGenomes(session);
     } catch (e) {
       session.log('Error collecting genomes',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
-
-  /// Indexes the FA file for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to index.
-  /// \throws Exception if an error occurs during indexing.
-  Future<void> indexGenome(Session session, int id) async {
-    session.log('Indexing genome with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.indexGenome(session, id);
-    } catch (e) {
-      session.log('Error indexing genome with ID: $id',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
-
-  /// Deletes the index for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to delete the index for.
-  /// \throws Exception if an error occurs during deletion.
-  Future<void> deleteGenomeIndex(Session session, int id) async {
-    session.log('Deleting index for genome with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.deleteGenomeIndex(session, id);
-    } catch (e) {
-      session.log('Error deleting index for genome with ID: $id',
           level: LogLevel.error, exception: e);
       rethrow;
     }

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/options_service.dart';
@@ -83,7 +85,7 @@ class MipgenService {
       "Running exon extract script with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await Process.run(settings.exonExtractScript, arg);
+    var process = await sl<ProcessRunner>().run(settings.exonExtractScript, arg);
 
     if (process.exitCode != 0 || process.stdout == "") {
       session.log(
@@ -223,7 +225,7 @@ class MipgenService {
       "Starting MIP generation process with arguments: $arg",
       level: LogLevel.info,
     );
-    await Process.start(
+    await sl<ProcessRunner>().start(
       settings.mipgenExecutable,
       arg,
       workingDirectory: "${settings.projectDir}/${project.folderName}",
@@ -244,11 +246,24 @@ class MipgenService {
       level: LogLevel.info,
     );
 
-    await session.serverpod.futureCallWithDelay(
-      'checkMipgenProgress',
+    await scheduleMipgenProgressCheck(
+      session,
       project,
-      const Duration(seconds: 15),
+      delay: const Duration(seconds: 15),
     );
+  }
+
+  /// Schedules a delayed future call that polls the MIP generation progress for
+  /// [project]. Used both to start polling and to reschedule the next check.
+  Future<void> scheduleMipgenProgressCheck(
+    Session session,
+    Project project, {
+    Duration delay = const Duration(seconds: 10),
+  }) async {
+    await session.serverpod.futureCalls
+        .callWithDelay(delay)
+        .checkMipgenProgress
+        .run(project);
   }
 
   /// Marks the MIP generation process as finished for the specified project.
@@ -282,28 +297,43 @@ class MipgenService {
       await fileService.deleteByproducts(session, project.id!);
     }
 
-    //TODO: better errors handling
-    var progress = await fileService.showMipsProgress(session, project.id!);
-    if (progress.isEmpty) {
+    // Finalize the project. Any failure while reading progress, sizing the
+    // output, or generating the UCSC track must not leave the project stuck in
+    // the active state, so the terminal bookkeeping (clearing the pid, marking
+    // the project inactive, and persisting it) always runs in `finally`.
+    try {
+      var progress = await fileService.showMipsProgress(session, project.id!);
+      if (progress.isEmpty) {
+        session.log(
+          "MIP generation failed for project ID: ${project.id}",
+          level: LogLevel.warning,
+        );
+        project.error = "MIP generation failed";
+      } else {
+        project.size = await fileService.getDirSize(
+          "${settings.projectDir}/${project.folderName!}",
+        );
+        if (project.started != null) {
+          project.completedIn = DateTime.now().difference(project.started!);
+        }
+        await _generateUCSCTrack(session, project);
+        session.log(
+          "MIP generation finished for project ID: ${project.id}",
+          level: LogLevel.info,
+        );
+      }
+    } catch (e, stackTrace) {
       session.log(
-        "MIP generation failed for project ID: ${project.id}",
-        level: LogLevel.warning,
+        "Error finalizing MIP generation for project ID: ${project.id}: $e",
+        level: LogLevel.error,
+        stackTrace: stackTrace,
       );
-      project.error = "MIP generation failed";
-    } else {
-      project.size = await fileService.getDirSize(
-        "${settings.projectDir}/${project.folderName!}",
-      );
+      project.error = "MIP generation failed: $e";
+    } finally {
       project.pid = 0;
-      project.completedIn = DateTime.now().difference(project.started!);
-      await _generateUCSCTrack(session, project);
-      session.log(
-        "MIP generation finished for project ID: ${project.id}",
-        level: LogLevel.info,
-      );
+      project.active = false;
+      await projectService.updateProject(session, project);
     }
-    project.active = false;
-    await projectService.updateProject(session, project);
   }
 
   /// Generates a UCSC track for the specified project.
@@ -326,7 +356,7 @@ class MipgenService {
       "Starting UCSC track generation process with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await Process.run(
+    var process = await sl<ProcessRunner>().run(
       "python",
       arg,
       workingDirectory: projectDir,

@@ -43,13 +43,15 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     return Snp(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       vcfPath: jsonSerialization['vcfPath'] as String,
       tbiPath: jsonSerialization['tbiPath'] as String,
       folder: jsonSerialization['folder'] as String,
-      active: jsonSerialization['active'] as bool,
-      private: jsonSerialization['private'] as bool,
-      size: jsonSerialization['size'] as int,
+      active: _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      private: jsonSerialization['private'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+      size: jsonSerialization['size'] as int?,
     );
   }
 
@@ -381,7 +383,7 @@ class SnpRepository {
   /// );
   /// ```
   Future<List<Snp>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SnpTable>? where,
     int? limit,
     int? offset,
@@ -389,6 +391,8 @@ class SnpRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<SnpTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Snp>(
       where: where?.call(Snp.t),
@@ -398,6 +402,8 @@ class SnpRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -419,13 +425,15 @@ class SnpRepository {
   /// );
   /// ```
   Future<Snp?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SnpTable>? where,
     int? offset,
     _i1.OrderByBuilder<SnpTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<SnpTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Snp>(
       where: where?.call(Snp.t),
@@ -434,18 +442,24 @@ class SnpRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Snp] by its [id] or null if no such row exists.
   Future<Snp?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Snp>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -455,14 +469,20 @@ class SnpRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Snp>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Snp> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Snp>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -470,7 +490,7 @@ class SnpRepository {
   ///
   /// The returned [Snp] will have its `id` field set.
   Future<Snp> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Snp row, {
     _i1.Transaction? transaction,
   }) async {
@@ -486,7 +506,7 @@ class SnpRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Snp>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Snp> rows, {
     _i1.ColumnSelections<SnpTable>? columns,
     _i1.Transaction? transaction,
@@ -502,7 +522,7 @@ class SnpRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Snp> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Snp row, {
     _i1.ColumnSelections<SnpTable>? columns,
     _i1.Transaction? transaction,
@@ -517,7 +537,7 @@ class SnpRepository {
   /// Updates a single [Snp] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Snp?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<SnpUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -532,7 +552,7 @@ class SnpRepository {
   /// Updates all [Snp]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Snp>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<SnpUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<SnpTable> where,
     int? limit,
@@ -558,7 +578,7 @@ class SnpRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Snp>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Snp> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -570,7 +590,7 @@ class SnpRepository {
 
   /// Deletes a single [Snp].
   Future<Snp> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Snp row, {
     _i1.Transaction? transaction,
   }) async {
@@ -582,7 +602,7 @@ class SnpRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Snp>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<SnpTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -595,7 +615,7 @@ class SnpRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SnpTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -603,6 +623,22 @@ class SnpRepository {
     return session.db.count<Snp>(
       where: where?.call(Snp.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Snp] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<SnpTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Snp>(
+      where: where(Snp.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }

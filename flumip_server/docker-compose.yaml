@@ -1,7 +1,7 @@
 services:
   # Development services
   postgres:
-    image: postgres:16.3
+    image: postgres:18
     ports:
       - '8090:5432'
     restart: unless-stopped
@@ -10,12 +10,12 @@ services:
       POSTGRES_DB: flumip
       POSTGRES_PASSWORD: "Ts9sUjpsxo_I4VGCOcw_UrF3gPrInFqG"
     volumes:
-      - flumip_data:/var/lib/postgresql/data
+      - flumip_data:/var/lib/postgresql
     profiles:
       - '' # Default profile
       - dev
   redis:
-    image: redis:6.2.6
+    image: redis:8
     ports:
       - '8091:6379'
     restart: unless-stopped
@@ -28,7 +28,7 @@ services:
 
   # Test services
   postgres_test:
-    image: postgres:16.3
+    image: postgres:18
     ports:
       - '9090:5432'
     restart: unless-stopped
@@ -37,12 +37,12 @@ services:
       POSTGRES_DB: flumip_test
       POSTGRES_PASSWORD: "zxW_YBwuziG0k5ySRDCXfvWI7EsgSVUo"
     volumes:
-      - flumip_test_data:/var/lib/postgresql/data
+      - flumip_test_data:/var/lib/postgresql
     profiles:
       - '' # Default profile
       - test
   redis_test:
-    image: redis:6.2.6
+    image: redis:8
     ports:
       - '9091:6379'
     restart: unless-stopped

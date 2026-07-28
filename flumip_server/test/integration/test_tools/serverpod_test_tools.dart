@@ -8,7 +8,6 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
-
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
@@ -20,6 +19,7 @@ import 'package:flumip_server/src/generated/snp.dart' as _i5;
 import 'package:flumip_server/src/generated/project_options.dart' as _i6;
 import 'package:flumip_server/src/generated/project.dart' as _i7;
 import 'package:flumip_server/src/generated/settings.dart' as _i8;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i9;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -84,6 +84,11 @@ export 'package:serverpod_test/serverpod_test_public_exports.dart';
 /// }
 /// ```
 ///
+/// [configOverride] A function to override the server configuration. This function is called with
+/// the default server configuration after it is loaded from the config/ directory
+/// and before it is used to start the server. Use this to override particular
+/// settings in the server configuration.
+///
 /// [testGroupTagsOverride] By default Serverpod test tools tags the `withServerpod` test group with `"integration"`.
 /// This is to provide a simple way to only run unit or integration tests.
 /// This property allows this tag to be overridden to something else. Defaults to `['integration']`.
@@ -94,6 +99,7 @@ void withServerpod(
   String testGroupName,
   _i1.TestClosure<TestEndpoints> testClosure, {
   bool? applyMigrations,
+  _i2.ServerpodConfig Function(_i2.ServerpodConfig)? configOverride,
   bool? enableSessionLogging,
   _i2.ExperimentalFeatures? experimentalFeatures,
   _i1.RollbackDatabase? rollbackDatabase,
@@ -116,6 +122,7 @@ void withServerpod(
       serverpodLoggingMode: serverpodLoggingMode,
       testServerOutputMode: testServerOutputMode,
       experimentalFeatures: experimentalFeatures,
+      configOverride: configOverride,
       runtimeParametersBuilder: runtimeParametersBuilder,
     ),
     maybeRollbackDatabase: rollbackDatabase,
@@ -127,6 +134,8 @@ void withServerpod(
 }
 
 class TestEndpoints {
+  late final futureCalls = _FutureCalls();
+
   late final _FileEndpoint file;
 
   late final _GenomeEndpoint genome;
@@ -172,6 +181,12 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
   }
+}
+
+class _FutureCalls {
+  late final checkIndexProgress = _CheckIndexProgressFutureCall();
+
+  late final checkMipgenProgress = _CheckMipgenProgressFutureCall();
 }
 
 class _FileEndpoint {
@@ -459,68 +474,6 @@ class _GenomeEndpoint {
           endpointPath: 'genome',
           methodName: 'collectGenomes',
           parameters: _i1.testObjectToJson({}),
-          serializationManager: _serializationManager,
-        );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i3.Future<void>);
-        return _localReturnValue;
-      } finally {
-        await _localUniqueSession.close();
-      }
-    });
-  }
-
-  _i3.Future<void> indexGenome(
-    _i1.TestSessionBuilder sessionBuilder,
-    int id,
-  ) async {
-    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'genome',
-            method: 'indexGenome',
-          );
-      try {
-        var _localCallContext = await _endpointDispatch.getMethodCallContext(
-          createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'genome',
-          methodName: 'indexGenome',
-          parameters: _i1.testObjectToJson({'id': id}),
-          serializationManager: _serializationManager,
-        );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i3.Future<void>);
-        return _localReturnValue;
-      } finally {
-        await _localUniqueSession.close();
-      }
-    });
-  }
-
-  _i3.Future<void> deleteGenomeIndex(
-    _i1.TestSessionBuilder sessionBuilder,
-    int id,
-  ) async {
-    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'genome',
-            method: 'deleteGenomeIndex',
-          );
-      try {
-        var _localCallContext = await _endpointDispatch.getMethodCallContext(
-          createSessionCallback: (_) => _localUniqueSession,
-          endpointPath: 'genome',
-          methodName: 'deleteGenomeIndex',
-          parameters: _i1.testObjectToJson({'id': id}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1388,5 +1341,41 @@ class _SettingsEndpoint {
         await _localUniqueSession.close();
       }
     });
+  }
+}
+
+class _CheckIndexProgressFutureCall {
+  Future<void> run(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i4.Genome object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i9.CheckIndexProgressRunFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+}
+
+class _CheckMipgenProgressFutureCall {
+  Future<void> run(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i7.Project object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i9.CheckMipgenProgressRunFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
   }
 }

@@ -1,0 +1,122 @@
+import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
+import 'package:serverpod/serverpod.dart';
+
+/// Test seeding helpers that insert rows directly (no filesystem side effects),
+/// so pure-DB tests don't depend on `/opt/flumip`. Use `projectService`'s own
+/// methods when a real project directory is required.
+
+Future<Genome> seedGenome(
+  Session session, {
+  String name = 'hg38',
+  String? path,
+  String? fastaPath,
+  String? refPath,
+  String? snpFolder,
+  List<int>? snp,
+  String? category,
+  bool indexed = false,
+  bool indexing = false,
+  int indexPID = 0,
+}) {
+  return Genome.db.insertRow(
+    session,
+    Genome(
+      name: name,
+      path: path,
+      fastaPath: fastaPath,
+      refPath: refPath,
+      snpFolder: snpFolder,
+      snp: snp,
+      category: category,
+      indexed: indexed,
+      indexing: indexing,
+      indexPID: indexPID,
+    ),
+  );
+}
+
+Future<Snp> seedSnp(
+  Session session, {
+  String name = 'common',
+  String vcfPath = '/tmp/snp.vcf.gz',
+  String tbiPath = '/tmp/snp.vcf.gz.tbi',
+  String folder = '/tmp/snp',
+  bool active = true,
+  bool private = false,
+}) {
+  return Snp.db.insertRow(
+    session,
+    Snp(
+      name: name,
+      vcfPath: vcfPath,
+      tbiPath: tbiPath,
+      folder: folder,
+      active: active,
+      private: private,
+    ),
+  );
+}
+
+/// Inserts a [Project] row directly. [options] must reference an existing
+/// [ProjectOptions] id (seed one with [seedOptions] first if needed).
+Future<Project> seedProject(
+  Session session, {
+  String name = 'test',
+  required int options,
+  String? folderName,
+  int? genome,
+  int? snp,
+  List<String>? genes,
+  int? pid,
+  bool active = false,
+  DateTime? started,
+}) {
+  return Project.db.insertRow(
+    session,
+    Project(
+      name: name,
+      options: options,
+      folderName: folderName,
+      genome: genome,
+      snp: snp,
+      genes: genes,
+      pid: pid,
+      active: active,
+      started: started,
+    ),
+  );
+}
+
+Future<ProjectOptions> seedOptions(Session session) {
+  // armLengths is nullable but generateMips dereferences it (armLengths!), so
+  // seed a non-null (empty) value to mirror a real configured options row.
+  return ProjectOptions.db.insertRow(session, ProjectOptions(armLengths: ''));
+}
+
+/// Loads the settings row and overrides the given directory fields, so
+/// filesystem tests can point the service at a temp directory instead of
+/// `/opt/flumip`.
+Future<Settings> overrideSettingsDirs(
+  Session session, {
+  String? baseDir,
+  String? projectDir,
+  String? genomeDir,
+  String? customSnpDir,
+  String? exonExtractScript,
+  String? mipgenExecutable,
+  String? ucscTrackGenerator,
+}) async {
+  final settings = await SettingsService().getSettings(session);
+  if (baseDir != null) settings.baseDir = baseDir;
+  if (projectDir != null) settings.projectDir = projectDir;
+  if (genomeDir != null) settings.genomeDir = genomeDir;
+  if (customSnpDir != null) settings.customSnpDir = customSnpDir;
+  if (exonExtractScript != null) settings.exonExtractScript = exonExtractScript;
+  if (mipgenExecutable != null) settings.mipgenExecutable = mipgenExecutable;
+  if (ucscTrackGenerator != null) {
+    settings.ucscTrackGenerator = ucscTrackGenerator;
+  }
+  await SettingsService().updateSettings(session, settings);
+  return settings;
+}
