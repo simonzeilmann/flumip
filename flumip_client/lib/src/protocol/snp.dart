@@ -43,13 +43,15 @@ abstract class Snp implements _i1.SerializableModel {
     return Snp(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       vcfPath: jsonSerialization['vcfPath'] as String,
       tbiPath: jsonSerialization['tbiPath'] as String,
       folder: jsonSerialization['folder'] as String,
-      active: jsonSerialization['active'] as bool,
-      private: jsonSerialization['private'] as bool,
-      size: jsonSerialization['size'] as int,
+      active: _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      private: jsonSerialization['private'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+      size: jsonSerialization['size'] as int?,
     );
   }
 

@@ -69,13 +69,15 @@ abstract class Project implements _i1.SerializableModel {
     return Project(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
       tags: jsonSerialization['tags'] == null
           ? null
           : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
-      created: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      created: jsonSerialization['created'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
       genes: jsonSerialization['genes'] == null
@@ -83,10 +85,18 @@ abstract class Project implements _i1.SerializableModel {
           : _i2.Protocol().deserialize<List<String>>(
               jsonSerialization['genes'],
             ),
-      bedFileCreated: jsonSerialization['bedFileCreated'] as bool,
-      active: jsonSerialization['active'] as bool,
-      size: jsonSerialization['size'] as int,
-      emailNotification: jsonSerialization['emailNotification'] as bool,
+      bedFileCreated: jsonSerialization['bedFileCreated'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['bedFileCreated']),
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      size: jsonSerialization['size'] as int?,
+      emailNotification: jsonSerialization['emailNotification'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['emailNotification'],
+            ),
       options: jsonSerialization['options'] as int,
       started: jsonSerialization['started'] == null
           ? null
@@ -96,8 +106,10 @@ abstract class Project implements _i1.SerializableModel {
           : _i1.DurationJsonExtension.fromJson(
               jsonSerialization['completedIn'],
             ),
-      error: jsonSerialization['error'] as String,
-      cleanup: jsonSerialization['cleanup'] as bool,
+      error: jsonSerialization['error'] as String?,
+      cleanup: jsonSerialization['cleanup'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
     );
   }
 

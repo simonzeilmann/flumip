@@ -60,7 +60,7 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     return Genome(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       path: jsonSerialization['path'] as String?,
       fastaPath: jsonSerialization['fastaPath'] as String?,
       refPath: jsonSerialization['refPath'] as String?,
@@ -69,12 +69,18 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
           ? null
           : _i2.Protocol().deserialize<List<int>>(jsonSerialization['snp']),
       category: jsonSerialization['category'] as String?,
-      active: jsonSerialization['active'] as bool,
-      indexed: jsonSerialization['indexed'] as bool,
-      indexing: jsonSerialization['indexing'] as bool,
-      indexPID: jsonSerialization['indexPID'] as int,
-      indexResults: jsonSerialization['indexResults'] as int,
-      size: jsonSerialization['size'] as int,
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      indexed: jsonSerialization['indexed'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
+      indexing: jsonSerialization['indexing'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
+      indexPID: jsonSerialization['indexPID'] as int?,
+      indexResults: jsonSerialization['indexResults'] as int?,
+      size: jsonSerialization['size'] as int?,
     );
   }
 
@@ -537,7 +543,7 @@ class GenomeRepository {
   /// );
   /// ```
   Future<List<Genome>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     int? offset,
@@ -545,6 +551,8 @@ class GenomeRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<GenomeTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Genome>(
       where: where?.call(Genome.t),
@@ -554,6 +562,8 @@ class GenomeRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -575,13 +585,15 @@ class GenomeRepository {
   /// );
   /// ```
   Future<Genome?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? offset,
     _i1.OrderByBuilder<GenomeTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<GenomeTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Genome>(
       where: where?.call(Genome.t),
@@ -590,18 +602,24 @@ class GenomeRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Genome] by its [id] or null if no such row exists.
   Future<Genome?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Genome>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -611,14 +629,20 @@ class GenomeRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Genome>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Genome>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -626,7 +650,7 @@ class GenomeRepository {
   ///
   /// The returned [Genome] will have its `id` field set.
   Future<Genome> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
@@ -642,7 +666,7 @@ class GenomeRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Genome>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.ColumnSelections<GenomeTable>? columns,
     _i1.Transaction? transaction,
@@ -658,7 +682,7 @@ class GenomeRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Genome> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.ColumnSelections<GenomeTable>? columns,
     _i1.Transaction? transaction,
@@ -673,7 +697,7 @@ class GenomeRepository {
   /// Updates a single [Genome] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Genome?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -688,7 +712,7 @@ class GenomeRepository {
   /// Updates all [Genome]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Genome>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<GenomeTable> where,
     int? limit,
@@ -714,7 +738,7 @@ class GenomeRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Genome>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -726,7 +750,7 @@ class GenomeRepository {
 
   /// Deletes a single [Genome].
   Future<Genome> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
@@ -738,7 +762,7 @@ class GenomeRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Genome>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<GenomeTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -751,7 +775,7 @@ class GenomeRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -759,6 +783,22 @@ class GenomeRepository {
     return session.db.count<Genome>(
       where: where?.call(Genome.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Genome] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<GenomeTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Genome>(
+      where: where(Genome.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }
