@@ -43,8 +43,10 @@ class ProcessService {
         "Error running process check for project ID: ${projectModel.id}",
         level: LogLevel.error,
       );
-      //TODO: error handling
-      throw ();
+      throw Exception(
+        'Failed to check mipgen process for project ${projectModel.id}: '
+        '`ps` exited with code ${process.exitCode}: ${process.stderr}',
+      );
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
@@ -95,7 +97,10 @@ class ProcessService {
         "Error running process check for gene ID: ${genomeModel.id}",
         level: LogLevel.error,
       );
-      throw ();
+      throw Exception(
+        'Failed to check index process for genome ${genomeModel.id}: '
+        '`ps` exited with code ${process.exitCode}: ${process.stderr}',
+      );
     } else {
       var lines = process.stdout.split("\n");
       if (lines.length > 1) {
@@ -143,8 +148,10 @@ class ProcessService {
         "Error running pgrep for process name: $processName",
         level: LogLevel.error,
       );
-      //TODO: error handling
-      throw ();
+      throw Exception(
+        'Failed to run pgrep for process "$processName": '
+        'exited with code ${process.exitCode}: ${process.stderr}',
+      );
     } else {
       var lines = process.stdout.split("\n");
       for (var line in lines) {
