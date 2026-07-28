@@ -1,10 +1,12 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/project_service.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:test/test.dart';
 
+import '../support/matchers.dart';
+
 import '../integration/test_tools/serverpod_test_tools.dart';
+import '../support/seed.dart';
 
 void main() {
   withServerpod('Project Creation', (sessionBuilder, endpoints) {
@@ -35,9 +37,7 @@ void main() {
       () async {
         expect(
             () => projectService.createProject(session, "", ProjectOptions(id: 1)),
-            throwsA(predicate((e) =>
-                e is ArgumentError &&
-                e.message == 'Project name cannot be empty')));
+            throwsMessage('Project name cannot be empty'));
       },
       tags: ['unit'],
     );
@@ -62,8 +62,7 @@ void main() {
     test('non existent project id should throw an exception', () async {
       expect(
           () => projectService.deleteProject(session, -1),
-          throwsA(predicate((e) =>
-              e is FileNotFoundException && e.message == 'Project not found')));
+          throwsMessage('Project not found'));
     });
   });
 
@@ -84,8 +83,7 @@ void main() {
         'should throw an exception', () async {
       expect(
           () => projectService.getProject(session, -1),
-          throwsA(predicate((e) =>
-              e is FileNotFoundException && e.message == 'Project not found')));
+          throwsMessage('Project not found'));
     });
 
     test(
@@ -161,5 +159,127 @@ void main() {
       },
       tags: ['unit'],
     );
+  });
+
+  withServerpod('Genome / SNP assignment', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test('setGenomeById links the genome to the project', () async {
+      final project = await seedProject(session, options: 1);
+      final genome = await seedGenome(session, name: 'hg38');
+      await projectService.setGenomeById(session, project.id!, genome.id!);
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.genome, genome.id);
+    }, tags: ['unit']);
+
+    test('setGenomeById throws when the project is missing', () async {
+      expect(
+        () => projectService.setGenomeById(session, -1, 1),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+
+    test('setGenomeById throws when the genome is missing', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService.setGenomeById(session, project.id!, -1),
+        throwsMessage('Gene not found'),
+      );
+    }, tags: ['unit']);
+
+    test('setSnpById links the snp to the project', () async {
+      final project = await seedProject(session, options: 1);
+      final snp = await seedSnp(session, name: 'common');
+      await projectService.setSnpById(session, project.id!, snp.id!);
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.snp, snp.id);
+    }, tags: ['unit']);
+
+    test('setSnpById throws when the project is missing', () async {
+      expect(
+        () => projectService.setSnpById(session, -1, 1),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+
+    test('setSnpById throws when the snp is missing', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService.setSnpById(session, project.id!, -1),
+        throwsMessage('Snp not found'),
+      );
+    }, tags: ['unit']);
+
+    test('updateProject persists field changes', () async {
+      final project = await seedProject(session, options: 1);
+      project.error = 'boom';
+      await projectService.updateProject(session, project);
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.error, 'boom');
+    }, tags: ['unit']);
+  });
+
+  withServerpod('Gene validation', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final projectService = ProjectService();
+
+    test('addGeneToProject rejects a duplicate gene', () async {
+      final project = await seedProject(session, options: 1);
+      await projectService.addGeneToProject(session, project.id!, 'BRCA1');
+      expect(
+        () => projectService.addGeneToProject(session, project.id!, 'BRCA1'),
+        throwsA(predicate(
+            (e) => e is Exception && '$e'.contains('Gene already exists'))),
+      );
+    }, tags: ['unit']);
+
+    test('addGeneToProject rejects an empty gene', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService.addGeneToProject(session, project.id!, ''),
+        throwsMessage('Supplied gene empty'),
+      );
+    }, tags: ['unit']);
+
+    test('addGeneToProject rejects invalid characters', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService.addGeneToProject(session, project.id!, 'BR-CA1'),
+        throwsMessage('Gene name contains invalid characters'),
+      );
+    }, tags: ['unit']);
+
+    test('addGeneToProject throws when the project is missing', () async {
+      expect(
+        () => projectService.addGeneToProject(session, -1, 'BRCA1'),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+
+    test('addGenesToProject rejects invalid characters', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService
+            .addGenesToProject(session, project.id!, ['OK', 'bad gene']),
+        throwsMessage('Gene name contains invalid characters'),
+      );
+    }, tags: ['unit']);
+
+    test('addGenesToProject throws when the project is missing', () async {
+      expect(
+        () => projectService.addGenesToProject(session, -1, ['BRCA1']),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+
+    test('removeGeneFromProject throws when there are no genes', () async {
+      final project = await seedProject(session, options: 1);
+      expect(
+        () => projectService.removeGeneFromProject(session, project.id!, 'X'),
+        throwsA(predicate(
+            (e) => e is Exception && '$e'.contains('does not have any genes'))),
+      );
+    }, tags: ['unit']);
   });
 }

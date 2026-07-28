@@ -4,6 +4,8 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:test/test.dart';
 
+import '../support/matchers.dart';
+
 import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
@@ -93,5 +95,31 @@ void main() {
       },
       tags: ['unit'],
     );
+  });
+
+  withServerpod('Not found', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+    final optionsService = OptionsService();
+
+    test('getProjectOptions throws for a missing id', () async {
+      expect(
+        () => optionsService.getProjectOptions(session, -1),
+        throwsA(isA<FileNotFoundException>()),
+      );
+    }, tags: ['unit']);
+
+    test('updateProjectOptions throws for a missing id', () async {
+      expect(
+        () => optionsService.updateProjectOptions(session, -1, ProjectOptions()),
+        throwsMessage('Project options not found'),
+      );
+    }, tags: ['unit']);
+
+    test('deleteProjectOptions throws for a missing id', () async {
+      expect(
+        () => optionsService.deleteProjectOptions(session, -1),
+        throwsMessage('Project options not found'),
+      );
+    }, tags: ['unit']);
   });
 }
