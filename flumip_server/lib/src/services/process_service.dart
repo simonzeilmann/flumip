@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/genome.dart';
 import 'package:flumip_server/src/generated/project.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
+import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -37,7 +36,8 @@ class ProcessService {
       );
       throw ArgumentError('Project id does not exist');
     }
-    var process = await Process.run("ps", ["-p", project.pid.toString()]);
+    var process =
+        await sl<ProcessRunner>().run("ps", ["-p", project.pid.toString()]);
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for project ID: ${projectModel.id}",
@@ -91,7 +91,8 @@ class ProcessService {
       );
       throw ArgumentError('Gene id does not exist');
     }
-    var process = await Process.run("ps", ["-p", genome.indexPID.toString()]);
+    var process = await sl<ProcessRunner>()
+        .run("ps", ["-p", genome.indexPID.toString()]);
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for gene ID: ${genomeModel.id}",
@@ -138,7 +139,8 @@ class ProcessService {
     );
     int processPID = 0;
 
-    var process = await Process.run("pgrep", ["--list-full", processName]);
+    var process =
+        await sl<ProcessRunner>().run("pgrep", ["--list-full", processName]);
     if (process.exitCode == 1) {
       session.log("Process is not running", level: LogLevel.info);
       return processPID;
@@ -171,7 +173,8 @@ class ProcessService {
 
   Future<void> terminateProcess(Session session, int pid) async {
     session.log("Terminating process with PID: $pid", level: LogLevel.info);
-    var process = await Process.run("kill", ["-9", pid.toString()]);
+    var process =
+        await sl<ProcessRunner>().run("kill", ["-9", pid.toString()]);
     if (process.exitCode > 1) {
       session.log(
         "Error terminating process with PID: $pid",

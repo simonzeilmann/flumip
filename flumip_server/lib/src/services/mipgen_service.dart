@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/options_service.dart';
@@ -84,7 +85,7 @@ class MipgenService {
       "Running exon extract script with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await Process.run(settings.exonExtractScript, arg);
+    var process = await sl<ProcessRunner>().run(settings.exonExtractScript, arg);
 
     if (process.exitCode != 0 || process.stdout == "") {
       session.log(
@@ -224,7 +225,7 @@ class MipgenService {
       "Starting MIP generation process with arguments: $arg",
       level: LogLevel.info,
     );
-    await Process.start(
+    await sl<ProcessRunner>().start(
       settings.mipgenExecutable,
       arg,
       workingDirectory: "${settings.projectDir}/${project.folderName}",
@@ -355,7 +356,7 @@ class MipgenService {
       "Starting UCSC track generation process with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await Process.run(
+    var process = await sl<ProcessRunner>().run(
       "python",
       arg,
       workingDirectory: projectDir,
