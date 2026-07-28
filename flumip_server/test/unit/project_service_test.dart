@@ -7,12 +7,20 @@ import '../support/matchers.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/seed.dart';
+import '../support/temp_dir.dart';
 
 void main() {
   withServerpod('Project Creation', (sessionBuilder, endpoints) {
     setup();
     var session = sessionBuilder.build();
     final projectService = sl<ProjectService>();
+
+    // createProject creates <projectDir>/<folderName>; point projectDir at a
+    // writable temp dir so the test doesn't depend on /opt/flumip existing.
+    setUp(() async {
+      final base = createTempDir('projsvc');
+      await overrideSettingsDirs(session, projectDir: base.path);
+    });
 
     test(
       'calling `createProject` should return the project',
@@ -47,6 +55,11 @@ void main() {
     var session = sessionBuilder.build();
     final projectService = ProjectService();
 
+    setUp(() async {
+      final base = createTempDir('projsvc');
+      await overrideSettingsDirs(session, projectDir: base.path);
+    });
+
     test(
       'calling `deleteProject` should give an empty list of projects',
       () async {
@@ -69,6 +82,11 @@ void main() {
   withServerpod('Get Projects', (sessionBuilder, endpoints) {
     var session = sessionBuilder.build();
     final projectService = ProjectService();
+
+    setUp(() async {
+      final base = createTempDir('projsvc');
+      await overrideSettingsDirs(session, projectDir: base.path);
+    });
 
     test('calling get Project should return the requested project', () async {
       final result = await projectService.createProject(
@@ -107,6 +125,11 @@ void main() {
   withServerpod('Gene Update Tests', (sessionBuilder, endpoints) {
     var session = sessionBuilder.build();
     final projectService = ProjectService();
+
+    setUp(() async {
+      final base = createTempDir('projsvc');
+      await overrideSettingsDirs(session, projectDir: base.path);
+    });
 
     test(
       'calling `addGenesToProject` should add genes'
