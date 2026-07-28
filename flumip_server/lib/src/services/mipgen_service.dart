@@ -98,7 +98,7 @@ class MipgenService {
     }
 
     session.log("Writing BED file: $bedFile", level: LogLevel.info);
-    fileService.writeStringToFile(session, bedFile, process.stdout);
+    await fileService.writeStringToFile(session, bedFile, process.stdout);
 
     project.bedFileCreated = true;
     await projectService.updateProject(session, project);

@@ -56,7 +56,6 @@ class FileService {
         "Gene file does not exist, creating: $geneFile",
         level: LogLevel.info,
       );
-      File(geneFile).create();
       await _writeListToFile(session, geneFile, genes);
     }
     session.log(

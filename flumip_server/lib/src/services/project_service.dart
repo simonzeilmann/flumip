@@ -97,7 +97,7 @@ class ProjectService {
         await processService.terminateProcess(session, project.pid!);
       }
       var settings = await SettingsService().getSettings(session);
-      Directory(
+      await Directory(
         "${settings.projectDir}/${project.folderName}",
       ).delete(recursive: true);
       // Cancel any scheduled future calls related to this project
