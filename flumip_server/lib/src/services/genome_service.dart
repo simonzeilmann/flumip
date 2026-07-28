@@ -327,7 +327,12 @@ class GenomeService {
   String _getFilePath(Directory dir, String extension) {
     return dir
         .listSync()
-        .firstWhere((file) => file.path.endsWith(extension))
+        .firstWhere(
+          (file) => file.path.endsWith(extension),
+          orElse: () => throw FlumipFileNotFoundException(
+            message: 'No "$extension" file found in ${dir.path}',
+          ),
+        )
         .path;
   }
 
