@@ -6,7 +6,7 @@ import '../services/options_service.dart';
 
 /// Endpoint for handling project options-related operations.
 class OptionsEndpoint extends Endpoint {
-  get optionsService => OptionsService();
+  OptionsService get optionsService => OptionsService();
 
   /// Creates project options.
   ///

@@ -21,6 +21,8 @@ import 'package:flumip_server/src/generated/genome.dart' as _i8;
 import 'package:flumip_server/src/generated/snp.dart' as _i9;
 import 'package:flumip_server/src/generated/project_options.dart' as _i10;
 import 'package:flumip_server/src/generated/settings.dart' as _i11;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i12;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -228,44 +230,6 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['genome'] as _i3.GenomeEndpoint)
                   .collectGenomes(session),
-        ),
-        'indexGenome': _i1.MethodConnector(
-          name: 'indexGenome',
-          params: {
-            'id': _i1.ParameterDescription(
-              name: 'id',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i3.GenomeEndpoint).indexGenome(
-                    session,
-                    params['id'],
-                  ),
-        ),
-        'deleteGenomeIndex': _i1.MethodConnector(
-          name: 'deleteGenomeIndex',
-          params: {
-            'id': _i1.ParameterDescription(
-              name: 'id',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
-          },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i3.GenomeEndpoint).deleteGenomeIndex(
-                    session,
-                    params['id'],
-                  ),
         ),
         'getSnp': _i1.MethodConnector(
           name: 'getSnp',
@@ -798,5 +762,10 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+  }
+
+  @override
+  _i1.FutureCallDispatch? get futureCalls {
+    return _i12.FutureCalls();
   }
 }

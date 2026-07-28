@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
@@ -377,15 +378,23 @@ class GenomeService {
       genome.fastaPath!,
     );
     await Genome.db.updateRow(session, genome);
-    await session.serverpod.futureCallWithDelay(
-      'checkIndexProgress',
-      genome,
-      const Duration(minutes: 1),
-    );
+    await scheduleIndexProgressCheck(session, genome);
     session.log(
       "Indexing started for genome with ID: $id",
       level: LogLevel.info,
     );
+  }
+
+  /// Schedules a delayed future call that polls the BWA index progress for
+  /// [genome]. Used both to start polling and to reschedule the next check.
+  Future<void> scheduleIndexProgressCheck(
+    Session session,
+    Genome genome,
+  ) async {
+    await session.serverpod.futureCalls
+        .callWithDelay(const Duration(minutes: 1))
+        .checkIndexProgress
+        .run(genome);
   }
 
   /// Marks the indexing as finished for a genome.

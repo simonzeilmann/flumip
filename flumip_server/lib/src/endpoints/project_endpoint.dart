@@ -6,7 +6,7 @@ import '../generated/protocol.dart';
 
 /// Endpoint for handling project-related operations.
 class ProjectEndpoint extends Endpoint {
-  get projectService => ProjectService();
+  ProjectService get projectService => ProjectService();
 
   /// Creates a new project.
   ///

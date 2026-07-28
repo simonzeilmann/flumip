@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:flumip_server/src/future_calls/check_index_progress_future_call.dart';
-import 'package:flumip_server/src/future_calls/check_mipgen_progress_future_call.dart';
 import 'package:flumip_server/src/future_calls/demo_mode_cleanup.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -18,12 +16,10 @@ void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
 
-  // If you are using any future calls, they need to be registered here.
-  pod.registerFutureCall(
-    CheckMipgenProgressFutureCall(),
-    'checkMipgenProgress',
-  );
-  pod.registerFutureCall(CheckIndexProgressFutureCall(), 'checkIndexProgress');
+  // CheckIndexProgress / CheckMipgenProgress are spec future calls and are
+  // registered automatically from the generated code. DemoModeCleanup still
+  // uses the legacy string-keyed API (identifier-based scheduling/cancellation)
+  // and is registered manually.
   pod.registerFutureCall(DemoModeCleanup(), 'demoModeCleanup');
 
   // Setup the flutter project server.
