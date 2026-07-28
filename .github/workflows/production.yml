@@ -43,6 +43,24 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-build
 
+    services:
+      # Test database matching flumip_server/config/test.yaml (localhost:9090,
+      # db flumip_test, user postgres). POSTGRES_TEST_PASSWORD must equal the
+      # `test.database` password inside the PASSWORDS_YAML secret.
+      postgres_test:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: flumip_test
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+        ports:
+          - 9090:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -70,7 +88,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cd flumip_server && dart test --tags "unit && action"
+          cd flumip_server && dart test --exclude-tags env
 
   deploy-production-to-server:
     runs-on: ubuntu-latest
