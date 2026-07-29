@@ -3,14 +3,12 @@ import 'dart:math';
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-const String siteUrl = String.fromEnvironment(
-  'SITE_URL',
-  defaultValue: 'http://localhost:8082',
-);
+final String siteUrl = resolveSiteUrl();
 
 class GenomeRange {
   final String name;
