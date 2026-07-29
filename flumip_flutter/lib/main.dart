@@ -1,4 +1,5 @@
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/project/projects_tab.dart';
 import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
@@ -11,10 +12,7 @@ const String siteTitle = String.fromEnvironment(
   defaultValue: 'Flumip Development',
 );
 
-const String apiUrl = String.fromEnvironment(
-  'API_URL',
-  defaultValue: 'http://localhost:8080/',
-);
+final String apiUrl = resolveApiUrl();
 
 const String appVersion = String.fromEnvironment(
   'APP_VERSION',
