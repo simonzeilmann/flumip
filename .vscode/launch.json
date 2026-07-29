@@ -8,6 +8,12 @@
   //
   // Without it the server hangs retrying the connection instead of failing, and
   // note that config/passwords.yaml is gitignored but must exist locally.
+  //
+  // Linting: the "Lint" task in tasks.json analyzes both packages exactly the
+  // way CI does (Ctrl+Shift+B). A shell command cannot be a launch
+  // configuration, so it lives there rather than here; the "Full stack"
+  // compounds below run it first via preLaunchTask, while the individual
+  // configurations skip it to keep restarts fast.
   "version": "0.2.0",
   "configurations": [
     {
@@ -91,7 +97,10 @@
   "compounds": [
     {
       // Backend plus frontend in one click, for exercising a change end to end.
+      // Lints first, so a push-blocking analyze failure shows up here rather
+      // than in CI. Remove preLaunchTask if you want to run despite failures.
       "name": "Full stack (debug)",
+      "preLaunchTask": "Lint",
       "configurations": [
         "Server",
         "Frontend (debug)"
@@ -100,6 +109,7 @@
     },
     {
       "name": "Full stack (apply migrations)",
+      "preLaunchTask": "Lint",
       "configurations": [
         "Server (apply migrations)",
         "Frontend (debug)"
