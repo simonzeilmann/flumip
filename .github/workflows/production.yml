@@ -162,7 +162,10 @@ jobs:
             #!/bin/bash
             docker stop postgres_production || true
             docker rm postgres_production || true
-            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5432:5432 --restart unless-stopped postgres:16.3
+            # postgres:18 matches dev, test, CI and deployment/setup-flumip.sh.
+            # NOTE: a data directory initialised by 16.3 cannot be opened by 18 —
+            # dump and restore flumip_production_data before this first runs.
+            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql/data -p 5432:5432 --restart unless-stopped postgres:18
             rm -rf /var/www/flumip_production
             mv ~/flumip_production/flumip_server/app /var/www/flumip_production
             echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_production/deployment/flumip_production.service /etc/systemd/system/
