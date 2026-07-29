@@ -1,0 +1,110 @@
+{
+  // Local development configurations. See flumip_server/config/development.yaml
+  // for the ports: API 8080, Insights 8081, web 8082.
+  //
+  // The backend needs the development database before it will start:
+  //
+  //   cd flumip_server && docker compose --profile dev up -d postgres redis
+  //
+  // Without it the server hangs retrying the connection instead of failing, and
+  // note that config/passwords.yaml is gitignored but must exist locally.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Everyday backend run. Leaves the schema untouched, so a pending
+      // migration shows up as a runtime error rather than being applied
+      // silently.
+      "name": "Server",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose"
+      ]
+    },
+    {
+      // Use after `serverpod create-migration`, or against a fresh database.
+      // Applies pending migrations at startup and then serves normally, which
+      // is what the deployed units do.
+      "name": "Server (apply migrations)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose",
+        "--apply-migrations"
+      ]
+    },
+    {
+      // Applies migrations and exits without serving — handy for setting up the
+      // database without leaving a server running.
+      "name": "Server: migrate only (exits)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=maintenance",
+        "--logging=verbose",
+        "--apply-migrations"
+      ]
+    },
+    {
+      // Hot reload and breakpoints. The web port is pinned so the URL is stable
+      // across runs; lib/api_config.dart recognises a localhost page on a port
+      // like this as a dev run and targets the API on 8080.
+      "name": "Frontend (debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/flumip_flutter",
+      "deviceId": "chrome",
+      "flutterMode": "debug",
+      "args": [
+        "--web-port=8083"
+      ]
+    },
+    {
+      // Release build, no debugger attached: no hot reload and no breakpoints,
+      // but representative of what an end user is served. Use this to check
+      // performance or anything that behaves differently in release.
+      "name": "Frontend (no debugging, release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/flumip_flutter",
+      "deviceId": "chrome",
+      "flutterMode": "release",
+      "noDebug": true,
+      "args": [
+        "--web-port=8083"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      // Backend plus frontend in one click, for exercising a change end to end.
+      "name": "Full stack (debug)",
+      "configurations": [
+        "Server",
+        "Frontend (debug)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Full stack (apply migrations)",
+      "configurations": [
+        "Server (apply migrations)",
+        "Frontend (debug)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
