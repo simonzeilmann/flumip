@@ -23,12 +23,26 @@ const Map<int, int> webToApiPort = {
   8092: 8090, // staging
 };
 
+/// Whether [pageUrl] looks like a local `flutter run` rather than an install.
+///
+/// `flutter run -d chrome` serves the app on its own port, which is neither an
+/// API port nor one of [webToApiPort]. A localhost page on an unrecognised port
+/// therefore means a development run, where the backend is the one described by
+/// `flumip_server/config/development.yaml`. An install served on localhost uses
+/// a known web port and is matched by [webToApiPort] instead.
+bool _isLocalDevPage(Uri pageUrl) {
+  const localHosts = {'localhost', '127.0.0.1', '::1'};
+  return localHosts.contains(pageUrl.host) &&
+      !webToApiPort.containsKey(pageUrl.port);
+}
+
 /// Derives the API URL from the URL the app itself was loaded from.
 ///
 /// Falls back to the page's own port for anything not in [webToApiPort] — for
 /// example a reverse proxy that routes the API on the same origin. A proxy that
 /// does not do that needs an explicit `--dart-define=API_URL` build.
 String apiUrlFor(Uri pageUrl) {
+  if (_isLocalDevPage(pageUrl)) return developmentApiUrl;
   return Uri(
     scheme: pageUrl.scheme,
     host: pageUrl.host,
@@ -54,8 +68,11 @@ const String developmentSiteUrl = 'http://localhost:8082';
 /// The origin this app is served from, without a trailing slash.
 ///
 /// UCSC custom-track links point back at this server's web port, so unlike
-/// [apiUrlFor] the port is kept as-is.
+/// [apiUrlFor] the port is kept as-is — except during a local `flutter run`,
+/// where tracks are served by the development backend rather than by the
+/// Flutter dev server hosting the app.
 String siteUrlFor(Uri pageUrl) {
+  if (_isLocalDevPage(pageUrl)) return developmentSiteUrl;
   return Uri(
     scheme: pageUrl.scheme,
     host: pageUrl.host,

@@ -163,9 +163,14 @@ jobs:
             docker stop postgres_staging || true
             docker rm postgres_staging || true
             # postgres:18 matches dev, test, CI and deployment/setup-flumip.sh.
-            # NOTE: a data directory initialised by 16.3 cannot be opened by 18 —
-            # dump and restore flumip_staging_data before this first runs.
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql/data -p 5433:5432 --restart unless-stopped postgres:18
+            # The volume mounts at /var/lib/postgresql, NOT .../data: postgres:18
+            # sets PGDATA=/var/lib/postgresql/18/docker, so the old path would
+            # keep the data in the container layer and lose it on the next
+            # `docker rm` here. Matches flumip_server/docker-compose.yaml.
+            # NOTE: the existing flumip_staging_data volume holds a 16.3 data
+            # directory at the old path and must be dumped and restored before
+            # this first runs.
+            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql -p 5433:5432 --restart unless-stopped postgres:18
             rm -rf /var/www/flumip_staging
             mv ~/flumip_staging/flumip_server/app /var/www/flumip_staging
             echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_staging/deployment/flumip_staging.service /etc/systemd/system/

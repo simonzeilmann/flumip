@@ -46,6 +46,27 @@ void main() {
       );
     });
 
+    test('points a local flutter run at the development backend', () {
+      // `flutter run -d chrome` serves the app on its own port, so the page
+      // port says nothing about where the API is.
+      expect(
+        apiUrlFor(Uri.parse('http://localhost:8083/')),
+        developmentApiUrl,
+      );
+      expect(
+        apiUrlFor(Uri.parse('http://127.0.0.1:54321/')),
+        developmentApiUrl,
+      );
+    });
+
+    test('still maps a known web port on localhost, for a local install', () {
+      // setup-flumip.sh defaults to --host localhost, which must keep working.
+      expect(
+        apiUrlFor(Uri.parse('http://localhost:9082/')),
+        'http://localhost:9080/',
+      );
+    });
+
     test('drops any path from the page URL', () {
       expect(
         apiUrlFor(Uri.parse('http://mips.example.org:9082/projects/7')),
@@ -66,6 +87,14 @@ void main() {
       expect(
         siteUrlFor(Uri.parse('https://mips.example.org/')),
         'https://mips.example.org',
+      );
+    });
+
+    test('points a local flutter run at the development web server', () {
+      // Tracks are served by flumip_server, not by the Flutter dev server.
+      expect(
+        siteUrlFor(Uri.parse('http://localhost:8083/')),
+        developmentSiteUrl,
       );
     });
 

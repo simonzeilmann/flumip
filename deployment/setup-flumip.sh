@@ -405,13 +405,17 @@ Either restore that file, or remove the container and its volume to start over:
     fi
   else
     echo -e "${GREEN}Starting $POSTGRES_IMAGE container $DB_CONTAINER on port $DB_PORT${NC}"
+    # The volume mounts at /var/lib/postgresql, NOT /var/lib/postgresql/data:
+    # postgres:18 sets PGDATA=/var/lib/postgresql/18/docker, so mounting the
+    # old path would leave the data in the container's writable layer and lose
+    # it on the next `docker rm`. Matches flumip_server/docker-compose.yaml.
     docker run -d \
       --name "$DB_CONTAINER" \
       --restart unless-stopped \
       -e POSTGRES_USER="$DB_USER" \
       -e POSTGRES_PASSWORD="$DB_PASSWORD" \
       -e POSTGRES_DB="$DB_NAME" \
-      -v "$DB_VOLUME":/var/lib/postgresql/data \
+      -v "$DB_VOLUME":/var/lib/postgresql \
       -p "$DB_PORT":5432 \
       "$POSTGRES_IMAGE" >/dev/null
   fi
