@@ -5,6 +5,7 @@ import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
+import 'package:flumip_server/src/services/mail_service.dart';
 import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
@@ -333,6 +334,23 @@ class MipgenService {
       project.pid = 0;
       project.active = false;
       await projectService.updateProject(session, project);
+    }
+
+    // Notify after the project has been persisted, so the email reflects the
+    // final state (size, duration, error). Guarded independently: finalization
+    // has already completed at this point and must never be affected by mail.
+    try {
+      await sl<MailService>().notifyProjectFinished(
+        session,
+        project,
+        failed: project.error.isNotEmpty,
+      );
+    } catch (e, stackTrace) {
+      session.log(
+        "Error notifying about MIP generation for project ID: ${project.id}: $e",
+        level: LogLevel.error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

@@ -1314,6 +1314,7 @@ class _SettingsEndpoint {
 
   _i3.Future<void> updateSettings(
     _i1.TestSessionBuilder sessionBuilder,
+    String password,
     _i8.Settings settings,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1327,7 +1328,45 @@ class _SettingsEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'settings',
           methodName: 'updateSettings',
-          parameters: _i1.testObjectToJson({'settings': settings}),
+          parameters: _i1.testObjectToJson({
+            'password': password,
+            'settings': settings,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> sendTestMail(
+    _i1.TestSessionBuilder sessionBuilder,
+    String password,
+    String to,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'sendTestMail',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'sendTestMail',
+          parameters: _i1.testObjectToJson({
+            'password': password,
+            'to': to,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =

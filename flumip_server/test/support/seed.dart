@@ -120,3 +120,27 @@ Future<Settings> overrideSettingsDirs(
   await SettingsService().updateSettings(session, settings);
   return settings;
 }
+
+/// Loads the settings row and overrides the mail/SMTP fields, so notification
+/// tests can control the configuration the [MailSender] receives.
+Future<Settings> overrideMailSettings(
+  Session session, {
+  bool? mailActive,
+  String? smtpServer,
+  int? smtpPort,
+  String? smtpUser,
+  String? smtpPassword,
+  String? smtpFrom,
+  bool? startTLS,
+}) async {
+  final settings = await SettingsService().getSettings(session);
+  if (mailActive != null) settings.mailActive = mailActive;
+  if (smtpServer != null) settings.smtpServer = smtpServer;
+  if (smtpPort != null) settings.smtpPort = smtpPort;
+  if (smtpUser != null) settings.smtpUser = smtpUser;
+  if (smtpPassword != null) settings.smtpPassword = smtpPassword;
+  if (smtpFrom != null) settings.smtpFrom = smtpFrom;
+  if (startTLS != null) settings.startTLS = startTLS;
+  await SettingsService().updateSettings(session, settings);
+  return settings;
+}
