@@ -174,9 +174,28 @@ void main() {
     test('settings: updateSettings persists', () async {
       final current = await endpoints.settings.getSettings(sessionBuilder, 'changeme');
       current.smtpFrom = 'test@flumip.local';
-      await endpoints.settings.updateSettings(sessionBuilder, current);
+      await endpoints.settings
+          .updateSettings(sessionBuilder, 'changeme', current);
       final again = await endpoints.settings.getSettings(sessionBuilder, 'changeme');
       expect(again.smtpFrom, 'test@flumip.local');
+    }, tags: ['integration']);
+
+    test('settings: updateSettings rejects an invalid password', () async {
+      final current =
+          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+      expect(
+        () => endpoints.settings
+            .updateSettings(sessionBuilder, 'wrong', current),
+        throwsMessage('Invalid password'),
+      );
+    }, tags: ['integration']);
+
+    test('settings: sendTestMail rejects an invalid password', () async {
+      expect(
+        () => endpoints.settings
+            .sendTestMail(sessionBuilder, 'wrong', 'someone@example.com'),
+        throwsMessage('Invalid password'),
+      );
     }, tags: ['integration']);
 
     test('file: readers return seeded project files', () async {
