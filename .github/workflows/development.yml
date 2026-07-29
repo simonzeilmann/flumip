@@ -90,3 +90,7 @@ jobs:
       - name: Run tests
         run: |
           cd flumip_server && dart test --exclude-tags env
+
+      - name: Run Flutter tests
+        run: |
+          cd flumip_flutter && flutter test
