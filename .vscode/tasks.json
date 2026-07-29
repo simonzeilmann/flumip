@@ -1,0 +1,73 @@
+{
+  // Mirrors the "Analyze code" step in
+  // .github/workflows/{development,staging,production}.yml. Keep the commands
+  // here identical to the ones there.
+  //
+  // Note the asymmetry, which is deliberate and not a typo: the server is
+  // analyzed with `dart analyze`, the frontend with `flutter analyze`. The two
+  // deprecated_member_use infos in project_service.dart (DemoModeCleanup stays
+  // on the legacy future-call API) are non-fatal to `dart analyze` but fail
+  // `flutter analyze`. Running the wrong one on the server is what made the
+  // staging and production pipelines undeployable until PR #24.
+  //
+  // Run "Lint" with Ctrl+Shift+B; it stops at the first failing package, the
+  // same as CI's `bash -e`.
+  "version": "2.0.0",
+  "options": {
+    "env": {
+      // dart/flutter are not on PATH in a default shell here. Appended rather
+      // than prepended so a real SDK installed elsewhere still takes priority.
+      "PATH": "${env:PATH}:${env:HOME}/frameworks/flutter/bin"
+    }
+  },
+  "tasks": [
+    {
+      "label": "Lint: server",
+      "detail": "dart analyze in flumip_server — exactly what CI runs",
+      "type": "shell",
+      "command": "dart analyze",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [
+        "$dart-analyze"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Lint: frontend",
+      "detail": "flutter analyze in flumip_flutter — exactly what CI runs",
+      "type": "shell",
+      "command": "flutter analyze",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_flutter"
+      },
+      "problemMatcher": [
+        "$dart-analyze"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      // Both packages, in CI's order. This is the one to run before pushing.
+      "label": "Lint",
+      "detail": "Analyze both packages the way CI does",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Lint: server",
+        "Lint: frontend"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+name: PR checks
+
+# Item 7: before this existed every workflow was push-only, so pull requests got
+# no checks at all and problems only surfaced after landing on development.
+# PRs #22, #23 and #24 all merged unvalidated — and #24 was itself a CI bug that
+# a run of these checks would have caught.
+
+on:
+  pull_request:
+    branches:
+      - development
+      - staging
+      - main
+
+permissions:
+  contents: read
+
+# A new push to a PR makes the in-flight run pointless.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    # Same definition the push pipelines use, so a green PR means something.
+    uses: ./.github/workflows/checks.yml
+    with:
+      # Matches development.yml: development is the usual base, so a PR build
+      # should predict the run that happens right after the merge, --wasm
+      # included.
+      web_build_args: --debug --wasm
+      # Analyze and build only, for fast feedback. This also keeps PR checks
+      # secret-free: a pull_request from a fork gets no secrets, so the
+      # test job's database password would not be available there anyway.
+      run_tests: false
+    secrets: inherit
