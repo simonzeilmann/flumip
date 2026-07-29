@@ -31,7 +31,12 @@ jobs:
 
       - name: Analyze code
         run: |
-          cd flumip_server && flutter analyze
+          # dart analyze, not flutter analyze, for the server package: the two
+          # deliberate deprecated_member_use infos in project_service.dart
+          # (DemoModeCleanup stays on the legacy future-call API) are non-fatal
+          # to dart analyze but fail flutter analyze, which blocked this
+          # pipeline outright. Matches development.yml.
+          cd flumip_server && dart analyze
           cd ../flumip_flutter && flutter analyze
 
       - name: Build
