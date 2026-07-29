@@ -10,6 +10,7 @@ dependencies:
   serverpod: 3.4.11
   uuid: ^4.6.0
   get_it: ^9.2.1
+  mailer: ^6.4.1
 
 dev_dependencies:
   lints: ^6.0.0
