@@ -504,14 +504,40 @@ class EndpointSettings extends _i1.EndpointRef {
 
   /// Updates the settings.
   ///
+  /// Password-gated like [getSettings]: the settings hold the SMTP credentials
+  /// and the settings password itself, so writing them must be authenticated.
+  ///
   /// \param session The current session.
+  /// \param password The password for authentication.
   /// \param settings The [Settings] object to update.
-  _i2.Future<void> updateSettings(_i7.Settings settings) =>
-      caller.callServerEndpoint<void>(
-        'settings',
-        'updateSettings',
-        {'settings': settings},
-      );
+  _i2.Future<void> updateSettings(
+    String password,
+    _i7.Settings settings,
+  ) => caller.callServerEndpoint<void>(
+    'settings',
+    'updateSettings',
+    {
+      'password': password,
+      'settings': settings,
+    },
+  );
+
+  /// Sends a test email so the SMTP configuration can be validated.
+  ///
+  /// \param session The current session.
+  /// \param password The password for authentication.
+  /// \param to The recipient address.
+  _i2.Future<void> sendTestMail(
+    String password,
+    String to,
+  ) => caller.callServerEndpoint<void>(
+    'settings',
+    'sendTestMail',
+    {
+      'password': password,
+      'to': to,
+    },
+  );
 }
 
 class Client extends _i1.ServerpodClientShared {

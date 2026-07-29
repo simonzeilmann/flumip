@@ -34,6 +34,7 @@ class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _smtpUserController = TextEditingController();
   final TextEditingController _smtpPasswordController = TextEditingController();
   final TextEditingController _smtpFromController = TextEditingController();
+  final TextEditingController _testMailController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
 
   final ValueNotifier<bool> _mailActiveNotifier = ValueNotifier(false);
@@ -64,6 +65,7 @@ class _SettingsTabState extends State<SettingsTab> {
     _smtpUserController.dispose();
     _smtpPasswordController.dispose();
     _smtpFromController.dispose();
+    _testMailController.dispose();
     _mailActiveNotifier.dispose();
     _startTLSNotifier.dispose();
     _loginRequiredNotifier.dispose();
@@ -130,7 +132,7 @@ class _SettingsTabState extends State<SettingsTab> {
         binCreationScript: _binCreationScript.text,
         mailActive: _mailActiveNotifier.value,
         smtpServer: _smtpServerController.text,
-        smtpPort: int.parse(_smtpPortController.text),
+        smtpPort: int.tryParse(_smtpPortController.text) ?? 25,
         smtpUser: _smtpUserController.text,
         smtpPassword: _smtpPasswordController.text,
         smtpFrom: _smtpFromController.text,
@@ -140,13 +142,44 @@ class _SettingsTabState extends State<SettingsTab> {
         demoMode: _demoModeNotifier.value,
       );
 
-      await client.settings.updateSettings(settings);
+      // Authenticated with the password the settings were loaded with; a new
+      // password in `settingsPassword` only takes effect after this succeeds.
+      await client.settings
+          .updateSettings(_passwordController.text, settings);
+      setState(() {
+        _errorMessage = null;
+        // The password may have just been changed; keep the one we authenticate
+        // with in sync so subsequent saves / test mails still work.
+        _passwordController.text = settings.settingsPassword;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Settings updated successfully')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '$e';
+      });
+    }
+  }
+
+  Future<void> sendTestMail() async {
+    final to = _testMailController.text.trim();
+    if (to.isEmpty) {
+      setState(() {
+        _errorMessage = 'Enter a recipient address for the test email';
+      });
+      return;
+    }
+    try {
+      await client.settings.sendTestMail(_passwordController.text, to);
       setState(() {
         _errorMessage = null;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Settings updated successfully')),
+          SnackBar(content: Text('Test email sent to $to')),
         );
       }
     } catch (e) {
@@ -316,6 +349,29 @@ class _SettingsTabState extends State<SettingsTab> {
                           },
                         ),
                         Text('Start TLS'),
+                      ],
+                    ),
+                    // Validates the SMTP configuration above without having to
+                    // run a job. Uses the currently saved settings, so save
+                    // first after changing them.
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _testMailController,
+                            decoration: InputDecoration(
+                              labelText: 'Send test email to',
+                              hintText: 'you@example.com',
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            autocorrect: false,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: sendTestMail,
+                          child: Text('Send test email'),
+                        ),
                       ],
                     ),
                   ],

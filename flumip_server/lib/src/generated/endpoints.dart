@@ -744,6 +744,11 @@ class Endpoints extends _i1.EndpointDispatch {
         'updateSettings': _i1.MethodConnector(
           name: 'updateSettings',
           params: {
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
             'settings': _i1.ParameterDescription(
               name: 'settings',
               type: _i1.getType<_i11.Settings>(),
@@ -757,7 +762,33 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['settings'] as _i7.SettingsEndpoint)
                   .updateSettings(
                     session,
+                    params['password'],
                     params['settings'],
+                  ),
+        ),
+        'sendTestMail': _i1.MethodConnector(
+          name: 'sendTestMail',
+          params: {
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'to': _i1.ParameterDescription(
+              name: 'to',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['settings'] as _i7.SettingsEndpoint).sendTestMail(
+                    session,
+                    params['password'],
+                    params['to'],
                   ),
         ),
       },

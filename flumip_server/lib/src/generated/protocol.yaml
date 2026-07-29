@@ -38,3 +38,4 @@ project:
 settings:
   - getSettings:
   - updateSettings:
+  - sendTestMail:
