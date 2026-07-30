@@ -38,7 +38,9 @@ class GenomeDetailsCard extends StatelessWidget {
                 SizedBox(width: 8),
                 Text(
                   "Details for ${genome.name}",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -47,7 +49,10 @@ class GenomeDetailsCard extends StatelessWidget {
               children: [
                 Icon(Icons.fingerprint, color: Colors.grey),
                 SizedBox(width: 8),
-                Text("ID: ${genome.id}", style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  "ID: ${genome.id}",
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
               ],
             ),
             if (genome.description != '') ...[
@@ -57,7 +62,10 @@ class GenomeDetailsCard extends StatelessWidget {
                   Icon(Icons.description, color: Colors.grey),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text("Description: ${genome.description}", style: TextStyle(color: Colors.black87)),
+                    child: Text(
+                      "Description: ${genome.description}",
+                      style: TextStyle(color: Colors.black87),
+                    ),
                   ),
                 ],
               ),
@@ -88,9 +96,17 @@ class GenomeDetailsCard extends StatelessWidget {
                 Icon(Icons.storage, color: Colors.orange),
                 SizedBox(width: 8),
                 if (genome.indexing)
-                  Text("Indexing: ${genome.indexing}...", style: TextStyle(color: Colors.orange))
+                  Text(
+                    "Indexing: ${genome.indexing}...",
+                    style: TextStyle(color: Colors.orange),
+                  )
                 else
-                  Text("Indexed: ${genome.indexed}", style: TextStyle(color: genome.indexed ? Colors.green : Colors.red)),
+                  Text(
+                    "Indexed: ${genome.indexed}",
+                    style: TextStyle(
+                      color: genome.indexed ? Colors.green : Colors.red,
+                    ),
+                  ),
               ],
             ),
             if (genome.indexed && !genome.indexing)
@@ -100,7 +116,9 @@ class GenomeDetailsCard extends StatelessWidget {
                   icon: Icon(Icons.delete),
                   onPressed: onDeleteIndex,
                   label: Text('Delete Index'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
                 ),
               ),
             if (!genome.indexed && !genome.indexing)
@@ -141,7 +159,9 @@ class GenomeDetailsCard extends StatelessWidget {
                           final snp = snapshot.data![index];
                           return Card(
                             elevation: 1,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(10),
                               child: Column(
@@ -149,19 +169,33 @@ class GenomeDetailsCard extends StatelessWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.label_important, color: Colors.purple),
+                                      Icon(
+                                        Icons.label_important,
+                                        color: Colors.purple,
+                                      ),
                                       SizedBox(width: 8),
-                                      Text(snp.name, style: TextStyle(fontWeight: FontWeight.bold)),
+                                      Text(
+                                        snp.name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   if (snp.description != "")
                                     Padding(
                                       padding: const EdgeInsets.only(top: 4),
-                                      child: Text('Description: ${snp.description}', style: TextStyle(color: Colors.black54)),
+                                      child: Text(
+                                        'Description: ${snp.description}',
+                                        style: TextStyle(color: Colors.black54),
+                                      ),
                                     ),
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
-                                    child: Text('Size: ${truncateToDecimalPlaces(snp.size / 1000000000, 2)} Gb', style: TextStyle(color: Colors.black54)),
+                                    child: Text(
+                                      'Size: ${truncateToDecimalPlaces(snp.size / 1000000000, 2)} Gb',
+                                      style: TextStyle(color: Colors.black54),
+                                    ),
                                   ),
                                 ],
                               ),

@@ -127,6 +127,57 @@ class EndpointFile extends EndpointFlumip {
         'showUSCSTrack',
         {'projectID': projectID},
       );
+
+  /// The token for this project's public UCSC track URL.
+  ///
+  /// The app builds `<siteUrl>/ucsc_track/<token>` from this and hands that URL
+  /// to genome.ucsc.edu. It used to build the URL from the project id, which made
+  /// every track world-readable and enumerable — see [UCSCTrackRoute] for why the
+  /// route itself cannot require a session.
+  ///
+  /// This is the access check that the public route cannot do: the token is only
+  /// ever released to somebody allowed to open the project.
+  _i2.Future<String> getUcscTrackToken(int projectID) =>
+      caller.callServerEndpoint<String>(
+        'file',
+        'getUcscTrackToken',
+        {'projectID': projectID},
+      );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'file',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'file',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
 }
 
 /// Base class for the endpoints that require a signed-in user when — and only
@@ -143,6 +194,29 @@ class EndpointFile extends EndpointFlumip {
 /// {@category Endpoint}
 abstract class EndpointFlumip extends _i1.EndpointRef {
   EndpointFlumip(_i1.EndpointCaller caller) : super(caller);
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  _i2.Future<void> requireProject(int projectId);
+
+  /// Checks that the caller may touch the project owning these options.
+  _i2.Future<void> requireProjectOptions(int optionsId);
 }
 
 /// Endpoint for genome-related operations.
@@ -285,6 +359,41 @@ class EndpointGenome extends EndpointFlumip {
     'deleteFastaIndex',
     {'id': id},
   );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'genome',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'genome',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
 }
 
 /// Endpoint for handling MIP generation-related operations.
@@ -322,6 +431,41 @@ class EndpointMipgen extends EndpointFlumip {
       'deleteExcessFiles': deleteExcessFiles,
     },
   );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'mipgen',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
 }
 
 /// Endpoint for handling project options-related operations.
@@ -394,6 +538,41 @@ class EndpointOptions extends EndpointFlumip {
         'options',
         'deleteProjectOptions',
         {'id': id},
+      );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'options',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'options',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
       );
 }
 
@@ -543,6 +722,41 @@ class EndpointProject extends EndpointFlumip {
       'snpId': snpId,
     },
   );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'project',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
 }
 
 /// Endpoint for handling settings-related operations.

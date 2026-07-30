@@ -231,6 +231,36 @@ class ProjectService {
     }
   }
 
+  /// The token for this project's public `/ucsc_track/<token>` URL, minting one
+  /// if the project does not have it yet.
+  ///
+  /// Projects created before the token existed have null here, so this fills it
+  /// in on first request rather than in a migration — generating per-row UUIDs in
+  /// SQL would have meant hand-editing generated migration output, which the next
+  /// `serverpod create-migration` could quietly undo.
+  ///
+  /// The caller is responsible for the access check; this is reached through
+  /// `FileEndpoint.getUcscTrackToken`, which does it.
+  Future<String> ensureTrackToken(Session session, int id) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(message: 'Project not found');
+    }
+
+    final existing = project.trackToken;
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final token = Uuid().v7();
+    project.trackToken = token;
+    await Project.db.updateRow(session, project);
+    session.log(
+      "Minted a UCSC track token for project ID: $id",
+      level: LogLevel.info,
+    );
+    return token;
+  }
+
   /// Retrieves all projects, **without any access filtering**.
   ///
   /// Not what an endpoint wants. `ProjectEndpoint.getProjects` goes through

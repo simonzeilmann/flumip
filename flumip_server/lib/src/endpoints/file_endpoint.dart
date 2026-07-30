@@ -1,7 +1,11 @@
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+import 'package:flumip_server/service_locator.dart';
+
 import '../services/file_service.dart';
+import '../services/project_service.dart';
+import '../web/routes/ucsc_track.dart';
 import 'flumip_endpoint.dart';
 
 /// Endpoint for handling file-related operations.
@@ -87,6 +91,28 @@ class FileEndpoint extends FlumipEndpoint {
       return fileService.showUSCSTrack(session, projectID);
     } catch (e) {
       session.log("Error showing USCSTrack for project ID: $projectID",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
+
+  /// The token for this project's public UCSC track URL.
+  ///
+  /// The app builds `<siteUrl>/ucsc_track/<token>` from this and hands that URL
+  /// to genome.ucsc.edu. It used to build the URL from the project id, which made
+  /// every track world-readable and enumerable — see [UCSCTrackRoute] for why the
+  /// route itself cannot require a session.
+  ///
+  /// This is the access check that the public route cannot do: the token is only
+  /// ever released to somebody allowed to open the project.
+  Future<String> getUcscTrackToken(Session session, int projectID) async {
+    session.log("UCSC track token requested for project ID: $projectID",
+        level: LogLevel.info);
+    try {
+      await requireProject(session, projectID);
+      return sl<ProjectService>().ensureTrackToken(session, projectID);
+    } catch (e) {
+      session.log("Error getting UCSC track token for project ID: $projectID",
           level: LogLevel.error, exception: e);
       rethrow;
     }

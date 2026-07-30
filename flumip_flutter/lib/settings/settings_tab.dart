@@ -102,8 +102,9 @@ class _SettingsTabState extends State<SettingsTab> {
 
   Future<void> _loadSettings() async {
     try {
-      final settings =
-          await client.settings.getSettings(_passwordController.text);
+      final settings = await client.settings.getSettings(
+        _passwordController.text,
+      );
       setState(() {
         _errorMessage = null;
         this.settings = settings;
@@ -139,13 +140,11 @@ class _SettingsTabState extends State<SettingsTab> {
         _oidcClientSecretController.clear();
       });
       await _loadAuthStatus();
-    }
-    on ArgumentException catch (e) {
+    } on ArgumentException catch (e) {
       setState(() {
         _errorMessage = e.message;
       });
-    }
-    catch (e) {
+    } catch (e) {
       setState(() {
         _errorMessage = '$e';
       });
@@ -198,8 +197,7 @@ class _SettingsTabState extends State<SettingsTab> {
         );
         _oidcClientSecretController.clear();
       }
-      await client.settings
-          .updateSettings(_passwordController.text, settings);
+      await client.settings.updateSettings(_passwordController.text, settings);
       setState(() {
         _errorMessage = null;
         // The password may have just been changed; keep the one we authenticate
@@ -225,8 +223,9 @@ class _SettingsTabState extends State<SettingsTab> {
   /// only clears the panel rather than showing an error banner.
   Future<void> _loadAuthStatus() async {
     try {
-      final status =
-          await client.settings.getAuthAdminStatus(_passwordController.text);
+      final status = await client.settings.getAuthAdminStatus(
+        _passwordController.text,
+      );
       if (!mounted) return;
       setState(() => _authStatus = status);
     } catch (_) {
@@ -258,11 +257,14 @@ class _SettingsTabState extends State<SettingsTab> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,
-        helperText: overridden ? 'Set by $envName in the environment' : helperText,
+        helperText: overridden
+            ? 'Set by $envName in the environment'
+            : helperText,
         helperMaxLines: 3,
         suffixIcon: overridden
             ? Tooltip(
-                message: 'An environment variable overrides this setting, so '
+                message:
+                    'An environment variable overrides this setting, so '
                     'editing it here has no effect.',
                 child: const Icon(Icons.lock_outline, size: 18),
               )
@@ -296,9 +298,9 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
                 SelectableText(
                   status.redirectUri,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'monospace',
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
                 ),
                 Text(
                   'It must match exactly. If your server sits behind a reverse '
@@ -315,7 +317,8 @@ class _SettingsTabState extends State<SettingsTab> {
         label: 'OIDC issuer',
         envName: 'FLUMIP_OIDC_ISSUER',
         hintText: 'https://login.example.org/realms/staff',
-        helperText: 'Without a trailing slash. '
+        helperText:
+            'Without a trailing slash. '
             '/.well-known/openid-configuration is appended to it.',
       ),
       _oidcField(
@@ -337,12 +340,13 @@ class _SettingsTabState extends State<SettingsTab> {
           helperText: _overriddenByEnv('FLUMIP_OIDC_CLIENT_SECRET')
               ? 'Set by FLUMIP_OIDC_CLIENT_SECRET in the environment'
               : secretConfigured
-                  ? 'A secret is stored. Type here to replace it; leave empty to '
-                      'keep it.'
-                  : 'No secret stored yet.',
+              ? 'A secret is stored. Type here to replace it; leave empty to '
+                    'keep it.'
+              : 'No secret stored yet.',
           suffixIcon: secretConfigured
               ? const Tooltip(
-                  message: 'A client secret is stored on the server. It is '
+                  message:
+                      'A client secret is stored on the server. It is '
                       'never sent back to the browser.',
                   child: Icon(Icons.check, size: 18),
                 )
@@ -354,7 +358,8 @@ class _SettingsTabState extends State<SettingsTab> {
         label: 'Public URL of this server',
         envName: 'FLUMIP_PUBLIC_URL',
         hintText: 'https://flumip.example.org',
-        helperText: 'Needed when a reverse proxy terminates TLS, because the '
+        helperText:
+            'Needed when a reverse proxy terminates TLS, because the '
             'server otherwise uses its own scheme, host and port.',
       ),
       _oidcField(
@@ -362,7 +367,8 @@ class _SettingsTabState extends State<SettingsTab> {
         label: 'Allowed email domains',
         envName: 'FLUMIP_OIDC_ALLOWED_DOMAINS',
         hintText: 'example.org, dept.example.org',
-        helperText: 'Comma-separated. Leave empty to allow everyone your '
+        helperText:
+            'Comma-separated. Leave empty to allow everyone your '
             'provider authenticates.',
       ),
       _oidcField(
@@ -370,7 +376,8 @@ class _SettingsTabState extends State<SettingsTab> {
         label: 'Administrator email addresses',
         envName: 'FLUMIP_OIDC_ADMIN_EMAILS',
         hintText: 'you@example.org',
-        helperText: 'Comma-separated. These accounts can open this settings tab '
+        helperText:
+            'Comma-separated. These accounts can open this settings tab '
             'without the password.',
       ),
       TextField(
@@ -378,7 +385,8 @@ class _SettingsTabState extends State<SettingsTab> {
         autocorrect: false,
         decoration: const InputDecoration(
           labelText: 'Scopes',
-          helperText: 'Space-separated. "openid" is required; "email" is needed '
+          helperText:
+              'Space-separated. "openid" is required; "email" is needed '
               'to identify users.',
           helperMaxLines: 2,
         ),
@@ -401,13 +409,13 @@ class _SettingsTabState extends State<SettingsTab> {
               child: Text(
                 status.discoveryOk
                     ? 'Reached the provider. Authorization endpoint: '
-                        '${status.authorizationEndpoint}'
+                          '${status.authorizationEndpoint}'
                     : status.discoveryError ?? 'Not configured yet.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: status.discoveryOk
-                          ? Colors.green[800]
-                          : Colors.red[800],
-                    ),
+                  color: status.discoveryOk
+                      ? Colors.green[800]
+                      : Colors.red[800],
+                ),
               ),
             ),
         ],
@@ -444,9 +452,9 @@ class _SettingsTabState extends State<SettingsTab> {
         _errorMessage = null;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Test email sent to $to')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Test email sent to $to')));
       }
     } catch (e) {
       setState(() {
@@ -465,11 +473,7 @@ class _SettingsTabState extends State<SettingsTab> {
             Container(
               color: Colors.red[300],
               padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  Text(_errorMessage!),
-                ],
-              ),
+              child: Column(children: [Text(_errorMessage!)]),
             ),
           SizedBox(height: 20),
           if (settings == null) ...[
@@ -485,12 +489,16 @@ class _SettingsTabState extends State<SettingsTab> {
                     enableSuggestions: false,
                     autocorrect: false,
                     decoration: const InputDecoration(
-                        border: OutlineInputBorder(), labelText: 'Password'),
+                      border: OutlineInputBorder(),
+                      labelText: 'Password',
+                    ),
                     onSubmitted: (_) => _loadSettings(),
                   ),
                 ),
                 ElevatedButton(
-                    onPressed: _loadSettings, child: Text('Load settings')),
+                  onPressed: _loadSettings,
+                  child: Text('Load settings'),
+                ),
               ],
             ),
           ] else ...[
@@ -516,8 +524,9 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   TextField(
                     controller: _customSnpDirController,
-                    decoration:
-                        InputDecoration(labelText: 'Custom SNP directory'),
+                    decoration: InputDecoration(
+                      labelText: 'Custom SNP directory',
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
@@ -532,26 +541,30 @@ class _SettingsTabState extends State<SettingsTab> {
                   ),
                   TextField(
                     controller: _exonExtractScriptController,
-                    decoration:
-                        InputDecoration(labelText: 'Exon extract script'),
+                    decoration: InputDecoration(
+                      labelText: 'Exon extract script',
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
                     controller: _ucscTrackGeneratorController,
-                    decoration:
-                        InputDecoration(labelText: 'UCSC track generator'),
+                    decoration: InputDecoration(
+                      labelText: 'UCSC track generator',
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
                     controller: _bigGenePredToGenePredExecutable,
                     decoration: InputDecoration(
-                        labelText: 'BigGenePred to GenePred executable'),
+                      labelText: 'BigGenePred to GenePred executable',
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(
                     controller: _binCreationScript,
-                    decoration:
-                        InputDecoration(labelText: 'Bin creation script'),
+                    decoration: InputDecoration(
+                      labelText: 'Bin creation script',
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   Row(

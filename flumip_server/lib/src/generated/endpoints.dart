@@ -204,6 +204,62 @@ class Endpoints extends _i1.EndpointDispatch {
                 params['projectID'],
               ),
         ),
+        'getUcscTrackToken': _i1.MethodConnector(
+          name: 'getUcscTrackToken',
+          params: {
+            'projectID': _i1.ParameterDescription(
+              name: 'projectID',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['file'] as _i3.FileEndpoint).getUcscTrackToken(
+                    session,
+                    params['projectID'],
+                  ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['file'] as _i3.FileEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['file'] as _i3.FileEndpoint).requireProjectOptions(
+                    session,
+                    params['optionsId'],
+                  ),
+        ),
       },
     );
     connectors['genome'] = _i1.EndpointConnector(
@@ -400,6 +456,44 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['id'],
                   ),
         ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['genome'] as _i4.GenomeEndpoint).requireProject(
+                    session,
+                    params['projectId'],
+                  ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
+                  .requireProjectOptions(
+                    session,
+                    params['optionsId'],
+                  ),
+        ),
       },
     );
     connectors['mipgen'] = _i1.EndpointConnector(
@@ -448,6 +542,44 @@ class Endpoints extends _i1.EndpointDispatch {
                     session,
                     params['projectID'],
                     params['deleteExcessFiles'],
+                  ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['mipgen'] as _i5.MipgenEndpoint).requireProject(
+                    session,
+                    params['projectId'],
+                  ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['mipgen'] as _i5.MipgenEndpoint)
+                  .requireProjectOptions(
+                    session,
+                    params['optionsId'],
                   ),
         ),
       },
@@ -546,6 +678,44 @@ class Endpoints extends _i1.EndpointDispatch {
                   .deleteProjectOptions(
                     session,
                     params['id'],
+                  ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['options'] as _i6.OptionsEndpoint).requireProject(
+                    session,
+                    params['projectId'],
+                  ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
+                  .requireProjectOptions(
+                    session,
+                    params['optionsId'],
                   ),
         ),
       },
@@ -756,6 +926,44 @@ class Endpoints extends _i1.EndpointDispatch {
                     session,
                     params['id'],
                     params['snpId'],
+                  ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['project'] as _i7.ProjectEndpoint).requireProject(
+                    session,
+                    params['projectId'],
+                  ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['project'] as _i7.ProjectEndpoint)
+                  .requireProjectOptions(
+                    session,
+                    params['optionsId'],
                   ),
         ),
       },

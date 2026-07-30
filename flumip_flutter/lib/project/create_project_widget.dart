@@ -3,13 +3,17 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/services.dart';
 
 import '../main.dart';
+import '../error_text.dart';
 
 class CreateProjectWidget extends StatefulWidget {
   final VoidCallback onProjectCreated;
   final VoidCallback onAbort;
 
-  const CreateProjectWidget(
-      {super.key, required this.onProjectCreated, required this.onAbort});
+  const CreateProjectWidget({
+    super.key,
+    required this.onProjectCreated,
+    required this.onAbort,
+  });
 
   @override
   CreateProjectWidgetState createState() => CreateProjectWidgetState();
@@ -122,7 +126,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load default options: $e';
+        _errorMessage = 'Failed to load default options: ${describeError(e)}';
       });
     }
   }
@@ -136,42 +140,43 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
     }
     try {
       var options = ProjectOptions(
-          minCaptureSize: int.tryParse(_minCaptureSizeController.text) ?? 162,
-          maxCaptureSize: int.tryParse(_maxCaptureSizeController.text) ?? 162,
-          armLengths: _armLengthsController.text,
-          armLengthSums: _armLengthSumsController.text,
-          extMinLength: int.tryParse(_extMinLengthController.text) ?? 16,
-          extMaxLength: int.tryParse(_extMinLengthController.text) ?? 18,
-          ligMinLength: int.tryParse(_ligMinLengthController.text) ?? 18,
-          tagSizes: _tagSizesController.text,
-          maskedArmThreshold:
-              double.tryParse(_maskedArmThresholdController.text) ?? 0.5,
-          targetArmCopy: int.tryParse(_targetArmCopyController.text) ?? 20,
-          maxArmCopyProduct:
-              int.tryParse(_maxArmCopyProductController.text) ?? 75,
-          trf: _trf,
-          featureFlank: int.tryParse(_featureFlankController.text) ?? 0,
-          captureIncrement: int.tryParse(_captureIncrementController.text) ?? 5,
-          logisticHeuristic: _logisticHeuristic,
-          maxMipOverlap: int.tryParse(_maxMipOverlapController.text) ?? 30,
-          startingMipOverlap:
-              int.tryParse(_startingMipOverlapController.text) ?? 0,
-          checkCopyNumber: _checkCopyNumber,
-          sealBothStrands: _sealBothStrands,
-          halfSealBothStrands: _halfSealBothStrands,
-          doubleTileStrandUnaware: _doubleTileStrandUnaware,
-          doubleTileStrandsSeparately: _doubleTileStrandsSeparately,
-          scoreMethod: _scoreMethod,
-          logisticOptimalScore:
-              double.tryParse(_logisticOptimalScoreController.text) ?? 0.98,
-          svrOptimalScore:
-              double.tryParse(_svrOptimalScoreController.text) ?? 2.2,
-          logisticPriorityScore:
-              double.tryParse(_logisticPriorityScoreController.text) ?? 0.9,
-          svrPriorityScore:
-              double.tryParse(_svrPriorityScoreController.text) ?? 1.5);
-      final ProjectOptions optionsInDB =
-          await client.options.insertProjectOptions(options);
+        minCaptureSize: int.tryParse(_minCaptureSizeController.text) ?? 162,
+        maxCaptureSize: int.tryParse(_maxCaptureSizeController.text) ?? 162,
+        armLengths: _armLengthsController.text,
+        armLengthSums: _armLengthSumsController.text,
+        extMinLength: int.tryParse(_extMinLengthController.text) ?? 16,
+        extMaxLength: int.tryParse(_extMinLengthController.text) ?? 18,
+        ligMinLength: int.tryParse(_ligMinLengthController.text) ?? 18,
+        tagSizes: _tagSizesController.text,
+        maskedArmThreshold:
+            double.tryParse(_maskedArmThresholdController.text) ?? 0.5,
+        targetArmCopy: int.tryParse(_targetArmCopyController.text) ?? 20,
+        maxArmCopyProduct:
+            int.tryParse(_maxArmCopyProductController.text) ?? 75,
+        trf: _trf,
+        featureFlank: int.tryParse(_featureFlankController.text) ?? 0,
+        captureIncrement: int.tryParse(_captureIncrementController.text) ?? 5,
+        logisticHeuristic: _logisticHeuristic,
+        maxMipOverlap: int.tryParse(_maxMipOverlapController.text) ?? 30,
+        startingMipOverlap:
+            int.tryParse(_startingMipOverlapController.text) ?? 0,
+        checkCopyNumber: _checkCopyNumber,
+        sealBothStrands: _sealBothStrands,
+        halfSealBothStrands: _halfSealBothStrands,
+        doubleTileStrandUnaware: _doubleTileStrandUnaware,
+        doubleTileStrandsSeparately: _doubleTileStrandsSeparately,
+        scoreMethod: _scoreMethod,
+        logisticOptimalScore:
+            double.tryParse(_logisticOptimalScoreController.text) ?? 0.98,
+        svrOptimalScore:
+            double.tryParse(_svrOptimalScoreController.text) ?? 2.2,
+        logisticPriorityScore:
+            double.tryParse(_logisticPriorityScoreController.text) ?? 0.9,
+        svrPriorityScore:
+            double.tryParse(_svrPriorityScoreController.text) ?? 1.5,
+      );
+      final ProjectOptions optionsInDB = await client.options
+          .insertProjectOptions(options);
       await client.project.createProject(
         _nameController.text,
         optionsInDB,
@@ -182,7 +187,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       widget.onProjectCreated();
     } catch (e) {
       setState(() {
-        _errorMessage = '$e';
+        _errorMessage = describeError(e);
       });
     }
   }
@@ -191,88 +196,89 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
   Widget build(BuildContext context) {
     bool isScreenWide = MediaQuery.sizeOf(context).width >= 1020;
     return Flexible(
-        fit: FlexFit.tight,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              if (_errorMessage != null)
-                Container(
-                  color: Colors.red[300],
-                  padding: const EdgeInsets.all(8),
-                  child: Text(_errorMessage!),
+      fit: FlexFit.tight,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            if (_errorMessage != null)
+              Container(
+                color: Colors.red[300],
+                padding: const EdgeInsets.all(8),
+                child: Text(_errorMessage!),
+              ),
+            SizedBox(height: 5),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Project Name (required)'),
+            ),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Project Description (optional)',
+              ),
+            ),
+            SizedBox(height: 15),
+            Row(
+              children: [
+                Text('Show Options'),
+                SizedBox(width: 10),
+                Switch(
+                  value: _showOptions,
+                  onChanged: (value) {
+                    setState(() {
+                      _showOptions = value;
+                    });
+                  },
                 ),
-              SizedBox(height: 5),
-              TextField(
-                controller: _nameController,
-                decoration:
-                    InputDecoration(labelText: 'Project Name (required)'),
-              ),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                    labelText: 'Project Description (optional)'),
-              ),
-              SizedBox(height: 15),
-              Row(
-                children: [
-                  Text('Show Options'),
-                  SizedBox(width: 10),
-                  Switch(
-                    value: _showOptions,
-                    onChanged: (value) {
-                      setState(() {
-                        _showOptions = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              if (_showOptions) ...[
-                if (isScreenWide) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      spacing: 10,
-                      children: [
-                        Expanded(child: buildFirstOptionsColumn()),
-                        Expanded(child: buildSecondOptionsColumn()),
-                        Expanded(child: buildThirdOptionsColumn()),
-                      ],
-                    ),
-                  )
-                ] else ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      spacing: 10,
-                      children: [
-                        buildFirstOptionsColumn(),
-                        buildSecondOptionsColumn(),
-                        buildThirdOptionsColumn(),
-                      ],
-                    ),
-                  )
-                ],
               ],
-              SizedBox(height: 35),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: widget.onAbort,
-                    child: Text('Cancel'),
+            ),
+            if (_showOptions) ...[
+              if (isScreenWide) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      Expanded(child: buildFirstOptionsColumn()),
+                      Expanded(child: buildSecondOptionsColumn()),
+                      Expanded(child: buildThirdOptionsColumn()),
+                    ],
                   ),
-                  SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _createProject,
-                    child: Text('Create Project'),
+                ),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      buildFirstOptionsColumn(),
+                      buildSecondOptionsColumn(),
+                      buildThirdOptionsColumn(),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ],
-          ),
-        ));
+            SizedBox(height: 35),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: widget.onAbort,
+                  child: Text('Cancel'),
+                ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _createProject,
+                  child: Text('Create Project'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget buildFirstOptionsColumn() {
@@ -294,7 +300,8 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         TextField(
           controller: _armLengthsController,
           decoration: InputDecoration(
-              labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]'),
+            labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]',
+          ),
           keyboardType: TextInputType.text,
           inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
@@ -333,7 +340,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           decoration: InputDecoration(labelText: 'Masked Arm Threshold'),
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
+            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
           ],
         ),
       ],
@@ -497,10 +504,12 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
                 });
               },
               items: ScoreMethod.values
-                  .map((method) => DropdownMenuItem(
-                        value: method,
-                        child: Text(method.toString().split('.').last),
-                      ))
+                  .map(
+                    (method) => DropdownMenuItem(
+                      value: method,
+                      child: Text(method.toString().split('.').last),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -510,7 +519,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           decoration: InputDecoration(labelText: 'Logistic Optimal Score'),
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
+            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
           ],
         ),
         TextField(
@@ -518,7 +527,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           decoration: InputDecoration(labelText: 'SVR Optimal Score'),
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
+            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
           ],
         ),
         TextField(
@@ -526,7 +535,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           decoration: InputDecoration(labelText: 'Logistic Priority Score'),
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
+            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
           ],
         ),
         TextField(
@@ -534,7 +543,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
           decoration: InputDecoration(labelText: 'SVR Priority Score'),
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}'))
+            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
           ],
         ),
       ],

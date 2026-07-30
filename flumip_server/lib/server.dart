@@ -53,7 +53,10 @@ void run(List<String> args) async {
     pod.webServer.addRoute(FlutterRoute(flutterAppDir));
   }
 
-  pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:id');
+  // Keyed on the project's track token, not its id: the route is unauthenticated
+  // by necessity (genome.ucsc.edu is the fetcher) so an unguessable path is what
+  // keeps tracks from being enumerable. See UCSCTrackRoute.
+  pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:token');
 
   // The sign-in flow runs on the web server, which is the origin the app itself
   // is served from — so the session cookie is set and read where the browser
