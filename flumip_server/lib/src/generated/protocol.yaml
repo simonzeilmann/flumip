@@ -1,3 +1,7 @@
+auth:
+  - config:
+  - me:
+  - logout:
 file:
   - deleteByProducts:
   - showSnpMipsResult:
@@ -38,4 +42,6 @@ project:
 settings:
   - getSettings:
   - updateSettings:
+  - setOidcClientSecret:
+  - getAuthAdminStatus:
   - sendTestMail:

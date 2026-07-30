@@ -3,9 +3,10 @@ import 'package:serverpod/server.dart';
 
 import '../services/project_service.dart';
 import '../generated/protocol.dart';
+import 'flumip_endpoint.dart';
 
 /// Endpoint for handling project-related operations.
-class ProjectEndpoint extends Endpoint {
+class ProjectEndpoint extends FlumipEndpoint {
   ProjectService get projectService => ProjectService();
 
   /// Creates a new project.

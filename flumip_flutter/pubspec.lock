@@ -144,7 +144,7 @@ packages:
     source: sdk
     version: "0.0.0"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -256,7 +256,7 @@ packages:
     source: hosted
     version: "2.1.8"
   serverpod_client:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: serverpod_client
       sha256: d79108bd64df3efea7cae0c6b9473049f308c40236039c0dd7397539062e5191

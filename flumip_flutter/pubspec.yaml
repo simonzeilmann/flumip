@@ -29,6 +29,12 @@ dependencies:
     path: ../flumip_client
 
   web: ^1.1.1
+  # /auth/session is a plain route on the web server, not a Serverpod
+  # endpoint, so it is fetched directly.
+  http: ^1.6.0
+  # Used directly for the auth key provider types; comes in via flumip_client
+  # but this package imports it, so declare it.
+  serverpod_client: 3.4.11
   intl: ^0.20.3
   url_launcher: ^6.1.10
 

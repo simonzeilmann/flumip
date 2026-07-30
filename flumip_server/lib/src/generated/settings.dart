@@ -36,6 +36,14 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    this.oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
        baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
@@ -63,7 +71,14 @@ abstract class Settings
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme';
+       settingsPassword = settingsPassword ?? 'changeme',
+       oidcIssuer = oidcIssuer ?? '',
+       oidcClientId = oidcClientId ?? '',
+       oidcScopes = oidcScopes ?? 'openid email profile',
+       oidcButtonLabel = oidcButtonLabel ?? 'Sign in with SSO',
+       oidcAllowedEmailDomains = oidcAllowedEmailDomains ?? '',
+       oidcAdminEmails = oidcAdminEmails ?? '',
+       authPublicUrl = authPublicUrl ?? '';
 
   factory Settings({
     int? id,
@@ -87,6 +102,14 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) = _SettingsImpl;
 
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -121,6 +144,15 @@ abstract class Settings
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
       settingsPassword: jsonSerialization['settingsPassword'] as String?,
+      oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
+      oidcClientId: jsonSerialization['oidcClientId'] as String?,
+      oidcClientSecret: jsonSerialization['oidcClientSecret'] as String?,
+      oidcScopes: jsonSerialization['oidcScopes'] as String?,
+      oidcButtonLabel: jsonSerialization['oidcButtonLabel'] as String?,
+      oidcAllowedEmailDomains:
+          jsonSerialization['oidcAllowedEmailDomains'] as String?,
+      oidcAdminEmails: jsonSerialization['oidcAdminEmails'] as String?,
+      authPublicUrl: jsonSerialization['authPublicUrl'] as String?,
     );
   }
 
@@ -171,6 +203,22 @@ abstract class Settings
 
   String settingsPassword;
 
+  String oidcIssuer;
+
+  String oidcClientId;
+
+  String? oidcClientSecret;
+
+  String oidcScopes;
+
+  String oidcButtonLabel;
+
+  String oidcAllowedEmailDomains;
+
+  String oidcAdminEmails;
+
+  String authPublicUrl;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -199,6 +247,14 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -225,6 +281,14 @@ abstract class Settings
       'startTLS': startTLS,
       'loginRequired': loginRequired,
       'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      if (oidcClientSecret != null) 'oidcClientSecret': oidcClientSecret,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
     };
   }
 
@@ -253,6 +317,13 @@ abstract class Settings
       'startTLS': startTLS,
       'loginRequired': loginRequired,
       'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
     };
   }
 
@@ -311,6 +382,14 @@ class _SettingsImpl extends Settings {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) : super._(
          id: id,
          demoMode: demoMode,
@@ -333,6 +412,14 @@ class _SettingsImpl extends Settings {
          startTLS: startTLS,
          loginRequired: loginRequired,
          settingsPassword: settingsPassword,
+         oidcIssuer: oidcIssuer,
+         oidcClientId: oidcClientId,
+         oidcClientSecret: oidcClientSecret,
+         oidcScopes: oidcScopes,
+         oidcButtonLabel: oidcButtonLabel,
+         oidcAllowedEmailDomains: oidcAllowedEmailDomains,
+         oidcAdminEmails: oidcAdminEmails,
+         authPublicUrl: authPublicUrl,
        );
 
   /// Returns a shallow copy of this [Settings]
@@ -361,6 +448,14 @@ class _SettingsImpl extends Settings {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    Object? oidcClientSecret = _Undefined,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) {
     return Settings(
       id: id is int? ? id : this.id,
@@ -386,6 +481,17 @@ class _SettingsImpl extends Settings {
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
       settingsPassword: settingsPassword ?? this.settingsPassword,
+      oidcIssuer: oidcIssuer ?? this.oidcIssuer,
+      oidcClientId: oidcClientId ?? this.oidcClientId,
+      oidcClientSecret: oidcClientSecret is String?
+          ? oidcClientSecret
+          : this.oidcClientSecret,
+      oidcScopes: oidcScopes ?? this.oidcScopes,
+      oidcButtonLabel: oidcButtonLabel ?? this.oidcButtonLabel,
+      oidcAllowedEmailDomains:
+          oidcAllowedEmailDomains ?? this.oidcAllowedEmailDomains,
+      oidcAdminEmails: oidcAdminEmails ?? this.oidcAdminEmails,
+      authPublicUrl: authPublicUrl ?? this.authPublicUrl,
     );
   }
 }
@@ -499,6 +605,51 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
         table.settingsPassword,
         value,
       );
+
+  _i1.ColumnValue<String, String> oidcIssuer(String value) => _i1.ColumnValue(
+    table.oidcIssuer,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcClientId(String value) => _i1.ColumnValue(
+    table.oidcClientId,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcClientSecret(String? value) =>
+      _i1.ColumnValue(
+        table.oidcClientSecret,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcScopes(String value) => _i1.ColumnValue(
+    table.oidcScopes,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcButtonLabel(String value) =>
+      _i1.ColumnValue(
+        table.oidcButtonLabel,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcAllowedEmailDomains(String value) =>
+      _i1.ColumnValue(
+        table.oidcAllowedEmailDomains,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcAdminEmails(String value) =>
+      _i1.ColumnValue(
+        table.oidcAdminEmails,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> authPublicUrl(String value) =>
+      _i1.ColumnValue(
+        table.authPublicUrl,
+        value,
+      );
 }
 
 class SettingsTable extends _i1.Table<int?> {
@@ -604,6 +755,45 @@ class SettingsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
+    oidcIssuer = _i1.ColumnString(
+      'oidcIssuer',
+      this,
+      hasDefault: true,
+    );
+    oidcClientId = _i1.ColumnString(
+      'oidcClientId',
+      this,
+      hasDefault: true,
+    );
+    oidcClientSecret = _i1.ColumnString(
+      'oidcClientSecret',
+      this,
+    );
+    oidcScopes = _i1.ColumnString(
+      'oidcScopes',
+      this,
+      hasDefault: true,
+    );
+    oidcButtonLabel = _i1.ColumnString(
+      'oidcButtonLabel',
+      this,
+      hasDefault: true,
+    );
+    oidcAllowedEmailDomains = _i1.ColumnString(
+      'oidcAllowedEmailDomains',
+      this,
+      hasDefault: true,
+    );
+    oidcAdminEmails = _i1.ColumnString(
+      'oidcAdminEmails',
+      this,
+      hasDefault: true,
+    );
+    authPublicUrl = _i1.ColumnString(
+      'authPublicUrl',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final SettingsUpdateTable updateTable;
@@ -648,6 +838,22 @@ class SettingsTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString settingsPassword;
 
+  late final _i1.ColumnString oidcIssuer;
+
+  late final _i1.ColumnString oidcClientId;
+
+  late final _i1.ColumnString oidcClientSecret;
+
+  late final _i1.ColumnString oidcScopes;
+
+  late final _i1.ColumnString oidcButtonLabel;
+
+  late final _i1.ColumnString oidcAllowedEmailDomains;
+
+  late final _i1.ColumnString oidcAdminEmails;
+
+  late final _i1.ColumnString authPublicUrl;
+
   @override
   List<_i1.Column> get columns => [
     id,
@@ -671,6 +877,14 @@ class SettingsTable extends _i1.Table<int?> {
     startTLS,
     loginRequired,
     settingsPassword,
+    oidcIssuer,
+    oidcClientId,
+    oidcClientSecret,
+    oidcScopes,
+    oidcButtonLabel,
+    oidcAllowedEmailDomains,
+    oidcAdminEmails,
+    authPublicUrl,
   ];
 }
 

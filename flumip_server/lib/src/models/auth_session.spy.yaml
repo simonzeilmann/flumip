@@ -1,0 +1,27 @@
+### A signed-in browser session, keyed by the `flumip_auth` cookie.
+###
+### This is the durable half of the credential. The cookie is HttpOnly, so the
+### Flutter app cannot read it; the app trades it for a short-lived bearer at
+### `/auth/session` (see AuthApiToken). Only the sha256 of the cookie value is
+### stored, so a database dump does not yield usable credentials.
+###
+### `email` and `isAdmin` are denormalised from FlumipUser and the allowlist as
+### they stood at sign-in time, so that authenticating a request needs no join.
+### Changing the admin list therefore takes effect on the next sign-in.
+class: AuthSession
+table: auth_session
+serverOnly: true
+fields:
+  userId: int, relation(parent=flumip_user, onDelete=Cascade)
+  cookieHash: String
+  email: String
+  isAdmin: bool, default=false
+  created: DateTime, default=now
+  expires: DateTime
+  lastSeen: DateTime, default=now
+indexes:
+  auth_session_cookie_hash_idx:
+    fields: cookieHash
+    unique: true
+  auth_session_expires_idx:
+    fields: expires

@@ -3,9 +3,10 @@ import 'package:serverpod/server.dart';
 
 import '../generated/protocol.dart';
 import '../services/genome_service.dart';
+import 'flumip_endpoint.dart';
 
 /// Endpoint for genome-related operations.
-class GenomeEndpoint extends Endpoint {
+class GenomeEndpoint extends FlumipEndpoint {
   /// Instance of the genome service.
   GenomeService get genomeService => GenomeService();
 

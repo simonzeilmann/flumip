@@ -21,3 +21,26 @@ fields:
   startTLS: bool, default=true
   loginRequired: bool, default=false
   settingsPassword: String, default="changeme"
+  # OpenID Connect single sign-on. Off by default: running with no
+  # authentication at all is the standard deployment. See docs/authentication.md.
+  # Any of these can be overridden by an environment variable, in which case the
+  # environment wins and the field renders read-only in the settings tab.
+  oidcIssuer: String, default=""
+  oidcClientId: String, default=""
+  # Never leaves the server. Written only through
+  # SettingsEndpoint.setOidcClientSecret, never serialized to the browser.
+  # Nullable because serverOnly fields must be: the client cannot supply one,
+  # so it deserializes as null on the way in. SettingsService.updateSettings
+  # leaves it out of the merge, which is what stops an unrelated save from
+  # blanking it.
+  oidcClientSecret: String?, scope=serverOnly
+  oidcScopes: String, default="openid email profile"
+  oidcButtonLabel: String, default="Sign in with SSO"
+  # Comma-separated. Empty means every account the IdP authenticates is allowed.
+  oidcAllowedEmailDomains: String, default=""
+  # Comma-separated. These addresses get the `admin` scope.
+  oidcAdminEmails: String, default=""
+  # Public origin of this install, e.g. "https://flumip.uni.example". Needed
+  # when a reverse proxy terminates TLS, because the server otherwise derives
+  # the redirect URI from its own scheme, host and port.
+  authPublicUrl: String, default=""

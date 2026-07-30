@@ -3,9 +3,10 @@ import 'package:serverpod/server.dart';
 
 import '../generated/project_options.dart';
 import '../services/options_service.dart';
+import 'flumip_endpoint.dart';
 
 /// Endpoint for handling project options-related operations.
-class OptionsEndpoint extends Endpoint {
+class OptionsEndpoint extends FlumipEndpoint {
   OptionsService get optionsService => OptionsService();
 
   /// Creates project options.

@@ -1,11 +1,12 @@
 import 'package:flumip_server/src/generated/exceptions/GenomeExceptions/bed_creation_exception.dart';
 import 'package:flumip_server/src/generated/exceptions/argument_exception.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:flumip_server/src/endpoints/flumip_endpoint.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Endpoint for handling MIP generation-related operations.
-class MipgenEndpoint extends Endpoint {
+class MipgenEndpoint extends FlumipEndpoint {
   final mipgenService = MipgenService();
 
   /// Creates a BED file for the specified project.

@@ -35,6 +35,13 @@ abstract class Settings implements _i1.SerializableModel {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
        baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
@@ -62,7 +69,14 @@ abstract class Settings implements _i1.SerializableModel {
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme';
+       settingsPassword = settingsPassword ?? 'changeme',
+       oidcIssuer = oidcIssuer ?? '',
+       oidcClientId = oidcClientId ?? '',
+       oidcScopes = oidcScopes ?? 'openid email profile',
+       oidcButtonLabel = oidcButtonLabel ?? 'Sign in with SSO',
+       oidcAllowedEmailDomains = oidcAllowedEmailDomains ?? '',
+       oidcAdminEmails = oidcAdminEmails ?? '',
+       authPublicUrl = authPublicUrl ?? '';
 
   factory Settings({
     int? id,
@@ -86,6 +100,13 @@ abstract class Settings implements _i1.SerializableModel {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) = _SettingsImpl;
 
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -120,6 +141,14 @@ abstract class Settings implements _i1.SerializableModel {
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
       settingsPassword: jsonSerialization['settingsPassword'] as String?,
+      oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
+      oidcClientId: jsonSerialization['oidcClientId'] as String?,
+      oidcScopes: jsonSerialization['oidcScopes'] as String?,
+      oidcButtonLabel: jsonSerialization['oidcButtonLabel'] as String?,
+      oidcAllowedEmailDomains:
+          jsonSerialization['oidcAllowedEmailDomains'] as String?,
+      oidcAdminEmails: jsonSerialization['oidcAdminEmails'] as String?,
+      authPublicUrl: jsonSerialization['authPublicUrl'] as String?,
     );
   }
 
@@ -168,6 +197,20 @@ abstract class Settings implements _i1.SerializableModel {
 
   String settingsPassword;
 
+  String oidcIssuer;
+
+  String oidcClientId;
+
+  String oidcScopes;
+
+  String oidcButtonLabel;
+
+  String oidcAllowedEmailDomains;
+
+  String oidcAdminEmails;
+
+  String authPublicUrl;
+
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -193,6 +236,13 @@ abstract class Settings implements _i1.SerializableModel {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -219,6 +269,13 @@ abstract class Settings implements _i1.SerializableModel {
       'startTLS': startTLS,
       'loginRequired': loginRequired,
       'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
     };
   }
 
@@ -253,6 +310,13 @@ class _SettingsImpl extends Settings {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) : super._(
          id: id,
          demoMode: demoMode,
@@ -275,6 +339,13 @@ class _SettingsImpl extends Settings {
          startTLS: startTLS,
          loginRequired: loginRequired,
          settingsPassword: settingsPassword,
+         oidcIssuer: oidcIssuer,
+         oidcClientId: oidcClientId,
+         oidcScopes: oidcScopes,
+         oidcButtonLabel: oidcButtonLabel,
+         oidcAllowedEmailDomains: oidcAllowedEmailDomains,
+         oidcAdminEmails: oidcAdminEmails,
+         authPublicUrl: authPublicUrl,
        );
 
   /// Returns a shallow copy of this [Settings]
@@ -303,6 +374,13 @@ class _SettingsImpl extends Settings {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) {
     return Settings(
       id: id is int? ? id : this.id,
@@ -328,6 +406,14 @@ class _SettingsImpl extends Settings {
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
       settingsPassword: settingsPassword ?? this.settingsPassword,
+      oidcIssuer: oidcIssuer ?? this.oidcIssuer,
+      oidcClientId: oidcClientId ?? this.oidcClientId,
+      oidcScopes: oidcScopes ?? this.oidcScopes,
+      oidcButtonLabel: oidcButtonLabel ?? this.oidcButtonLabel,
+      oidcAllowedEmailDomains:
+          oidcAllowedEmailDomains ?? this.oidcAllowedEmailDomains,
+      oidcAdminEmails: oidcAdminEmails ?? this.oidcAdminEmails,
+      authPublicUrl: authPublicUrl ?? this.authPublicUrl,
     );
   }
 }

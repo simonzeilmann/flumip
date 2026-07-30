@@ -180,6 +180,53 @@ void main() {
       expect(again.smtpFrom, 'test@flumip.local');
     }, tags: ['integration']);
 
+    // Guards SettingsService.updateSettings, which merges an explicit list of
+    // client-editable fields onto the stored row. A field added to the model but
+    // forgotten in that list would silently write its default on every save, so
+    // this round-trips every one of them with a distinct value.
+    test('settings: updateSettings round-trips every client-editable field',
+        () async {
+      final current =
+          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+      final updated = current.copyWith(
+        demoMode: true,
+        baseDir: '/rt/base',
+        projectDir: '/rt/projects',
+        genomeDir: '/rt/genomes',
+        customSnpDir: '/rt/snp',
+        toolsDir: '/rt/tools',
+        mipgenExecutable: '/rt/mipgen',
+        exonExtractScript: '/rt/exons.sh',
+        ucscTrackGenerator: '/rt/track.py',
+        binCreationScript: '/rt/bins.py',
+        bigGenePredToGenePredExecutable: '/rt/bgp',
+        mailActive: true,
+        smtpServer: 'smtp.rt.example',
+        smtpPort: 2525,
+        smtpUser: 'rt-user',
+        smtpPassword: 'rt-pass',
+        smtpFrom: 'rt@flumip.local',
+        startTLS: false,
+        loginRequired: false,
+        settingsPassword: 'changeme',
+        oidcIssuer: 'https://rt.example/realms/rt',
+        oidcClientId: 'rt-client',
+        oidcScopes: 'openid email',
+        oidcButtonLabel: 'RT login',
+        oidcAllowedEmailDomains: 'rt.example',
+        oidcAdminEmails: 'admin@rt.example',
+        authPublicUrl: 'https://rt.example',
+      );
+      await endpoints.settings
+          .updateSettings(sessionBuilder, 'changeme', updated);
+
+      final again =
+          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+      final expected = updated.toJson()..remove('id');
+      final actual = again.toJson()..remove('id');
+      expect(actual, expected);
+    }, tags: ['integration']);
+
     test('settings: updateSettings rejects an invalid password', () async {
       final current =
           await endpoints.settings.getSettings(sessionBuilder, 'changeme');

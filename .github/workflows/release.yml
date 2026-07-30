@@ -8,6 +8,11 @@ name: Release build
 # the page origin at runtime (see flumip_flutter/lib/api_config.dart). That is
 # what lets one tarball be installed on any machine.
 #
+# Single sign-on is configured at runtime — in the Settings tab or through the
+# environment file the systemd units read (see docs/authentication.md) — so it
+# needs no --dart-define here. Do not add one: a compile-time OIDC setting would
+# make this tarball host-specific again, which is the whole thing it avoids.
+#
 # Cut a release by pushing a tag:  git tag v0.7.0 && git push origin v0.7.0
 # Run it manually (workflow_dispatch) to test the job: the tarball is uploaded
 # as a workflow artifact instead of being published as a release.
