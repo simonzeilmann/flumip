@@ -76,19 +76,27 @@ class AuthorizationService {
     }
   }
 
-  /// Loads a project and refuses if the caller may not touch it.
+  /// Refuses if the caller may not touch project [projectId].
   ///
-  /// Throws [FlumipFileNotFoundException] when there is no such project and
-  /// [AccessDeniedException] when there is one but it is somebody else's.
-  Future<Project> requireProjectAccess(Session session, int projectId) async {
+  /// Says nothing about existence, deliberately. A missing project returns
+  /// quietly and the operation goes on to fail with whatever error it already
+  /// produced.
+  ///
+  /// The first version of this threw [FlumipFileNotFoundException] for an unknown
+  /// id, which seemed tidier and was wrong: `FileEndpoint.showMipsProgress` has
+  /// always answered a bad id with Serverpod's [FileNotFoundException], the app
+  /// catches the two separately, and a guard bolted onto the front of an
+  /// operation has no business changing the error that operation reports for an
+  /// unrelated failure. A test caught it. Adding [AccessDeniedException] is the
+  /// entire remit.
+  ///
+  /// Costs no query at all while single sign-on is off.
+  Future<void> requireProjectAccess(Session session, int projectId) async {
+    if (!isEnforcing) return;
+
     final project = await Project.db.findById(session, projectId);
-    if (project == null) {
-      session.log('Project not found with ID: $projectId',
-          level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
-    }
+    if (project == null) return;
     await requireAccessTo(session, project);
-    return project;
   }
 
   /// Refuses if the caller may not touch [project].
@@ -111,6 +119,27 @@ class AuthorizationService {
       level: LogLevel.warning,
     );
     throw AccessDeniedException();
+  }
+
+  /// Refuses if the caller may not touch the project that owns [optionsId].
+  ///
+  /// `ProjectOptions` rows are addressed by their own id and every one of them is
+  /// reachable from the client, so guarding only `Project` would leave a
+  /// project's entire mipgen configuration readable and writable by anyone
+  /// willing to count upwards.
+  ///
+  /// Options no project references yet are allowed through: the create-project
+  /// flow inserts the options row *before* the project that will point at it, so
+  /// refusing an unreferenced row would break creating a project at all.
+  Future<void> requireOptionsAccess(Session session, int optionsId) async {
+    if (!isEnforcing) return;
+
+    final project = await Project.db.findFirstRow(
+      session,
+      where: (t) => t.options.equals(optionsId),
+    );
+    if (project == null) return;
+    await requireAccessTo(session, project);
   }
 
   /// Every project the caller is allowed to see.

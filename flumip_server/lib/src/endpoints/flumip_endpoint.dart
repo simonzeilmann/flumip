@@ -1,5 +1,7 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Base class for the endpoints that require a signed-in user when — and only
@@ -28,4 +30,29 @@ abstract class FlumipEndpoint extends Endpoint {
       return false;
     }
   }
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  Future<void> requireProject(Session session, int projectId) =>
+      authz.requireProjectAccess(session, projectId);
+
+  /// Checks that the caller may touch the project owning these options.
+  Future<void> requireProjectOptions(Session session, int optionsId) =>
+      authz.requireOptionsAccess(session, optionsId);
 }

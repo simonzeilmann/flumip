@@ -16,6 +16,7 @@ class FileEndpoint extends FlumipEndpoint {
     session.log("Deleting byproducts for project ID: $projectID",
         level: LogLevel.info);
     try {
+      await requireProject(session, projectID);
       return fileService.deleteByproducts(session, projectID);
     } catch (e) {
       session.log("Error deleting byproducts for project ID: $projectID",
@@ -33,6 +34,7 @@ class FileEndpoint extends FlumipEndpoint {
     session.log("Showing SNP MIPs result for project ID: $projectID",
         level: LogLevel.info);
     try {
+      await requireProject(session, projectID);
       return fileService.showSnpMipsResult(session, projectID);
     } catch (e) {
       session.log("Error showing SNP MIPs result for project ID: $projectID",
@@ -50,6 +52,7 @@ class FileEndpoint extends FlumipEndpoint {
     session.log("Showing MIPs result for project ID: $projectID",
         level: LogLevel.info);
     try {
+      await requireProject(session, projectID);
       return fileService.showMipsResult(session, projectID);
     } catch (e) {
       session.log("Error showing MIPs result for project ID: $projectID",
@@ -67,6 +70,7 @@ class FileEndpoint extends FlumipEndpoint {
     session.log("Showing MIPs progress for project ID: $projectID",
         level: LogLevel.info);
     try {
+      await requireProject(session, projectID);
       return fileService.showMipsProgress(session, projectID);
     } catch (e) {
       session.log("Error showing MIPs progress for project ID: $projectID",
@@ -79,6 +83,7 @@ class FileEndpoint extends FlumipEndpoint {
     session.log("Showing USCSTrack for project ID: $projectID",
         level: LogLevel.info);
     try {
+      await requireProject(session, projectID);
       return fileService.showUSCSTrack(session, projectID);
     } catch (e) {
       session.log("Error showing USCSTrack for project ID: $projectID",

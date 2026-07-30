@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -56,6 +57,13 @@ class ProjectService {
       description: desc,
       folderName: Uuid().v7(),
       options: options.id!,
+      // Null while single sign-on is off, which is what keeps every project on a
+      // no-auth install unowned and therefore shared. Stamping is done here
+      // rather than in the endpoint because it populates data; the *checks* live
+      // at the endpoint boundary, where unauthenticated future calls cannot trip
+      // over them.
+      owner: await authz.ownerForNewProject(session),
+      trackToken: Uuid().v7(),
     );
     var project = await Project.db.insertRow(session, projectRow);
 
@@ -223,7 +231,12 @@ class ProjectService {
     }
   }
 
-  /// Retrieves all projects.
+  /// Retrieves all projects, **without any access filtering**.
+  ///
+  /// Not what an endpoint wants. `ProjectEndpoint.getProjects` goes through
+  /// `AuthorizationService.visibleProjects`, which applies the same predicate the
+  /// per-project gate uses. This stays as the unfiltered primitive for internal
+  /// callers that legitimately need every row.
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.

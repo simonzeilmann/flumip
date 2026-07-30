@@ -19,6 +19,7 @@ class MipgenEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await requireProject(session, projectID);
       return mipgenService.createBedFile(session, projectID);
     } on BedCreationException {
       rethrow;
@@ -51,6 +52,7 @@ class MipgenEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await requireProject(session, projectID);
       return mipgenService.generateMips(session, projectID, deleteExcessFiles);
     }
     on ArgumentException {
