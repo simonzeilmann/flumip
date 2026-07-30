@@ -148,7 +148,7 @@ class EndpointFile extends EndpointFlumip {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///
@@ -199,7 +199,7 @@ abstract class EndpointFlumip extends _i1.EndpointRef {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///
@@ -364,7 +364,7 @@ class EndpointGenome extends EndpointFlumip {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///
@@ -436,7 +436,7 @@ class EndpointMipgen extends EndpointFlumip {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///
@@ -544,7 +544,7 @@ class EndpointOptions extends EndpointFlumip {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///
@@ -727,7 +727,7 @@ class EndpointProject extends EndpointFlumip {
   ///
   /// **Every endpoint method that takes a project id must start with this.**
   ///
-  /// Adds [AccessDeniedException] and changes nothing else: an unknown id passes
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
   /// straight through so the operation still reports the not-found error it
   /// always reported.
   ///

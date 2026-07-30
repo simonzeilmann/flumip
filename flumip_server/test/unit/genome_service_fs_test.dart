@@ -16,7 +16,10 @@ import '../support/temp_dir.dart';
 /// tested without the serverpod future-call machinery.
 class NoScheduleGenomeService extends GenomeService {
   @override
-  Future<void> scheduleIndexProgressCheck(Session session, Genome genome) async {}
+  Future<void> scheduleIndexProgressCheck(
+    Session session,
+    Genome genome,
+  ) async {}
 }
 
 // Single shared fake registered once (see mipgen_service_test.dart for why).
@@ -38,9 +41,17 @@ void main() {
     var session = sessionBuilder.build();
 
     test('indexFasta starts bwa and records the pid', () async {
-      final genome = await seedGenome(session,
-          name: 'hg38', path: '/data/hg38', fastaPath: '/data/hg38/fa/hg38.fa');
-      fake.stubRun('pgrep', exitCode: 0, stdout: '321 bwa index /data/hg38/fa/hg38.fa\n');
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: '/data/hg38',
+        fastaPath: '/data/hg38/fa/hg38.fa',
+      );
+      fake.stubRun(
+        'pgrep',
+        exitCode: 0,
+        stdout: '321 bwa index /data/hg38/fa/hg38.fa\n',
+      );
       await NoScheduleGenomeService().indexFasta(session, genome.id!);
       final reloaded = await GenomeService().getGenome(session, genome.id!);
       expect(reloaded.indexing, isTrue);
@@ -57,8 +68,13 @@ void main() {
     }, tags: ['unit']);
 
     test('indexFasta throws when already indexed', () async {
-      final genome = await seedGenome(session,
-          name: 'hg38', path: '/data/hg38', fastaPath: '/x.fa', indexed: true);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: '/data/hg38',
+        fastaPath: '/x.fa',
+        indexed: true,
+      );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
         throwsA(isA<ArgumentError>()),
@@ -66,8 +82,13 @@ void main() {
     }, tags: ['unit']);
 
     test('indexFasta throws when already indexing', () async {
-      final genome = await seedGenome(session,
-          name: 'hg38', path: '/data/hg38', fastaPath: '/x.fa', indexing: true);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: '/data/hg38',
+        fastaPath: '/x.fa',
+        indexing: true,
+      );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
         throwsA(isA<ArgumentError>()),
@@ -75,7 +96,11 @@ void main() {
     }, tags: ['unit']);
 
     test('indexFasta throws when the genome has no fasta path', () async {
-      final genome = await seedGenome(session, name: 'hg38', path: '/data/hg38');
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: '/data/hg38',
+      );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
         throwsA(isA<ArgumentError>()),
@@ -90,8 +115,13 @@ void main() {
     test('marks indexed when all bwa index files are present', () async {
       final base = createTempDir('idxfin');
       writeIndexedFa('${base.path}/fa');
-      final genome = await seedGenome(session,
-          name: 'hg38', path: base.path, indexing: true, indexPID: 5);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: base.path,
+        indexing: true,
+        indexPID: 5,
+      );
       await genomeService.indexIsFinished(session, genome);
       final reloaded = await genomeService.getGenome(session, genome.id!);
       expect(reloaded.indexed, isTrue);
@@ -104,8 +134,12 @@ void main() {
       final base = createTempDir('idxfin');
       Directory('${base.path}/fa').createSync(recursive: true);
       File('${base.path}/fa/hg38.fa').writeAsStringSync('>chr1\n');
-      final genome =
-          await seedGenome(session, name: 'hg38', path: base.path, indexing: true);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: base.path,
+        indexing: true,
+      );
       await genomeService.indexIsFinished(session, genome);
       final reloaded = await genomeService.getGenome(session, genome.id!);
       expect(reloaded.indexed, isFalse);
@@ -121,8 +155,12 @@ void main() {
     test('deletes the bwa index files but keeps the fasta', () async {
       final base = createTempDir('delidx');
       writeIndexedFa('${base.path}/fa');
-      final genome = await seedGenome(session,
-          name: 'hg38', path: base.path, indexed: true);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: base.path,
+        indexed: true,
+      );
       await genomeService.deleteFastaIndex(session, genome.id!);
       expect(File('${base.path}/fa/hg38.fa').existsSync(), isTrue);
       expect(File('${base.path}/fa/hg38.fa.amb').existsSync(), isFalse);
@@ -134,8 +172,12 @@ void main() {
     test('throws when the genome is not indexed', () async {
       final base = createTempDir('delidx');
       Directory('${base.path}/fa').createSync(recursive: true);
-      final genome = await seedGenome(session,
-          name: 'hg38', path: base.path, indexed: false);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        path: base.path,
+        indexed: false,
+      );
       expect(
         () => genomeService.deleteFastaIndex(session, genome.id!),
         throwsA(isA<ArgumentError>()),
@@ -148,36 +190,39 @@ void main() {
     var session = sessionBuilder.build();
     final genomeService = GenomeService();
 
-    test('discovers a genome tree with reference, fasta index and snp',
-        () async {
-      final base = createTempDir('collect');
-      final genomeDir = '${base.path}/genomes';
-      final hg38 = '$genomeDir/human/hg38';
-      Directory(hg38).createSync(recursive: true);
-      File('$hg38/refGene.txt').writeAsStringSync('gene\n');
-      writeIndexedFa('$hg38/fa');
-      final snpDir = '$hg38/snp/00-common';
-      Directory(snpDir).createSync(recursive: true);
-      File('$snpDir/common.vcf.gz').writeAsStringSync('v');
-      File('$snpDir/common.vcf.gz.tbi').writeAsStringSync('t');
-      await overrideSettingsDirs(session, genomeDir: genomeDir);
+    test(
+      'discovers a genome tree with reference, fasta index and snp',
+      () async {
+        final base = createTempDir('collect');
+        final genomeDir = '${base.path}/genomes';
+        final hg38 = '$genomeDir/human/hg38';
+        Directory(hg38).createSync(recursive: true);
+        File('$hg38/refGene.txt').writeAsStringSync('gene\n');
+        writeIndexedFa('$hg38/fa');
+        final snpDir = '$hg38/snp/00-common';
+        Directory(snpDir).createSync(recursive: true);
+        File('$snpDir/common.vcf.gz').writeAsStringSync('v');
+        File('$snpDir/common.vcf.gz.tbi').writeAsStringSync('t');
+        await overrideSettingsDirs(session, genomeDir: genomeDir);
 
-      await genomeService.collectGenomes(session);
+        await genomeService.collectGenomes(session);
 
-      final genomes = await genomeService.getAllGenomes(session);
-      expect(genomes.length, 1);
-      final g = genomes.single;
-      expect(g.name, 'hg38');
-      expect(g.category, 'human');
-      expect(g.indexed, isTrue);
-      expect(g.refPath, endsWith('refGene.txt'));
-      expect(g.fastaPath, endsWith('hg38.fa'));
-      expect(g.snp, isNotNull);
-      expect(g.snp!.length, 1);
-      final snps = await genomeService.getAllSnps(session);
-      expect(snps.length, 1);
-      expect(snps.single.name, '00-common');
-    }, tags: ['unit']);
+        final genomes = await genomeService.getAllGenomes(session);
+        expect(genomes.length, 1);
+        final g = genomes.single;
+        expect(g.name, 'hg38');
+        expect(g.category, 'human');
+        expect(g.indexed, isTrue);
+        expect(g.refPath, endsWith('refGene.txt'));
+        expect(g.fastaPath, endsWith('hg38.fa'));
+        expect(g.snp, isNotNull);
+        expect(g.snp!.length, 1);
+        final snps = await genomeService.getAllSnps(session);
+        expect(snps.length, 1);
+        expect(snps.single.name, '00-common');
+      },
+      tags: ['unit'],
+    );
 
     test('throws when the genome directory does not exist', () async {
       await overrideSettingsDirs(session, genomeDir: '/does/not/exist/xyz');

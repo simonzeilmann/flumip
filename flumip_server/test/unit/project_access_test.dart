@@ -18,13 +18,12 @@ void main() {
     Principal principal = Principal.anonymous,
     int? projectOwner,
     int? department,
-  }) =>
-      projectIsAccessible(
-        enforcing: enforcing,
-        principal: principal,
-        owner: projectOwner,
-        department: department,
-      );
+  }) => projectIsAccessible(
+    enforcing: enforcing,
+    principal: principal,
+    owner: projectOwner,
+    department: department,
+  );
 
   group('the default install (no authentication)', () {
     // If any of these ever fails, the standard deployment has lost access to its
@@ -147,10 +146,7 @@ void main() {
     // has to honour it.
     test('still grants access', () {
       expect(
-        allowed(
-          principal: const Principal(isAdmin: true),
-          projectOwner: 7,
-        ),
+        allowed(principal: const Principal(isAdmin: true), projectOwner: 7),
         isTrue,
       );
     });

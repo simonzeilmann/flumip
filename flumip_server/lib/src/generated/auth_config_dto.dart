@@ -18,16 +18,12 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// required at all, and what to put on the button. No table — transport only.
 abstract class AuthConfigDto
     implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  AuthConfigDto._({
-    bool? enabled,
-    String? buttonLabel,
-  }) : enabled = enabled ?? false,
-       buttonLabel = buttonLabel ?? 'Sign in with SSO';
+  AuthConfigDto._({bool? enabled, String? buttonLabel})
+    : enabled = enabled ?? false,
+      buttonLabel = buttonLabel ?? 'Sign in with SSO';
 
-  factory AuthConfigDto({
-    bool? enabled,
-    String? buttonLabel,
-  }) = _AuthConfigDtoImpl;
+  factory AuthConfigDto({bool? enabled, String? buttonLabel}) =
+      _AuthConfigDtoImpl;
 
   factory AuthConfigDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return AuthConfigDto(
@@ -45,10 +41,7 @@ abstract class AuthConfigDto
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  AuthConfigDto copyWith({
-    bool? enabled,
-    String? buttonLabel,
-  });
+  AuthConfigDto copyWith({bool? enabled, String? buttonLabel});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -74,22 +67,14 @@ abstract class AuthConfigDto
 }
 
 class _AuthConfigDtoImpl extends AuthConfigDto {
-  _AuthConfigDtoImpl({
-    bool? enabled,
-    String? buttonLabel,
-  }) : super._(
-         enabled: enabled,
-         buttonLabel: buttonLabel,
-       );
+  _AuthConfigDtoImpl({bool? enabled, String? buttonLabel})
+    : super._(enabled: enabled, buttonLabel: buttonLabel);
 
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  AuthConfigDto copyWith({
-    bool? enabled,
-    String? buttonLabel,
-  }) {
+  AuthConfigDto copyWith({bool? enabled, String? buttonLabel}) {
     return AuthConfigDto(
       enabled: enabled ?? this.enabled,
       buttonLabel: buttonLabel ?? this.buttonLabel,

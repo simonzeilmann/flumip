@@ -33,18 +33,12 @@ abstract class ArgumentException
   ArgumentException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
-    return {
-      '__className__': 'ArgumentException',
-      'message': message,
-    };
+    return {'__className__': 'ArgumentException', 'message': message};
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
-    return {
-      '__className__': 'ArgumentException',
-      'message': message,
-    };
+    return {'__className__': 'ArgumentException', 'message': message};
   }
 
   @override

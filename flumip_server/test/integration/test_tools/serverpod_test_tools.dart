@@ -161,34 +161,13 @@ class _InternalTestEndpoints extends TestEndpoints
     _i2.SerializationManager serializationManager,
     _i2.EndpointDispatch endpoints,
   ) {
-    auth = _AuthEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    file = _FileEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    genome = _GenomeEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    mipgen = _MipgenEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    options = _OptionsEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    project = _ProjectEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    settings = _SettingsEndpoint(
-      endpoints,
-      serializationManager,
-    );
+    auth = _AuthEndpoint(endpoints, serializationManager);
+    file = _FileEndpoint(endpoints, serializationManager);
+    genome = _GenomeEndpoint(endpoints, serializationManager);
+    mipgen = _MipgenEndpoint(endpoints, serializationManager);
+    options = _OptionsEndpoint(endpoints, serializationManager);
+    project = _ProjectEndpoint(endpoints, serializationManager);
+    settings = _SettingsEndpoint(endpoints, serializationManager);
   }
 }
 
@@ -199,10 +178,7 @@ class _FutureCalls {
 }
 
 class _AuthEndpoint {
-  _AuthEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _AuthEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -296,10 +272,7 @@ class _AuthEndpoint {
 }
 
 class _FileEndpoint {
-  _FileEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _FileEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -555,10 +528,7 @@ class _FileEndpoint {
 }
 
 class _GenomeEndpoint {
-  _GenomeEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _GenomeEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -641,10 +611,7 @@ class _GenomeEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'genome',
           methodName: 'updateGenome',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'genome': genome,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'genome': genome}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -766,10 +733,7 @@ class _GenomeEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'genome',
           methodName: 'updateSnp',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'snp': snp,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'snp': snp}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -972,10 +936,7 @@ class _GenomeEndpoint {
 }
 
 class _MipgenEndpoint {
-  _MipgenEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _MipgenEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1111,10 +1072,7 @@ class _MipgenEndpoint {
 }
 
 class _OptionsEndpoint {
-  _OptionsEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _OptionsEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1228,10 +1186,7 @@ class _OptionsEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'options',
           methodName: 'updateProjectOptions',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'options': options,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'options': options}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1342,10 +1297,7 @@ class _OptionsEndpoint {
 }
 
 class _ProjectEndpoint {
-  _ProjectEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _ProjectEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1496,10 +1448,7 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'addGeneToProject',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'gene': gene,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'gene': gene}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1531,10 +1480,7 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'removeGeneFromProject',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'gene': gene,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'gene': gene}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1566,10 +1512,7 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'addGenesToProject',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'genes': genes,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'genes': genes}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1601,10 +1544,7 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'setGeneById',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'genomeId': genomeId,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'genomeId': genomeId}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1636,10 +1576,7 @@ class _ProjectEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'project',
           methodName: 'setSnpById',
-          parameters: _i1.testObjectToJson({
-            'id': id,
-            'snpId': snpId,
-          }),
+          parameters: _i1.testObjectToJson({'id': id, 'snpId': snpId}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -1719,10 +1656,7 @@ class _ProjectEndpoint {
 }
 
 class _SettingsEndpoint {
-  _SettingsEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _SettingsEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1876,10 +1810,7 @@ class _SettingsEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'settings',
           methodName: 'sendTestMail',
-          parameters: _i1.testObjectToJson({
-            'password': password,
-            'to': to,
-          }),
+          parameters: _i1.testObjectToJson({'password': password, 'to': to}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =

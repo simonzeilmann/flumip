@@ -1,9 +1,14 @@
 ### Raised when the signed-in user may not touch the project they asked for.
 ###
+### Named for projects rather than called `AccessDeniedException` because
+### Serverpod already ships one of those, for its Insights endpoint. Two types
+### with the same name make any library that imports both protocols fail to
+### compile, and the specific name reads better at the catch site anyway.
+###
 ### Deliberately distinct from FlumipFileNotFoundException so the app can tell
 ### "no such project" from "not yours" and show a message that makes sense. The
 ### server does *not* use it to hide existence: list endpoints filter foreign
 ### projects out entirely, so a client that never guesses ids never sees this.
-exception: AccessDeniedException
+exception: ProjectAccessDeniedException
 fields:
   message: String, default = "You do not have access to this project"

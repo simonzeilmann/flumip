@@ -103,7 +103,8 @@ class AuthService {
     if (discovery == null) {
       throw AuthFlowException(
         'This server cannot currently reach the identity provider at '
-        '${config.issuer}. ${_runtime.discoveryError ?? ''}'.trim(),
+                '${config.issuer}. ${_runtime.discoveryError ?? ''}'
+            .trim(),
       );
     }
     if (config.redirectUri.isEmpty) {
@@ -185,8 +186,10 @@ class AuthService {
         codeVerifier: flow.codeVerifier,
       );
     } catch (e) {
-      session.log('The authorization code exchange failed: $e',
-          level: LogLevel.error);
+      session.log(
+        'The authorization code exchange failed: $e',
+        level: LogLevel.error,
+      );
       throw AuthFlowException(
         'The identity provider refused this sign-in. If this keeps happening, '
         'an administrator should check that the redirect URI registered with '
@@ -397,8 +400,10 @@ class AuthService {
       // Cascades to any remaining tokens of the session.
       await AuthSession.db.deleteWhere(session, where: (t) => t.expires < now);
     } catch (e) {
-      session.log('Pruning expired authentication rows failed: $e',
-          level: LogLevel.warning);
+      session.log(
+        'Pruning expired authentication rows failed: $e',
+        level: LogLevel.warning,
+      );
     }
   }
 

@@ -15,12 +15,9 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// The signed-in user, as shown in the app bar. No table — transport only.
 abstract class AuthUserDto
     implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  AuthUserDto._({
-    required this.email,
-    String? displayName,
-    bool? isAdmin,
-  }) : displayName = displayName ?? '',
-       isAdmin = isAdmin ?? false;
+  AuthUserDto._({required this.email, String? displayName, bool? isAdmin})
+    : displayName = displayName ?? '',
+      isAdmin = isAdmin ?? false;
 
   factory AuthUserDto({
     required String email,
@@ -47,11 +44,7 @@ abstract class AuthUserDto
   /// Returns a shallow copy of this [AuthUserDto]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  AuthUserDto copyWith({
-    String? email,
-    String? displayName,
-    bool? isAdmin,
-  });
+  AuthUserDto copyWith({String? email, String? displayName, bool? isAdmin});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -79,25 +72,14 @@ abstract class AuthUserDto
 }
 
 class _AuthUserDtoImpl extends AuthUserDto {
-  _AuthUserDtoImpl({
-    required String email,
-    String? displayName,
-    bool? isAdmin,
-  }) : super._(
-         email: email,
-         displayName: displayName,
-         isAdmin: isAdmin,
-       );
+  _AuthUserDtoImpl({required String email, String? displayName, bool? isAdmin})
+    : super._(email: email, displayName: displayName, isAdmin: isAdmin);
 
   /// Returns a shallow copy of this [AuthUserDto]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  AuthUserDto copyWith({
-    String? email,
-    String? displayName,
-    bool? isAdmin,
-  }) {
+  AuthUserDto copyWith({String? email, String? displayName, bool? isAdmin}) {
     return AuthUserDto(
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,

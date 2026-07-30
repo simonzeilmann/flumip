@@ -24,7 +24,10 @@ class SettingsService {
     return settings.first;
   }
 
-  Future<Settings> getSettingsExternal(Session session, String? password) async {
+  Future<Settings> getSettingsExternal(
+    Session session,
+    String? password,
+  ) async {
     var settings = await getSettings(session);
     if (!_isAdmin(session, settings, password)) {
       throw ArgumentException(message: 'Invalid password');
@@ -82,7 +85,10 @@ class SettingsService {
         "deleting the duplicates",
         level: LogLevel.warning,
       );
-      await Settings.db.deleteWhere(session, where: (t) => t.id.notEquals(keep));
+      await Settings.db.deleteWhere(
+        session,
+        where: (t) => t.id.notEquals(keep),
+      );
     }
   }
 

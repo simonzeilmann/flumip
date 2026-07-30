@@ -207,79 +207,38 @@ class _AuthSessionImpl extends AuthSession {
 class AuthSessionUpdateTable extends _i1.UpdateTable<AuthSessionTable> {
   AuthSessionUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> userId(int value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _i1.ColumnValue<int, int> userId(int value) =>
+      _i1.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<String, String> cookieHash(String value) => _i1.ColumnValue(
-    table.cookieHash,
-    value,
-  );
+  _i1.ColumnValue<String, String> cookieHash(String value) =>
+      _i1.ColumnValue(table.cookieHash, value);
 
-  _i1.ColumnValue<String, String> email(String value) => _i1.ColumnValue(
-    table.email,
-    value,
-  );
+  _i1.ColumnValue<String, String> email(String value) =>
+      _i1.ColumnValue(table.email, value);
 
-  _i1.ColumnValue<bool, bool> isAdmin(bool value) => _i1.ColumnValue(
-    table.isAdmin,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> isAdmin(bool value) =>
+      _i1.ColumnValue(table.isAdmin, value);
 
   _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+      _i1.ColumnValue(table.created, value);
 
   _i1.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
-      _i1.ColumnValue(
-        table.expires,
-        value,
-      );
+      _i1.ColumnValue(table.expires, value);
 
   _i1.ColumnValue<DateTime, DateTime> lastSeen(DateTime value) =>
-      _i1.ColumnValue(
-        table.lastSeen,
-        value,
-      );
+      _i1.ColumnValue(table.lastSeen, value);
 }
 
 class AuthSessionTable extends _i1.Table<int?> {
   AuthSessionTable({super.tableRelation}) : super(tableName: 'auth_session') {
     updateTable = AuthSessionUpdateTable(this);
-    userId = _i1.ColumnInt(
-      'userId',
-      this,
-    );
-    cookieHash = _i1.ColumnString(
-      'cookieHash',
-      this,
-    );
-    email = _i1.ColumnString(
-      'email',
-      this,
-    );
-    isAdmin = _i1.ColumnBool(
-      'isAdmin',
-      this,
-      hasDefault: true,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
-    expires = _i1.ColumnDateTime(
-      'expires',
-      this,
-    );
-    lastSeen = _i1.ColumnDateTime(
-      'lastSeen',
-      this,
-      hasDefault: true,
-    );
+    userId = _i1.ColumnInt('userId', this);
+    cookieHash = _i1.ColumnString('cookieHash', this);
+    email = _i1.ColumnString('email', this);
+    isAdmin = _i1.ColumnBool('isAdmin', this, hasDefault: true);
+    created = _i1.ColumnDateTime('created', this, hasDefault: true);
+    expires = _i1.ColumnDateTime('expires', this);
+    lastSeen = _i1.ColumnDateTime('lastSeen', this, hasDefault: true);
   }
 
   late final AuthSessionUpdateTable updateTable;
@@ -478,10 +437,7 @@ class AuthSessionRepository {
     AuthSession row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<AuthSession>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<AuthSession>(row, transaction: transaction);
   }
 
   /// Updates all [AuthSession]s in the list and returns the updated rows. If
@@ -566,10 +522,7 @@ class AuthSessionRepository {
     List<AuthSession> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<AuthSession>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<AuthSession>(rows, transaction: transaction);
   }
 
   /// Deletes a single [AuthSession].
@@ -578,10 +531,7 @@ class AuthSessionRepository {
     AuthSession row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<AuthSession>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<AuthSession>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

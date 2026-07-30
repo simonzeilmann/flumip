@@ -24,8 +24,7 @@ class MailService {
     final mailSender = sl<MailSender>();
 
     if (to.isEmpty) {
-      session.log('No recipient supplied for test mail',
-          level: LogLevel.error);
+      session.log('No recipient supplied for test mail', level: LogLevel.error);
       throw ArgumentException(message: 'No recipient supplied');
     }
 
@@ -40,7 +39,8 @@ class MailService {
       settings: settings,
       to: to,
       subject: 'FLUMIP test email',
-      body: 'This is a test email from FLUMIP.\n\n'
+      body:
+          'This is a test email from FLUMIP.\n\n'
           'If you received it, the SMTP configuration works.',
     );
     session.log('Test mail sent to $to', level: LogLevel.info);
@@ -91,11 +91,11 @@ class MailService {
         : 'FLUMIP: MIP generation finished for "${project.name}"';
     final body = failed
         ? 'MIP generation for project "${project.name}" failed.\n\n'
-            'Error: ${project.error}\n'
+              'Error: ${project.error}\n'
         : 'MIP generation for project "${project.name}" finished '
-            'successfully.\n\n'
-            'Duration: ${project.completedIn ?? "unknown"}\n'
-            'Output size: ${project.size} bytes\n';
+              'successfully.\n\n'
+              'Duration: ${project.completedIn ?? "unknown"}\n'
+              'Output size: ${project.size} bytes\n';
 
     try {
       await mailSender.send(

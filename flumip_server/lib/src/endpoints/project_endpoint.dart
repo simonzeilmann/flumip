@@ -18,14 +18,20 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
   Future<Project> createProject(
-      Session session, String name, ProjectOptions options,
-      [String? description]) async {
+    Session session,
+    String name,
+    ProjectOptions options, [
+    String? description,
+  ]) async {
     session.log("Creating project with name: $name", level: LogLevel.info);
     try {
       return projectService.createProject(session, name, options, description);
     } catch (e) {
-      session.log("Error creating project with name: $name",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error creating project with name: $name",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -40,8 +46,11 @@ class ProjectEndpoint extends FlumipEndpoint {
       await requireProject(session, id);
       return projectService.deleteProject(session, id);
     } catch (e) {
-      session.log("Error deleting project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error deleting project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -55,11 +64,14 @@ class ProjectEndpoint extends FlumipEndpoint {
     try {
       // Filtered, not all of them. Foreign projects are dropped here rather than
       // refused on open, so a user simply never sees work that is not theirs and
-      // AccessDeniedException stays a thing only a hand-built request can hit.
+      // ProjectAccessDeniedException stays a thing only a hand-built request can hit.
       return authz.visibleProjects(session);
     } catch (e) {
-      session.log("Error retrieving all projects",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error retrieving all projects",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -75,8 +87,11 @@ class ProjectEndpoint extends FlumipEndpoint {
       await requireProject(session, id);
       return projectService.getProject(session, id);
     } catch (e) {
-      session.log("Error retrieving project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error retrieving project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -92,8 +107,11 @@ class ProjectEndpoint extends FlumipEndpoint {
       await requireProject(session, id);
       return projectService.addGeneToProject(session, id, gene);
     } catch (e) {
-      session.log("Error adding gene to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error adding gene to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -104,15 +122,23 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param id The ID of the project.
   /// \param gene The gene to remove.
   Future<void> removeGeneFromProject(
-      Session session, int id, String gene) async {
-    session.log("Removing gene from project with ID: $id",
-        level: LogLevel.info);
+    Session session,
+    int id,
+    String gene,
+  ) async {
+    session.log(
+      "Removing gene from project with ID: $id",
+      level: LogLevel.info,
+    );
     try {
       await requireProject(session, id);
       return projectService.removeGeneFromProject(session, id, gene);
     } catch (e) {
-      session.log("Error removing gene from project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error removing gene from project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -123,14 +149,20 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param id The ID of the project.
   /// \param genes The list of genes to add.
   Future<void> addGenesToProject(
-      Session session, int id, List<String> genes) async {
+    Session session,
+    int id,
+    List<String> genes,
+  ) async {
     session.log("Adding genes to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
       return projectService.addGenesToProject(session, id, genes);
     } catch (e) {
-      session.log("Error adding genes to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error adding genes to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -146,8 +178,11 @@ class ProjectEndpoint extends FlumipEndpoint {
       await requireProject(session, id);
       return projectService.setGenomeById(session, id, genomeId);
     } catch (e) {
-      session.log("Error setting gene to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting gene to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -163,8 +198,11 @@ class ProjectEndpoint extends FlumipEndpoint {
       await requireProject(session, id);
       return projectService.setSnpById(session, id, snpId);
     } catch (e) {
-      session.log("Error setting snp to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting snp to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

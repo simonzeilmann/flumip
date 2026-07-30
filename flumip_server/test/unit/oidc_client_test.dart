@@ -22,18 +22,19 @@ void main() {
     client = OidcClient();
   });
 
-  AuthConfig configFor({String redirectUri = 'https://flumip.example/auth/callback'}) =>
-      AuthConfig.resolve(
-        settings: Settings(
-          loginRequired: true,
-          oidcIssuer: issuer,
-          oidcClientId: 'flumip',
-          oidcClientSecret: 's3cret',
-          oidcScopes: 'openid email profile',
-          authPublicUrl: Uri.parse(redirectUri).origin,
-        ),
-        env: const {},
-      );
+  AuthConfig configFor({
+    String redirectUri = 'https://flumip.example/auth/callback',
+  }) => AuthConfig.resolve(
+    settings: Settings(
+      loginRequired: true,
+      oidcIssuer: issuer,
+      oidcClientId: 'flumip',
+      oidcClientSecret: 's3cret',
+      oidcScopes: 'openid email profile',
+      authPublicUrl: Uri.parse(redirectUri).origin,
+    ),
+    env: const {},
+  );
 
   const discovery = OidcDiscovery(
     issuer: issuer,
@@ -47,10 +48,7 @@ void main() {
       http.stubProvider(issuer: issuer);
       final result = await client.discover(issuer);
 
-      expect(
-        http.lastRequest!.url,
-        '$issuer/.well-known/openid-configuration',
-      );
+      expect(http.lastRequest!.url, '$issuer/.well-known/openid-configuration');
       expect(result.authorizationEndpoint, '$issuer/authorize');
       expect(result.tokenEndpoint, '$issuer/token');
       expect(result.userinfoEndpoint, '$issuer/userinfo');
@@ -77,11 +75,13 @@ void main() {
       });
       expect(
         () => client.discover(issuer),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('declares issuer'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('declares issuer'),
+          ),
+        ),
       );
     });
 
@@ -92,11 +92,13 @@ void main() {
       });
       expect(
         () => client.discover(issuer),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('token_endpoint'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('token_endpoint'),
+          ),
+        ),
       );
     });
 
@@ -127,10 +129,7 @@ void main() {
         '$issuer/.well-known/openid-configuration',
         'Not Found',
       );
-      expect(
-        () => client.discover(issuer),
-        throwsA(isA<HttpJsonException>()),
-      );
+      expect(() => client.discover(issuer), throwsA(isA<HttpJsonException>()));
     });
   });
 
@@ -168,22 +167,25 @@ void main() {
       expect(url.toString(), isNot(contains('the-verifier')));
     });
 
-    test('preserves query parameters already on the authorization endpoint', () {
-      const withQuery = OidcDiscovery(
-        issuer: issuer,
-        authorizationEndpoint: '$issuer/authorize?tenant=uni',
-        tokenEndpoint: '$issuer/token',
-      );
-      final url = client.authorizationUrl(
-        discovery: withQuery,
-        config: configFor(),
-        state: 's',
-        nonce: 'n',
-        codeVerifier: 'v',
-      );
-      expect(url.queryParameters['tenant'], 'uni');
-      expect(url.queryParameters['response_type'], 'code');
-    });
+    test(
+      'preserves query parameters already on the authorization endpoint',
+      () {
+        const withQuery = OidcDiscovery(
+          issuer: issuer,
+          authorizationEndpoint: '$issuer/authorize?tenant=uni',
+          tokenEndpoint: '$issuer/token',
+        );
+        final url = client.authorizationUrl(
+          discovery: withQuery,
+          config: configFor(),
+          state: 's',
+          nonce: 'n',
+          codeVerifier: 'v',
+        );
+        expect(url.queryParameters['tenant'], 'uni');
+        expect(url.queryParameters['response_type'], 'code');
+      },
+    );
   });
 
   group('exchangeCode', () {
@@ -252,11 +254,13 @@ void main() {
           code: 'c',
           codeVerifier: 'v',
         ),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('openid'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('openid'),
+          ),
+        ),
       );
     });
 
@@ -273,11 +277,13 @@ void main() {
           code: 'c',
           codeVerifier: 'v',
         ),
-        throwsA(isA<HttpJsonException>().having(
-          (e) => e.toString(),
-          'toString',
-          contains('invalid_grant'),
-        )),
+        throwsA(
+          isA<HttpJsonException>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('invalid_grant'),
+          ),
+        ),
       );
     });
   });
@@ -293,17 +299,20 @@ void main() {
       expect(http.lastRequest!.bearer, 'the-access-token');
     });
 
-    test('returns null when the provider advertises no userinfo endpoint', () async {
-      const noUserinfo = OidcDiscovery(
-        issuer: issuer,
-        authorizationEndpoint: '$issuer/authorize',
-        tokenEndpoint: '$issuer/token',
-      );
-      expect(
-        await client.userinfo(discovery: noUserinfo, accessToken: 'x'),
-        isNull,
-      );
-      expect(http.requests, isEmpty);
-    });
+    test(
+      'returns null when the provider advertises no userinfo endpoint',
+      () async {
+        const noUserinfo = OidcDiscovery(
+          issuer: issuer,
+          authorizationEndpoint: '$issuer/authorize',
+          tokenEndpoint: '$issuer/token',
+        );
+        expect(
+          await client.userinfo(discovery: noUserinfo, accessToken: 'x'),
+          isNull,
+        );
+        expect(http.requests, isEmpty);
+      },
+    );
   });
 }

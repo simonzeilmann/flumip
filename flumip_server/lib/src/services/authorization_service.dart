@@ -87,7 +87,7 @@ class AuthorizationService {
   /// always answered a bad id with Serverpod's [FileNotFoundException], the app
   /// catches the two separately, and a guard bolted onto the front of an
   /// operation has no business changing the error that operation reports for an
-  /// unrelated failure. A test caught it. Adding [AccessDeniedException] is the
+  /// unrelated failure. A test caught it. Adding [ProjectAccessDeniedException] is the
   /// entire remit.
   ///
   /// Costs no query at all while single sign-on is off.
@@ -118,7 +118,7 @@ class AuthorizationService {
       'Refused access to project ${project.id} for $who',
       level: LogLevel.warning,
     );
-    throw AccessDeniedException();
+    throw ProjectAccessDeniedException();
   }
 
   /// Refuses if the caller may not touch the project that owns [optionsId].
@@ -157,12 +157,14 @@ class AuthorizationService {
 
     final who = await principal(session);
     return all
-        .where((p) => projectIsAccessible(
-              enforcing: enforcing,
-              principal: who,
-              owner: p.owner,
-              department: p.department,
-            ))
+        .where(
+          (p) => projectIsAccessible(
+            enforcing: enforcing,
+            principal: who,
+            owner: p.owner,
+            department: p.department,
+          ),
+        )
         .toList();
   }
 

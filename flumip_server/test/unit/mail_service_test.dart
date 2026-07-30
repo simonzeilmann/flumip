@@ -127,12 +127,17 @@ void main() {
     }, tags: ['unit']);
   });
 
-  withServerpod('MailService.notifyProjectFinished', (sessionBuilder, endpoints) {
+  withServerpod('MailService.notifyProjectFinished', (
+    sessionBuilder,
+    endpoints,
+  ) {
     setUp(fake.reset);
     var session = sessionBuilder.build();
 
-    Future<Project> seedNotifiableProject(Session session,
-        {bool emailNotification = true}) async {
+    Future<Project> seedNotifiableProject(
+      Session session, {
+      bool emailNotification = true,
+    }) async {
       final options = await seedOptions(session);
       final project = await seedProject(
         session,
@@ -149,31 +154,47 @@ void main() {
 
     test('skips when mail is globally disabled', () async {
       await overrideMailSettings(
-          session, mailActive: false, smtpServer: 'smtp.example.test');
+        session,
+        mailActive: false,
+        smtpServer: 'smtp.example.test',
+      );
       final project = await seedNotifiableProject(session);
-      await RecipientMailService('user@example.test')
-          .notifyProjectFinished(session, project, failed: false);
+      await RecipientMailService(
+        'user@example.test',
+      ).notifyProjectFinished(session, project, failed: false);
       expect(fake.sent, isEmpty);
     }, tags: ['unit']);
 
     test('skips when the project opted out', () async {
       await overrideMailSettings(
-          session, mailActive: true, smtpServer: 'smtp.example.test');
-      final project =
-          await seedNotifiableProject(session, emailNotification: false);
-      await RecipientMailService('user@example.test')
-          .notifyProjectFinished(session, project, failed: false);
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+      );
+      final project = await seedNotifiableProject(
+        session,
+        emailNotification: false,
+      );
+      await RecipientMailService(
+        'user@example.test',
+      ).notifyProjectFinished(session, project, failed: false);
       expect(fake.sent, isEmpty);
     }, tags: ['unit']);
 
     test('skips when no recipient can be resolved (current default)', () async {
       await overrideMailSettings(
-          session, mailActive: true, smtpServer: 'smtp.example.test');
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+      );
       final project = await seedNotifiableProject(session);
       // The production MailService resolves no recipient until a user system
       // exists, so nothing is sent.
-      await MailService()
-          .notifyProjectFinished(session, project, failed: false);
+      await MailService().notifyProjectFinished(
+        session,
+        project,
+        failed: false,
+      );
       expect(fake.sent, isEmpty);
     }, tags: ['unit']);
 
@@ -185,8 +206,9 @@ void main() {
         smtpFrom: 'flumip@example.test',
       );
       final project = await seedNotifiableProject(session);
-      await RecipientMailService('user@example.test')
-          .notifyProjectFinished(session, project, failed: false);
+      await RecipientMailService(
+        'user@example.test',
+      ).notifyProjectFinished(session, project, failed: false);
 
       expect(fake.sent.length, 1);
       final mail = fake.lastSent!;
@@ -198,13 +220,17 @@ void main() {
 
     test('sends a failure notification including the error', () async {
       await overrideMailSettings(
-          session, mailActive: true, smtpServer: 'smtp.example.test');
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+      );
       final project = await seedNotifiableProject(session);
       project.error = 'MIP generation failed';
       await ProjectService().updateProject(session, project);
 
-      await RecipientMailService('user@example.test')
-          .notifyProjectFinished(session, project, failed: true);
+      await RecipientMailService(
+        'user@example.test',
+      ).notifyProjectFinished(session, project, failed: true);
 
       expect(fake.sent.length, 1);
       expect(fake.lastSent!.subject, contains('failed'));
@@ -213,18 +239,24 @@ void main() {
 
     test('swallows SMTP failures so the job is unaffected', () async {
       await overrideMailSettings(
-          session, mailActive: true, smtpServer: 'smtp.example.test');
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+      );
       final project = await seedNotifiableProject(session);
       fake.error = Exception('connection refused');
       // Must NOT throw.
-      await RecipientMailService('user@example.test')
-          .notifyProjectFinished(session, project, failed: false);
+      await RecipientMailService(
+        'user@example.test',
+      ).notifyProjectFinished(session, project, failed: false);
       expect(fake.sent.length, 1);
     }, tags: ['unit']);
   });
 
-  withServerpod('mipgenIsFinished notification trigger',
-      (sessionBuilder, endpoints) {
+  withServerpod('mipgenIsFinished notification trigger', (
+    sessionBuilder,
+    endpoints,
+  ) {
     setUp(() {
       fake.reset();
       fakeProcess.reset();
@@ -237,9 +269,15 @@ void main() {
     Future<Project> prepare({required bool withProgress}) async {
       final base = createTempDir('mailtrigger');
       await overrideSettingsDirs(
-          session, projectDir: base.path, ucscTrackGenerator: 'ucsc-gen');
+        session,
+        projectDir: base.path,
+        ucscTrackGenerator: 'ucsc-gen',
+      );
       await overrideMailSettings(
-          session, mailActive: true, smtpServer: 'smtp.example.test');
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+      );
       final options = await seedOptions(session);
       final project = await seedProject(
         session,

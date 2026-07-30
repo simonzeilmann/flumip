@@ -86,7 +86,10 @@ class MipgenService {
       "Running exon extract script with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await sl<ProcessRunner>().run(settings.exonExtractScript, arg);
+    var process = await sl<ProcessRunner>().run(
+      settings.exonExtractScript,
+      arg,
+    );
 
     if (process.exitCode != 0 || process.stdout == "") {
       session.log(
@@ -143,7 +146,9 @@ class MipgenService {
         "No fasta path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw FlumipFileNotFoundException(message: 'No fasta path found in genome');
+      throw FlumipFileNotFoundException(
+        message: 'No fasta path found in genome',
+      );
     }
     Snp? snp;
     if (project.snp != null) {

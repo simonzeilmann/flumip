@@ -7,7 +7,7 @@ void main() {
   group('describeError', () {
     test('uses the message from an access refusal', () {
       expect(
-        describeError(AccessDeniedException(message: 'Not your project')),
+        describeError(ProjectAccessDeniedException(message: 'Not your project')),
         'Not your project',
       );
     });
@@ -16,7 +16,7 @@ void main() {
       // The point of the helper. Interpolating the exception directly, which is
       // what every call site did before, yields its toString() — wrapper class
       // included — instead of the sentence the server wrote.
-      final described = describeError(AccessDeniedException());
+      final described = describeError(ProjectAccessDeniedException());
       expect(described, isNot(contains('Exception')));
       expect(described, isNot(contains('Instance of')));
       expect(described, contains('access'));
@@ -48,7 +48,7 @@ void main() {
 
   group('isAccessDenied', () {
     test('is true only for an access refusal', () {
-      expect(isAccessDenied(AccessDeniedException()), isTrue);
+      expect(isAccessDenied(ProjectAccessDeniedException()), isTrue);
       expect(
         isAccessDenied(FlumipFileNotFoundException(message: 'gone')),
         isFalse,

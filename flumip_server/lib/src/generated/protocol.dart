@@ -20,9 +20,9 @@ import 'auth_session.dart' as _i7;
 import 'auth_user_dto.dart' as _i8;
 import 'exceptions.dart' as _i9;
 import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i10;
-import 'exceptions/access_denied_exception.dart' as _i11;
-import 'exceptions/argument_exception.dart' as _i12;
-import 'exceptions/flumip_file_not_found_exception.dart' as _i13;
+import 'exceptions/argument_exception.dart' as _i11;
+import 'exceptions/flumip_file_not_found_exception.dart' as _i12;
+import 'exceptions/project_access_denied_exception.dart' as _i13;
 import 'flumip_user.dart' as _i14;
 import 'genome.dart' as _i15;
 import 'project.dart' as _i16;
@@ -41,9 +41,9 @@ export 'auth_session.dart';
 export 'auth_user_dto.dart';
 export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
-export 'exceptions/access_denied_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
+export 'exceptions/project_access_denied_exception.dart';
 export 'flumip_user.dart';
 export 'genome.dart';
 export 'project.dart';
@@ -1379,10 +1379,7 @@ class Protocol extends _i1.SerializationManagerServer {
   }
 
   @override
-  T deserialize<T>(
-    dynamic data, [
-    Type? t,
-  ]) {
+  T deserialize<T>(dynamic data, [Type? t]) {
     t ??= T;
 
     final dataClassName = getClassNameFromObjectJson(data);
@@ -1423,14 +1420,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i10.BedCreationException) {
       return _i10.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i11.AccessDeniedException) {
-      return _i11.AccessDeniedException.fromJson(data) as T;
+    if (t == _i11.ArgumentException) {
+      return _i11.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i12.ArgumentException) {
-      return _i12.ArgumentException.fromJson(data) as T;
+    if (t == _i12.FlumipFileNotFoundException) {
+      return _i12.FlumipFileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i13.FlumipFileNotFoundException) {
-      return _i13.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _i13.ProjectAccessDeniedException) {
+      return _i13.ProjectAccessDeniedException.fromJson(data) as T;
     }
     if (t == _i14.FlumipUser) {
       return _i14.FlumipUser.fromJson(data) as T;
@@ -1479,16 +1476,18 @@ class Protocol extends _i1.SerializationManagerServer {
       return (data != null ? _i10.BedCreationException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i11.AccessDeniedException?>()) {
-      return (data != null ? _i11.AccessDeniedException.fromJson(data) : null)
+    if (t == _i1.getType<_i11.ArgumentException?>()) {
+      return (data != null ? _i11.ArgumentException.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _i12.FlumipFileNotFoundException.fromJson(data)
+              : null)
           as T;
     }
-    if (t == _i1.getType<_i12.ArgumentException?>()) {
-      return (data != null ? _i12.ArgumentException.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i13.FlumipFileNotFoundException?>()) {
+    if (t == _i1.getType<_i13.ProjectAccessDeniedException?>()) {
       return (data != null
-              ? _i13.FlumipFileNotFoundException.fromJson(data)
+              ? _i13.ProjectAccessDeniedException.fromJson(data)
               : null)
           as T;
     }
@@ -1561,9 +1560,9 @@ class Protocol extends _i1.SerializationManagerServer {
       _i8.AuthUserDto => 'AuthUserDto',
       _i9.GeneExtractionException => 'GeneExtractionException',
       _i10.BedCreationException => 'BedCreationException',
-      _i11.AccessDeniedException => 'AccessDeniedException',
-      _i12.ArgumentException => 'ArgumentException',
-      _i13.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _i11.ArgumentException => 'ArgumentException',
+      _i12.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _i13.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
       _i14.FlumipUser => 'FlumipUser',
       _i15.Genome => 'Genome',
       _i16.Project => 'Project',
@@ -1601,12 +1600,12 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'GeneExtractionException';
       case _i10.BedCreationException():
         return 'BedCreationException';
-      case _i11.AccessDeniedException():
-        return 'AccessDeniedException';
-      case _i12.ArgumentException():
+      case _i11.ArgumentException():
         return 'ArgumentException';
-      case _i13.FlumipFileNotFoundException():
+      case _i12.FlumipFileNotFoundException():
         return 'FlumipFileNotFoundException';
+      case _i13.ProjectAccessDeniedException():
+        return 'ProjectAccessDeniedException';
       case _i14.FlumipUser():
         return 'FlumipUser';
       case _i15.Genome():
@@ -1659,14 +1658,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'BedCreationException') {
       return deserialize<_i10.BedCreationException>(data['data']);
     }
-    if (dataClassName == 'AccessDeniedException') {
-      return deserialize<_i11.AccessDeniedException>(data['data']);
-    }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i12.ArgumentException>(data['data']);
+      return deserialize<_i11.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i13.FlumipFileNotFoundException>(data['data']);
+      return deserialize<_i12.FlumipFileNotFoundException>(data['data']);
+    }
+    if (dataClassName == 'ProjectAccessDeniedException') {
+      return deserialize<_i13.ProjectAccessDeniedException>(data['data']);
     }
     if (dataClassName == 'FlumipUser') {
       return deserialize<_i14.FlumipUser>(data['data']);

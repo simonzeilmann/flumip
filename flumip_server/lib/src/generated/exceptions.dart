@@ -17,16 +17,12 @@ abstract class GeneExtractionException
         _i1.SerializableException,
         _i1.SerializableModel,
         _i1.ProtocolSerialization {
-  GeneExtractionException._({
-    String? message,
-    int? errorCode,
-  }) : message = message ?? 'Bed File Could not be created',
-       errorCode = errorCode ?? 1000;
+  GeneExtractionException._({String? message, int? errorCode})
+    : message = message ?? 'Bed File Could not be created',
+      errorCode = errorCode ?? 1000;
 
-  factory GeneExtractionException({
-    String? message,
-    int? errorCode,
-  }) = _GeneExtractionExceptionImpl;
+  factory GeneExtractionException({String? message, int? errorCode}) =
+      _GeneExtractionExceptionImpl;
 
   factory GeneExtractionException.fromJson(
     Map<String, dynamic> jsonSerialization,
@@ -44,10 +40,7 @@ abstract class GeneExtractionException
   /// Returns a shallow copy of this [GeneExtractionException]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  GeneExtractionException copyWith({
-    String? message,
-    int? errorCode,
-  });
+  GeneExtractionException copyWith({String? message, int? errorCode});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -73,22 +66,14 @@ abstract class GeneExtractionException
 }
 
 class _GeneExtractionExceptionImpl extends GeneExtractionException {
-  _GeneExtractionExceptionImpl({
-    String? message,
-    int? errorCode,
-  }) : super._(
-         message: message,
-         errorCode: errorCode,
-       );
+  _GeneExtractionExceptionImpl({String? message, int? errorCode})
+    : super._(message: message, errorCode: errorCode);
 
   /// Returns a shallow copy of this [GeneExtractionException]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  GeneExtractionException copyWith({
-    String? message,
-    int? errorCode,
-  }) {
+  GeneExtractionException copyWith({String? message, int? errorCode}) {
     return GeneExtractionException(
       message: message ?? this.message,
       errorCode: errorCode ?? this.errorCode,

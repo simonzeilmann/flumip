@@ -16,9 +16,9 @@ import 'auth_config_dto.dart' as _i3;
 import 'auth_user_dto.dart' as _i4;
 import 'exceptions.dart' as _i5;
 import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i6;
-import 'exceptions/access_denied_exception.dart' as _i7;
-import 'exceptions/argument_exception.dart' as _i8;
-import 'exceptions/flumip_file_not_found_exception.dart' as _i9;
+import 'exceptions/argument_exception.dart' as _i7;
+import 'exceptions/flumip_file_not_found_exception.dart' as _i8;
+import 'exceptions/project_access_denied_exception.dart' as _i9;
 import 'genome.dart' as _i10;
 import 'project.dart' as _i11;
 import 'project_options.dart' as _i12;
@@ -33,9 +33,9 @@ export 'auth_config_dto.dart';
 export 'auth_user_dto.dart';
 export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
-export 'exceptions/access_denied_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
+export 'exceptions/project_access_denied_exception.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -93,14 +93,14 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i6.BedCreationException) {
       return _i6.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i7.AccessDeniedException) {
-      return _i7.AccessDeniedException.fromJson(data) as T;
+    if (t == _i7.ArgumentException) {
+      return _i7.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i8.ArgumentException) {
-      return _i8.ArgumentException.fromJson(data) as T;
+    if (t == _i8.FlumipFileNotFoundException) {
+      return _i8.FlumipFileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i9.FlumipFileNotFoundException) {
-      return _i9.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _i9.ProjectAccessDeniedException) {
+      return _i9.ProjectAccessDeniedException.fromJson(data) as T;
     }
     if (t == _i10.Genome) {
       return _i10.Genome.fromJson(data) as T;
@@ -137,16 +137,18 @@ class Protocol extends _i1.SerializationManager {
       return (data != null ? _i6.BedCreationException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i7.AccessDeniedException?>()) {
-      return (data != null ? _i7.AccessDeniedException.fromJson(data) : null)
+    if (t == _i1.getType<_i7.ArgumentException?>()) {
+      return (data != null ? _i7.ArgumentException.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i8.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _i8.FlumipFileNotFoundException.fromJson(data)
+              : null)
           as T;
     }
-    if (t == _i1.getType<_i8.ArgumentException?>()) {
-      return (data != null ? _i8.ArgumentException.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i9.FlumipFileNotFoundException?>()) {
+    if (t == _i1.getType<_i9.ProjectAccessDeniedException?>()) {
       return (data != null
-              ? _i9.FlumipFileNotFoundException.fromJson(data)
+              ? _i9.ProjectAccessDeniedException.fromJson(data)
               : null)
           as T;
     }
@@ -210,9 +212,9 @@ class Protocol extends _i1.SerializationManager {
       _i4.AuthUserDto => 'AuthUserDto',
       _i5.GeneExtractionException => 'GeneExtractionException',
       _i6.BedCreationException => 'BedCreationException',
-      _i7.AccessDeniedException => 'AccessDeniedException',
-      _i8.ArgumentException => 'ArgumentException',
-      _i9.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _i7.ArgumentException => 'ArgumentException',
+      _i8.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _i9.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
       _i10.Genome => 'Genome',
       _i11.Project => 'Project',
       _i12.ProjectOptions => 'ProjectOptions',
@@ -243,12 +245,12 @@ class Protocol extends _i1.SerializationManager {
         return 'GeneExtractionException';
       case _i6.BedCreationException():
         return 'BedCreationException';
-      case _i7.AccessDeniedException():
-        return 'AccessDeniedException';
-      case _i8.ArgumentException():
+      case _i7.ArgumentException():
         return 'ArgumentException';
-      case _i9.FlumipFileNotFoundException():
+      case _i8.FlumipFileNotFoundException():
         return 'FlumipFileNotFoundException';
+      case _i9.ProjectAccessDeniedException():
+        return 'ProjectAccessDeniedException';
       case _i10.Genome():
         return 'Genome';
       case _i11.Project():
@@ -286,14 +288,14 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'BedCreationException') {
       return deserialize<_i6.BedCreationException>(data['data']);
     }
-    if (dataClassName == 'AccessDeniedException') {
-      return deserialize<_i7.AccessDeniedException>(data['data']);
-    }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i8.ArgumentException>(data['data']);
+      return deserialize<_i7.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i9.FlumipFileNotFoundException>(data['data']);
+      return deserialize<_i8.FlumipFileNotFoundException>(data['data']);
+    }
+    if (dataClassName == 'ProjectAccessDeniedException') {
+      return deserialize<_i9.ProjectAccessDeniedException>(data['data']);
     }
     if (dataClassName == 'Genome') {
       return deserialize<_i10.Genome>(data['data']);

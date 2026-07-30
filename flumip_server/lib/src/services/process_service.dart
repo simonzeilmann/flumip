@@ -36,8 +36,10 @@ class ProcessService {
       );
       throw ArgumentError('Project id does not exist');
     }
-    var process =
-        await sl<ProcessRunner>().run("ps", ["-p", project.pid.toString()]);
+    var process = await sl<ProcessRunner>().run("ps", [
+      "-p",
+      project.pid.toString(),
+    ]);
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for project ID: ${projectModel.id}",
@@ -91,8 +93,10 @@ class ProcessService {
       );
       throw ArgumentError('Gene id does not exist');
     }
-    var process = await sl<ProcessRunner>()
-        .run("ps", ["-p", genome.indexPID.toString()]);
+    var process = await sl<ProcessRunner>().run("ps", [
+      "-p",
+      genome.indexPID.toString(),
+    ]);
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for gene ID: ${genomeModel.id}",
@@ -139,8 +143,10 @@ class ProcessService {
     );
     int processPID = 0;
 
-    var process =
-        await sl<ProcessRunner>().run("pgrep", ["--list-full", processName]);
+    var process = await sl<ProcessRunner>().run("pgrep", [
+      "--list-full",
+      processName,
+    ]);
     if (process.exitCode == 1) {
       session.log("Process is not running", level: LogLevel.info);
       return processPID;
@@ -173,8 +179,7 @@ class ProcessService {
 
   Future<void> terminateProcess(Session session, int pid) async {
     session.log("Terminating process with PID: $pid", level: LogLevel.info);
-    var process =
-        await sl<ProcessRunner>().run("kill", ["-9", pid.toString()]);
+    var process = await sl<ProcessRunner>().run("kill", ["-9", pid.toString()]);
     if (process.exitCode > 1) {
       session.log(
         "Error terminating process with PID: $pid",

@@ -59,13 +59,17 @@ void main() {
       expect(reloaded.description, 'updated');
     }, tags: ['unit']);
 
-    test('updateGenome throws FileNotFoundException for a missing id', () async {
-      final ghost = Genome(id: 9999, name: 'ghost');
-      expect(
-        () => genomeService.updateGenome(session, 9999, ghost),
-        throwsMessage('Genome not found'),
-      );
-    }, tags: ['unit']);
+    test(
+      'updateGenome throws FileNotFoundException for a missing id',
+      () async {
+        final ghost = Genome(id: 9999, name: 'ghost');
+        expect(
+          () => genomeService.updateGenome(session, 9999, ghost),
+          throwsMessage('Genome not found'),
+        );
+      },
+      tags: ['unit'],
+    );
   });
 
   withServerpod('GenomeService snps', (sessionBuilder, endpoints) {
@@ -95,7 +99,11 @@ void main() {
     test('getAllSnpForGenome resolves the genome snp ids', () async {
       final s1 = await seedSnp(session, name: 'common');
       final s2 = await seedSnp(session, name: 'private');
-      final genome = await seedGenome(session, name: 'hg38', snp: [s1.id!, s2.id!]);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        snp: [s1.id!, s2.id!],
+      );
       final snps = await genomeService.getAllSnpForGenome(session, genome.id!);
       expect(snps.map((s) => s.name), containsAll(['common', 'private']));
     }, tags: ['unit']);

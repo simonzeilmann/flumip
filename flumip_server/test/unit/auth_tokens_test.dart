@@ -52,10 +52,7 @@ void main() {
     });
 
     test('differs for different inputs', () {
-      expect(
-        AuthTokens.sha256Hex('a'),
-        isNot(AuthTokens.sha256Hex('b')),
-      );
+      expect(AuthTokens.sha256Hex('a'), isNot(AuthTokens.sha256Hex('b')));
     });
   });
 
