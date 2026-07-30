@@ -13,13 +13,16 @@ its own password.
 
 It handles **authentication**: proving who you are, and keeping strangers out.
 
-It does not yet handle **authorization**: everyone who gets in can see and change
-every project. Projects have `owner` and `department` fields, but nothing reads
-them yet. The only distinction FLUMIP makes is a list of administrator addresses,
-who can open the Settings tab without the password.
+It also handles **project ownership**: with sign-in switched on, a project belongs
+to whoever created it, and other users neither see it in their list nor can open
+it. Administrators see everything. That is documented separately in
+[authorization.md](authorization.md) — read it before switching sign-in on for an
+install that already has projects in it, because it explains what happens to the
+projects you already have.
 
-So: this is a front door, not a set of internal locks. If you need per-user
-project isolation, it is not here yet.
+What it still does not do is anything finer-grained than that: no roles beyond
+administrator, no sharing a project with a named colleague, no per-project
+permissions. Departments are half-built — see the authorization document.
 
 ## The redirect URI, which is where most setups go wrong
 
