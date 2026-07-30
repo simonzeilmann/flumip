@@ -36,6 +36,24 @@ class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _smtpFromController = TextEditingController();
   final TextEditingController _testMailController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _oidcIssuerController = TextEditingController();
+  final TextEditingController _oidcClientIdController = TextEditingController();
+  final TextEditingController _oidcClientSecretController =
+      TextEditingController();
+  final TextEditingController _oidcScopesController = TextEditingController();
+  final TextEditingController _oidcButtonLabelController =
+      TextEditingController();
+  final TextEditingController _oidcAllowedDomainsController =
+      TextEditingController();
+  final TextEditingController _oidcAdminEmailsController =
+      TextEditingController();
+  final TextEditingController _authPublicUrlController =
+      TextEditingController();
+
+  /// What the server reports about the SSO setup that is not itself a setting:
+  /// the computed redirect URI, whether a secret is stored, which fields an
+  /// environment variable has taken over, and the discovery probe result.
+  AuthAdminStatusDto? _authStatus;
 
   final ValueNotifier<bool> _mailActiveNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _startTLSNotifier = ValueNotifier(false);
@@ -71,6 +89,14 @@ class _SettingsTabState extends State<SettingsTab> {
     _loginRequiredNotifier.dispose();
     _demoModeNotifier.dispose();
     _newPasswordController.dispose();
+    _oidcIssuerController.dispose();
+    _oidcClientIdController.dispose();
+    _oidcClientSecretController.dispose();
+    _oidcScopesController.dispose();
+    _oidcButtonLabelController.dispose();
+    _oidcAllowedDomainsController.dispose();
+    _oidcAdminEmailsController.dispose();
+    _authPublicUrlController.dispose();
     super.dispose();
   }
 
@@ -102,7 +128,17 @@ class _SettingsTabState extends State<SettingsTab> {
         _loginRequiredNotifier.value = settings.loginRequired;
         _newPasswordController.text = settings.settingsPassword;
         _demoModeNotifier.value = settings.demoMode;
+        _oidcIssuerController.text = settings.oidcIssuer;
+        _oidcClientIdController.text = settings.oidcClientId;
+        _oidcScopesController.text = settings.oidcScopes;
+        _oidcButtonLabelController.text = settings.oidcButtonLabel;
+        _oidcAllowedDomainsController.text = settings.oidcAllowedEmailDomains;
+        _oidcAdminEmailsController.text = settings.oidcAdminEmails;
+        _authPublicUrlController.text = settings.authPublicUrl;
+        // Never populated from the server: the secret is write-only.
+        _oidcClientSecretController.clear();
       });
+      await _loadAuthStatus();
     }
     on ArgumentException catch (e) {
       setState(() {
@@ -140,10 +176,28 @@ class _SettingsTabState extends State<SettingsTab> {
         loginRequired: _loginRequiredNotifier.value,
         settingsPassword: _newPasswordController.text,
         demoMode: _demoModeNotifier.value,
+        oidcIssuer: _oidcIssuerController.text.trim(),
+        oidcClientId: _oidcClientIdController.text.trim(),
+        oidcScopes: _oidcScopesController.text.trim(),
+        oidcButtonLabel: _oidcButtonLabelController.text.trim(),
+        oidcAllowedEmailDomains: _oidcAllowedDomainsController.text.trim(),
+        oidcAdminEmails: _oidcAdminEmailsController.text.trim(),
+        authPublicUrl: _authPublicUrlController.text.trim(),
       );
 
       // Authenticated with the password the settings were loaded with; a new
       // password in `settingsPassword` only takes effect after this succeeds.
+      // Sent before updateSettings, so that switching SSO on in the same save
+      // finds the secret already in place rather than refusing as incomplete.
+      // oidcClientSecret cannot travel in the Settings object above: it is a
+      // serverOnly field and has no client-side counterpart.
+      if (_oidcClientSecretController.text.isNotEmpty) {
+        await client.settings.setOidcClientSecret(
+          _passwordController.text,
+          _oidcClientSecretController.text,
+        );
+        _oidcClientSecretController.clear();
+      }
       await client.settings
           .updateSettings(_passwordController.text, settings);
       setState(() {
@@ -152,6 +206,7 @@ class _SettingsTabState extends State<SettingsTab> {
         // with in sync so subsequent saves / test mails still work.
         _passwordController.text = settings.settingsPassword;
       });
+      await _loadAuthStatus();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Settings updated successfully')),
@@ -162,6 +217,217 @@ class _SettingsTabState extends State<SettingsTab> {
         _errorMessage = '$e';
       });
     }
+  }
+
+  /// Re-reads the SSO status, including a live discovery probe.
+  ///
+  /// Failure is not fatal — the rest of the settings tab still works — so this
+  /// only clears the panel rather than showing an error banner.
+  Future<void> _loadAuthStatus() async {
+    try {
+      final status =
+          await client.settings.getAuthAdminStatus(_passwordController.text);
+      if (!mounted) return;
+      setState(() => _authStatus = status);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _authStatus = null);
+    }
+  }
+
+  /// Whether an environment variable has taken over [envName].
+  ///
+  /// Such a field is shown read-only: saving it would silently have no effect,
+  /// because the environment wins in [AuthConfig.resolve].
+  bool _overriddenByEnv(String envName) =>
+      _authStatus?.envOverrides.contains(envName) ?? false;
+
+  /// A text field that turns read-only when the environment supplies the value.
+  Widget _oidcField({
+    required TextEditingController controller,
+    required String label,
+    required String envName,
+    String? hintText,
+    String? helperText,
+  }) {
+    final overridden = _overriddenByEnv(envName);
+    return TextField(
+      controller: controller,
+      readOnly: overridden,
+      autocorrect: false,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        helperText: overridden ? 'Set by $envName in the environment' : helperText,
+        helperMaxLines: 3,
+        suffixIcon: overridden
+            ? Tooltip(
+                message: 'An environment variable overrides this setting, so '
+                    'editing it here has no effect.',
+                child: const Icon(Icons.lock_outline, size: 18),
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// The single sign-on fields, shown only when sign-in is required.
+  List<Widget> _ssoFields(BuildContext context) {
+    final status = _authStatus;
+    final secretConfigured = status?.secretConfigured ?? false;
+    return [
+      const Divider(),
+      // The most important thing on this screen. A mismatch between the URI this
+      // server computes and the one registered with the provider is by far the
+      // most common way an OIDC setup fails, and the error appears at the
+      // provider — where the admin cannot see our value. So show it.
+      if (status != null && status.redirectUri.isNotEmpty)
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 6,
+              children: [
+                Text(
+                  'Redirect URI to register with your identity provider',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                SelectableText(
+                  status.redirectUri,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
+                ),
+                Text(
+                  'It must match exactly. If your server sits behind a reverse '
+                  'proxy, set the public URL below so this is the address the '
+                  'browser actually uses.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      _oidcField(
+        controller: _oidcIssuerController,
+        label: 'OIDC issuer',
+        envName: 'FLUMIP_OIDC_ISSUER',
+        hintText: 'https://login.example.org/realms/staff',
+        helperText: 'Without a trailing slash. '
+            '/.well-known/openid-configuration is appended to it.',
+      ),
+      _oidcField(
+        controller: _oidcClientIdController,
+        label: 'Client ID',
+        envName: 'FLUMIP_OIDC_CLIENT_ID',
+      ),
+      // Write-only: the server never sends it back, so the field starts empty
+      // and an empty field on save means "leave it alone".
+      TextField(
+        controller: _oidcClientSecretController,
+        obscureText: true,
+        autocorrect: false,
+        enableSuggestions: false,
+        readOnly: _overriddenByEnv('FLUMIP_OIDC_CLIENT_SECRET'),
+        decoration: InputDecoration(
+          labelText: 'Client secret',
+          helperMaxLines: 3,
+          helperText: _overriddenByEnv('FLUMIP_OIDC_CLIENT_SECRET')
+              ? 'Set by FLUMIP_OIDC_CLIENT_SECRET in the environment'
+              : secretConfigured
+                  ? 'A secret is stored. Type here to replace it; leave empty to '
+                      'keep it.'
+                  : 'No secret stored yet.',
+          suffixIcon: secretConfigured
+              ? const Tooltip(
+                  message: 'A client secret is stored on the server. It is '
+                      'never sent back to the browser.',
+                  child: Icon(Icons.check, size: 18),
+                )
+              : null,
+        ),
+      ),
+      _oidcField(
+        controller: _authPublicUrlController,
+        label: 'Public URL of this server',
+        envName: 'FLUMIP_PUBLIC_URL',
+        hintText: 'https://flumip.example.org',
+        helperText: 'Needed when a reverse proxy terminates TLS, because the '
+            'server otherwise uses its own scheme, host and port.',
+      ),
+      _oidcField(
+        controller: _oidcAllowedDomainsController,
+        label: 'Allowed email domains',
+        envName: 'FLUMIP_OIDC_ALLOWED_DOMAINS',
+        hintText: 'example.org, dept.example.org',
+        helperText: 'Comma-separated. Leave empty to allow everyone your '
+            'provider authenticates.',
+      ),
+      _oidcField(
+        controller: _oidcAdminEmailsController,
+        label: 'Administrator email addresses',
+        envName: 'FLUMIP_OIDC_ADMIN_EMAILS',
+        hintText: 'you@example.org',
+        helperText: 'Comma-separated. These accounts can open this settings tab '
+            'without the password.',
+      ),
+      TextField(
+        controller: _oidcScopesController,
+        autocorrect: false,
+        decoration: const InputDecoration(
+          labelText: 'Scopes',
+          helperText: 'Space-separated. "openid" is required; "email" is needed '
+              'to identify users.',
+          helperMaxLines: 2,
+        ),
+      ),
+      TextField(
+        controller: _oidcButtonLabelController,
+        decoration: const InputDecoration(labelText: 'Sign-in button label'),
+      ),
+      // Validates the configuration here, with a readable message, rather than
+      // at someone's first sign-in attempt. Same idea as the test email above.
+      Row(
+        children: [
+          ElevatedButton(
+            onPressed: _loadAuthStatus,
+            child: const Text('Test connection'),
+          ),
+          const SizedBox(width: 10),
+          if (status != null)
+            Expanded(
+              child: Text(
+                status.discoveryOk
+                    ? 'Reached the provider. Authorization endpoint: '
+                        '${status.authorizationEndpoint}'
+                    : status.discoveryError ?? 'Not configured yet.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: status.discoveryOk
+                          ? Colors.green[800]
+                          : Colors.red[800],
+                    ),
+              ),
+            ),
+        ],
+      ),
+      // Enforcement is deliberately conditional on a working configuration:
+      // requiring a sign-in with no way to sign in would lock everyone out
+      // permanently, so the server stays reachable until this is sorted.
+      if (status != null && status.enabled && !status.enforcing)
+        Container(
+          color: Colors.orange[100],
+          padding: const EdgeInsets.all(8),
+          child: const Text(
+            'Sign-in is switched on but is not being enforced yet, because the '
+            'configuration is incomplete or the provider could not be reached. '
+            'The server stays reachable without signing in until it works, so '
+            'that a half-finished setup cannot lock you out.',
+          ),
+        ),
+      const Divider(),
+    ];
   }
 
   Future<void> sendTestMail() async {
@@ -382,15 +648,22 @@ class _SettingsTabState extends State<SettingsTab> {
                         builder: (context, value, child) {
                           return Checkbox(
                             value: value,
+                            // setState, unlike the SMTP checkbox above, because
+                            // this one reveals the fields below it.
                             onChanged: (value) {
-                              _loginRequiredNotifier.value = value!;
+                              setState(() {
+                                _loginRequiredNotifier.value = value!;
+                              });
                             },
                           );
                         },
                       ),
-                      Text('Login required'),
+                      const Expanded(
+                        child: Text('Require sign-in (single sign-on)'),
+                      ),
                     ],
                   ),
+                  if (_loginRequiredNotifier.value) ..._ssoFields(context),
                   TextField(
                     controller: _newPasswordController,
                     obscureText: true,
