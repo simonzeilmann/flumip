@@ -106,7 +106,16 @@ class SettingsService {
       ..smtpFrom = settings.smtpFrom
       ..startTLS = settings.startTLS
       ..loginRequired = settings.loginRequired
-      ..settingsPassword = settings.settingsPassword;
+      ..settingsPassword = settings.settingsPassword
+      ..oidcIssuer = settings.oidcIssuer
+      ..oidcClientId = settings.oidcClientId
+      ..oidcScopes = settings.oidcScopes
+      ..oidcButtonLabel = settings.oidcButtonLabel
+      ..oidcAllowedEmailDomains = settings.oidcAllowedEmailDomains
+      ..oidcAdminEmails = settings.oidcAdminEmails
+      ..authPublicUrl = settings.authPublicUrl;
+    // oidcClientSecret is deliberately absent: it is serverOnly, so it arrives
+    // as null from the client and is written only by setOidcClientSecret.
 
     await Settings.db.updateRow(session, stored);
     session.log("Settings updated successfully", level: LogLevel.info);

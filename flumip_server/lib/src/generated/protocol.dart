@@ -12,23 +12,37 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:serverpod/protocol.dart' as _i2;
-import 'exceptions.dart' as _i3;
-import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i4;
-import 'exceptions/argument_exception.dart' as _i5;
-import 'exceptions/flumip_file_not_found_exception.dart' as _i6;
-import 'genome.dart' as _i7;
-import 'project.dart' as _i8;
-import 'project_options.dart' as _i9;
-import 'score_method.dart' as _i10;
-import 'settings.dart' as _i11;
-import 'snp.dart' as _i12;
-import 'package:flumip_server/src/generated/genome.dart' as _i13;
-import 'package:flumip_server/src/generated/snp.dart' as _i14;
-import 'package:flumip_server/src/generated/project.dart' as _i15;
+import 'auth_admin_status_dto.dart' as _i3;
+import 'auth_api_token.dart' as _i4;
+import 'auth_config_dto.dart' as _i5;
+import 'auth_flow.dart' as _i6;
+import 'auth_session.dart' as _i7;
+import 'auth_user_dto.dart' as _i8;
+import 'exceptions.dart' as _i9;
+import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i10;
+import 'exceptions/argument_exception.dart' as _i11;
+import 'exceptions/flumip_file_not_found_exception.dart' as _i12;
+import 'flumip_user.dart' as _i13;
+import 'genome.dart' as _i14;
+import 'project.dart' as _i15;
+import 'project_options.dart' as _i16;
+import 'score_method.dart' as _i17;
+import 'settings.dart' as _i18;
+import 'snp.dart' as _i19;
+import 'package:flumip_server/src/generated/genome.dart' as _i20;
+import 'package:flumip_server/src/generated/snp.dart' as _i21;
+import 'package:flumip_server/src/generated/project.dart' as _i22;
+export 'auth_admin_status_dto.dart';
+export 'auth_api_token.dart';
+export 'auth_config_dto.dart';
+export 'auth_flow.dart';
+export 'auth_session.dart';
+export 'auth_user_dto.dart';
 export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
+export 'flumip_user.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -44,6 +58,436 @@ class Protocol extends _i1.SerializationManagerServer {
   static final Protocol _instance = Protocol._();
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
+    _i2.TableDefinition(
+      name: 'auth_api_token',
+      dartName: 'AuthApiToken',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'auth_api_token_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'authSessionId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tokenHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isAdmin',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'created',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expires',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _i2.ForeignKeyDefinition(
+          constraintName: 'auth_api_token_fk_0',
+          columns: ['authSessionId'],
+          referenceTable: 'auth_session',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _i2.ForeignKeyAction.noAction,
+          onDelete: _i2.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'auth_api_token_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_api_token_hash_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'tokenHash',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_api_token_session_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'authSessionId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_api_token_expires_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'expires',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'auth_flow',
+      dartName: 'AuthFlow',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'auth_flow_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'state',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'codeVerifier',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'nonce',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'redirectUri',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'created',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expires',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'auth_flow_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_flow_state_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'state',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_flow_expires_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'expires',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'auth_session',
+      dartName: 'AuthSession',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'auth_session_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cookieHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isAdmin',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'created',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expires',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastSeen',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+      ],
+      foreignKeys: [
+        _i2.ForeignKeyDefinition(
+          constraintName: 'auth_session_fk_0',
+          columns: ['userId'],
+          referenceTable: 'flumip_user',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _i2.ForeignKeyAction.noAction,
+          onDelete: _i2.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'auth_session_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_session_cookie_hash_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'cookieHash',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'auth_session_expires_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'expires',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'flumip_user',
+      dartName: 'FlumipUser',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'flumip_user_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'subject',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'issuer',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'displayName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'created',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+        _i2.ColumnDefinition(
+          name: 'lastLogin',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'CURRENT_TIMESTAMP',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'flumip_user_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'flumip_user_identity_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'issuer',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'subject',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'flumip_user_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'email',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     _i2.TableDefinition(
       name: 'genome',
       dartName: 'Genome',
@@ -723,6 +1167,61 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'String',
           columnDefault: '\'changeme\'::text',
         ),
+        _i2.ColumnDefinition(
+          name: 'oidcIssuer',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcClientId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcClientSecret',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcScopes',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'openid email profile\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcButtonLabel',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'Sign in with SSO\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcAllowedEmailDomains',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'oidcAdminEmails',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'authPublicUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
       ],
       foreignKeys: [],
       indexes: [
@@ -855,70 +1354,115 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
 
-    if (t == _i3.GeneExtractionException) {
-      return _i3.GeneExtractionException.fromJson(data) as T;
+    if (t == _i3.AuthAdminStatusDto) {
+      return _i3.AuthAdminStatusDto.fromJson(data) as T;
     }
-    if (t == _i4.BedCreationException) {
-      return _i4.BedCreationException.fromJson(data) as T;
+    if (t == _i4.AuthApiToken) {
+      return _i4.AuthApiToken.fromJson(data) as T;
     }
-    if (t == _i5.ArgumentException) {
-      return _i5.ArgumentException.fromJson(data) as T;
+    if (t == _i5.AuthConfigDto) {
+      return _i5.AuthConfigDto.fromJson(data) as T;
     }
-    if (t == _i6.FlumipFileNotFoundException) {
-      return _i6.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _i6.AuthFlow) {
+      return _i6.AuthFlow.fromJson(data) as T;
     }
-    if (t == _i7.Genome) {
-      return _i7.Genome.fromJson(data) as T;
+    if (t == _i7.AuthSession) {
+      return _i7.AuthSession.fromJson(data) as T;
     }
-    if (t == _i8.Project) {
-      return _i8.Project.fromJson(data) as T;
+    if (t == _i8.AuthUserDto) {
+      return _i8.AuthUserDto.fromJson(data) as T;
     }
-    if (t == _i9.ProjectOptions) {
-      return _i9.ProjectOptions.fromJson(data) as T;
+    if (t == _i9.GeneExtractionException) {
+      return _i9.GeneExtractionException.fromJson(data) as T;
     }
-    if (t == _i10.ScoreMethod) {
-      return _i10.ScoreMethod.fromJson(data) as T;
+    if (t == _i10.BedCreationException) {
+      return _i10.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i11.Settings) {
-      return _i11.Settings.fromJson(data) as T;
+    if (t == _i11.ArgumentException) {
+      return _i11.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i12.Snp) {
-      return _i12.Snp.fromJson(data) as T;
+    if (t == _i12.FlumipFileNotFoundException) {
+      return _i12.FlumipFileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i3.GeneExtractionException?>()) {
-      return (data != null ? _i3.GeneExtractionException.fromJson(data) : null)
+    if (t == _i13.FlumipUser) {
+      return _i13.FlumipUser.fromJson(data) as T;
+    }
+    if (t == _i14.Genome) {
+      return _i14.Genome.fromJson(data) as T;
+    }
+    if (t == _i15.Project) {
+      return _i15.Project.fromJson(data) as T;
+    }
+    if (t == _i16.ProjectOptions) {
+      return _i16.ProjectOptions.fromJson(data) as T;
+    }
+    if (t == _i17.ScoreMethod) {
+      return _i17.ScoreMethod.fromJson(data) as T;
+    }
+    if (t == _i18.Settings) {
+      return _i18.Settings.fromJson(data) as T;
+    }
+    if (t == _i19.Snp) {
+      return _i19.Snp.fromJson(data) as T;
+    }
+    if (t == _i1.getType<_i3.AuthAdminStatusDto?>()) {
+      return (data != null ? _i3.AuthAdminStatusDto.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i4.AuthApiToken?>()) {
+      return (data != null ? _i4.AuthApiToken.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.AuthConfigDto?>()) {
+      return (data != null ? _i5.AuthConfigDto.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i6.AuthFlow?>()) {
+      return (data != null ? _i6.AuthFlow.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i7.AuthSession?>()) {
+      return (data != null ? _i7.AuthSession.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i8.AuthUserDto?>()) {
+      return (data != null ? _i8.AuthUserDto.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i9.GeneExtractionException?>()) {
+      return (data != null ? _i9.GeneExtractionException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i4.BedCreationException?>()) {
-      return (data != null ? _i4.BedCreationException.fromJson(data) : null)
+    if (t == _i1.getType<_i10.BedCreationException?>()) {
+      return (data != null ? _i10.BedCreationException.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i5.ArgumentException?>()) {
-      return (data != null ? _i5.ArgumentException.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.ArgumentException?>()) {
+      return (data != null ? _i11.ArgumentException.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i6.FlumipFileNotFoundException?>()) {
+    if (t == _i1.getType<_i12.FlumipFileNotFoundException?>()) {
       return (data != null
-              ? _i6.FlumipFileNotFoundException.fromJson(data)
+              ? _i12.FlumipFileNotFoundException.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i7.Genome?>()) {
-      return (data != null ? _i7.Genome.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.FlumipUser?>()) {
+      return (data != null ? _i13.FlumipUser.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.Project?>()) {
-      return (data != null ? _i8.Project.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.Genome?>()) {
+      return (data != null ? _i14.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.ProjectOptions?>()) {
-      return (data != null ? _i9.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.Project?>()) {
+      return (data != null ? _i15.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.ScoreMethod?>()) {
-      return (data != null ? _i10.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.ProjectOptions?>()) {
+      return (data != null ? _i16.ProjectOptions.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.Settings?>()) {
-      return (data != null ? _i11.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i17.ScoreMethod?>()) {
+      return (data != null ? _i17.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.Snp?>()) {
-      return (data != null ? _i12.Snp.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i18.Settings?>()) {
+      return (data != null ? _i18.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i19.Snp?>()) {
+      return (data != null ? _i19.Snp.fromJson(data) : null) as T;
+    }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
     if (t == List<int>) {
       return (data as List).map((e) => deserialize<int>(e)).toList() as T;
@@ -929,9 +1473,6 @@ class Protocol extends _i1.SerializationManagerServer {
               : null)
           as T;
     }
-    if (t == List<String>) {
-      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
-    }
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
               ? (data as List).map((e) => deserialize<String>(e)).toList()
@@ -941,15 +1482,15 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i13.Genome>) {
-      return (data as List).map((e) => deserialize<_i13.Genome>(e)).toList()
+    if (t == List<_i20.Genome>) {
+      return (data as List).map((e) => deserialize<_i20.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i14.Snp>) {
-      return (data as List).map((e) => deserialize<_i14.Snp>(e)).toList() as T;
+    if (t == List<_i21.Snp>) {
+      return (data as List).map((e) => deserialize<_i21.Snp>(e)).toList() as T;
     }
-    if (t == List<_i15.Project>) {
-      return (data as List).map((e) => deserialize<_i15.Project>(e)).toList()
+    if (t == List<_i22.Project>) {
+      return (data as List).map((e) => deserialize<_i22.Project>(e)).toList()
           as T;
     }
     try {
@@ -960,16 +1501,23 @@ class Protocol extends _i1.SerializationManagerServer {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i3.GeneExtractionException => 'GeneExtractionException',
-      _i4.BedCreationException => 'BedCreationException',
-      _i5.ArgumentException => 'ArgumentException',
-      _i6.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
-      _i7.Genome => 'Genome',
-      _i8.Project => 'Project',
-      _i9.ProjectOptions => 'ProjectOptions',
-      _i10.ScoreMethod => 'ScoreMethod',
-      _i11.Settings => 'Settings',
-      _i12.Snp => 'Snp',
+      _i3.AuthAdminStatusDto => 'AuthAdminStatusDto',
+      _i4.AuthApiToken => 'AuthApiToken',
+      _i5.AuthConfigDto => 'AuthConfigDto',
+      _i6.AuthFlow => 'AuthFlow',
+      _i7.AuthSession => 'AuthSession',
+      _i8.AuthUserDto => 'AuthUserDto',
+      _i9.GeneExtractionException => 'GeneExtractionException',
+      _i10.BedCreationException => 'BedCreationException',
+      _i11.ArgumentException => 'ArgumentException',
+      _i12.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _i13.FlumipUser => 'FlumipUser',
+      _i14.Genome => 'Genome',
+      _i15.Project => 'Project',
+      _i16.ProjectOptions => 'ProjectOptions',
+      _i17.ScoreMethod => 'ScoreMethod',
+      _i18.Settings => 'Settings',
+      _i19.Snp => 'Snp',
       _ => null,
     };
   }
@@ -984,25 +1532,39 @@ class Protocol extends _i1.SerializationManagerServer {
     }
 
     switch (data) {
-      case _i3.GeneExtractionException():
+      case _i3.AuthAdminStatusDto():
+        return 'AuthAdminStatusDto';
+      case _i4.AuthApiToken():
+        return 'AuthApiToken';
+      case _i5.AuthConfigDto():
+        return 'AuthConfigDto';
+      case _i6.AuthFlow():
+        return 'AuthFlow';
+      case _i7.AuthSession():
+        return 'AuthSession';
+      case _i8.AuthUserDto():
+        return 'AuthUserDto';
+      case _i9.GeneExtractionException():
         return 'GeneExtractionException';
-      case _i4.BedCreationException():
+      case _i10.BedCreationException():
         return 'BedCreationException';
-      case _i5.ArgumentException():
+      case _i11.ArgumentException():
         return 'ArgumentException';
-      case _i6.FlumipFileNotFoundException():
+      case _i12.FlumipFileNotFoundException():
         return 'FlumipFileNotFoundException';
-      case _i7.Genome():
+      case _i13.FlumipUser():
+        return 'FlumipUser';
+      case _i14.Genome():
         return 'Genome';
-      case _i8.Project():
+      case _i15.Project():
         return 'Project';
-      case _i9.ProjectOptions():
+      case _i16.ProjectOptions():
         return 'ProjectOptions';
-      case _i10.ScoreMethod():
+      case _i17.ScoreMethod():
         return 'ScoreMethod';
-      case _i11.Settings():
+      case _i18.Settings():
         return 'Settings';
-      case _i12.Snp():
+      case _i19.Snp():
         return 'Snp';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1018,35 +1580,56 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'AuthAdminStatusDto') {
+      return deserialize<_i3.AuthAdminStatusDto>(data['data']);
+    }
+    if (dataClassName == 'AuthApiToken') {
+      return deserialize<_i4.AuthApiToken>(data['data']);
+    }
+    if (dataClassName == 'AuthConfigDto') {
+      return deserialize<_i5.AuthConfigDto>(data['data']);
+    }
+    if (dataClassName == 'AuthFlow') {
+      return deserialize<_i6.AuthFlow>(data['data']);
+    }
+    if (dataClassName == 'AuthSession') {
+      return deserialize<_i7.AuthSession>(data['data']);
+    }
+    if (dataClassName == 'AuthUserDto') {
+      return deserialize<_i8.AuthUserDto>(data['data']);
+    }
     if (dataClassName == 'GeneExtractionException') {
-      return deserialize<_i3.GeneExtractionException>(data['data']);
+      return deserialize<_i9.GeneExtractionException>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
-      return deserialize<_i4.BedCreationException>(data['data']);
+      return deserialize<_i10.BedCreationException>(data['data']);
     }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i5.ArgumentException>(data['data']);
+      return deserialize<_i11.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i6.FlumipFileNotFoundException>(data['data']);
+      return deserialize<_i12.FlumipFileNotFoundException>(data['data']);
+    }
+    if (dataClassName == 'FlumipUser') {
+      return deserialize<_i13.FlumipUser>(data['data']);
     }
     if (dataClassName == 'Genome') {
-      return deserialize<_i7.Genome>(data['data']);
+      return deserialize<_i14.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i8.Project>(data['data']);
+      return deserialize<_i15.Project>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i9.ProjectOptions>(data['data']);
+      return deserialize<_i16.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i10.ScoreMethod>(data['data']);
+      return deserialize<_i17.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i11.Settings>(data['data']);
+      return deserialize<_i18.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i12.Snp>(data['data']);
+      return deserialize<_i19.Snp>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1064,16 +1647,24 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i7.Genome:
-        return _i7.Genome.t;
-      case _i8.Project:
-        return _i8.Project.t;
-      case _i9.ProjectOptions:
-        return _i9.ProjectOptions.t;
-      case _i11.Settings:
-        return _i11.Settings.t;
-      case _i12.Snp:
-        return _i12.Snp.t;
+      case _i4.AuthApiToken:
+        return _i4.AuthApiToken.t;
+      case _i6.AuthFlow:
+        return _i6.AuthFlow.t;
+      case _i7.AuthSession:
+        return _i7.AuthSession.t;
+      case _i13.FlumipUser:
+        return _i13.FlumipUser.t;
+      case _i14.Genome:
+        return _i14.Genome.t;
+      case _i15.Project:
+        return _i15.Project.t;
+      case _i16.ProjectOptions:
+        return _i16.ProjectOptions.t;
+      case _i18.Settings:
+        return _i18.Settings.t;
+      case _i19.Snp:
+        return _i19.Snp.t;
     }
     return null;
   }

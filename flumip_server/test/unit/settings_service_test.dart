@@ -99,5 +99,28 @@ void main() {
       expect(reread.id, stored.id);
       expect(reread.smtpServer, 'smtp.example.org');
     }, tags: ['unit']);
+
+    test('updateSettings never blanks the server-only OIDC client secret',
+        () async {
+      // Written the way SettingsEndpoint.setOidcClientSecret writes it: on the
+      // stored row directly, never through the client-editable merge list.
+      final stored = await settingsService.getSettings(session);
+      stored.oidcClientSecret = 'top-secret';
+      await Settings.db.updateRow(session, stored);
+
+      // What the client sends: oidcClientSecret is serverOnly, so it is absent
+      // from the wire format and deserializes as null. Saving anything else
+      // must not erase it.
+      final fromClient = Settings()
+        ..id = stored.id
+        ..smtpServer = 'smtp.example.org'
+        ..oidcIssuer = 'https://idp.example.org';
+      expect(fromClient.oidcClientSecret, isNull);
+      await settingsService.updateSettings(session, fromClient);
+
+      final reread = await settingsService.getSettings(session);
+      expect(reread.oidcClientSecret, 'top-secret');
+      expect(reread.oidcIssuer, 'https://idp.example.org');
+    }, tags: ['unit']);
   });
 }

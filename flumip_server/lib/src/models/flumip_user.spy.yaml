@@ -1,0 +1,25 @@
+### An identity that has signed in through the configured OIDC provider.
+###
+### Created on first sign-in and reused afterwards. `issuer` + `subject` is the
+### identity key, because that is the only pair the spec guarantees to be stable
+### and unique; `email` is treated as a mutable attribute and is deliberately
+### *not* unique, so that moving an install to a different IdP does not fail on
+### a constraint the first time a known user signs in against the new one.
+###
+### serverOnly: nothing here is client-facing. The app receives AuthUserDto.
+class: FlumipUser
+table: flumip_user
+serverOnly: true
+fields:
+  email: String
+  subject: String
+  issuer: String
+  displayName: String, default=""
+  created: DateTime, default=now
+  lastLogin: DateTime, default=now
+indexes:
+  flumip_user_identity_idx:
+    fields: issuer, subject
+    unique: true
+  flumip_user_email_idx:
+    fields: email
