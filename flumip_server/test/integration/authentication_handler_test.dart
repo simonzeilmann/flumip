@@ -45,40 +45,27 @@ void main() {
     final authService = sl<AuthService>();
     final url = await authService.beginFlow(session);
     final state = url.queryParameters['state']!;
-    final flow = await AuthFlow.db.findFirstRow(
-      session,
-      where: (t) => t.state.equals(state),
-    );
-    http.stubProvider(
-      issuer: issuer,
-      idTokenClaims: {
-        'iss': issuer,
-        'aud': 'flumip',
-        'sub': 'user-123',
-        'nonce': flow!.nonce,
-        'email': email ?? 'a@uni.example',
-        'exp': epochSeconds(
-          DateTime.now().toUtc().add(const Duration(minutes: 5)),
-        ),
-      },
-    );
-    final signedIn = await authService.completeCallback(
-      session,
-      code: 'c',
-      state: state,
-    );
-    final issued = (await authService.issueApiToken(
-      session,
-      signedIn.cookieValue,
-    ))!;
+    final flow = await AuthFlow.db
+        .findFirstRow(session, where: (t) => t.state.equals(state));
+    http.stubProvider(issuer: issuer, idTokenClaims: {
+      'iss': issuer,
+      'aud': 'flumip',
+      'sub': 'user-123',
+      'nonce': flow!.nonce,
+      'email': email ?? 'a@uni.example',
+      'exp': epochSeconds(
+        DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      ),
+    });
+    final signedIn =
+        await authService.completeCallback(session, code: 'c', state: state);
+    final issued =
+        (await authService.issueApiToken(session, signedIn.cookieValue))!;
     return issued.token;
   }
 
   withServerpod('flumipAuthenticationHandler', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
 
     setUp(http.reset);
@@ -102,17 +89,15 @@ void main() {
       expect(info!.scopes, contains(adminScope));
     });
 
-    test(
-      'the authId names the browser session, so logout can revoke it',
-      () async {
-        await enableSso(session);
-        final token = await bearerToken(session);
-        final info = await flumipAuthenticationHandler(session, token);
+    test('the authId names the browser session, so logout can revoke it',
+        () async {
+      await enableSso(session);
+      final token = await bearerToken(session);
+      final info = await flumipAuthenticationHandler(session, token);
 
-        final authSession = await AuthSession.db.findFirstRow(session);
-        expect(info!.authId, '${authSession!.id}');
-      },
-    );
+      final authSession = await AuthSession.db.findFirstRow(session);
+      expect(info!.authId, '${authSession!.id}');
+    });
 
     test('returns null for an unknown token', () async {
       await enableSso(session);
@@ -126,9 +111,7 @@ void main() {
       await enableSso(session);
       final token = await bearerToken(session);
       final row = await AuthApiToken.db.findFirstRow(session);
-      row!.expires = DateTime.now().toUtc().subtract(
-        const Duration(minutes: 1),
-      );
+      row!.expires = DateTime.now().toUtc().subtract(const Duration(minutes: 1));
       await AuthApiToken.db.updateRow(session, row);
 
       expect(await flumipAuthenticationHandler(session, token), isNull);

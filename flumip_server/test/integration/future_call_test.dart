@@ -17,10 +17,7 @@ class RecordingGenomeService extends GenomeService {
   bool scheduled = false;
   bool finished = false;
   @override
-  Future<void> scheduleIndexProgressCheck(
-    Session session,
-    Genome genome,
-  ) async {
+  Future<void> scheduleIndexProgressCheck(Session session, Genome genome) async {
     scheduled = true;
   }
 
@@ -56,25 +53,18 @@ void main() {
     setUp(fake.reset);
     var session = sessionBuilder.build();
 
-    test(
-      'CheckIndexProgress reschedules while bwa is still running',
-      () async {
-        final recording = RecordingGenomeService();
-        sl.registerSingleton<GenomeService>(recording);
-        final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
-        fake.stubRun(
-          'ps',
-          exitCode: 0,
-          stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n',
-        );
+    test('CheckIndexProgress reschedules while bwa is still running', () async {
+      final recording = RecordingGenomeService();
+      sl.registerSingleton<GenomeService>(recording);
+      final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
+      fake.stubRun('ps',
+          exitCode: 0, stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n');
 
-        await CheckIndexProgressFutureCall().run(session, genome);
+      await CheckIndexProgressFutureCall().run(session, genome);
 
-        expect(recording.scheduled, isTrue);
-        expect(recording.finished, isFalse);
-      },
-      tags: ['integration'],
-    );
+      expect(recording.scheduled, isTrue);
+      expect(recording.finished, isFalse);
+    }, tags: ['integration']);
 
     test('CheckIndexProgress finalizes when bwa has finished', () async {
       final recording = RecordingGenomeService();
@@ -88,40 +78,30 @@ void main() {
       expect(recording.scheduled, isFalse);
     }, tags: ['integration']);
 
-    test(
-      'CheckMipgenProgress reschedules while mipgen is still running',
-      () async {
-        final recording = RecordingMipgenService();
-        sl.registerSingleton<MipgenService>(recording);
-        final project = await seedProject(session, options: 1, pid: 1234);
-        fake.stubRun(
-          'ps',
-          exitCode: 0,
-          stdout: 'PID TTY CMD\n1234 pts/0 00:00 mipgen -x\n',
-        );
+    test('CheckMipgenProgress reschedules while mipgen is still running',
+        () async {
+      final recording = RecordingMipgenService();
+      sl.registerSingleton<MipgenService>(recording);
+      final project = await seedProject(session, options: 1, pid: 1234);
+      fake.stubRun('ps',
+          exitCode: 0, stdout: 'PID TTY CMD\n1234 pts/0 00:00 mipgen -x\n');
 
-        await CheckMipgenProgressFutureCall().run(session, project);
+      await CheckMipgenProgressFutureCall().run(session, project);
 
-        expect(recording.scheduled, isTrue);
-        expect(recording.finished, isFalse);
-      },
-      tags: ['integration'],
-    );
+      expect(recording.scheduled, isTrue);
+      expect(recording.finished, isFalse);
+    }, tags: ['integration']);
 
-    test(
-      'CheckMipgenProgress finalizes when mipgen has finished',
-      () async {
-        final recording = RecordingMipgenService();
-        sl.registerSingleton<MipgenService>(recording);
-        final project = await seedProject(session, options: 1, pid: 1234);
-        fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
+    test('CheckMipgenProgress finalizes when mipgen has finished', () async {
+      final recording = RecordingMipgenService();
+      sl.registerSingleton<MipgenService>(recording);
+      final project = await seedProject(session, options: 1, pid: 1234);
+      fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
 
-        await CheckMipgenProgressFutureCall().run(session, project);
+      await CheckMipgenProgressFutureCall().run(session, project);
 
-        expect(recording.finished, isTrue);
-        expect(recording.scheduled, isFalse);
-      },
-      tags: ['integration'],
-    );
+      expect(recording.finished, isTrue);
+      expect(recording.scheduled, isFalse);
+    }, tags: ['integration']);
   });
 }

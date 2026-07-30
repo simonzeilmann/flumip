@@ -16,16 +16,17 @@ void main() {
     String? nonce = 'the-nonce',
     String? email = 'a@uni.example',
     Object? extra,
-  }) => {
-    'iss': issuer,
-    'aud': audience,
-    'sub': subject,
-    'exp': epochSeconds(now.add(const Duration(minutes: 5))),
-    'iat': epochSeconds(now),
-    'nonce': ?nonce,
-    'email': ?email,
-    if (extra is Map<String, dynamic>) ...extra,
-  };
+  }) =>
+      {
+        'iss': issuer,
+        'aud': audience,
+        'sub': subject,
+        'exp': epochSeconds(now.add(const Duration(minutes: 5))),
+        'iat': epochSeconds(now),
+        'nonce': ?nonce,
+        'email': ?email,
+        if (extra is Map<String, dynamic>) ...extra,
+      };
 
   void validate(IdTokenClaims parsed, {String nonce = 'the-nonce'}) =>
       parsed.validate(
@@ -88,22 +89,21 @@ void main() {
     });
 
     test('reads a fractional exp', () {
-      final parsed = IdTokenClaims.parse(
-        unsignedJwt({...claims(), 'exp': epochSeconds(now) + 300.5}),
-      );
+      final parsed = IdTokenClaims.parse(unsignedJwt({
+        ...claims(),
+        'exp': epochSeconds(now) + 300.5,
+      }));
       expect(parsed.expires.isAfter(now), isTrue);
     });
 
     test('rejects a token that is not three segments', () {
       expect(
         () => IdTokenClaims.parse('not.a-jwt'),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('three dot-separated parts'),
-          ),
-        ),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('three dot-separated parts'),
+        )),
       );
     });
 
@@ -147,13 +147,11 @@ void main() {
       );
       expect(
         () => validate(parsed),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('was issued by'),
-          ),
-        ),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('was issued by'),
+        )),
       );
     });
 
@@ -177,13 +175,11 @@ void main() {
       );
       expect(
         () => validate(parsed),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('nonce does not match'),
-          ),
-        ),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('nonce does not match'),
+        )),
       );
     });
 
@@ -193,43 +189,35 @@ void main() {
     });
 
     test('tolerates expiry within the clock skew allowance', () {
-      final parsed = IdTokenClaims.parse(
-        unsignedJwt({
-          ...claims(),
-          'exp': epochSeconds(now.subtract(const Duration(minutes: 2))),
-        }),
-      );
+      final parsed = IdTokenClaims.parse(unsignedJwt({
+        ...claims(),
+        'exp': epochSeconds(now.subtract(const Duration(minutes: 2))),
+      }));
       // Two minutes past, five minutes of allowance: a modest clock difference
       // between this server and the provider must not break sign-in.
       expect(() => validate(parsed), returnsNormally);
     });
 
     test('rejects expiry beyond the clock skew allowance', () {
-      final parsed = IdTokenClaims.parse(
-        unsignedJwt({
-          ...claims(),
-          'exp': epochSeconds(now.subtract(const Duration(minutes: 10))),
-        }),
-      );
+      final parsed = IdTokenClaims.parse(unsignedJwt({
+        ...claims(),
+        'exp': epochSeconds(now.subtract(const Duration(minutes: 10))),
+      }));
       expect(
         () => validate(parsed),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('clocks'),
-          ),
-        ),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('clocks'),
+        )),
       );
     });
 
     test('honours a custom skew', () {
-      final parsed = IdTokenClaims.parse(
-        unsignedJwt({
-          ...claims(),
-          'exp': epochSeconds(now.subtract(const Duration(minutes: 2))),
-        }),
-      );
+      final parsed = IdTokenClaims.parse(unsignedJwt({
+        ...claims(),
+        'exp': epochSeconds(now.subtract(const Duration(minutes: 2))),
+      }));
       expect(
         () => parsed.validate(
           issuer: 'https://idp.example.org',

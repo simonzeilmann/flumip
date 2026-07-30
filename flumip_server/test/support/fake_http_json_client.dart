@@ -88,11 +88,13 @@ class FakeHttpJsonClient implements HttpJsonClient {
     }
   }
 
-  RecordedRequest? get lastRequest => requests.isEmpty ? null : requests.last;
+  RecordedRequest? get lastRequest =>
+      requests.isEmpty ? null : requests.last;
 
   /// The last POST to [url], or null.
-  RecordedRequest? lastPostTo(String url) =>
-      requests.where((r) => r.method == 'POST' && r.url == url).lastOrNull;
+  RecordedRequest? lastPostTo(String url) => requests
+      .where((r) => r.method == 'POST' && r.url == url)
+      .lastOrNull;
 
   @override
   Future<Map<String, dynamic>> getJson(String url, {String? bearer}) async {
@@ -111,14 +113,12 @@ class FakeHttpJsonClient implements HttpJsonClient {
     required Map<String, String> fields,
     (String, String)? basicAuth,
   }) async {
-    requests.add(
-      RecordedRequest(
-        method: 'POST',
-        url: url,
-        fields: Map.of(fields),
-        basicAuth: basicAuth,
-      ),
-    );
+    requests.add(RecordedRequest(
+      method: 'POST',
+      url: url,
+      fields: Map.of(fields),
+      basicAuth: basicAuth,
+    ));
     if (postError != null) throw postError!;
     final response = _postResponses[url];
     if (response == null) {

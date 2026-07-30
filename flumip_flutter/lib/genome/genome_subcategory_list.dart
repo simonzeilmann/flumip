@@ -26,9 +26,7 @@ class GenomeSubcategoryList extends StatelessWidget {
             SizedBox(width: 8),
             Text(
               "Genomes for ${selectedGenome?.category ?? ''}:",
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -47,38 +45,26 @@ class GenomeSubcategoryList extends StatelessWidget {
                   color: isSelected ? Colors.green[50] : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: isSelected ? Colors.green : Colors.grey[300]!,
-                    ),
+                    side: BorderSide(color: isSelected ? Colors.green : Colors.grey[300]!),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => onGenomeSelected(genome.id!),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(
-                                Icons.biotech,
-                                color: isSelected ? Colors.green : Colors.grey,
-                              ),
+                              Icon(Icons.biotech, color: isSelected ? Colors.green : Colors.grey),
                               SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   genome.name,
                                   style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.green
-                                        : Colors.black,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
+                                    color: isSelected ? Colors.green : Colors.black,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                   ),
                                 ),
                               ),
@@ -87,11 +73,7 @@ class GenomeSubcategoryList extends StatelessWidget {
                           SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(
-                                Icons.storage,
-                                color: Colors.orange,
-                                size: 18,
-                              ),
+                              Icon(Icons.storage, color: Colors.orange, size: 18),
                               SizedBox(width: 6),
                               Text(
                                 'Size: ${truncateToDecimalPlaces(genome.size / 1000000000, 2)} GB',
@@ -103,19 +85,12 @@ class GenomeSubcategoryList extends StatelessWidget {
                             SizedBox(height: 6),
                             Row(
                               children: [
-                                Icon(
-                                  Icons.description,
-                                  color: Colors.grey,
-                                  size: 18,
-                                ),
+                                Icon(Icons.description, color: Colors.grey, size: 18),
                                 SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     genome.description,
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                    ),
+                                    style: TextStyle(color: Colors.black87, fontSize: 13),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -135,3 +110,4 @@ class GenomeSubcategoryList extends StatelessWidget {
     );
   }
 }
+

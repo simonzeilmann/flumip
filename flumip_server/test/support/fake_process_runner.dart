@@ -40,7 +40,7 @@ class FakeProcessRunner implements ProcessRunner {
   Object? startError;
 
   FakeProcessRunner({ProcessResult? defaultRunResult})
-    : defaultRunResult = defaultRunResult ?? ProcessResult(0, 0, '', '');
+      : defaultRunResult = defaultRunResult ?? ProcessResult(0, 0, '', '');
 
   /// Clears all recorded invocations, stubs, and error overrides. Call from a
   /// test `setUp` when the same fake instance is shared across a group.
@@ -85,15 +85,13 @@ class FakeProcessRunner implements ProcessRunner {
     String? workingDirectory,
     bool runInShell = false,
   }) async {
-    invocations.add(
-      ProcessInvocation(
-        executable: executable,
-        arguments: arguments,
-        workingDirectory: workingDirectory,
-        runInShell: runInShell,
-        started: false,
-      ),
-    );
+    invocations.add(ProcessInvocation(
+      executable: executable,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      runInShell: runInShell,
+      started: false,
+    ));
     if (runError != null) throw runError!;
     return _runStubs[executable] ?? defaultRunResult;
   }
@@ -105,15 +103,13 @@ class FakeProcessRunner implements ProcessRunner {
     String? workingDirectory,
     bool runInShell = false,
   }) async {
-    invocations.add(
-      ProcessInvocation(
-        executable: executable,
-        arguments: arguments,
-        workingDirectory: workingDirectory,
-        runInShell: runInShell,
-        started: true,
-      ),
-    );
+    invocations.add(ProcessInvocation(
+      executable: executable,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      runInShell: runInShell,
+      started: true,
+    ));
     if (startError != null) throw startError!;
   }
 }

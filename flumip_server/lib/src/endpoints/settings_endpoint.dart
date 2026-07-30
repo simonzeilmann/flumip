@@ -30,14 +30,13 @@ class SettingsEndpoint extends Endpoint {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
       return settingsService.getSettingsExternal(session, password);
-    } on ArgumentException {
+    }
+    on ArgumentException {
       rethrow;
-    } catch (e) {
-      session.log(
-        "Error retrieving settings",
-        level: LogLevel.error,
-        exception: e,
-      );
+    }
+    catch (e) {
+      session.log("Error retrieving settings",
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -69,11 +68,8 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log(
-        "Error updating settings",
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log("Error updating settings",
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -103,11 +99,8 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log(
-        "Error setting the OIDC client secret",
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log("Error setting the OIDC client secret",
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -175,11 +168,8 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log(
-        "Error sending test mail",
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log("Error sending test mail",
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }

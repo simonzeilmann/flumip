@@ -106,28 +106,22 @@ void main() {
       expect(runtime.discoveryError, contains('503'));
     });
 
-    test(
-      'keeps enforcing when the provider goes down after succeeding once',
-      () async {
-        // A transient provider outage must not drop everyone's live session.
-        await configure(session);
-        http.stubProvider(issuer: issuer);
-        final runtime = AuthRuntime(environment: const {});
-        await runtime.refresh(session);
-        expect(runtime.isEnforcing, isTrue);
+    test('keeps enforcing when the provider goes down after succeeding once',
+        () async {
+      // A transient provider outage must not drop everyone's live session.
+      await configure(session);
+      http.stubProvider(issuer: issuer);
+      final runtime = AuthRuntime(environment: const {});
+      await runtime.refresh(session);
+      expect(runtime.isEnforcing, isTrue);
 
-        http.getError = HttpJsonException(500, issuer, 'boom');
-        await runtime.refresh(session);
+      http.getError = HttpJsonException(500, issuer, 'boom');
+      await runtime.refresh(session);
 
-        expect(
-          runtime.isEnforcing,
-          isTrue,
-          reason: 'the cached document stands',
-        );
-        expect(runtime.discovery, isNotNull);
-        expect(runtime.discoveryError, contains('500'));
-      },
-    );
+      expect(runtime.isEnforcing, isTrue, reason: 'the cached document stands');
+      expect(runtime.discovery, isNotNull);
+      expect(runtime.discoveryError, contains('500'));
+    });
 
     test('self-heals when the provider comes back', () async {
       // This is what makes the periodic refresh worth having: a provider that
@@ -148,7 +142,9 @@ void main() {
 
     test('FLUMIP_AUTH_STRICT fails closed instead', () async {
       await configure(session, clientSecret: null);
-      final runtime = AuthRuntime(environment: const {AuthEnv.strict: 'true'});
+      final runtime = AuthRuntime(
+        environment: const {AuthEnv.strict: 'true'},
+      );
       await runtime.refresh(session);
 
       expect(runtime.config.isComplete, isFalse);
@@ -160,68 +156,62 @@ void main() {
       // applies the migration that creates the table. A throw here would crash
       // the boot.
       sl.registerSingleton<SettingsService>(ThrowingSettingsService());
-      addTearDown(
-        () => sl.registerSingleton<SettingsService>(SettingsService()),
-      );
+      addTearDown(() => sl.registerSingleton<SettingsService>(
+            SettingsService(),
+          ));
 
       final runtime = AuthRuntime(environment: const {});
       await expectLater(runtime.refresh(session), completes);
       expect(runtime.isEnforcing, isFalse);
     });
 
-    test(
-      'falls back to the environment when the settings cannot be read',
-      () async {
-        sl.registerSingleton<SettingsService>(ThrowingSettingsService());
-        addTearDown(
-          () => sl.registerSingleton<SettingsService>(SettingsService()),
-        );
-        http.stubProvider(issuer: issuer);
+    test('falls back to the environment when the settings cannot be read',
+        () async {
+      sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+      addTearDown(() => sl.registerSingleton<SettingsService>(
+            SettingsService(),
+          ));
+      http.stubProvider(issuer: issuer);
 
-        final runtime = AuthRuntime(
-          environment: const {
-            AuthEnv.enabled: 'true',
-            AuthEnv.issuer: issuer,
-            AuthEnv.clientId: 'flumip',
-            AuthEnv.publicUrl: 'https://flumip.example',
-          },
-        );
-        await runtime.refresh(session);
+      final runtime = AuthRuntime(environment: const {
+        AuthEnv.enabled: 'true',
+        AuthEnv.issuer: issuer,
+        AuthEnv.clientId: 'flumip',
+        AuthEnv.publicUrl: 'https://flumip.example',
+      });
+      await runtime.refresh(session);
 
-        expect(runtime.config.loginRequired, isTrue);
-        expect(runtime.config.issuer, issuer);
-        // Still not complete: no secret is configured, so it fails open.
-        expect(runtime.isEnforcing, isFalse);
-      },
-    );
+      expect(runtime.config.loginRequired, isTrue);
+      expect(runtime.config.issuer, issuer);
+      // Still not complete: no secret is configured, so it fails open.
+      expect(runtime.isEnforcing, isFalse);
+    });
 
-    test(
-      'FLUMIP_AUTH_ENABLED=false switches a configured install off',
-      () async {
-        // The documented break-glass route out of a lockout.
-        await configure(session);
-        http.stubProvider(issuer: issuer);
+    test('FLUMIP_AUTH_ENABLED=false switches a configured install off',
+        () async {
+      // The documented break-glass route out of a lockout.
+      await configure(session);
+      http.stubProvider(issuer: issuer);
 
-        final enforcing = AuthRuntime(environment: const {});
-        await enforcing.refresh(session);
-        expect(enforcing.isEnforcing, isTrue);
+      final enforcing = AuthRuntime(environment: const {});
+      await enforcing.refresh(session);
+      expect(enforcing.isEnforcing, isTrue);
 
-        final overridden = AuthRuntime(
-          environment: const {AuthEnv.enabled: 'false'},
-        );
-        await overridden.refresh(session);
-        expect(overridden.isEnforcing, isFalse);
-        expect(overridden.config.envOverrides, contains(AuthEnv.enabled));
-      },
-    );
+      final overridden = AuthRuntime(
+        environment: const {AuthEnv.enabled: 'false'},
+      );
+      await overridden.refresh(session);
+      expect(overridden.isEnforcing, isFalse);
+      expect(overridden.config.envOverrides, contains(AuthEnv.enabled));
+    });
 
     test('an environment issuer overrides the stored one', () async {
       await configure(session, storedIssuer: 'https://stored.example.org');
       http.stubProvider(issuer: 'https://env.example.org');
 
-      final runtime = AuthRuntime(
-        environment: const {AuthEnv.issuer: 'https://env.example.org'},
-      );
+      final runtime = AuthRuntime(environment: const {
+        AuthEnv.issuer: 'https://env.example.org',
+      });
       await runtime.refresh(session);
 
       expect(runtime.config.issuer, 'https://env.example.org');
@@ -241,21 +231,18 @@ void main() {
       expect(runtime.isEnforcing, isTrue);
     });
 
-    test(
-      'the redirect URI is derived from the configured public URL',
-      () async {
-        await configure(session);
-        http.stubProvider(issuer: issuer);
-        final runtime = AuthRuntime(environment: const {});
-        await runtime.refresh(session);
+    test('the redirect URI is derived from the configured public URL', () async {
+      await configure(session);
+      http.stubProvider(issuer: issuer);
+      final runtime = AuthRuntime(environment: const {});
+      await runtime.refresh(session);
 
-        expect(
-          runtime.config.redirectUri,
-          'https://flumip.example/auth/callback',
-        );
-        expect(runtime.config.cookieSecure, isTrue);
-      },
-    );
+      expect(
+        runtime.config.redirectUri,
+        'https://flumip.example/auth/callback',
+      );
+      expect(runtime.config.cookieSecure, isTrue);
+    });
 
     test('constructing one starts no timer', () {
       // A timer created in the constructor leaks out of every test that builds

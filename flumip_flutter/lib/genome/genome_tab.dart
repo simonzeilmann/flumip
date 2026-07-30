@@ -30,7 +30,7 @@ class _GenomeTabState extends State<GenomeTab> {
     _fetchCategories();
     _timer = Timer.periodic(
       Duration(seconds: 5),
-      (_) => _reloadSelectedGenome(),
+          (_) => _reloadSelectedGenome(),
     );
   }
 
@@ -51,7 +51,7 @@ class _GenomeTabState extends State<GenomeTab> {
     try {
       final categories = await client.genome.getCategories();
       categories.sort(
-        (a, b) => a.compareTo(b),
+            (a, b) => a.compareTo(b),
       ); // Sort categories alphabetically by name
       setState(() {
         _errorMessage = null;
@@ -68,7 +68,7 @@ class _GenomeTabState extends State<GenomeTab> {
     try {
       final genomes = await client.genome.getGenomeByCategory(category);
       genomes.sort(
-        (a, b) => a.name.compareTo(b.name),
+            (a, b) => a.name.compareTo(b.name),
       ); // Sort genomes alphabetically by name
       setState(() {
         _errorMessage = null;
@@ -179,7 +179,7 @@ class _GenomeTabState extends State<GenomeTab> {
 
   double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
       (value * pow(10, fractionalDigits)).truncate() /
-      pow(10, fractionalDigits);
+          pow(10, fractionalDigits);
 
   @override
   Widget build(BuildContext context) {
@@ -206,8 +206,7 @@ class _GenomeTabState extends State<GenomeTab> {
                             SizedBox(width: 8),
                             Text(
                               "Categories",
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -217,51 +216,32 @@ class _GenomeTabState extends State<GenomeTab> {
                             width: 220,
                             child: ListView.separated(
                               itemCount: categories.length,
-                              separatorBuilder: (context, _) =>
-                                  SizedBox(height: 8),
+                              separatorBuilder: (context, _) => SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 final category = categories[index];
                                 final isSelected = selectedCategory == category;
                                 return Card(
                                   elevation: isSelected ? 4 : 1,
-                                  color: isSelected
-                                      ? Colors.blue[50]
-                                      : Colors.white,
+                                  color: isSelected ? Colors.blue[50] : Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(
-                                      color: isSelected
-                                          ? Colors.blue
-                                          : Colors.grey[300]!,
-                                    ),
+                                    side: BorderSide(color: isSelected ? Colors.blue : Colors.grey[300]!),
                                   ),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(12),
                                     onTap: () => _fetchGenomes(category),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                        horizontal: 16,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                       child: Row(
                                         children: [
-                                          Icon(
-                                            Icons.label,
-                                            color: isSelected
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                          ),
+                                          Icon(Icons.label, color: isSelected ? Colors.blue : Colors.grey),
                                           SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
                                               category,
                                               style: TextStyle(
-                                                color: isSelected
-                                                    ? Colors.blue
-                                                    : Colors.black,
-                                                fontWeight: isSelected
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
+                                                color: isSelected ? Colors.blue : Colors.black,
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                               ),
                                             ),
                                           ),

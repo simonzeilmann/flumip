@@ -26,7 +26,8 @@ const String appVersion = String.fromEnvironment(
   defaultValue: 'debug',
 );
 
-var client = Client(apiUrl)..connectivityMonitor = FlutterConnectivityMonitor();
+var client = Client(apiUrl)
+  ..connectivityMonitor = FlutterConnectivityMonitor();
 
 /// Sign-in state for the whole app.
 ///

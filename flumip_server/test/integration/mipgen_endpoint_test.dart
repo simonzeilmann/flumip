@@ -20,11 +20,8 @@ void main() {
       });
       await overrideSettingsDirs(session, projectDir: base.path);
 
-      final result = await endpoints.project.createProject(
-        sessionBuilder,
-        "int_test",
-        ProjectOptions(id: 1),
-      );
+      final result = await endpoints.project
+          .createProject(sessionBuilder, "int_test", ProjectOptions(id: 1));
       expect(result.id, greaterThan(0));
     }, tags: ['integration']);
   });

@@ -21,11 +21,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.getGenome(session, id);
     } catch (e) {
-      session.log(
-        'Error retrieving genome with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving genome with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -40,11 +37,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.getAllGenomes(session);
     } catch (e) {
-      session.log(
-        'Error retrieving all genomes',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving all genomes',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -60,11 +54,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.updateGenome(session, id, genome);
     } catch (e) {
-      session.log(
-        'Error updating genome with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error updating genome with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -78,11 +69,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.collectGenomes(session);
     } catch (e) {
-      session.log(
-        'Error collecting genomes',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error collecting genomes',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -98,11 +86,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.getSnp(session, id);
     } catch (e) {
-      session.log(
-        'Error retrieving SNP with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving SNP with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -118,11 +103,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.getAllSnpForGenome(session, genomeId);
     } catch (e) {
-      session.log(
-        'Error retrieving all SNPs',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving all SNPs',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -138,11 +120,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.updateSnp(session, id, snp);
     } catch (e) {
-      session.log(
-        'Error updating SNP with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error updating SNP with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -157,11 +136,8 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.getGenomeCategories(session);
     } catch (e) {
-      session.log(
-        'Error retrieving categories',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving categories',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -173,21 +149,14 @@ class GenomeEndpoint extends FlumipEndpoint {
   /// \returns A list of genomes in the specified category.
   /// \throws Exception if an error occurs during retrieval.
   Future<List<Genome>> getGenomeByCategory(
-    Session session,
-    String category,
-  ) async {
-    session.log(
-      'Retrieving genomes for category: $category',
-      level: LogLevel.info,
-    );
+      Session session, String category) async {
+    session.log('Retrieving genomes for category: $category',
+        level: LogLevel.info);
     try {
       return genomeService.getGenomeByCategory(session, category);
     } catch (e) {
-      session.log(
-        'Error retrieving genomes for category: $category',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error retrieving genomes for category: $category',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
@@ -197,28 +166,20 @@ class GenomeEndpoint extends FlumipEndpoint {
     try {
       return genomeService.indexFasta(session, id);
     } catch (e) {
-      session.log(
-        'Error indexing fasta for genome with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error indexing fasta for genome with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }
 
   Future<void> deleteFastaIndex(Session session, int id) async {
-    session.log(
-      'Deleting fasta index for genome with ID: $id',
-      level: LogLevel.info,
-    );
+    session.log('Deleting fasta index for genome with ID: $id',
+        level: LogLevel.info);
     try {
       return genomeService.deleteFastaIndex(session, id);
     } catch (e) {
-      session.log(
-        'Error deleting fasta index for genome with ID: $id',
-        level: LogLevel.error,
-        exception: e,
-      );
+      session.log('Error deleting fasta index for genome with ID: $id',
+          level: LogLevel.error, exception: e);
       rethrow;
     }
   }

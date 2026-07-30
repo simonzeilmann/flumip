@@ -67,9 +67,8 @@ class IdTokenClaims {
 
     final Map<String, dynamic> payload;
     try {
-      payload =
-          jsonDecode(utf8.decode(_decodeSegment(parts[1])))
-              as Map<String, dynamic>;
+      payload = jsonDecode(utf8.decode(_decodeSegment(parts[1])))
+          as Map<String, dynamic>;
     } on FormatException {
       rethrow;
     } catch (e) {

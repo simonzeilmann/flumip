@@ -22,10 +22,7 @@ import 'test_tools/serverpod_test_tools.dart';
 /// bwa completion directly.
 class NoScheduleGenomeService extends GenomeService {
   @override
-  Future<void> scheduleIndexProgressCheck(
-    Session session,
-    Genome genome,
-  ) async {}
+  Future<void> scheduleIndexProgressCheck(Session session, Genome genome) async {}
 }
 
 Future<void> eventually(
@@ -56,21 +53,15 @@ void main() {
         refPath: '${settings.genomeDir}/human/hg38/refGene.txt',
         fastaPath: '${settings.genomeDir}/human/hg38/fa/hg38.fa',
       );
-      final project = await projectService.createProject(
-        session,
-        'smoke',
-        ProjectOptions(id: 1),
-      );
+      final project =
+          await projectService.createProject(session, 'smoke', ProjectOptions(id: 1));
       project.genome = genome.id;
       await projectService.updateProject(session, project);
       await projectService.addGeneToProject(session, project.id!, 'BRCA1');
 
       await mipgenService.createBedFile(session, project.id!);
 
-      expect(
-        await fileService.checkBedFileExists(session, project.id!),
-        isTrue,
-      );
+      expect(await fileService.checkBedFileExists(session, project.id!), isTrue);
     }, tags: ['env']);
   });
 

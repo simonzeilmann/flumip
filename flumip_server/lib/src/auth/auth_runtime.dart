@@ -104,8 +104,7 @@ class AuthRuntime {
 
     if (!_config.isComplete) {
       _discovery = null;
-      _discoveryError =
-          'Incomplete configuration: '
+      _discoveryError = 'Incomplete configuration: '
           '${_missingFields().join(', ')} not set.';
       session.log(
         'Authentication is switched on but not fully configured '
@@ -158,10 +157,8 @@ class AuthRuntime {
       } catch (e) {
         // refresh() is already total; this is belt-and-braces so a timer
         // callback can never bring the isolate down.
-        session.log(
-          'Authentication refresh tick failed: $e',
-          level: LogLevel.error,
-        );
+        session.log('Authentication refresh tick failed: $e',
+            level: LogLevel.error);
       } finally {
         await session.close();
       }
@@ -182,10 +179,10 @@ class AuthRuntime {
   Future<void> broadcastConfigChange(Session session) => refresh(session);
 
   List<String> _missingFields() => [
-    if (_config.issuer.isEmpty) 'issuer',
-    if (_config.clientId.isEmpty) 'client ID',
-    if (_config.clientSecret.isEmpty) 'client secret',
-  ];
+        if (_config.issuer.isEmpty) 'issuer',
+        if (_config.clientId.isEmpty) 'client ID',
+        if (_config.clientSecret.isEmpty) 'client secret',
+      ];
 
   /// The secret from Serverpod's password mechanism, if configured.
   ///

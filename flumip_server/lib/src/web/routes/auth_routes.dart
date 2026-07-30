@@ -42,22 +42,23 @@ Headers _cookieHeaders({
   required String value,
   required bool secure,
   required Duration maxAge,
-}) => Headers.build((h) {
-  h.setCookie = SetCookieHeader(
-    name: authCookieName,
-    value: value,
-    path: Uri.parse('/'),
-    httpOnly: true,
-    // Never readable from JavaScript, so an XSS in the app cannot exfiltrate
-    // the durable credential.
-    secure: secure,
-    // Lax rather than Strict: the cookie is set on the redirect back from the
-    // identity provider, which is a cross-site navigation. Strict would drop
-    // it and sign-in would silently do nothing.
-    sameSite: SameSite.lax,
-    maxAge: maxAge.inSeconds,
-  );
-});
+}) =>
+    Headers.build((h) {
+      h.setCookie = SetCookieHeader(
+        name: authCookieName,
+        value: value,
+        path: Uri.parse('/'),
+        httpOnly: true,
+        // Never readable from JavaScript, so an XSS in the app cannot exfiltrate
+        // the durable credential.
+        secure: secure,
+        // Lax rather than Strict: the cookie is set on the redirect back from the
+        // identity provider, which is a cross-site navigation. Strict would drop
+        // it and sign-in would silently do nothing.
+        sameSite: SameSite.lax,
+        maxAge: maxAge.inSeconds,
+      );
+    });
 
 /// `GET /auth/login` — starts the flow and redirects to the provider.
 class AuthLoginRoute extends Route {
@@ -74,10 +75,8 @@ class AuthLoginRoute extends Route {
       final url = await authService.beginFlow(session);
       return Response.seeOther(url);
     } on AuthFlowException catch (e) {
-      session.log(
-        'Could not start a sign-in: ${e.message}',
-        level: LogLevel.warning,
-      );
+      session.log('Could not start a sign-in: ${e.message}',
+          level: LogLevel.warning);
       // 503 rather than 500: this is "not available", and the message is written
       // for whoever is looking at the screen.
       return Response(
@@ -101,10 +100,8 @@ class AuthCallbackRoute extends Route {
     final error = query['error'];
     if (error != null) {
       final description = query['error_description'] ?? '';
-      session.log(
-        'The identity provider refused the sign-in: $error '
-        '$description',
-      );
+      session.log('The identity provider refused the sign-in: $error '
+          '$description');
       return Response.badRequest(
         body: Body.fromString(
           'The identity provider refused this sign-in: $error'
@@ -148,10 +145,8 @@ class AuthCallbackRoute extends Route {
         ),
       );
     } on AuthFlowException catch (e) {
-      session.log(
-        'A sign-in could not be completed: ${e.message}',
-        level: LogLevel.warning,
-      );
+      session.log('A sign-in could not be completed: ${e.message}',
+          level: LogLevel.warning);
       return Response.forbidden(
         body: Body.fromString(e.message, mimeType: MimeType.plainText),
       );
@@ -197,11 +192,11 @@ class AuthSessionRoute extends Route {
   }
 
   Response _noSession(String message) => Response.unauthorized(
-    body: Body.fromString(
-      jsonEncode({'error': message}),
-      mimeType: MimeType.json,
-    ),
-  );
+        body: Body.fromString(
+          jsonEncode({'error': message}),
+          mimeType: MimeType.json,
+        ),
+      );
 }
 
 /// `GET /auth/logout` — revokes the session, clears the cookie, returns to the app.

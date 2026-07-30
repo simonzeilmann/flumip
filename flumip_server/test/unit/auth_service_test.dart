@@ -51,18 +51,19 @@ void main() {
     String? name = 'Ada Lovelace',
     required String nonce,
     Duration? expiresIn,
-  }) => {
-    'iss': issuer,
-    'aud': 'flumip',
-    'sub': subject,
-    'nonce': nonce,
-    'exp': epochSeconds(
-      DateTime.now().toUtc().add(expiresIn ?? const Duration(minutes: 5)),
-    ),
-    'iat': epochSeconds(DateTime.now().toUtc()),
-    'email': ?email,
-    'name': ?name,
-  };
+  }) =>
+      {
+        'iss': issuer,
+        'aud': 'flumip',
+        'sub': subject,
+        'nonce': nonce,
+        'exp': epochSeconds(
+          DateTime.now().toUtc().add(expiresIn ?? const Duration(minutes: 5)),
+        ),
+        'iat': epochSeconds(DateTime.now().toUtc()),
+        'email': ?email,
+        'name': ?name,
+      };
 
   /// Runs a full sign-in and returns the resulting cookie.
   Future<CompletedSignIn> signIn(
@@ -75,10 +76,8 @@ void main() {
     final authService = sl<AuthService>();
     final url = await authService.beginFlow(session);
     final state = url.queryParameters['state']!;
-    final flow = await AuthFlow.db.findFirstRow(
-      session,
-      where: (t) => t.state.equals(state),
-    );
+    final flow = await AuthFlow.db
+        .findFirstRow(session, where: (t) => t.state.equals(state));
 
     http.stubProvider(
       issuer: issuer,
@@ -91,18 +90,11 @@ void main() {
       userinfo: userinfo,
     );
 
-    return authService.completeCallback(
-      session,
-      code: 'the-code',
-      state: state,
-    );
+    return authService.completeCallback(session, code: 'the-code', state: state);
   }
 
   withServerpod('AuthService sign-in flow', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
     final authService = sl<AuthService>();
 
@@ -114,10 +106,8 @@ void main() {
 
       expect(url.toString(), startsWith('$issuer/authorize'));
       final state = url.queryParameters['state']!;
-      final flow = await AuthFlow.db.findFirstRow(
-        session,
-        where: (t) => t.state.equals(state),
-      );
+      final flow = await AuthFlow.db
+          .findFirstRow(session, where: (t) => t.state.equals(state));
       expect(flow, isNotNull);
       // The verifier stays on the server; only its challenge goes via the
       // browser.
@@ -130,24 +120,22 @@ void main() {
       // leaves the stored OIDC settings in place. Blaming the provider there
       // would send an admin debugging the wrong thing.
       await enableSso(session);
-      final off = AuthRuntime(environment: const {AuthEnv.enabled: 'false'});
-      sl.registerSingleton<AuthRuntime>(off);
-      addTearDown(
-        () => sl.registerSingleton<AuthRuntime>(
-          AuthRuntime(environment: const {}),
-        ),
+      final off = AuthRuntime(
+        environment: const {AuthEnv.enabled: 'false'},
       );
+      sl.registerSingleton<AuthRuntime>(off);
+      addTearDown(() => sl.registerSingleton<AuthRuntime>(
+            AuthRuntime(environment: const {}),
+          ));
       await off.refresh(session);
 
       await expectLater(
         () => authService.beginFlow(session),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('switched off'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('switched off'),
+        )),
       );
     });
 
@@ -159,13 +147,11 @@ void main() {
 
       await expectLater(
         () => authService.beginFlow(session),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('not fully configured'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('not fully configured'),
+        )),
       );
     });
 
@@ -198,10 +184,8 @@ void main() {
       await enableSso(session);
       final url = await authService.beginFlow(session);
       final state = url.queryParameters['state']!;
-      final flow = await AuthFlow.db.findFirstRow(
-        session,
-        where: (t) => t.state.equals(state),
-      );
+      final flow = await AuthFlow.db
+          .findFirstRow(session, where: (t) => t.state.equals(state));
       http.stubProvider(
         issuer: issuer,
         idTokenClaims: idTokenClaims(nonce: flow!.nonce),
@@ -212,13 +196,11 @@ void main() {
       // Replaying the same callback must fail: the row is gone.
       await expectLater(
         () => authService.completeCallback(session, code: 'c', state: state),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('already been used'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('already been used'),
+        )),
       );
     });
 
@@ -238,30 +220,22 @@ void main() {
       await enableSso(session);
       final url = await authService.beginFlow(session);
       final state = url.queryParameters['state']!;
-      final flow = await AuthFlow.db.findFirstRow(
-        session,
-        where: (t) => t.state.equals(state),
-      );
-      flow!.expires = DateTime.now().toUtc().subtract(
-        const Duration(minutes: 1),
-      );
+      final flow = await AuthFlow.db
+          .findFirstRow(session, where: (t) => t.state.equals(state));
+      flow!.expires = DateTime.now().toUtc().subtract(const Duration(minutes: 1));
       await AuthFlow.db.updateRow(session, flow);
 
       await expectLater(
         () => authService.completeCallback(session, code: 'c', state: state),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('took too long'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('took too long'),
+        )),
       );
       expect(
-        await AuthFlow.db.findFirstRow(
-          session,
-          where: (t) => t.state.equals(state),
-        ),
+        await AuthFlow.db
+            .findFirstRow(session, where: (t) => t.state.equals(state)),
         isNull,
       );
     });
@@ -276,13 +250,11 @@ void main() {
       );
       await expectLater(
         () => authService.completeCallback(session, code: 'c', state: state),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('could not accept'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('could not accept'),
+        )),
       );
     });
 
@@ -303,13 +275,11 @@ void main() {
       await enableSso(session);
       await expectLater(
         () => signIn(session, email: null, userinfo: {'sub': 'no-email-here'}),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('email'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('email'),
+        )),
       );
     });
 
@@ -321,10 +291,7 @@ void main() {
   });
 
   withServerpod('AuthService access control', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
 
     setUp(http.reset);
@@ -345,13 +312,11 @@ void main() {
       await enableSso(session, allowedDomains: 'uni.example');
       await expectLater(
         () => signIn(session, email: 'outsider@other.example'),
-        throwsA(
-          isA<AuthFlowException>().having(
-            (e) => e.message,
-            'message',
-            contains('not allowed'),
-          ),
-        ),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('not allowed'),
+        )),
       );
     });
 
@@ -363,14 +328,11 @@ void main() {
       );
     });
 
-    test(
-      'an empty allowlist admits anyone the provider authenticates',
-      () async {
-        await enableSso(session);
-        final result = await signIn(session, email: 'anyone@anywhere.example');
-        expect(result.session.email, 'anyone@anywhere.example');
-      },
-    );
+    test('an empty allowlist admits anyone the provider authenticates', () async {
+      await enableSso(session);
+      final result = await signIn(session, email: 'anyone@anywhere.example');
+      expect(result.session.email, 'anyone@anywhere.example');
+    });
 
     test('an address on the admin list gets the admin flag', () async {
       await enableSso(session, adminEmails: 'boss@uni.example');
@@ -386,10 +348,7 @@ void main() {
   });
 
   withServerpod('AuthService user records', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
 
     setUp(http.reset);
@@ -424,25 +383,20 @@ void main() {
     test('lastLogin advances on each sign-in', () async {
       await enableSso(session);
       final first = await signIn(session);
-      final before = (await FlumipUser.db.findById(
-        session,
-        first.session.userId,
-      ))!.lastLogin;
+      final before =
+          (await FlumipUser.db.findById(session, first.session.userId))!
+              .lastLogin;
       await Future<void>.delayed(const Duration(milliseconds: 5));
       await signIn(session);
-      final after = (await FlumipUser.db.findById(
-        session,
-        first.session.userId,
-      ))!.lastLogin;
+      final after =
+          (await FlumipUser.db.findById(session, first.session.userId))!
+              .lastLogin;
       expect(after.isAfter(before) || after == before, isTrue);
     });
   });
 
   withServerpod('AuthService API tokens', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
     final authService = sl<AuthService>();
 
@@ -469,10 +423,8 @@ void main() {
     test('the token hash is stored, not the token', () async {
       await enableSso(session);
       final signedIn = await signIn(session);
-      final issued = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final issued =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
 
       final row = await AuthApiToken.db.findFirstRow(session);
       expect(row!.tokenHash, AuthTokens.sha256Hex(issued.token));
@@ -487,14 +439,10 @@ void main() {
       // forever.
       await enableSso(session);
       final signedIn = await signIn(session);
-      final first = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
-      final second = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final first =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
+      final second =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
 
       expect(first.token, isNot(second.token));
       expect(
@@ -523,9 +471,8 @@ void main() {
     test('an expired session yields no token', () async {
       await enableSso(session);
       final signedIn = await signIn(session);
-      signedIn.session.expires = DateTime.now().toUtc().subtract(
-        const Duration(minutes: 1),
-      );
+      signedIn.session.expires =
+          DateTime.now().toUtc().subtract(const Duration(minutes: 1));
       await AuthSession.db.updateRow(session, signedIn.session);
 
       expect(
@@ -538,25 +485,20 @@ void main() {
       await enableSso(session);
       final signedIn = await signIn(session);
       // Session ends in a minute; the default token lifetime is 30.
-      signedIn.session.expires = DateTime.now().toUtc().add(
-        const Duration(minutes: 1),
-      );
+      signedIn.session.expires =
+          DateTime.now().toUtc().add(const Duration(minutes: 1));
       await AuthSession.db.updateRow(session, signedIn.session);
 
-      final issued = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final issued =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
       expect(issued.expires, signedIn.session.expires);
     });
 
     test('resolveApiToken finds a valid token', () async {
       await enableSso(session);
       final signedIn = await signIn(session);
-      final issued = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final issued =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
 
       final resolved = await authService.resolveApiToken(session, issued.token);
       expect(resolved!.email, 'a@uni.example');
@@ -571,14 +513,10 @@ void main() {
     test('resolveApiToken returns null for an expired token', () async {
       await enableSso(session);
       final signedIn = await signIn(session);
-      final issued = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final issued =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
       final row = await AuthApiToken.db.findFirstRow(session);
-      row!.expires = DateTime.now().toUtc().subtract(
-        const Duration(minutes: 1),
-      );
+      row!.expires = DateTime.now().toUtc().subtract(const Duration(minutes: 1));
       await AuthApiToken.db.updateRow(session, row);
 
       expect(await authService.resolveApiToken(session, issued.token), isNull);
@@ -586,10 +524,7 @@ void main() {
   });
 
   withServerpod('AuthService revocation', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
     final authService = sl<AuthService>();
 
@@ -601,16 +536,12 @@ void main() {
       // into a security bug.
       await enableSso(session);
       final signedIn = await signIn(session);
-      final issued = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final issued =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
 
       // Prime the cache.
-      expect(
-        await authService.resolveApiToken(session, issued.token),
-        isNotNull,
-      );
+      expect(await authService.resolveApiToken(session, issued.token),
+          isNotNull);
 
       await authService.revokeSession(session, signedIn.session.id!);
 
@@ -620,14 +551,10 @@ void main() {
     test('revoking kills every token minted from the session', () async {
       await enableSso(session);
       final signedIn = await signIn(session);
-      final first = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
-      final second = (await authService.issueApiToken(
-        session,
-        signedIn.cookieValue,
-      ))!;
+      final first =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
+      final second =
+          (await authService.issueApiToken(session, signedIn.cookieValue))!;
       await authService.resolveApiToken(session, first.token);
       await authService.resolveApiToken(session, second.token);
 
@@ -659,16 +586,8 @@ void main() {
 
     test('one session is revoked without touching another', () async {
       await enableSso(session);
-      final a = await signIn(
-        session,
-        subject: 'user-a',
-        email: 'a@uni.example',
-      );
-      final b = await signIn(
-        session,
-        subject: 'user-b',
-        email: 'b@uni.example',
-      );
+      final a = await signIn(session, subject: 'user-a', email: 'a@uni.example');
+      final b = await signIn(session, subject: 'user-b', email: 'b@uni.example');
       final tokenA = (await authService.issueApiToken(session, a.cookieValue))!;
       final tokenB = (await authService.issueApiToken(session, b.cookieValue))!;
       await authService.resolveApiToken(session, tokenA.token);
@@ -685,10 +604,7 @@ void main() {
   });
 
   withServerpod('AuthService pruning', (sessionBuilder, endpoints) {
-    setup(
-      httpClient: http,
-      authRuntime: AuthRuntime(environment: const {}),
-    );
+    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
     final authService = sl<AuthService>();
 
