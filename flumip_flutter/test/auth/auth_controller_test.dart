@@ -96,12 +96,12 @@ void main() {
       expect(controller.user!.displayName, 'Ada Lovelace');
     });
 
-    test('the provider yields a Basic authorization header', () async {
+    test('the provider yields a Bearer authorization header', () async {
       final controller = controllerFor(config: enabled, session: anySession);
       await controller.bootstrap();
       final header = await controller.authKeyProvider!.authHeaderValue;
       expect(header, isNotNull);
-      expect(header, wrapAsBasicAuthHeaderValue('a-token'));
+      expect(header, wrapAsBearerAuthHeaderValue('a-token'));
     });
 
     test('listeners are notified of the state change', () async {

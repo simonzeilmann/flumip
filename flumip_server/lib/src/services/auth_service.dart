@@ -83,6 +83,16 @@ class AuthService {
     final config = _runtime.config;
     final discovery = _runtime.discovery;
 
+    // Checked before the configuration, so that an install where sign-in has
+    // been switched off — including via the FLUMIP_AUTH_ENABLED break-glass
+    // switch, which leaves the stored OIDC settings intact — says so, rather
+    // than blaming the provider it is no longer talking to.
+    if (!config.loginRequired) {
+      throw AuthFlowException(
+        'Single sign-on is switched off on this server, so there is nothing to '
+        'sign in to. You should be able to use FLUMIP without signing in.',
+      );
+    }
     if (!config.isComplete) {
       throw AuthFlowException(
         'Single sign-on is not fully configured on this server. An '

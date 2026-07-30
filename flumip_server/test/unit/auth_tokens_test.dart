@@ -20,6 +20,18 @@ void main() {
       expect(AuthTokens.newToken().length, 43);
     });
 
+    test('contains no colon, which is why the wire scheme must be Bearer', () {
+      // Serverpod's wrapAsBasicAuthHeaderValue is built for its own auth keys,
+      // which have the shape `id:hash`. relic's typed `authorization` parser
+      // base64-decodes a `Basic` value and splits it on a colon, so a token
+      // without one is rejected with a 400 *before* the authentication handler
+      // runs. base64url tokens never contain a colon, so `Basic` can never work
+      // here — see SessionAuthKeyProvider.authHeaderValue.
+      for (var i = 0; i < 100; i++) {
+        expect(AuthTokens.newToken(), isNot(contains(':')));
+      }
+    });
+
     test('does not repeat', () {
       final tokens = {for (var i = 0; i < 1000; i++) AuthTokens.newToken()};
       expect(tokens, hasLength(1000));

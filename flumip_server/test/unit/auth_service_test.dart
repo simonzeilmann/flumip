@@ -1,4 +1,5 @@
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/auth/auth_config.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/auth_tokens.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
@@ -114,9 +115,36 @@ void main() {
       expect(url.queryParameters['nonce'], flow.nonce);
     });
 
+    test('beginFlow says so when sign-in is switched off', () async {
+      // Notably the case after the FLUMIP_AUTH_ENABLED break-glass switch, which
+      // leaves the stored OIDC settings in place. Blaming the provider there
+      // would send an admin debugging the wrong thing.
+      await enableSso(session);
+      final off = AuthRuntime(
+        environment: const {AuthEnv.enabled: 'false'},
+      );
+      sl.registerSingleton<AuthRuntime>(off);
+      addTearDown(() => sl.registerSingleton<AuthRuntime>(
+            AuthRuntime(environment: const {}),
+          ));
+      await off.refresh(session);
+
+      await expectLater(
+        () => authService.beginFlow(session),
+        throwsA(isA<AuthFlowException>().having(
+          (e) => e.message,
+          'message',
+          contains('switched off'),
+        )),
+      );
+    });
+
     test('beginFlow refuses when the configuration is incomplete', () async {
-      // loginRequired stays false, so nothing is configured.
+      final settings = await sl<SettingsService>().getSettings(session);
+      settings.loginRequired = true;
+      await Settings.db.updateRow(session, settings);
       await sl<AuthRuntime>().refresh(session);
+
       await expectLater(
         () => authService.beginFlow(session),
         throwsA(isA<AuthFlowException>().having(

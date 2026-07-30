@@ -11,14 +11,14 @@ void main() {
       );
 
   group('refreshAuthKey', () {
-    test('reports success and exposes the token as a Basic header', () async {
+    test('reports success and exposes the token as a Bearer header', () async {
       final provider = SessionAuthKeyProvider(
         fetchSession: () async => tokenNamed('t1'),
       );
       expect(await provider.refreshAuthKey(), RefreshAuthKeyResult.success);
       expect(
         await provider.authHeaderValue,
-        wrapAsBasicAuthHeaderValue('t1'),
+        wrapAsBearerAuthHeaderValue('t1'),
       );
     });
 
@@ -83,7 +83,7 @@ void main() {
       expect(calls, 2);
       expect(
         await provider.authHeaderValue,
-        wrapAsBasicAuthHeaderValue('t2'),
+        wrapAsBearerAuthHeaderValue('t2'),
       );
     });
 
@@ -187,7 +187,7 @@ void main() {
       );
       expect(
         await provider.authHeaderValue,
-        wrapAsBasicAuthHeaderValue('t1'),
+        wrapAsBearerAuthHeaderValue('t1'),
       );
     });
   });

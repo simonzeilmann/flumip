@@ -71,11 +71,19 @@ class SessionAuthKeyProvider implements RefresherClientAuthKeyProvider {
         SessionAuthKeyProvider(fetchSession: fetchSession),
       );
 
+  /// The `Authorization` header value, or null when there is no token.
+  ///
+  /// **Bearer, not Basic.** Serverpod's `wrapAsBasicAuthHeaderValue` exists for
+  /// its own auth keys, which have the shape `id:hash`; relic's typed
+  /// `authorization` header parser decodes a `Basic` value and splits it on a
+  /// colon, so an opaque token without one is rejected with a 400 *before the
+  /// authentication handler ever runs*. Verified against a running server: the
+  /// same token is a 400 as Basic and fine as Bearer.
   @override
   Future<String?> get authHeaderValue async {
     final token = _token;
     if (token == null) return null;
-    return wrapAsBasicAuthHeaderValue(token);
+    return wrapAsBearerAuthHeaderValue(token);
   }
 
   @override

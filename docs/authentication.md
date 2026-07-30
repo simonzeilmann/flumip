@@ -262,7 +262,7 @@ provider → GET <site>/auth/callback    code exchanged server-to-server
                                        Set-Cookie: flumip_auth (HttpOnly)
                                        redirect to "/"
 app     → GET  <site>/auth/session     cookie traded for a short-lived bearer
-app     → API calls with Authorization: Basic <bearer>
+app     → API calls with Authorization: Bearer <token>
 ```
 
 The cookie is `HttpOnly`, so no script — including a compromised FLUMIP page —
@@ -271,7 +271,10 @@ redirect back from your provider, and `Secure` only when the public scheme is
 `https`, because a `Secure` cookie on a plain-HTTP install is silently discarded.
 
 The API server is a different origin and Serverpod's browser client sends no
-cookies, so API calls carry a bearer token instead. That bearer is short-lived
+cookies, so API calls carry a bearer token instead, in an `Authorization: Bearer`
+header. (Not `Basic`, which Serverpod offers for its own `id:hash` auth keys:
+relic splits a decoded `Basic` value on a colon, so an opaque token without one is
+rejected with a 400 before FLUMIP's own code runs.) That bearer is short-lived
 (30 minutes), held only in memory, and re-minted from the cookie as needed. Signing
 out revokes the browser session, which cascades to every bearer minted from it, so
 other tabs lose access too.
