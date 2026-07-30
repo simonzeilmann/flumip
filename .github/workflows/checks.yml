@@ -20,8 +20,9 @@ on:
         type: string
       run_tests:
         description: >-
-          Whether to run the unit-test job. PR checks set this to false for fast
-          feedback; every push pipeline leaves it on.
+          Whether to run the unit-test job. Every push pipeline leaves it on.
+          pr.yml turns it off only for a pull request from a fork, where the
+          database secrets the job needs are not available.
         required: false
         default: true
         type: boolean
