@@ -54,15 +54,50 @@ void main() {
       );
     }, tags: ['unit']);
 
-    test('getSettings resets to a single default row when duplicated',
-        () async {
-      // Seed two rows so there is not exactly one; getSettings must reset.
+    test('getSettings never discards the existing row', () async {
+      final original = await settingsService.getSettings(session);
+      original.settingsPassword = 'not-the-default';
+      original.loginRequired = true;
+      await settingsService.updateSettings(session, original);
+
+      // A second read must not reset the row back to its defaults: doing so
+      // would restore settingsPassword = "changeme" and loginRequired = false.
+      final reread = await settingsService.getSettings(session);
+      expect(reread.id, original.id);
+      expect(reread.settingsPassword, 'not-the-default');
+      expect(reread.loginRequired, isTrue);
+    }, tags: ['unit']);
+
+    test('getSettings dedupes to the lowest id and keeps its values', () async {
+      final kept = await settingsService.getSettings(session);
+      kept.settingsPassword = 'keep-me';
+      await settingsService.updateSettings(session, kept);
+
+      // Seed extra rows so there is not exactly one.
       await Settings.db.insertRow(session, Settings());
       await Settings.db.insertRow(session, Settings());
+
       final settings = await settingsService.getSettings(session);
-      expect(settings.baseDir, '/opt/flumip');
+      expect(settings.id, kept.id);
+      expect(settings.settingsPassword, 'keep-me');
       final all = await Settings.db.find(session, where: (t) => t.id > 0);
       expect(all.length, 1);
+    }, tags: ['unit']);
+
+    test('updateSettings merges onto the stored row rather than replacing it',
+        () async {
+      final stored = await settingsService.getSettings(session);
+
+      // Simulates what the Flutter settings tab sends: a fresh object built
+      // from the form controllers, carrying the stored row's id.
+      final fromClient = Settings()
+        ..id = stored.id
+        ..smtpServer = 'smtp.example.org';
+      await settingsService.updateSettings(session, fromClient);
+
+      final reread = await settingsService.getSettings(session);
+      expect(reread.id, stored.id);
+      expect(reread.smtpServer, 'smtp.example.org');
     }, tags: ['unit']);
   });
 }
