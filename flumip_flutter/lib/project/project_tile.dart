@@ -7,6 +7,7 @@ import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../error_text.dart';
 
 final String siteUrl = resolveSiteUrl();
 
@@ -103,8 +104,16 @@ class _ProjectTileState extends State<ProjectTile> {
         }
       });
     } catch (e) {
+      // Stop the ten-second poll when the answer will not change. Without this,
+      // a project that has stopped being ours mid-session — revoked session,
+      // ownership reassigned — re-reports the same refusal every ten seconds for
+      // as long as the tile stays expanded.
+      if (isAccessDenied(e)) {
+        _timer?.cancel();
+        _timer = null;
+      }
       setState(() {
-        _errorMessage = 'Failed to reload project: $e';
+        _errorMessage = 'Failed to reload project: ${describeError(e)}';
       });
     }
   }
@@ -115,9 +124,9 @@ class _ProjectTileState extends State<ProjectTile> {
       await _reloadProject();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add gene: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add gene: ${describeError(e)}')),
+        );
       }
     }
   }
@@ -128,9 +137,9 @@ class _ProjectTileState extends State<ProjectTile> {
       await _reloadProject();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to remove gene: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove gene: ${describeError(e)}')),
+        );
       }
     }
   }
@@ -153,7 +162,9 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create BED file: $e')),
+          SnackBar(
+            content: Text('Failed to create BED file: ${describeError(e)}'),
+          ),
         );
       }
     }
@@ -182,9 +193,11 @@ class _ProjectTileState extends State<ProjectTile> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to generate MIPs: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate MIPs: ${describeError(e)}'),
+          ),
+        );
       }
     }
   }
@@ -243,7 +256,9 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load MIPs result: $e')),
+          SnackBar(
+            content: Text('Failed to load MIPs result: ${describeError(e)}'),
+          ),
         );
       }
     }
@@ -305,7 +320,11 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
+          SnackBar(
+            content: Text(
+              'Failed to load SNP MIPs result: ${describeError(e)}',
+            ),
+          ),
         );
       }
     }
@@ -341,9 +360,11 @@ class _ProjectTileState extends State<ProjectTile> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load progress: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load progress: ${describeError(e)}'),
+          ),
+        );
       }
     }
   }
@@ -383,7 +404,16 @@ class _ProjectTileState extends State<ProjectTile> {
     return ranges;
   }
 
-  Map<String, String> _generateUCSCTrackUrl(List<String> track) {
+  /// Builds one UCSC Genome Browser URL per genome range in [track].
+  ///
+  /// [trackToken] keys the public `/ucsc_track/<token>` URL that UCSC will fetch.
+  /// It used to be `widget.project.id`, which made every project's track readable
+  /// and enumerable by anyone who could reach the port; the token comes from
+  /// `client.file.getUcscTrackToken`, which checks access before releasing it.
+  Map<String, String> _generateUCSCTrackUrl(
+    List<String> track,
+    String trackToken,
+  ) {
     String url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?';
     switch (genome.name) {
       case 'hg18':
@@ -404,8 +434,15 @@ class _ProjectTileState extends State<ProjectTile> {
 
     var genomeRanges = _getGenomeRanges(track);
     for (var range in genomeRanges) {
-      map[range.name] = url +=
-          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=$siteUrl/ucsc_track/${widget.project.id}';
+      // `url +` and not `url +=`. This was `+=`, which mutated the shared base on
+      // every iteration, so with two ranges the second URL carried the first
+      // range's `&position=` as well and UCSC was handed two conflicting
+      // positions. Only projects with more than one range were affected, which is
+      // presumably why it went unnoticed. Corrected here because this line is
+      // being rewritten anyway; it is not part of the authorization change.
+      map[range.name] =
+          '$url&position=${range.name}:${range.start}-${range.end} '
+          '&hgt.customText=$siteUrl/ucsc_track/$trackToken';
     }
 
     return map;
@@ -439,7 +476,33 @@ class _ProjectTileState extends State<ProjectTile> {
                 if (result.isNotEmpty)
                   TextButton(
                     onPressed: () async {
-                      var ucscTrack = _generateUCSCTrackUrl(result);
+                      // Fetched here rather than with the track itself so the
+                      // token is only ever minted when somebody actually opens
+                      // UCSC.
+                      final String trackToken;
+                      try {
+                        trackToken = await client.file.getUcscTrackToken(
+                          widget.project.id!,
+                        );
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Could not build the UCSC track link: '
+                                '${describeError(e)}',
+                              ),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      // `context` here belongs to the dialog builder, not to the
+                      // State, so State.mounted says nothing about it — hence
+                      // context.mounted rather than the mounted check used
+                      // elsewhere in this file.
+                      if (!context.mounted) return;
+                      var ucscTrack = _generateUCSCTrackUrl(result, trackToken);
                       if (ucscTrack.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("No UCSC Track found")),
@@ -512,7 +575,11 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
+          SnackBar(
+            content: Text(
+              'Failed to load SNP MIPs result: ${describeError(e)}',
+            ),
+          ),
         );
       }
     }
@@ -551,7 +618,7 @@ class _ProjectTileState extends State<ProjectTile> {
       cat.sort((a, b) => a.compareTo(b));
       return cat;
     } catch (e) {
-      _errorMessage = 'Failed to load gene categories: $e';
+      _errorMessage = 'Failed to load gene categories: ${describeError(e)}';
       return [];
     }
   }
@@ -560,7 +627,7 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       return await client.genome.getGenomeByCategory(category);
     } catch (e) {
-      _errorMessage = 'Failed to load genes for category: $e';
+      _errorMessage = 'Failed to load genes for category: ${describeError(e)}';
       return [];
     }
   }
@@ -569,7 +636,7 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       return await client.genome.getAllSnpForGenome(geneId);
     } catch (e) {
-      _errorMessage = 'Failed to load snps for genome: $e';
+      _errorMessage = 'Failed to load snps for genome: ${describeError(e)}';
       return [];
     }
   }
@@ -579,7 +646,7 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.setGeneById(widget.project.id!, geneId);
       await _reloadProject();
     } catch (e) {
-      _errorMessage = 'Failed to set genome: $e';
+      _errorMessage = 'Failed to set genome: ${describeError(e)}';
     }
   }
 
@@ -588,7 +655,7 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.setSnpById(widget.project.id!, snpId);
       await _reloadProject();
     } catch (e) {
-      _errorMessage = 'Failed to set snp: $e';
+      _errorMessage = 'Failed to set snp: ${describeError(e)}';
     }
   }
 

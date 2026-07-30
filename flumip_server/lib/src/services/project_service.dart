@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -56,6 +57,13 @@ class ProjectService {
       description: desc,
       folderName: Uuid().v7(),
       options: options.id!,
+      // Null while single sign-on is off, which is what keeps every project on a
+      // no-auth install unowned and therefore shared. Stamping is done here
+      // rather than in the endpoint because it populates data; the *checks* live
+      // at the endpoint boundary, where unauthenticated future calls cannot trip
+      // over them.
+      owner: await authz.ownerForNewProject(session),
+      trackToken: Uuid().v7(),
     );
     var project = await Project.db.insertRow(session, projectRow);
 
@@ -223,7 +231,42 @@ class ProjectService {
     }
   }
 
-  /// Retrieves all projects.
+  /// The token for this project's public `/ucsc_track/<token>` URL, minting one
+  /// if the project does not have it yet.
+  ///
+  /// Projects created before the token existed have null here, so this fills it
+  /// in on first request rather than in a migration — generating per-row UUIDs in
+  /// SQL would have meant hand-editing generated migration output, which the next
+  /// `serverpod create-migration` could quietly undo.
+  ///
+  /// The caller is responsible for the access check; this is reached through
+  /// `FileEndpoint.getUcscTrackToken`, which does it.
+  Future<String> ensureTrackToken(Session session, int id) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(message: 'Project not found');
+    }
+
+    final existing = project.trackToken;
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final token = Uuid().v7();
+    project.trackToken = token;
+    await Project.db.updateRow(session, project);
+    session.log(
+      "Minted a UCSC track token for project ID: $id",
+      level: LogLevel.info,
+    );
+    return token;
+  }
+
+  /// Retrieves all projects, **without any access filtering**.
+  ///
+  /// Not what an endpoint wants. `ProjectEndpoint.getProjects` goes through
+  /// `AuthorizationService.visibleProjects`, which applies the same predicate the
+  /// per-project gate uses. This stays as the unfiltered primitive for internal
+  /// callers that legitimately need every row.
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.

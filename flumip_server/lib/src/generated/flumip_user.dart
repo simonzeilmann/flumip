@@ -193,69 +193,34 @@ class _FlumipUserImpl extends FlumipUser {
 class FlumipUserUpdateTable extends _i1.UpdateTable<FlumipUserTable> {
   FlumipUserUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> email(String value) => _i1.ColumnValue(
-    table.email,
-    value,
-  );
+  _i1.ColumnValue<String, String> email(String value) =>
+      _i1.ColumnValue(table.email, value);
 
-  _i1.ColumnValue<String, String> subject(String value) => _i1.ColumnValue(
-    table.subject,
-    value,
-  );
+  _i1.ColumnValue<String, String> subject(String value) =>
+      _i1.ColumnValue(table.subject, value);
 
-  _i1.ColumnValue<String, String> issuer(String value) => _i1.ColumnValue(
-    table.issuer,
-    value,
-  );
+  _i1.ColumnValue<String, String> issuer(String value) =>
+      _i1.ColumnValue(table.issuer, value);
 
-  _i1.ColumnValue<String, String> displayName(String value) => _i1.ColumnValue(
-    table.displayName,
-    value,
-  );
+  _i1.ColumnValue<String, String> displayName(String value) =>
+      _i1.ColumnValue(table.displayName, value);
 
   _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+      _i1.ColumnValue(table.created, value);
 
   _i1.ColumnValue<DateTime, DateTime> lastLogin(DateTime value) =>
-      _i1.ColumnValue(
-        table.lastLogin,
-        value,
-      );
+      _i1.ColumnValue(table.lastLogin, value);
 }
 
 class FlumipUserTable extends _i1.Table<int?> {
   FlumipUserTable({super.tableRelation}) : super(tableName: 'flumip_user') {
     updateTable = FlumipUserUpdateTable(this);
-    email = _i1.ColumnString(
-      'email',
-      this,
-    );
-    subject = _i1.ColumnString(
-      'subject',
-      this,
-    );
-    issuer = _i1.ColumnString(
-      'issuer',
-      this,
-    );
-    displayName = _i1.ColumnString(
-      'displayName',
-      this,
-      hasDefault: true,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
-    lastLogin = _i1.ColumnDateTime(
-      'lastLogin',
-      this,
-      hasDefault: true,
-    );
+    email = _i1.ColumnString('email', this);
+    subject = _i1.ColumnString('subject', this);
+    issuer = _i1.ColumnString('issuer', this);
+    displayName = _i1.ColumnString('displayName', this, hasDefault: true);
+    created = _i1.ColumnDateTime('created', this, hasDefault: true);
+    lastLogin = _i1.ColumnDateTime('lastLogin', this, hasDefault: true);
   }
 
   late final FlumipUserUpdateTable updateTable;
@@ -451,10 +416,7 @@ class FlumipUserRepository {
     FlumipUser row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<FlumipUser>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<FlumipUser>(row, transaction: transaction);
   }
 
   /// Updates all [FlumipUser]s in the list and returns the updated rows. If
@@ -539,10 +501,7 @@ class FlumipUserRepository {
     List<FlumipUser> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<FlumipUser>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<FlumipUser>(rows, transaction: transaction);
   }
 
   /// Deletes a single [FlumipUser].
@@ -551,10 +510,7 @@ class FlumipUserRepository {
     FlumipUser row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<FlumipUser>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<FlumipUser>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

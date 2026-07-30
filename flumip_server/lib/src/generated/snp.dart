@@ -214,85 +214,42 @@ class _SnpImpl extends Snp {
 class SnpUpdateTable extends _i1.UpdateTable<SnpTable> {
   SnpUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
-    table.name,
-    value,
-  );
+  _i1.ColumnValue<String, String> name(String value) =>
+      _i1.ColumnValue(table.name, value);
 
-  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
-    table.description,
-    value,
-  );
+  _i1.ColumnValue<String, String> description(String value) =>
+      _i1.ColumnValue(table.description, value);
 
-  _i1.ColumnValue<String, String> vcfPath(String value) => _i1.ColumnValue(
-    table.vcfPath,
-    value,
-  );
+  _i1.ColumnValue<String, String> vcfPath(String value) =>
+      _i1.ColumnValue(table.vcfPath, value);
 
-  _i1.ColumnValue<String, String> tbiPath(String value) => _i1.ColumnValue(
-    table.tbiPath,
-    value,
-  );
+  _i1.ColumnValue<String, String> tbiPath(String value) =>
+      _i1.ColumnValue(table.tbiPath, value);
 
-  _i1.ColumnValue<String, String> folder(String value) => _i1.ColumnValue(
-    table.folder,
-    value,
-  );
+  _i1.ColumnValue<String, String> folder(String value) =>
+      _i1.ColumnValue(table.folder, value);
 
-  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
-    table.active,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> active(bool value) =>
+      _i1.ColumnValue(table.active, value);
 
-  _i1.ColumnValue<bool, bool> private(bool value) => _i1.ColumnValue(
-    table.private,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> private(bool value) =>
+      _i1.ColumnValue(table.private, value);
 
-  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
-    table.size,
-    value,
-  );
+  _i1.ColumnValue<int, int> size(int value) =>
+      _i1.ColumnValue(table.size, value);
 }
 
 class SnpTable extends _i1.Table<int?> {
   SnpTable({super.tableRelation}) : super(tableName: 'snp') {
     updateTable = SnpUpdateTable(this);
-    name = _i1.ColumnString(
-      'name',
-      this,
-    );
-    description = _i1.ColumnString(
-      'description',
-      this,
-      hasDefault: true,
-    );
-    vcfPath = _i1.ColumnString(
-      'vcfPath',
-      this,
-    );
-    tbiPath = _i1.ColumnString(
-      'tbiPath',
-      this,
-    );
-    folder = _i1.ColumnString(
-      'folder',
-      this,
-    );
-    active = _i1.ColumnBool(
-      'active',
-      this,
-    );
-    private = _i1.ColumnBool(
-      'private',
-      this,
-      hasDefault: true,
-    );
-    size = _i1.ColumnInt(
-      'size',
-      this,
-      hasDefault: true,
-    );
+    name = _i1.ColumnString('name', this);
+    description = _i1.ColumnString('description', this, hasDefault: true);
+    vcfPath = _i1.ColumnString('vcfPath', this);
+    tbiPath = _i1.ColumnString('tbiPath', this);
+    folder = _i1.ColumnString('folder', this);
+    active = _i1.ColumnBool('active', this);
+    private = _i1.ColumnBool('private', this, hasDefault: true);
+    size = _i1.ColumnInt('size', this, hasDefault: true);
   }
 
   late final SnpUpdateTable updateTable;
@@ -494,10 +451,7 @@ class SnpRepository {
     Snp row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Snp>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<Snp>(row, transaction: transaction);
   }
 
   /// Updates all [Snp]s in the list and returns the updated rows. If
@@ -582,10 +536,7 @@ class SnpRepository {
     List<Snp> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<Snp>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<Snp>(rows, transaction: transaction);
   }
 
   /// Deletes a single [Snp].
@@ -594,10 +545,7 @@ class SnpRepository {
     Snp row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Snp>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Snp>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

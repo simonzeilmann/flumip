@@ -297,144 +297,66 @@ class _GenomeImpl extends Genome {
 class GenomeUpdateTable extends _i1.UpdateTable<GenomeTable> {
   GenomeUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
-    table.name,
-    value,
-  );
+  _i1.ColumnValue<String, String> name(String value) =>
+      _i1.ColumnValue(table.name, value);
 
-  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
-    table.description,
-    value,
-  );
+  _i1.ColumnValue<String, String> description(String value) =>
+      _i1.ColumnValue(table.description, value);
 
-  _i1.ColumnValue<String, String> path(String? value) => _i1.ColumnValue(
-    table.path,
-    value,
-  );
+  _i1.ColumnValue<String, String> path(String? value) =>
+      _i1.ColumnValue(table.path, value);
 
-  _i1.ColumnValue<String, String> fastaPath(String? value) => _i1.ColumnValue(
-    table.fastaPath,
-    value,
-  );
+  _i1.ColumnValue<String, String> fastaPath(String? value) =>
+      _i1.ColumnValue(table.fastaPath, value);
 
-  _i1.ColumnValue<String, String> refPath(String? value) => _i1.ColumnValue(
-    table.refPath,
-    value,
-  );
+  _i1.ColumnValue<String, String> refPath(String? value) =>
+      _i1.ColumnValue(table.refPath, value);
 
-  _i1.ColumnValue<String, String> snpFolder(String? value) => _i1.ColumnValue(
-    table.snpFolder,
-    value,
-  );
+  _i1.ColumnValue<String, String> snpFolder(String? value) =>
+      _i1.ColumnValue(table.snpFolder, value);
 
   _i1.ColumnValue<List<int>, List<int>> snp(List<int>? value) =>
-      _i1.ColumnValue(
-        table.snp,
-        value,
-      );
+      _i1.ColumnValue(table.snp, value);
 
-  _i1.ColumnValue<String, String> category(String? value) => _i1.ColumnValue(
-    table.category,
-    value,
-  );
+  _i1.ColumnValue<String, String> category(String? value) =>
+      _i1.ColumnValue(table.category, value);
 
-  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
-    table.active,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> active(bool value) =>
+      _i1.ColumnValue(table.active, value);
 
-  _i1.ColumnValue<bool, bool> indexed(bool value) => _i1.ColumnValue(
-    table.indexed,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> indexed(bool value) =>
+      _i1.ColumnValue(table.indexed, value);
 
-  _i1.ColumnValue<bool, bool> indexing(bool value) => _i1.ColumnValue(
-    table.indexing,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> indexing(bool value) =>
+      _i1.ColumnValue(table.indexing, value);
 
-  _i1.ColumnValue<int, int> indexPID(int value) => _i1.ColumnValue(
-    table.indexPID,
-    value,
-  );
+  _i1.ColumnValue<int, int> indexPID(int value) =>
+      _i1.ColumnValue(table.indexPID, value);
 
-  _i1.ColumnValue<int, int> indexResults(int value) => _i1.ColumnValue(
-    table.indexResults,
-    value,
-  );
+  _i1.ColumnValue<int, int> indexResults(int value) =>
+      _i1.ColumnValue(table.indexResults, value);
 
-  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
-    table.size,
-    value,
-  );
+  _i1.ColumnValue<int, int> size(int value) =>
+      _i1.ColumnValue(table.size, value);
 }
 
 class GenomeTable extends _i1.Table<int?> {
   GenomeTable({super.tableRelation}) : super(tableName: 'genome') {
     updateTable = GenomeUpdateTable(this);
-    name = _i1.ColumnString(
-      'name',
-      this,
-    );
-    description = _i1.ColumnString(
-      'description',
-      this,
-      hasDefault: true,
-    );
-    path = _i1.ColumnString(
-      'path',
-      this,
-    );
-    fastaPath = _i1.ColumnString(
-      'fastaPath',
-      this,
-    );
-    refPath = _i1.ColumnString(
-      'refPath',
-      this,
-    );
-    snpFolder = _i1.ColumnString(
-      'snpFolder',
-      this,
-    );
-    snp = _i1.ColumnSerializable<List<int>>(
-      'snp',
-      this,
-    );
-    category = _i1.ColumnString(
-      'category',
-      this,
-    );
-    active = _i1.ColumnBool(
-      'active',
-      this,
-      hasDefault: true,
-    );
-    indexed = _i1.ColumnBool(
-      'indexed',
-      this,
-      hasDefault: true,
-    );
-    indexing = _i1.ColumnBool(
-      'indexing',
-      this,
-      hasDefault: true,
-    );
-    indexPID = _i1.ColumnInt(
-      'indexPID',
-      this,
-      hasDefault: true,
-    );
-    indexResults = _i1.ColumnInt(
-      'indexResults',
-      this,
-      hasDefault: true,
-    );
-    size = _i1.ColumnInt(
-      'size',
-      this,
-      hasDefault: true,
-    );
+    name = _i1.ColumnString('name', this);
+    description = _i1.ColumnString('description', this, hasDefault: true);
+    path = _i1.ColumnString('path', this);
+    fastaPath = _i1.ColumnString('fastaPath', this);
+    refPath = _i1.ColumnString('refPath', this);
+    snpFolder = _i1.ColumnString('snpFolder', this);
+    snp = _i1.ColumnSerializable<List<int>>('snp', this);
+    category = _i1.ColumnString('category', this);
+    active = _i1.ColumnBool('active', this, hasDefault: true);
+    indexed = _i1.ColumnBool('indexed', this, hasDefault: true);
+    indexing = _i1.ColumnBool('indexing', this, hasDefault: true);
+    indexPID = _i1.ColumnInt('indexPID', this, hasDefault: true);
+    indexResults = _i1.ColumnInt('indexResults', this, hasDefault: true);
+    size = _i1.ColumnInt('size', this, hasDefault: true);
   }
 
   late final GenomeUpdateTable updateTable;
@@ -654,10 +576,7 @@ class GenomeRepository {
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Genome>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<Genome>(row, transaction: transaction);
   }
 
   /// Updates all [Genome]s in the list and returns the updated rows. If
@@ -742,10 +661,7 @@ class GenomeRepository {
     List<Genome> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<Genome>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<Genome>(rows, transaction: transaction);
   }
 
   /// Deletes a single [Genome].
@@ -754,10 +670,7 @@ class GenomeRepository {
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Genome>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Genome>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

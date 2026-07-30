@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import 'create_project_widget.dart';
+import '../error_text.dart';
 
 class ProjectsTab extends StatefulWidget {
   const ProjectsTab({super.key});
@@ -32,7 +33,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = '$e';
+        _errorMessage = describeError(e);
       });
     }
   }
@@ -43,7 +44,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
       _fetchProjects();
     } catch (e) {
       setState(() {
-        _errorMessage = '$e';
+        _errorMessage = describeError(e);
       });
     }
   }

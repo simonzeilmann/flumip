@@ -499,192 +499,101 @@ class _SettingsImpl extends Settings {
 class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
   SettingsUpdateTable(super.table);
 
-  _i1.ColumnValue<bool, bool> demoMode(bool value) => _i1.ColumnValue(
-    table.demoMode,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> demoMode(bool value) =>
+      _i1.ColumnValue(table.demoMode, value);
 
-  _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
-    table.baseDir,
-    value,
-  );
+  _i1.ColumnValue<String, String> baseDir(String value) =>
+      _i1.ColumnValue(table.baseDir, value);
 
-  _i1.ColumnValue<String, String> projectDir(String value) => _i1.ColumnValue(
-    table.projectDir,
-    value,
-  );
+  _i1.ColumnValue<String, String> projectDir(String value) =>
+      _i1.ColumnValue(table.projectDir, value);
 
-  _i1.ColumnValue<String, String> genomeDir(String value) => _i1.ColumnValue(
-    table.genomeDir,
-    value,
-  );
+  _i1.ColumnValue<String, String> genomeDir(String value) =>
+      _i1.ColumnValue(table.genomeDir, value);
 
-  _i1.ColumnValue<String, String> customSnpDir(String value) => _i1.ColumnValue(
-    table.customSnpDir,
-    value,
-  );
+  _i1.ColumnValue<String, String> customSnpDir(String value) =>
+      _i1.ColumnValue(table.customSnpDir, value);
 
-  _i1.ColumnValue<String, String> toolsDir(String value) => _i1.ColumnValue(
-    table.toolsDir,
-    value,
-  );
+  _i1.ColumnValue<String, String> toolsDir(String value) =>
+      _i1.ColumnValue(table.toolsDir, value);
 
   _i1.ColumnValue<String, String> mipgenExecutable(String value) =>
-      _i1.ColumnValue(
-        table.mipgenExecutable,
-        value,
-      );
+      _i1.ColumnValue(table.mipgenExecutable, value);
 
   _i1.ColumnValue<String, String> exonExtractScript(String value) =>
-      _i1.ColumnValue(
-        table.exonExtractScript,
-        value,
-      );
+      _i1.ColumnValue(table.exonExtractScript, value);
 
   _i1.ColumnValue<String, String> ucscTrackGenerator(String value) =>
-      _i1.ColumnValue(
-        table.ucscTrackGenerator,
-        value,
-      );
+      _i1.ColumnValue(table.ucscTrackGenerator, value);
 
   _i1.ColumnValue<String, String> binCreationScript(String value) =>
-      _i1.ColumnValue(
-        table.binCreationScript,
-        value,
-      );
+      _i1.ColumnValue(table.binCreationScript, value);
 
   _i1.ColumnValue<String, String> bigGenePredToGenePredExecutable(
     String value,
-  ) => _i1.ColumnValue(
-    table.bigGenePredToGenePredExecutable,
-    value,
-  );
+  ) => _i1.ColumnValue(table.bigGenePredToGenePredExecutable, value);
 
-  _i1.ColumnValue<bool, bool> mailActive(bool value) => _i1.ColumnValue(
-    table.mailActive,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> mailActive(bool value) =>
+      _i1.ColumnValue(table.mailActive, value);
 
-  _i1.ColumnValue<String, String> smtpServer(String value) => _i1.ColumnValue(
-    table.smtpServer,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpServer(String value) =>
+      _i1.ColumnValue(table.smtpServer, value);
 
-  _i1.ColumnValue<int, int> smtpPort(int value) => _i1.ColumnValue(
-    table.smtpPort,
-    value,
-  );
+  _i1.ColumnValue<int, int> smtpPort(int value) =>
+      _i1.ColumnValue(table.smtpPort, value);
 
-  _i1.ColumnValue<String, String> smtpUser(String value) => _i1.ColumnValue(
-    table.smtpUser,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpUser(String value) =>
+      _i1.ColumnValue(table.smtpUser, value);
 
-  _i1.ColumnValue<String, String> smtpPassword(String value) => _i1.ColumnValue(
-    table.smtpPassword,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpPassword(String value) =>
+      _i1.ColumnValue(table.smtpPassword, value);
 
-  _i1.ColumnValue<String, String> smtpFrom(String value) => _i1.ColumnValue(
-    table.smtpFrom,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpFrom(String value) =>
+      _i1.ColumnValue(table.smtpFrom, value);
 
-  _i1.ColumnValue<bool, bool> startTLS(bool value) => _i1.ColumnValue(
-    table.startTLS,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> startTLS(bool value) =>
+      _i1.ColumnValue(table.startTLS, value);
 
-  _i1.ColumnValue<bool, bool> loginRequired(bool value) => _i1.ColumnValue(
-    table.loginRequired,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> loginRequired(bool value) =>
+      _i1.ColumnValue(table.loginRequired, value);
 
   _i1.ColumnValue<String, String> settingsPassword(String value) =>
-      _i1.ColumnValue(
-        table.settingsPassword,
-        value,
-      );
+      _i1.ColumnValue(table.settingsPassword, value);
 
-  _i1.ColumnValue<String, String> oidcIssuer(String value) => _i1.ColumnValue(
-    table.oidcIssuer,
-    value,
-  );
+  _i1.ColumnValue<String, String> oidcIssuer(String value) =>
+      _i1.ColumnValue(table.oidcIssuer, value);
 
-  _i1.ColumnValue<String, String> oidcClientId(String value) => _i1.ColumnValue(
-    table.oidcClientId,
-    value,
-  );
+  _i1.ColumnValue<String, String> oidcClientId(String value) =>
+      _i1.ColumnValue(table.oidcClientId, value);
 
   _i1.ColumnValue<String, String> oidcClientSecret(String? value) =>
-      _i1.ColumnValue(
-        table.oidcClientSecret,
-        value,
-      );
+      _i1.ColumnValue(table.oidcClientSecret, value);
 
-  _i1.ColumnValue<String, String> oidcScopes(String value) => _i1.ColumnValue(
-    table.oidcScopes,
-    value,
-  );
+  _i1.ColumnValue<String, String> oidcScopes(String value) =>
+      _i1.ColumnValue(table.oidcScopes, value);
 
   _i1.ColumnValue<String, String> oidcButtonLabel(String value) =>
-      _i1.ColumnValue(
-        table.oidcButtonLabel,
-        value,
-      );
+      _i1.ColumnValue(table.oidcButtonLabel, value);
 
   _i1.ColumnValue<String, String> oidcAllowedEmailDomains(String value) =>
-      _i1.ColumnValue(
-        table.oidcAllowedEmailDomains,
-        value,
-      );
+      _i1.ColumnValue(table.oidcAllowedEmailDomains, value);
 
   _i1.ColumnValue<String, String> oidcAdminEmails(String value) =>
-      _i1.ColumnValue(
-        table.oidcAdminEmails,
-        value,
-      );
+      _i1.ColumnValue(table.oidcAdminEmails, value);
 
   _i1.ColumnValue<String, String> authPublicUrl(String value) =>
-      _i1.ColumnValue(
-        table.authPublicUrl,
-        value,
-      );
+      _i1.ColumnValue(table.authPublicUrl, value);
 }
 
 class SettingsTable extends _i1.Table<int?> {
   SettingsTable({super.tableRelation}) : super(tableName: 'settings') {
     updateTable = SettingsUpdateTable(this);
-    demoMode = _i1.ColumnBool(
-      'demoMode',
-      this,
-      hasDefault: true,
-    );
-    baseDir = _i1.ColumnString(
-      'baseDir',
-      this,
-      hasDefault: true,
-    );
-    projectDir = _i1.ColumnString(
-      'projectDir',
-      this,
-      hasDefault: true,
-    );
-    genomeDir = _i1.ColumnString(
-      'genomeDir',
-      this,
-      hasDefault: true,
-    );
-    customSnpDir = _i1.ColumnString(
-      'customSnpDir',
-      this,
-      hasDefault: true,
-    );
-    toolsDir = _i1.ColumnString(
-      'toolsDir',
-      this,
-      hasDefault: true,
-    );
+    demoMode = _i1.ColumnBool('demoMode', this, hasDefault: true);
+    baseDir = _i1.ColumnString('baseDir', this, hasDefault: true);
+    projectDir = _i1.ColumnString('projectDir', this, hasDefault: true);
+    genomeDir = _i1.ColumnString('genomeDir', this, hasDefault: true);
+    customSnpDir = _i1.ColumnString('customSnpDir', this, hasDefault: true);
+    toolsDir = _i1.ColumnString('toolsDir', this, hasDefault: true);
     mipgenExecutable = _i1.ColumnString(
       'mipgenExecutable',
       this,
@@ -710,70 +619,23 @@ class SettingsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
-    mailActive = _i1.ColumnBool(
-      'mailActive',
-      this,
-      hasDefault: true,
-    );
-    smtpServer = _i1.ColumnString(
-      'smtpServer',
-      this,
-      hasDefault: true,
-    );
-    smtpPort = _i1.ColumnInt(
-      'smtpPort',
-      this,
-      hasDefault: true,
-    );
-    smtpUser = _i1.ColumnString(
-      'smtpUser',
-      this,
-      hasDefault: true,
-    );
-    smtpPassword = _i1.ColumnString(
-      'smtpPassword',
-      this,
-      hasDefault: true,
-    );
-    smtpFrom = _i1.ColumnString(
-      'smtpFrom',
-      this,
-      hasDefault: true,
-    );
-    startTLS = _i1.ColumnBool(
-      'startTLS',
-      this,
-      hasDefault: true,
-    );
-    loginRequired = _i1.ColumnBool(
-      'loginRequired',
-      this,
-      hasDefault: true,
-    );
+    mailActive = _i1.ColumnBool('mailActive', this, hasDefault: true);
+    smtpServer = _i1.ColumnString('smtpServer', this, hasDefault: true);
+    smtpPort = _i1.ColumnInt('smtpPort', this, hasDefault: true);
+    smtpUser = _i1.ColumnString('smtpUser', this, hasDefault: true);
+    smtpPassword = _i1.ColumnString('smtpPassword', this, hasDefault: true);
+    smtpFrom = _i1.ColumnString('smtpFrom', this, hasDefault: true);
+    startTLS = _i1.ColumnBool('startTLS', this, hasDefault: true);
+    loginRequired = _i1.ColumnBool('loginRequired', this, hasDefault: true);
     settingsPassword = _i1.ColumnString(
       'settingsPassword',
       this,
       hasDefault: true,
     );
-    oidcIssuer = _i1.ColumnString(
-      'oidcIssuer',
-      this,
-      hasDefault: true,
-    );
-    oidcClientId = _i1.ColumnString(
-      'oidcClientId',
-      this,
-      hasDefault: true,
-    );
-    oidcClientSecret = _i1.ColumnString(
-      'oidcClientSecret',
-      this,
-    );
-    oidcScopes = _i1.ColumnString(
-      'oidcScopes',
-      this,
-      hasDefault: true,
-    );
+    oidcIssuer = _i1.ColumnString('oidcIssuer', this, hasDefault: true);
+    oidcClientId = _i1.ColumnString('oidcClientId', this, hasDefault: true);
+    oidcClientSecret = _i1.ColumnString('oidcClientSecret', this);
+    oidcScopes = _i1.ColumnString('oidcScopes', this, hasDefault: true);
     oidcButtonLabel = _i1.ColumnString(
       'oidcButtonLabel',
       this,
@@ -789,11 +651,7 @@ class SettingsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
-    authPublicUrl = _i1.ColumnString(
-      'authPublicUrl',
-      this,
-      hasDefault: true,
-    );
+    authPublicUrl = _i1.ColumnString('authPublicUrl', this, hasDefault: true);
   }
 
   late final SettingsUpdateTable updateTable;
@@ -1055,10 +913,7 @@ class SettingsRepository {
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Settings>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<Settings>(row, transaction: transaction);
   }
 
   /// Updates all [Settings]s in the list and returns the updated rows. If
@@ -1143,10 +998,7 @@ class SettingsRepository {
     List<Settings> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<Settings>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<Settings>(rows, transaction: transaction);
   }
 
   /// Deletes a single [Settings].
@@ -1155,10 +1007,7 @@ class SettingsRepository {
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Settings>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Settings>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

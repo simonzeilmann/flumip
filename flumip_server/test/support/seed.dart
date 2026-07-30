@@ -71,6 +71,8 @@ Future<Project> seedProject(
   int? pid,
   bool active = false,
   DateTime? started,
+  int? owner,
+  String? trackToken,
 }) {
   return Project.db.insertRow(
     session,
@@ -84,8 +86,45 @@ Future<Project> seedProject(
       pid: pid,
       active: active,
       started: started,
+      // Null owner is the default on purpose: it is what every project on an
+      // install that predates authorization has, and what projects created while
+      // single sign-on is off keep having.
+      owner: owner,
+      trackToken: trackToken,
     ),
   );
+}
+
+/// Inserts a [FlumipUser] and an [AuthSession] for it, and returns both.
+///
+/// Authorization tests need a *real* AuthSession row, not just an
+/// [AuthenticationOverride]: `AuthorizationService` resolves the caller's user id
+/// by parsing `AuthenticationInfo.authId` as an AuthSession id and reading that
+/// row. Overriding the authentication without seeding the row yields a principal
+/// with a null `userId`, which can never own anything — so the ownership rules
+/// would look broken while actually being untested.
+Future<({FlumipUser user, AuthSession authSession})> seedSignedInUser(
+  Session session, {
+  required String email,
+  String issuer = 'https://idp.example.org',
+  bool isAdmin = false,
+  Duration validFor = const Duration(hours: 1),
+}) async {
+  final user = await FlumipUser.db.insertRow(
+    session,
+    FlumipUser(email: email, subject: email, issuer: issuer),
+  );
+  final authSession = await AuthSession.db.insertRow(
+    session,
+    AuthSession(
+      userId: user.id!,
+      cookieHash: 'cookie-hash-for-$email',
+      email: email,
+      isAdmin: isAdmin,
+      expires: DateTime.now().toUtc().add(validFor),
+    ),
+  );
+  return (user: user, authSession: authSession);
 }
 
 Future<ProjectOptions> seedOptions(Session session) {

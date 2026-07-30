@@ -29,48 +29,13 @@ class Endpoints extends _i1.EndpointDispatch {
   @override
   void initializeEndpoints(_i1.Server server) {
     var endpoints = <String, _i1.Endpoint>{
-      'auth': _i2.AuthEndpoint()
-        ..initialize(
-          server,
-          'auth',
-          null,
-        ),
-      'file': _i3.FileEndpoint()
-        ..initialize(
-          server,
-          'file',
-          null,
-        ),
-      'genome': _i4.GenomeEndpoint()
-        ..initialize(
-          server,
-          'genome',
-          null,
-        ),
-      'mipgen': _i5.MipgenEndpoint()
-        ..initialize(
-          server,
-          'mipgen',
-          null,
-        ),
-      'options': _i6.OptionsEndpoint()
-        ..initialize(
-          server,
-          'options',
-          null,
-        ),
-      'project': _i7.ProjectEndpoint()
-        ..initialize(
-          server,
-          'project',
-          null,
-        ),
-      'settings': _i8.SettingsEndpoint()
-        ..initialize(
-          server,
-          'settings',
-          null,
-        ),
+      'auth': _i2.AuthEndpoint()..initialize(server, 'auth', null),
+      'file': _i3.FileEndpoint()..initialize(server, 'file', null),
+      'genome': _i4.GenomeEndpoint()..initialize(server, 'genome', null),
+      'mipgen': _i5.MipgenEndpoint()..initialize(server, 'mipgen', null),
+      'options': _i6.OptionsEndpoint()..initialize(server, 'options', null),
+      'project': _i7.ProjectEndpoint()..initialize(server, 'project', null),
+      'settings': _i8.SettingsEndpoint()..initialize(server, 'settings', null),
     };
     connectors['auth'] = _i1.EndpointConnector(
       name: 'auth',
@@ -79,31 +44,20 @@ class Endpoints extends _i1.EndpointDispatch {
         'config': _i1.MethodConnector(
           name: 'config',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['auth'] as _i2.AuthEndpoint).config(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['auth'] as _i2.AuthEndpoint).config(session),
         ),
         'me': _i1.MethodConnector(
           name: 'me',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['auth'] as _i2.AuthEndpoint).me(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['auth'] as _i2.AuthEndpoint).me(session),
         ),
         'logout': _i1.MethodConnector(
           name: 'logout',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['auth'] as _i2.AuthEndpoint).logout(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['auth'] as _i2.AuthEndpoint).logout(session),
         ),
       },
     );
@@ -120,15 +74,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['file'] as _i3.FileEndpoint).deleteByProducts(
-                    session,
-                    params['projectID'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).deleteByProducts(
+                session,
+                params['projectID'],
+              ),
         ),
         'showSnpMipsResult': _i1.MethodConnector(
           name: 'showSnpMipsResult',
@@ -139,15 +89,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['file'] as _i3.FileEndpoint).showSnpMipsResult(
-                    session,
-                    params['projectID'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).showSnpMipsResult(
+                session,
+                params['projectID'],
+              ),
         ),
         'showMipsResult': _i1.MethodConnector(
           name: 'showMipsResult',
@@ -158,11 +104,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['file'] as _i3.FileEndpoint).showMipsResult(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).showMipsResult(
                 session,
                 params['projectID'],
               ),
@@ -176,15 +119,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['file'] as _i3.FileEndpoint).showMipsProgress(
-                    session,
-                    params['projectID'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).showMipsProgress(
+                session,
+                params['projectID'],
+              ),
         ),
         'showUSCSTrack': _i1.MethodConnector(
           name: 'showUSCSTrack',
@@ -195,13 +134,55 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['file'] as _i3.FileEndpoint).showUSCSTrack(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).showUSCSTrack(
                 session,
                 params['projectID'],
+              ),
+        ),
+        'getUcscTrackToken': _i1.MethodConnector(
+          name: 'getUcscTrackToken',
+          params: {
+            'projectID': _i1.ParameterDescription(
+              name: 'projectID',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).getUcscTrackToken(
+                session,
+                params['projectID'],
+              ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['file'] as _i3.FileEndpoint).requireProjectOptions(
+                session,
+                params['optionsId'],
               ),
         ),
       },
@@ -219,11 +200,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint).getGenome(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getGenome(
                 session,
                 params['id'],
               ),
@@ -231,12 +209,10 @@ class Endpoints extends _i1.EndpointDispatch {
         'getAllGenomes': _i1.MethodConnector(
           name: 'getAllGenomes',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
-                  .getAllGenomes(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getAllGenomes(
+                session,
+              ),
         ),
         'updateGenome': _i1.MethodConnector(
           name: 'updateGenome',
@@ -252,26 +228,20 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i4.GenomeEndpoint).updateGenome(
-                    session,
-                    params['id'],
-                    params['genome'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).updateGenome(
+                session,
+                params['id'],
+                params['genome'],
+              ),
         ),
         'collectGenomes': _i1.MethodConnector(
           name: 'collectGenomes',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
-                  .collectGenomes(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).collectGenomes(
+                session,
+              ),
         ),
         'getSnp': _i1.MethodConnector(
           name: 'getSnp',
@@ -282,11 +252,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint).getSnp(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getSnp(
                 session,
                 params['id'],
               ),
@@ -300,15 +267,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
-                  .getAllSnpForGenome(
-                    session,
-                    params['genomeId'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getAllSnpForGenome(
+                session,
+                params['genomeId'],
+              ),
         ),
         'updateSnp': _i1.MethodConnector(
           name: 'updateSnp',
@@ -324,11 +287,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint).updateSnp(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).updateSnp(
                 session,
                 params['id'],
                 params['snp'],
@@ -337,12 +297,10 @@ class Endpoints extends _i1.EndpointDispatch {
         'getCategories': _i1.MethodConnector(
           name: 'getCategories',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
-                  .getCategories(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getCategories(
+                session,
+              ),
         ),
         'getGenomeByCategory': _i1.MethodConnector(
           name: 'getGenomeByCategory',
@@ -353,15 +311,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint)
-                  .getGenomeByCategory(
-                    session,
-                    params['category'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).getGenomeByCategory(
+                session,
+                params['category'],
+              ),
         ),
         'indexFasta': _i1.MethodConnector(
           name: 'indexFasta',
@@ -372,11 +326,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['genome'] as _i4.GenomeEndpoint).indexFasta(
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).indexFasta(
                 session,
                 params['id'],
               ),
@@ -390,15 +341,41 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['genome'] as _i4.GenomeEndpoint).deleteFastaIndex(
-                    session,
-                    params['id'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).deleteFastaIndex(
+                session,
+                params['id'],
+              ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['genome'] as _i4.GenomeEndpoint).requireProjectOptions(
+                session,
+                params['optionsId'],
+              ),
         ),
       },
     );
@@ -415,15 +392,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['mipgen'] as _i5.MipgenEndpoint).createBedFile(
-                    session,
-                    params['projectID'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['mipgen'] as _i5.MipgenEndpoint).createBedFile(
+                session,
+                params['projectID'],
+              ),
         ),
         'generateMips': _i1.MethodConnector(
           name: 'generateMips',
@@ -439,16 +412,42 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['mipgen'] as _i5.MipgenEndpoint).generateMips(
-                    session,
-                    params['projectID'],
-                    params['deleteExcessFiles'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['mipgen'] as _i5.MipgenEndpoint).generateMips(
+                session,
+                params['projectID'],
+                params['deleteExcessFiles'],
+              ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['mipgen'] as _i5.MipgenEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['mipgen'] as _i5.MipgenEndpoint).requireProjectOptions(
+                session,
+                params['optionsId'],
+              ),
         ),
       },
     );
@@ -459,11 +458,8 @@ class Endpoints extends _i1.EndpointDispatch {
         'createProjectOptions': _i1.MethodConnector(
           name: 'createProjectOptions',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint)
                   .createProjectOptions(session),
         ),
         'insertProjectOptions': _i1.MethodConnector(
@@ -475,15 +471,9 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
-                  .insertProjectOptions(
-                    session,
-                    params['options'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint)
+                  .insertProjectOptions(session, params['options']),
         ),
         'getProjectOptions': _i1.MethodConnector(
           name: 'getProjectOptions',
@@ -494,15 +484,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
-                  .getProjectOptions(
-                    session,
-                    params['id'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint).getProjectOptions(
+                session,
+                params['id'],
+              ),
         ),
         'updateProjectOptions': _i1.MethodConnector(
           name: 'updateProjectOptions',
@@ -518,11 +504,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint)
                   .updateProjectOptions(
                     session,
                     params['id'],
@@ -538,15 +521,37 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['options'] as _i6.OptionsEndpoint)
-                  .deleteProjectOptions(
-                    session,
-                    params['id'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint)
+                  .deleteProjectOptions(session, params['id']),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['options'] as _i6.OptionsEndpoint)
+                  .requireProjectOptions(session, params['optionsId']),
         ),
       },
     );
@@ -573,17 +578,13 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['project'] as _i7.ProjectEndpoint).createProject(
-                    session,
-                    params['name'],
-                    params['options'],
-                    params['description'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).createProject(
+                session,
+                params['name'],
+                params['options'],
+                params['description'],
+              ),
         ),
         'deleteProject': _i1.MethodConnector(
           name: 'deleteProject',
@@ -594,25 +595,19 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['project'] as _i7.ProjectEndpoint).deleteProject(
-                    session,
-                    params['id'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).deleteProject(
+                session,
+                params['id'],
+              ),
         ),
         'getProjects': _i1.MethodConnector(
           name: 'getProjects',
           params: {},
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['project'] as _i7.ProjectEndpoint)
-                  .getProjects(session),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).getProjects(
+                session,
+              ),
         ),
         'getProject': _i1.MethodConnector(
           name: 'getProject',
@@ -623,15 +618,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['project'] as _i7.ProjectEndpoint).getProject(
-                    session,
-                    params['id'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).getProject(
+                session,
+                params['id'],
+              ),
         ),
         'addGeneToProject': _i1.MethodConnector(
           name: 'addGeneToProject',
@@ -647,16 +638,12 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['project'] as _i7.ProjectEndpoint)
-                  .addGeneToProject(
-                    session,
-                    params['id'],
-                    params['gene'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).addGeneToProject(
+                session,
+                params['id'],
+                params['gene'],
+              ),
         ),
         'removeGeneFromProject': _i1.MethodConnector(
           name: 'removeGeneFromProject',
@@ -672,16 +659,9 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['project'] as _i7.ProjectEndpoint)
-                  .removeGeneFromProject(
-                    session,
-                    params['id'],
-                    params['gene'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint)
+                  .removeGeneFromProject(session, params['id'], params['gene']),
         ),
         'addGenesToProject': _i1.MethodConnector(
           name: 'addGenesToProject',
@@ -697,16 +677,12 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['project'] as _i7.ProjectEndpoint)
-                  .addGenesToProject(
-                    session,
-                    params['id'],
-                    params['genes'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).addGenesToProject(
+                session,
+                params['id'],
+                params['genes'],
+              ),
         ),
         'setGeneById': _i1.MethodConnector(
           name: 'setGeneById',
@@ -722,16 +698,12 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['project'] as _i7.ProjectEndpoint).setGeneById(
-                    session,
-                    params['id'],
-                    params['genomeId'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).setGeneById(
+                session,
+                params['id'],
+                params['genomeId'],
+              ),
         ),
         'setSnpById': _i1.MethodConnector(
           name: 'setSnpById',
@@ -747,16 +719,40 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['project'] as _i7.ProjectEndpoint).setSnpById(
-                    session,
-                    params['id'],
-                    params['snpId'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).setSnpById(
+                session,
+                params['id'],
+                params['snpId'],
+              ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).requireProject(
+                session,
+                params['projectId'],
+              ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint)
+                  .requireProjectOptions(session, params['optionsId']),
         ),
       },
     );
@@ -773,15 +769,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['settings'] as _i8.SettingsEndpoint).getSettings(
-                    session,
-                    params['password'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint).getSettings(
+                session,
+                params['password'],
+              ),
         ),
         'updateSettings': _i1.MethodConnector(
           name: 'updateSettings',
@@ -797,16 +789,12 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
-                  .updateSettings(
-                    session,
-                    params['password'],
-                    params['settings'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint).updateSettings(
+                session,
+                params['password'],
+                params['settings'],
+              ),
         ),
         'setOidcClientSecret': _i1.MethodConnector(
           name: 'setOidcClientSecret',
@@ -822,11 +810,8 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint)
                   .setOidcClientSecret(
                     session,
                     params['password'],
@@ -842,15 +827,9 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
-                  .getAuthAdminStatus(
-                    session,
-                    params['password'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint)
+                  .getAuthAdminStatus(session, params['password']),
         ),
         'sendTestMail': _i1.MethodConnector(
           name: 'sendTestMail',
@@ -866,16 +845,12 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _i1.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['settings'] as _i8.SettingsEndpoint).sendTestMail(
-                    session,
-                    params['password'],
-                    params['to'],
-                  ),
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint).sendTestMail(
+                session,
+                params['password'],
+                params['to'],
+              ),
         ),
       },
     );

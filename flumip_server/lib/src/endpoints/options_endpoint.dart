@@ -29,13 +29,17 @@ class OptionsEndpoint extends FlumipEndpoint {
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
   Future<ProjectOptions> insertProjectOptions(
-      Session session, ProjectOptions options) async {
+    Session session,
+    ProjectOptions options,
+  ) async {
     session.log("Inserting project options", level: LogLevel.info);
     try {
       return optionsService.insertProjectOptions(session, options);
     } catch (e) {
-      session.log("Error inserting project options - $e",
-          level: LogLevel.error);
+      session.log(
+        "Error inserting project options - $e",
+        level: LogLevel.error,
+      );
       rethrow;
     }
   }
@@ -48,10 +52,14 @@ class OptionsEndpoint extends FlumipEndpoint {
   Future<ProjectOptions> getProjectOptions(Session session, int id) async {
     session.log("Retrieving project options for ID: $id", level: LogLevel.info);
     try {
+      await requireProjectOptions(session, id);
       return optionsService.getProjectOptions(session, id);
     } catch (e) {
-      session.log("Error retrieving project options for ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error retrieving project options for ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -62,13 +70,20 @@ class OptionsEndpoint extends FlumipEndpoint {
   /// \param id The ID of the project options to update.
   /// \param options The [ProjectOptions] object to update.
   Future<void> updateProjectOptions(
-      Session session, int id, ProjectOptions options) async {
+    Session session,
+    int id,
+    ProjectOptions options,
+  ) async {
     session.log("Updating project options for ID: $id", level: LogLevel.info);
     try {
+      await requireProjectOptions(session, id);
       return optionsService.updateProjectOptions(session, id, options);
     } catch (e) {
-      session.log("Error updating project options for ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error updating project options for ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -80,10 +95,14 @@ class OptionsEndpoint extends FlumipEndpoint {
   Future<void> deleteProjectOptions(Session session, int id) async {
     session.log("Deleting project options for ID: $id", level: LogLevel.info);
     try {
+      await requireProjectOptions(session, id);
       return optionsService.deleteProjectOptions(session, id);
     } catch (e) {
-      session.log("Error deleting project options for ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error deleting project options for ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

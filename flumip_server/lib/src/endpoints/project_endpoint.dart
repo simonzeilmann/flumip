@@ -1,6 +1,7 @@
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+import '../services/authorization_service.dart';
 import '../services/project_service.dart';
 import '../generated/protocol.dart';
 import 'flumip_endpoint.dart';
@@ -17,14 +18,20 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
   Future<Project> createProject(
-      Session session, String name, ProjectOptions options,
-      [String? description]) async {
+    Session session,
+    String name,
+    ProjectOptions options, [
+    String? description,
+  ]) async {
     session.log("Creating project with name: $name", level: LogLevel.info);
     try {
       return projectService.createProject(session, name, options, description);
     } catch (e) {
-      session.log("Error creating project with name: $name",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error creating project with name: $name",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -36,10 +43,14 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<void> deleteProject(Session session, int id) async {
     session.log("Deleting project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.deleteProject(session, id);
     } catch (e) {
-      session.log("Error deleting project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error deleting project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -51,10 +62,16 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<List<Project>> getProjects(Session session) async {
     session.log("Retrieving all projects", level: LogLevel.info);
     try {
-      return projectService.getProjects(session);
+      // Filtered, not all of them. Foreign projects are dropped here rather than
+      // refused on open, so a user simply never sees work that is not theirs and
+      // ProjectAccessDeniedException stays a thing only a hand-built request can hit.
+      return authz.visibleProjects(session);
     } catch (e) {
-      session.log("Error retrieving all projects",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error retrieving all projects",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -67,10 +84,14 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<Project> getProject(Session session, int id) async {
     session.log("Retrieving project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.getProject(session, id);
     } catch (e) {
-      session.log("Error retrieving project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error retrieving project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -83,10 +104,14 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<void> addGeneToProject(Session session, int id, String gene) async {
     session.log("Adding gene to project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.addGeneToProject(session, id, gene);
     } catch (e) {
-      session.log("Error adding gene to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error adding gene to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -97,14 +122,23 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param id The ID of the project.
   /// \param gene The gene to remove.
   Future<void> removeGeneFromProject(
-      Session session, int id, String gene) async {
-    session.log("Removing gene from project with ID: $id",
-        level: LogLevel.info);
+    Session session,
+    int id,
+    String gene,
+  ) async {
+    session.log(
+      "Removing gene from project with ID: $id",
+      level: LogLevel.info,
+    );
     try {
+      await requireProject(session, id);
       return projectService.removeGeneFromProject(session, id, gene);
     } catch (e) {
-      session.log("Error removing gene from project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error removing gene from project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -115,13 +149,20 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// \param id The ID of the project.
   /// \param genes The list of genes to add.
   Future<void> addGenesToProject(
-      Session session, int id, List<String> genes) async {
+    Session session,
+    int id,
+    List<String> genes,
+  ) async {
     session.log("Adding genes to project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.addGenesToProject(session, id, genes);
     } catch (e) {
-      session.log("Error adding genes to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error adding genes to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -134,10 +175,14 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<void> setGeneById(Session session, int id, int genomeId) async {
     session.log("Setting gene to project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.setGenomeById(session, id, genomeId);
     } catch (e) {
-      session.log("Error setting gene to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting gene to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -150,10 +195,14 @@ class ProjectEndpoint extends FlumipEndpoint {
   Future<void> setSnpById(Session session, int id, int snpId) async {
     session.log("Setting snp to project with ID: $id", level: LogLevel.info);
     try {
+      await requireProject(session, id);
       return projectService.setSnpById(session, id, snpId);
     } catch (e) {
-      session.log("Error setting snp to project with ID: $id",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting snp to project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

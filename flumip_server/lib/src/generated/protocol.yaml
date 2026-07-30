@@ -8,6 +8,9 @@ file:
   - showMipsResult:
   - showMipsProgress:
   - showUSCSTrack:
+  - getUcscTrackToken:
+  - requireProject:
+  - requireProjectOptions:
 genome:
   - getGenome:
   - getAllGenomes:
@@ -20,15 +23,21 @@ genome:
   - getGenomeByCategory:
   - indexFasta:
   - deleteFastaIndex:
+  - requireProject:
+  - requireProjectOptions:
 mipgen:
   - createBedFile:
   - generateMips:
+  - requireProject:
+  - requireProjectOptions:
 options:
   - createProjectOptions:
   - insertProjectOptions:
   - getProjectOptions:
   - updateProjectOptions:
   - deleteProjectOptions:
+  - requireProject:
+  - requireProjectOptions:
 project:
   - createProject:
   - deleteProject:
@@ -39,6 +48,8 @@ project:
   - addGenesToProject:
   - setGeneById:
   - setSnpById:
+  - requireProject:
+  - requireProjectOptions:
 settings:
   - getSettings:
   - updateSettings:

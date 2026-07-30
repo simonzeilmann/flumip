@@ -19,14 +19,13 @@ class MipgenEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await requireProject(session, projectID);
       return mipgenService.createBedFile(session, projectID);
     } on BedCreationException {
       rethrow;
-    }
-    on ArgumentException {
+    } on ArgumentException {
       rethrow;
-    }
-    catch (e) {
+    } catch (e) {
       session.log(
         "Unexpected error creating BED file for project ID: $projectID",
         level: LogLevel.error,
@@ -51,15 +50,13 @@ class MipgenEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await requireProject(session, projectID);
       return mipgenService.generateMips(session, projectID, deleteExcessFiles);
-    }
-    on ArgumentException {
+    } on ArgumentException {
       rethrow;
-    }
-    on FileNotFoundException {
+    } on FileNotFoundException {
       rethrow;
-    }
-    catch (e) {
+    } catch (e) {
       session.log(
         "Error generating MIPs for project ID: $projectID",
         level: LogLevel.error,
