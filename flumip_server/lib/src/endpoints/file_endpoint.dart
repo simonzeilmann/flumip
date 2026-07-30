@@ -2,9 +2,10 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 import '../services/file_service.dart';
+import 'flumip_endpoint.dart';
 
 /// Endpoint for handling file-related operations.
-class FileEndpoint extends Endpoint {
+class FileEndpoint extends FlumipEndpoint {
   final fileService = FileService();
 
   /// Deletes byproduct files for the specified project.

@@ -14,12 +14,15 @@
 import 'package:serverpod_test/serverpod_test.dart' as _i1;
 import 'package:serverpod/serverpod.dart' as _i2;
 import 'dart:async' as _i3;
-import 'package:flumip_server/src/generated/genome.dart' as _i4;
-import 'package:flumip_server/src/generated/snp.dart' as _i5;
-import 'package:flumip_server/src/generated/project_options.dart' as _i6;
-import 'package:flumip_server/src/generated/project.dart' as _i7;
-import 'package:flumip_server/src/generated/settings.dart' as _i8;
-import 'package:flumip_server/src/generated/future_calls.dart' as _i9;
+import 'package:flumip_server/src/generated/auth_config_dto.dart' as _i4;
+import 'package:flumip_server/src/generated/auth_user_dto.dart' as _i5;
+import 'package:flumip_server/src/generated/genome.dart' as _i6;
+import 'package:flumip_server/src/generated/snp.dart' as _i7;
+import 'package:flumip_server/src/generated/project_options.dart' as _i8;
+import 'package:flumip_server/src/generated/project.dart' as _i9;
+import 'package:flumip_server/src/generated/settings.dart' as _i10;
+import 'package:flumip_server/src/generated/auth_admin_status_dto.dart' as _i11;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i12;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -136,6 +139,8 @@ void withServerpod(
 class TestEndpoints {
   late final futureCalls = _FutureCalls();
 
+  late final _AuthEndpoint auth;
+
   late final _FileEndpoint file;
 
   late final _GenomeEndpoint genome;
@@ -156,6 +161,10 @@ class _InternalTestEndpoints extends TestEndpoints
     _i2.SerializationManager serializationManager,
     _i2.EndpointDispatch endpoints,
   ) {
+    auth = _AuthEndpoint(
+      endpoints,
+      serializationManager,
+    );
     file = _FileEndpoint(
       endpoints,
       serializationManager,
@@ -187,6 +196,103 @@ class _FutureCalls {
   late final checkIndexProgress = _CheckIndexProgressFutureCall();
 
   late final checkMipgenProgress = _CheckMipgenProgressFutureCall();
+}
+
+class _AuthEndpoint {
+  _AuthEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i4.AuthConfigDto> config(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'auth',
+            method: 'config',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'auth',
+          methodName: 'config',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i4.AuthConfigDto>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i5.AuthUserDto?> me(_i1.TestSessionBuilder sessionBuilder) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'auth',
+            method: 'me',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'auth',
+          methodName: 'me',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i5.AuthUserDto?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> logout(_i1.TestSessionBuilder sessionBuilder) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'auth',
+            method: 'logout',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'auth',
+          methodName: 'logout',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 }
 
 class _FileEndpoint {
@@ -365,7 +471,7 @@ class _GenomeEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i4.Genome> getGenome(
+  _i3.Future<_i6.Genome> getGenome(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -388,7 +494,7 @@ class _GenomeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i4.Genome>);
+                as _i3.Future<_i6.Genome>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -396,7 +502,7 @@ class _GenomeEndpoint {
     });
   }
 
-  _i3.Future<List<_i4.Genome>> getAllGenomes(
+  _i3.Future<List<_i6.Genome>> getAllGenomes(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -418,7 +524,7 @@ class _GenomeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i4.Genome>>);
+                as _i3.Future<List<_i6.Genome>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -429,7 +535,7 @@ class _GenomeEndpoint {
   _i3.Future<void> updateGenome(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
-    _i4.Genome genome,
+    _i6.Genome genome,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -489,7 +595,7 @@ class _GenomeEndpoint {
     });
   }
 
-  _i3.Future<_i5.Snp> getSnp(
+  _i3.Future<_i7.Snp> getSnp(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -512,7 +618,7 @@ class _GenomeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i5.Snp>);
+                as _i3.Future<_i7.Snp>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -520,7 +626,7 @@ class _GenomeEndpoint {
     });
   }
 
-  _i3.Future<List<_i5.Snp>> getAllSnpForGenome(
+  _i3.Future<List<_i7.Snp>> getAllSnpForGenome(
     _i1.TestSessionBuilder sessionBuilder,
     int genomeId,
   ) async {
@@ -543,7 +649,7 @@ class _GenomeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i5.Snp>>);
+                as _i3.Future<List<_i7.Snp>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -554,7 +660,7 @@ class _GenomeEndpoint {
   _i3.Future<void> updateSnp(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
-    _i5.Snp snp,
+    _i7.Snp snp,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -616,7 +722,7 @@ class _GenomeEndpoint {
     });
   }
 
-  _i3.Future<List<_i4.Genome>> getGenomeByCategory(
+  _i3.Future<List<_i6.Genome>> getGenomeByCategory(
     _i1.TestSessionBuilder sessionBuilder,
     String category,
   ) async {
@@ -639,7 +745,7 @@ class _GenomeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i4.Genome>>);
+                as _i3.Future<List<_i6.Genome>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -797,7 +903,7 @@ class _OptionsEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i6.ProjectOptions> createProjectOptions(
+  _i3.Future<_i8.ProjectOptions> createProjectOptions(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -819,7 +925,7 @@ class _OptionsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i6.ProjectOptions>);
+                as _i3.Future<_i8.ProjectOptions>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -827,9 +933,9 @@ class _OptionsEndpoint {
     });
   }
 
-  _i3.Future<_i6.ProjectOptions> insertProjectOptions(
+  _i3.Future<_i8.ProjectOptions> insertProjectOptions(
     _i1.TestSessionBuilder sessionBuilder,
-    _i6.ProjectOptions options,
+    _i8.ProjectOptions options,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -850,7 +956,7 @@ class _OptionsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i6.ProjectOptions>);
+                as _i3.Future<_i8.ProjectOptions>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -858,7 +964,7 @@ class _OptionsEndpoint {
     });
   }
 
-  _i3.Future<_i6.ProjectOptions> getProjectOptions(
+  _i3.Future<_i8.ProjectOptions> getProjectOptions(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -881,7 +987,7 @@ class _OptionsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i6.ProjectOptions>);
+                as _i3.Future<_i8.ProjectOptions>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -892,7 +998,7 @@ class _OptionsEndpoint {
   _i3.Future<void> updateProjectOptions(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
-    _i6.ProjectOptions options,
+    _i8.ProjectOptions options,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -966,10 +1072,10 @@ class _ProjectEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i7.Project> createProject(
+  _i3.Future<_i9.Project> createProject(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
-    _i6.ProjectOptions options, [
+    _i8.ProjectOptions options, [
     String? description,
   ]) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -995,7 +1101,7 @@ class _ProjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i7.Project>);
+                as _i3.Future<_i9.Project>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1034,7 +1140,7 @@ class _ProjectEndpoint {
     });
   }
 
-  _i3.Future<List<_i7.Project>> getProjects(
+  _i3.Future<List<_i9.Project>> getProjects(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1056,7 +1162,7 @@ class _ProjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i7.Project>>);
+                as _i3.Future<List<_i9.Project>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1064,7 +1170,7 @@ class _ProjectEndpoint {
     });
   }
 
-  _i3.Future<_i7.Project> getProject(
+  _i3.Future<_i9.Project> getProject(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
   ) async {
@@ -1087,7 +1193,7 @@ class _ProjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i7.Project>);
+                as _i3.Future<_i9.Project>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1281,9 +1387,9 @@ class _SettingsEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i8.Settings> getSettings(
+  _i3.Future<_i10.Settings> getSettings(
     _i1.TestSessionBuilder sessionBuilder,
-    String password,
+    String? password,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1304,7 +1410,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.Settings>);
+                as _i3.Future<_i10.Settings>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1314,8 +1420,8 @@ class _SettingsEndpoint {
 
   _i3.Future<void> updateSettings(
     _i1.TestSessionBuilder sessionBuilder,
-    String password,
-    _i8.Settings settings,
+    String? password,
+    _i10.Settings settings,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1347,9 +1453,75 @@ class _SettingsEndpoint {
     });
   }
 
+  _i3.Future<void> setOidcClientSecret(
+    _i1.TestSessionBuilder sessionBuilder,
+    String? password,
+    String secret,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'setOidcClientSecret',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'setOidcClientSecret',
+          parameters: _i1.testObjectToJson({
+            'password': password,
+            'secret': secret,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i11.AuthAdminStatusDto> getAuthAdminStatus(
+    _i1.TestSessionBuilder sessionBuilder,
+    String? password,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'getAuthAdminStatus',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'getAuthAdminStatus',
+          parameters: _i1.testObjectToJson({'password': password}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i11.AuthAdminStatusDto>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i3.Future<void> sendTestMail(
     _i1.TestSessionBuilder sessionBuilder,
-    String password,
+    String? password,
     String to,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1386,12 +1558,12 @@ class _SettingsEndpoint {
 class _CheckIndexProgressFutureCall {
   Future<void> run(
     _i1.TestSessionBuilder sessionBuilder,
-    _i4.Genome object,
+    _i6.Genome object,
   ) async {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i9.CheckIndexProgressRunFutureCall().invoke(
+      await _i12.CheckIndexProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1404,12 +1576,12 @@ class _CheckIndexProgressFutureCall {
 class _CheckMipgenProgressFutureCall {
   Future<void> run(
     _i1.TestSessionBuilder sessionBuilder,
-    _i7.Project object,
+    _i9.Project object,
   ) async {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i9.CheckMipgenProgressRunFutureCall().invoke(
+      await _i12.CheckMipgenProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );

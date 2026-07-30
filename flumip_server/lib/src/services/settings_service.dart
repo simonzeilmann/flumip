@@ -1,3 +1,4 @@
+import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -23,12 +24,31 @@ class SettingsService {
     return settings.first;
   }
 
-  Future<Settings> getSettingsExternal(Session session, String password) async {
+  Future<Settings> getSettingsExternal(Session session, String? password) async {
     var settings = await getSettings(session);
-    if (settings.settingsPassword != password) {
+    if (!_isAdmin(session, settings, password)) {
       throw ArgumentException(message: 'Invalid password');
     }
     return settings;
+  }
+
+  /// Throws unless the caller may administer this server.
+  ///
+  /// Use this for operations that need admin rights but must not read the
+  /// settings out — notably writing the OIDC client secret, which is write-only.
+  Future<void> requireAdmin(Session session, String? password) async {
+    await getSettingsExternal(session, password);
+  }
+
+  /// Either a valid settings password, or a signed-in session whose email is on
+  /// the admin list.
+  ///
+  /// The password keeps working even with SSO enabled, deliberately: it is the
+  /// break-glass credential for the case where the identity provider is the
+  /// thing that is broken.
+  bool _isAdmin(Session session, Settings settings, String? password) {
+    if (password != null && password == settings.settingsPassword) return true;
+    return session.authenticated?.scopes.contains(adminScope) ?? false;
   }
 
   /// Ensures exactly one settings row exists, without ever discarding it.
