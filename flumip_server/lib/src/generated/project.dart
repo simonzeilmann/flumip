@@ -26,6 +26,7 @@ abstract class Project
     DateTime? created,
     this.owner,
     this.department,
+    this.trackToken,
     this.genes,
     bool? bedFileCreated,
     bool? active,
@@ -57,6 +58,7 @@ abstract class Project
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -86,6 +88,7 @@ abstract class Project
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
+      trackToken: jsonSerialization['trackToken'] as String?,
       genes: jsonSerialization['genes'] == null
           ? null
           : _i2.Protocol().deserialize<List<String>>(
@@ -141,9 +144,32 @@ abstract class Project
 
   DateTime created;
 
+  /// The FlumipUser who created the project, or null.
+  ///
+  /// Null means "unowned", which every project on an existing install is, since
+  /// nothing wrote this column before authorization existed. Unowned projects
+  /// stay fully accessible to everyone so that switching single sign-on on does
+  /// not strand people's existing work — see `projectIsAccessible`.
+  ///
+  /// onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  /// the data they produced. The project falls back to unowned, which an admin
+  /// can then reassign.
   int? owner;
 
+  /// Reserved. Nothing sets this, because no department claim is collected from
+  /// the identity provider. `projectIsAccessible` reads it, but the clause
+  /// cannot match while the caller's department is always null. Wiring it means
+  /// adding a claim name to Settings — see docs/authorization.md.
   int? department;
+
+  /// Unguessable token for the public `/ucsc_track/<token>` URL.
+  ///
+  /// serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  /// an access check. The route itself cannot require a session — the fetcher is
+  /// genome.ucsc.edu, not a browser — so the token is what stops the track from
+  /// being enumerable. Null on projects created before this existed; minted on
+  /// first request.
+  String? trackToken;
 
   List<String>? genes;
 
@@ -184,6 +210,7 @@ abstract class Project
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -210,6 +237,7 @@ abstract class Project
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
+      if (trackToken != null) 'trackToken': trackToken,
       if (genes != null) 'genes': genes?.toJson(),
       'bedFileCreated': bedFileCreated,
       'active': active,
@@ -294,6 +322,7 @@ class _ProjectImpl extends Project {
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -316,6 +345,7 @@ class _ProjectImpl extends Project {
          created: created,
          owner: owner,
          department: department,
+         trackToken: trackToken,
          genes: genes,
          bedFileCreated: bedFileCreated,
          active: active,
@@ -344,6 +374,7 @@ class _ProjectImpl extends Project {
     DateTime? created,
     Object? owner = _Undefined,
     Object? department = _Undefined,
+    Object? trackToken = _Undefined,
     Object? genes = _Undefined,
     bool? bedFileCreated,
     bool? active,
@@ -367,6 +398,7 @@ class _ProjectImpl extends Project {
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is int? ? department : this.department,
+      trackToken: trackToken is String? ? trackToken : this.trackToken,
       genes: genes is List<String>?
           ? genes
           : this.genes?.map((e0) => e0).toList(),
@@ -431,6 +463,11 @@ class ProjectUpdateTable extends _i1.UpdateTable<ProjectTable> {
 
   _i1.ColumnValue<int, int> department(int? value) => _i1.ColumnValue(
     table.department,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> trackToken(String? value) => _i1.ColumnValue(
+    table.trackToken,
     value,
   );
 
@@ -534,6 +571,10 @@ class ProjectTable extends _i1.Table<int?> {
       'department',
       this,
     );
+    trackToken = _i1.ColumnString(
+      'trackToken',
+      this,
+    );
     genes = _i1.ColumnSerializable<List<String>>(
       'genes',
       this,
@@ -602,9 +643,32 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnDateTime created;
 
+  /// The FlumipUser who created the project, or null.
+  ///
+  /// Null means "unowned", which every project on an existing install is, since
+  /// nothing wrote this column before authorization existed. Unowned projects
+  /// stay fully accessible to everyone so that switching single sign-on on does
+  /// not strand people's existing work — see `projectIsAccessible`.
+  ///
+  /// onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  /// the data they produced. The project falls back to unowned, which an admin
+  /// can then reassign.
   late final _i1.ColumnInt owner;
 
+  /// Reserved. Nothing sets this, because no department claim is collected from
+  /// the identity provider. `projectIsAccessible` reads it, but the clause
+  /// cannot match while the caller's department is always null. Wiring it means
+  /// adding a claim name to Settings — see docs/authorization.md.
   late final _i1.ColumnInt department;
+
+  /// Unguessable token for the public `/ucsc_track/<token>` URL.
+  ///
+  /// serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  /// an access check. The route itself cannot require a session — the fetcher is
+  /// genome.ucsc.edu, not a browser — so the token is what stops the track from
+  /// being enumerable. Null on projects created before this existed; minted on
+  /// first request.
+  late final _i1.ColumnString trackToken;
 
   late final _i1.ColumnSerializable<List<String>> genes;
 
@@ -640,6 +704,7 @@ class ProjectTable extends _i1.Table<int?> {
     created,
     owner,
     department,
+    trackToken,
     genes,
     bedFileCreated,
     active,

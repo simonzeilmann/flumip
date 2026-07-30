@@ -8,8 +8,30 @@ fields:
   snp: int?
   tags: List<String>?
   created: DateTime, default=now
-  owner: int?
+  ### The FlumipUser who created the project, or null.
+  ###
+  ### Null means "unowned", which every project on an existing install is, since
+  ### nothing wrote this column before authorization existed. Unowned projects
+  ### stay fully accessible to everyone so that switching single sign-on on does
+  ### not strand people's existing work — see `projectIsAccessible`.
+  ###
+  ### onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  ### the data they produced. The project falls back to unowned, which an admin
+  ### can then reassign.
+  owner: int?, relation(parent=flumip_user, onDelete=SetNull)
+  ### Reserved. Nothing sets this, because no department claim is collected from
+  ### the identity provider. `projectIsAccessible` reads it, but the clause
+  ### cannot match while the caller's department is always null. Wiring it means
+  ### adding a claim name to Settings — see docs/authorization.md.
   department: int?
+  ### Unguessable token for the public `/ucsc_track/<token>` URL.
+  ###
+  ### serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  ### an access check. The route itself cannot require a session — the fetcher is
+  ### genome.ucsc.edu, not a browser — so the token is what stops the track from
+  ### being enumerable. Null on projects created before this existed; minted on
+  ### first request.
+  trackToken: String?, scope=serverOnly
   genes: List<String>?
   bedFileCreated: bool, default=false
   active: bool, default=false
@@ -21,3 +43,9 @@ fields:
   completedIn: Duration?
   error: String, default=''
   cleanup: bool, default=false
+indexes:
+  project_owner_idx:
+    fields: owner
+  project_track_token_idx:
+    fields: trackToken
+    unique: true

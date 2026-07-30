@@ -130,8 +130,22 @@ abstract class Project implements _i1.SerializableModel {
 
   DateTime created;
 
+  /// The FlumipUser who created the project, or null.
+  ///
+  /// Null means "unowned", which every project on an existing install is, since
+  /// nothing wrote this column before authorization existed. Unowned projects
+  /// stay fully accessible to everyone so that switching single sign-on on does
+  /// not strand people's existing work — see `projectIsAccessible`.
+  ///
+  /// onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  /// the data they produced. The project falls back to unowned, which an admin
+  /// can then reassign.
   int? owner;
 
+  /// Reserved. Nothing sets this, because no department claim is collected from
+  /// the identity provider. `projectIsAccessible` reads it, but the clause
+  /// cannot match while the caller's department is always null. Wiring it means
+  /// adding a claim name to Settings — see docs/authorization.md.
   int? department;
 
   List<String>? genes;
