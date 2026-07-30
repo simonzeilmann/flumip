@@ -1,6 +1,7 @@
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/oidc_client.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/services/http_client.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
@@ -56,6 +57,7 @@ void setup({
   sl.registerSingleton<MailService>(MailService());
   sl.registerSingleton<OidcClient>(OidcClient());
   sl.registerSingleton<AuthService>(AuthService());
+  sl.registerSingleton<AuthorizationService>(AuthorizationService());
   // Registered rather than a static singleton so that tests can install one
   // with a synthetic environment, following the same seam-not-mock convention
   // as the rest of these.
