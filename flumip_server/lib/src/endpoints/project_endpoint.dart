@@ -215,6 +215,66 @@ class ProjectEndpoint extends FlumipEndpoint {
     }
   }
 
+  /// Hands a project to a different owner, or to nobody.
+  ///
+  /// **Administrators only** — and note this is guarded by [AuthorizationService.requireAdmin]
+  /// rather than `requireProject`. The two are not interchangeable: an owner
+  /// passes `requireProject` for their own project, and being allowed to *use*
+  /// something is not being allowed to give it away.
+  ///
+  /// A null [ownerId] releases the project to unowned, i.e. shared.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param ownerId The `flumip_user` id of the new owner, or null for unowned.
+  Future<void> setProjectOwner(Session session, int id, int? ownerId) async {
+    session.log(
+      "Setting owner of project $id to ${ownerId ?? 'nobody'}",
+      level: LogLevel.info,
+    );
+    try {
+      await authz.requireAdmin(session);
+      return await projectService.setOwner(session, id, ownerId);
+    } catch (e) {
+      session.log(
+        "Error setting owner of project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Every user a project can be handed to.
+  ///
+  /// **Administrators only.** This is the only endpoint that exposes the user
+  /// list, so the gate is the whole of its security: an ordinary user has no
+  /// business enumerating everyone with an account.
+  ///
+  /// \param session The current session.
+  Future<List<FlumipUserDto>> assignableOwners(Session session) async {
+    try {
+      await authz.requireAdmin(session);
+      final users = await projectService.assignableOwners(session);
+      return users
+          .map(
+            (u) => FlumipUserDto(
+              id: u.id!,
+              email: u.email,
+              displayName: u.displayName,
+            ),
+          )
+          .toList();
+    } catch (e) {
+      session.log(
+        "Error listing assignable owners",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
   /// Whether an administrator has switched mail on for this install.
   ///
   /// The per-project notification switch is meaningless without it, so the app

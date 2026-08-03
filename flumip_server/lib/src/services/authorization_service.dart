@@ -168,6 +168,44 @@ class AuthorizationService {
         .toList();
   }
 
+  /// Refuses unless the caller is a signed-in administrator.
+  ///
+  /// ⚠️ **This inverts the fail-open ordering the rest of this class follows**,
+  /// and does so on purpose. Everywhere else, "not enforcing" grants access
+  /// immediately, because a no-auth install must never be locked out of its own
+  /// projects. Here there is nothing to be locked out of: reassigning ownership
+  /// needs identities to assign to, and while single sign-on is off there are no
+  /// `flumip_user` rows and no notion of an administrator.
+  ///
+  /// Failing open instead would be actively harmful rather than merely useless.
+  /// An install that ran with single sign-on on, collected owners, and then
+  /// switched it off would expose an unauthenticated way to strip those owners —
+  /// invisible at the time, because access is unrestricted anyway while off, and
+  /// destructive the moment single sign-on came back on.
+  Future<void> requireAdmin(Session session) async {
+    if (!isEnforcing) {
+      session.log(
+        'Refused an admin-only operation: single sign-on is not enforcing, so '
+        'there are no administrators.',
+        level: LogLevel.warning,
+      );
+      throw ProjectAccessDeniedException(
+        message: 'This action needs an administrator, and single sign-on is off',
+      );
+    }
+
+    final who = await principal(session);
+    if (who.isAdmin) return;
+
+    session.log(
+      'Refused an admin-only operation for $who',
+      level: LogLevel.warning,
+    );
+    throw ProjectAccessDeniedException(
+      message: 'This action is restricted to administrators',
+    );
+  }
+
   /// The `flumip_user` id to stamp on a project being created, or null.
   ///
   /// Null while single sign-on is off, which is what keeps every project on a

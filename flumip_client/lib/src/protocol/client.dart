@@ -18,9 +18,10 @@ import 'package:flumip_client/src/protocol/genome.dart' as _i5;
 import 'package:flumip_client/src/protocol/snp.dart' as _i6;
 import 'package:flumip_client/src/protocol/project_options.dart' as _i7;
 import 'package:flumip_client/src/protocol/project.dart' as _i8;
-import 'package:flumip_client/src/protocol/settings.dart' as _i9;
-import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i10;
-import 'protocol.dart' as _i11;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i9;
+import 'package:flumip_client/src/protocol/settings.dart' as _i10;
+import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i11;
+import 'protocol.dart' as _i12;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
@@ -723,6 +724,44 @@ class EndpointProject extends EndpointFlumip {
     },
   );
 
+  /// Hands a project to a different owner, or to nobody.
+  ///
+  /// **Administrators only** — and note this is guarded by [AuthorizationService.requireAdmin]
+  /// rather than `requireProject`. The two are not interchangeable: an owner
+  /// passes `requireProject` for their own project, and being allowed to *use*
+  /// something is not being allowed to give it away.
+  ///
+  /// A null [ownerId] releases the project to unowned, i.e. shared.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param ownerId The `flumip_user` id of the new owner, or null for unowned.
+  _i2.Future<void> setProjectOwner(
+    int id,
+    int? ownerId,
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'setProjectOwner',
+    {
+      'id': id,
+      'ownerId': ownerId,
+    },
+  );
+
+  /// Every user a project can be handed to.
+  ///
+  /// **Administrators only.** This is the only endpoint that exposes the user
+  /// list, so the gate is the whole of its security: an ordinary user has no
+  /// business enumerating everyone with an account.
+  ///
+  /// \param session The current session.
+  _i2.Future<List<_i9.FlumipUserDto>> assignableOwners() =>
+      caller.callServerEndpoint<List<_i9.FlumipUserDto>>(
+        'project',
+        'assignableOwners',
+        {},
+      );
+
   /// Whether an administrator has switched mail on for this install.
   ///
   /// The per-project notification switch is meaningless without it, so the app
@@ -809,8 +848,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i9.Settings> getSettings(String? password) =>
-      caller.callServerEndpoint<_i9.Settings>(
+  _i2.Future<_i10.Settings> getSettings(String? password) =>
+      caller.callServerEndpoint<_i10.Settings>(
         'settings',
         'getSettings',
         {'password': password},
@@ -830,7 +869,7 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param settings The [Settings] object to update.
   _i2.Future<void> updateSettings(
     String? password,
-    _i9.Settings settings,
+    _i10.Settings settings,
   ) => caller.callServerEndpoint<void>(
     'settings',
     'updateSettings',
@@ -871,8 +910,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
-  _i2.Future<_i10.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
-      caller.callServerEndpoint<_i10.AuthAdminStatusDto>(
+  _i2.Future<_i11.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
+      caller.callServerEndpoint<_i11.AuthAdminStatusDto>(
         'settings',
         'getAuthAdminStatus',
         {'password': password},
@@ -916,7 +955,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i11.Protocol(),
+         _i12.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
