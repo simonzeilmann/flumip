@@ -1,6 +1,7 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/mail_sender.dart';
+import 'package:flumip_server/src/services/mail_templates.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -36,12 +37,25 @@ class MailService {
     }
 
     session.log('Sending test mail to $to', level: LogLevel.info);
+    // Deliberately the same layout as a real notification, so clicking "Send
+    // test email" previews what users will actually receive — a styling problem
+    // then surfaces here rather than in somebody's first genuine notification.
+    // The SMTP settings are echoed back because confirming those is the whole
+    // reason for sending it.
+    final site = settings.authPublicUrl.trim();
+    final details = TestMailDetails(
+      smtpServer: settings.smtpServer,
+      smtpPort: settings.smtpPort,
+      from: settings.smtpFrom,
+      startTLS: settings.startTLS,
+      siteUrl: site.isEmpty ? null : site,
+    );
     await mailSender.send(
       settings: settings,
       to: to,
-      subject: 'FLUMIP test email',
-      body: 'This is a test email from FLUMIP.\n\n'
-          'If you received it, the SMTP configuration works.',
+      subject: buildTestSubject(),
+      body: buildTestTextBody(details),
+      html: buildTestHtmlBody(details),
     );
     session.log('Test mail sent to $to', level: LogLevel.info);
   }
@@ -86,23 +100,15 @@ class MailService {
       return;
     }
 
-    final subject = failed
-        ? 'FLUMIP: MIP generation failed for "${project.name}"'
-        : 'FLUMIP: MIP generation finished for "${project.name}"';
-    final body = failed
-        ? 'MIP generation for project "${project.name}" failed.\n\n'
-            'Error: ${project.error}\n'
-        : 'MIP generation for project "${project.name}" finished '
-            'successfully.\n\n'
-            'Duration: ${project.completedIn ?? "unknown"}\n'
-            'Output size: ${project.size} bytes\n';
+    final details = await _detailsFor(session, project, settings, failed: failed);
 
     try {
       await mailSender.send(
         settings: settings,
         to: recipient,
-        subject: subject,
-        body: body,
+        subject: buildSubject(details),
+        body: buildTextBody(details),
+        html: buildHtmlBody(details),
       );
       session.log(
         'Notification sent for project ${project.id} to $recipient',
@@ -116,6 +122,49 @@ class MailService {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  /// Gathers what the message says, resolving the names behind the ids.
+  ///
+  /// Every lookup is best-effort: a missing genome or SNP row leaves that line
+  /// out of the mail rather than failing the send. A notification is worth less
+  /// than the job it reports on, so nothing here may throw — the caller already
+  /// swallows delivery errors, and this runs before that guard.
+  Future<ProjectMailDetails> _detailsFor(
+    Session session,
+    Project project,
+    Settings settings, {
+    required bool failed,
+  }) async {
+    String? genomeName;
+    String? snpName;
+    try {
+      if (project.genome != null) {
+        genomeName = (await Genome.db.findById(session, project.genome!))?.name;
+      }
+      if (project.snp != null) {
+        snpName = (await Snp.db.findById(session, project.snp!))?.name;
+      }
+    } catch (e) {
+      session.log(
+        'Could not resolve genome/SNP names for the notification: $e',
+        level: LogLevel.warning,
+      );
+    }
+
+    final site = settings.authPublicUrl.trim();
+    return ProjectMailDetails(
+      projectName: project.name,
+      failed: failed,
+      error: project.error,
+      completedIn: project.completedIn,
+      sizeBytes: project.size,
+      genomeName: genomeName,
+      snpName: snpName,
+      geneCount: project.genes?.length ?? 0,
+      // Empty is the default, and a link to nowhere is worse than no link.
+      siteUrl: site.isEmpty ? null : site,
+    );
   }
 
   /// Resolves the email address to notify for [project]: its owner's.
