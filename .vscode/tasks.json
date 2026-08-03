@@ -163,13 +163,35 @@
       }
     },
     {
+      "label": "Auth: banner",
+      "detail": "Where to sign in and as whom",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh banner",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       // What "Server (single sign-on)" runs before starting.
+      //
+      // Order matters twice over. "Auth: enable" is first because it seeds the
+      // default administrator, and admin is read from the config AuthRuntime
+      // last loaded — putting it ahead of the web build, which takes the best
+      // part of a minute, means the 30s refresh tick has passed before anyone
+      // can reach the sign-in page. The banner is last so it is what you are
+      // left looking at, rather than being buried under build output.
       "label": "Auth: sign-in ready",
       "detail": "Provider up, single sign-on on, and the app built where the server serves it",
       "dependsOrder": "sequence",
       "dependsOn": [
         "Auth: enable",
-        "App: build into server web/app"
+        "App: build into server web/app",
+        "Auth: banner"
       ],
       "problemMatcher": []
     },

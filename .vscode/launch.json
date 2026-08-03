@@ -80,9 +80,14 @@
       // No hot reload, by construction: a rebuild means re-running the task.
       // Use "Full stack (debug)" for everything that is not sign-in.
       //
-      // To be an administrator in the browser, run the "Auth: set admin emails"
-      // task first — a browser sign-in reads that setting, and unlike
-      // `dev-auth.sh token --admin` it cannot be faked per-session.
+      // The browser opens itself once the web server is actually listening, via
+      // serverReadyAction below — waiting on the log line rather than a fixed
+      // delay, because the server takes a variable few seconds to bind.
+      //
+      // The task chain prints who to sign in as; `boss@uni.example` is seeded as
+      // the administrator when no admin list is configured. Any other username
+      // signs in as an ordinary user, which is how you see both sides.
+      // Override with FLUMIP_DEV_ADMIN, or the "Auth: set admin emails" task.
       // "Auth: disable" puts things back.
       "name": "Server (single sign-on)",
       "type": "dart",
@@ -94,7 +99,15 @@
         "--mode=development",
         "--role=monolith",
         "--logging=verbose"
-      ]
+      ],
+      "serverReadyAction": {
+        // Matches "Webserver listening on http://localhost:8082" — the web
+        // port, which is the one that can complete a sign-in. Capturing the URL
+        // rather than hard-coding it keeps this right if the port ever moves.
+        "pattern": "Webserver listening on (https?://[^\\s]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
     },
     {
       // Hot reload and breakpoints. The web port is pinned so the URL is stable

@@ -20,6 +20,7 @@
 #   ./tool/dev-auth.sh token boss@x --admin        ... with the admin scope
 #   ./tool/dev-auth.sh signin boss@uni.example     full OIDC round trip, prints the bearer
 #   ./tool/dev-auth.sh status                      what the server currently thinks
+#   ./tool/dev-auth.sh banner                      where to sign in, and as whom
 #
 # The mock provider is the `auth` compose profile:
 #   docker compose --profile auth up -d mock_oidc
@@ -30,6 +31,7 @@ ISSUER="${FLUMIP_DEV_ISSUER:-http://localhost:9999/default}"
 CLIENT_ID="${FLUMIP_DEV_CLIENT_ID:-flumip}"
 CLIENT_SECRET="${FLUMIP_DEV_CLIENT_SECRET:-s3cret}"
 WEB="${FLUMIP_DEV_WEB:-http://localhost:8082}"
+DEV_ADMIN="${FLUMIP_DEV_ADMIN:-boss@uni.example}"
 API="${FLUMIP_DEV_API:-http://localhost:8080}"
 
 cd "$(dirname "$0")/.."
@@ -65,6 +67,19 @@ require_server() {
 
 cmd_enable() {
   require_provider
+
+  # Seed a default administrator when none is configured, so there is always a
+  # user to sign in as. Set early and on purpose: admin is read from the config
+  # AuthRuntime last loaded, so writing it here — before the web build, which
+  # takes the best part of a minute — means the refresh tick has passed by the
+  # time anyone can actually reach the sign-in page.
+  local admins
+  admins="$(sql_value 'SELECT "oidcAdminEmails" FROM settings LIMIT 1;')"
+  if [ -z "$admins" ]; then
+    admins="$DEV_ADMIN"
+    sql "UPDATE settings SET \"oidcAdminEmails\" = '$admins';"
+  fi
+
   sql "UPDATE settings SET
          \"loginRequired\" = true,
          \"oidcIssuer\" = '$ISSUER',
@@ -73,8 +88,27 @@ cmd_enable() {
          \"authPublicUrl\" = '$WEB';"
   echo "SSO on, pointed at $ISSUER."
   echo "The gate closes on the runtime's own refresh tick — up to 30s, no restart needed."
-  echo "Admin emails are the oidcAdminEmails setting; set it with:"
-  echo "  ./tool/dev-auth.sh admins boss@uni.example"
+  echo "Administrators: $admins"
+}
+
+# Printed last, so it is what you are left looking at.
+cmd_banner() {
+  local admins
+  admins="$(sql_value 'SELECT "oidcAdminEmails" FROM settings LIMIT 1;')"
+  cat <<BANNER
+
+  ┌───────────────────────────────────────────────────────────────────────┐
+  │  Sign in at  $WEB
+  │
+  │  Default user:  ${admins:-<none configured>}
+  │                 — type it into the provider's form; the password box is
+  │                   not real, any username signs you in as that user.
+  │
+  │  Only the address above gets the admin scope, so anything else is an
+  │  ordinary user — which is how you test both sides.
+  └───────────────────────────────────────────────────────────────────────┘
+
+BANNER
 }
 
 cmd_disable() {
@@ -179,6 +213,7 @@ case "${1:-}" in
   admins)  shift; cmd_admins "${1:-}" ;;
   token)   shift; [ $# -ge 1 ] || { echo "usage: dev-auth.sh token <email> [--admin]" >&2; exit 2; }; cmd_token "$@" ;;
   signin)  shift; [ $# -ge 1 ] || { echo "usage: dev-auth.sh signin <email>" >&2; exit 2; }; cmd_signin "$1" ;;
+  banner)  cmd_banner ;;
   status)  cmd_status ;;
   *)       sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//' ; exit 2 ;;
 esac
