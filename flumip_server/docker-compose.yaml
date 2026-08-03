@@ -53,6 +53,42 @@ services:
       - '' # Default profile
       - test
 
+  # A stand-in OpenID Connect provider, for developing against single sign-on
+  # without a real identity provider. Deliberately NOT in the default profile:
+  # it is a development tool, and nothing in the test suite needs it — the
+  # backend tests drive AuthRuntime directly with a fake HTTP client.
+  #
+  #   docker compose --profile auth up -d mock_oidc
+  #   ./tool/dev-auth.sh enable
+  #
+  # Type any username into its form and you are signed in as that user, so
+  # alice, bob and an admin need no configuration between them.
+  #
+  # It is ~200 lines of our own Python (tool/mock_oidc.py) rather than an
+  # off-the-shelf mock, because ghcr.io/navikt/mock-oauth2-server does not put an
+  # `email` claim in the token on the interactive-login path and its
+  # tokenCallbacks config is not applied there — so every sign-in failed with
+  # "The identity provider did not tell this server your email address", and the
+  # only way through was hand-typing JSON into its claims box each time. Writing
+  # one is cheap here because IdTokenClaims.parse deliberately does not verify
+  # signatures, so there are no keys to manage. See the file's docstring.
+  #
+  # Stock python image, no build step: the script uses only the standard library.
+  mock_oidc:
+    image: python:3.12-alpine
+    command: python3 /srv/mock_oidc.py
+    volumes:
+      - ./tool/mock_oidc.py:/srv/mock_oidc.py:ro
+    ports:
+      - '9999:8080'
+    environment:
+      ISSUER: http://localhost:9999/default
+      DEFAULT_USER: boss@uni.example
+      DEFAULT_DOMAIN: uni.example
+    restart: unless-stopped
+    profiles:
+      - auth
+
 volumes:
   flumip_data:
   flumip_test_data:

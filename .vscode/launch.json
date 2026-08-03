@@ -63,6 +63,53 @@
       ]
     },
     {
+      // The one to use for anything behind the login.
+      //
+      // ⚠️ Sign-in cannot be tested with the "Frontend" configurations or either
+      // "Full stack" compound, and fails *silently* if you try. `flutter run`
+      // serves the app on its own port, so it is no longer same-origin with the
+      // Serverpod web server; the session cookie is set on the web server's
+      // origin and is therefore never sent to /auth/session. Clicking sign in
+      // then does nothing at all, with no error in the console or the log.
+      //
+      // So this one skips `flutter run` entirely: the preLaunchTask starts the
+      // mock provider, switches single sign-on on, and builds the app into
+      // flumip_server/web/app — the directory the server itself serves. Open
+      // http://localhost:8082, NOT 8083.
+      //
+      // No hot reload, by construction: a rebuild means re-running the task.
+      // Use "Full stack (debug)" for everything that is not sign-in.
+      //
+      // The browser opens itself once the web server is actually listening, via
+      // serverReadyAction below — waiting on the log line rather than a fixed
+      // delay, because the server takes a variable few seconds to bind.
+      //
+      // The task chain prints who to sign in as; `boss@uni.example` is seeded as
+      // the administrator when no admin list is configured. Any other username
+      // signs in as an ordinary user, which is how you see both sides.
+      // Override with FLUMIP_DEV_ADMIN, or the "Auth: set admin emails" task.
+      // "Auth: disable" puts things back.
+      "name": "Server (single sign-on)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "preLaunchTask": "Auth: sign-in ready",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose"
+      ],
+      "serverReadyAction": {
+        // Matches "Webserver listening on http://localhost:8082" — the web
+        // port, which is the one that can complete a sign-in. Capturing the URL
+        // rather than hard-coding it keeps this right if the port ever moves.
+        "pattern": "Webserver listening on (https?://[^\\s]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
       // Hot reload and breakpoints. The web port is pinned so the URL is stable
       // across runs; lib/api_config.dart recognises a localhost page on a port
       // like this as a dev run and targets the API on 8080.

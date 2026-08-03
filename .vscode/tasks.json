@@ -55,6 +55,147 @@
       }
     },
     {
+      // Everything below is for developing against single sign-on. See
+      // flumip_server/tool/dev-auth.sh, which these wrap.
+      "label": "Auth: provider up",
+      "detail": "Start the mock OpenID Connect provider on :9999 (compose profile `auth`)",
+      "type": "shell",
+      "command": "docker compose --profile auth up -d mock_oidc",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      // dev-auth.sh refuses if the provider is unreachable, hence the dependsOn.
+      "label": "Auth: enable",
+      "detail": "Point settings at the mock provider and switch single sign-on on",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh enable",
+      "dependsOn": [
+        "Auth: provider up"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Auth: disable",
+      "detail": "Switch single sign-on back off (the gate reopens within 30s)",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh disable",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Auth: status",
+      "detail": "Settings, provider, and whether the gate is actually closed",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh status",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      // Signing in through a browser takes admin from the oidcAdminEmails
+      // setting, NOT from `dev-auth.sh token --admin`, which writes the flag
+      // straight onto the session row and ignores this list entirely. Without
+      // this, a browser sign-in is always an ordinary user and the
+      // administrator-only controls never appear.
+      //
+      // ⚠️ Allow ~30s before signing in. Admin is decided at sign-in from the
+      // config AuthRuntime last read, and this writes the database directly
+      // rather than going through SettingsEndpoint.updateSettings, which is what
+      // normally calls broadcastConfigChange to apply a change immediately.
+      // Signing in inside that window makes you silently an ordinary user.
+      "label": "Auth: set admin emails",
+      "detail": "Who counts as an administrator in a browser sign-in (takes ~30s to apply)",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh admins '${input:adminEmails}'",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      // ⚠️ The reason this exists. `flutter run` serves the app on its own port,
+      // so it is no longer same-origin with the Serverpod web server — and the
+      // session cookie, set on the web server's origin, is never sent to
+      // /auth/session. Sign-in then silently does nothing, with no error
+      // anywhere. Building into the directory the server itself serves is the
+      // only way to complete a sign-in locally.
+      "label": "App: build into server web/app",
+      "detail": "flutter build web + copy into flumip_server/web/app — required for sign-in",
+      "type": "shell",
+      "command": "flutter build web --debug && rm -rf ../flumip_server/web/app && cp -r build/web ../flumip_server/web/app",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_flutter"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Auth: banner",
+      "detail": "Where to sign in and as whom",
+      "type": "shell",
+      "command": "./tool/dev-auth.sh banner",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      // What "Server (single sign-on)" runs before starting.
+      //
+      // Order matters twice over. "Auth: enable" is first because it seeds the
+      // default administrator, and admin is read from the config AuthRuntime
+      // last loaded — putting it ahead of the web build, which takes the best
+      // part of a minute, means the 30s refresh tick has passed before anyone
+      // can reach the sign-in page. The banner is last so it is what you are
+      // left looking at, rather than being buried under build output.
+      "label": "Auth: sign-in ready",
+      "detail": "Provider up, single sign-on on, and the app built where the server serves it",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Auth: enable",
+        "App: build into server web/app",
+        "Auth: banner"
+      ],
+      "problemMatcher": []
+    },
+    {
       // Both packages, in CI's order. This is the one to run before pushing.
       "label": "Lint",
       "detail": "Analyze both packages the way CI does",
@@ -68,6 +209,14 @@
         "isDefault": true
       },
       "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "adminEmails",
+      "type": "promptString",
+      "description": "Comma-separated emails that get the admin scope on sign-in. Empty clears the list.",
+      "default": "boss@uni.example"
     }
   ]
 }
