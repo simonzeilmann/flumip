@@ -106,7 +106,17 @@
         // rather than hard-coding it keeps this right if the port ever moves.
         "pattern": "Webserver listening on (https?://[^\\s]+)",
         "uriFormat": "%s",
-        "action": "openExternally"
+        // Chrome specifically, not "openExternally" — that opens the system
+        // default, which is Firefox here.
+        //
+        // Two consequences worth knowing, both of which happen to suit this
+        // configuration. It attaches the JavaScript debugger, so the console and
+        // network panels are available in the Debug Console — which is where a
+        // failing /auth/session or a stale asset actually shows up. And it
+        // launches a temporary Chrome profile, so every run starts signed out
+        // with an empty cache: sign-in is two clicks against the mock provider,
+        // and a stale bundle cannot survive between runs.
+        "action": "debugWithChrome"
       }
     },
     {

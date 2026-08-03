@@ -1,3 +1,5 @@
+import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:serverpod/protocol.dart';
@@ -40,15 +42,45 @@ class SettingsService {
     await getSettingsExternal(session, password);
   }
 
-  /// Either a valid settings password, or a signed-in session whose email is on
-  /// the admin list.
+  /// Either a signed-in session whose email is on the admin list, or — **only
+  /// while sign-in is not being enforced** — the settings password.
   ///
-  /// The password keeps working even with SSO enabled, deliberately: it is the
-  /// break-glass credential for the case where the identity provider is the
-  /// thing that is broken.
+  /// Once single sign-on is enforcing, the password stops being accepted
+  /// entirely. Identity is then the only way in, so a user who happens to know
+  /// the shared password cannot use it to reach an administrator's settings.
+  ///
+  /// ⚠️ **This trades away part of the lockout escape**, knowingly. The password
+  /// used to work regardless, precisely because the identity provider can be the
+  /// thing that is broken. What is left:
+  ///
+  /// - A provider that has **never** answered discovery leaves `isEnforcing`
+  ///   false — the fail-open rule — so the password still works. This is the
+  ///   common misconfiguration, and it is still recoverable from the UI.
+  /// - A provider that answered once and **then** broke keeps enforcing from the
+  ///   cached document. Nobody can sign in, and the password no longer helps.
+  ///   Recovery is `FLUMIP_AUTH_ENABLED=false` plus a restart, or
+  ///   `UPDATE settings SET "loginRequired" = false;`. Both are in
+  ///   docs/authentication.md and HANDOFF.md.
+  ///
+  /// Never throws on the runtime lookup, for the reason given on
+  /// `FlumipEndpoint.requireLogin`: a half-initialised process must not turn
+  /// every settings call into a 500. An unavailable runtime means "not
+  /// enforcing", which keeps the password working — the safe direction, since
+  /// the alternative is a server nobody can configure.
   bool _isAdmin(Session session, Settings settings, String? password) {
-    if (password != null && password == settings.settingsPassword) return true;
-    return session.authenticated?.scopes.contains(adminScope) ?? false;
+    if (session.authenticated?.scopes.contains(adminScope) ?? false) return true;
+
+    var enforcing = false;
+    if (sl.isRegistered<AuthRuntime>()) {
+      try {
+        enforcing = sl<AuthRuntime>().isEnforcing;
+      } catch (_) {
+        enforcing = false;
+      }
+    }
+    if (enforcing) return false;
+
+    return password != null && password == settings.settingsPassword;
   }
 
   /// Ensures exactly one settings row exists, without ever discarding it.

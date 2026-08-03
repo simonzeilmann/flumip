@@ -19,9 +19,10 @@ import 'package:flumip_client/src/protocol/snp.dart' as _i6;
 import 'package:flumip_client/src/protocol/project_options.dart' as _i7;
 import 'package:flumip_client/src/protocol/project.dart' as _i8;
 import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i9;
-import 'package:flumip_client/src/protocol/settings.dart' as _i10;
-import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i11;
-import 'protocol.dart' as _i12;
+import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i10;
+import 'package:flumip_client/src/protocol/settings.dart' as _i11;
+import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i12;
+import 'protocol.dart' as _i13;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
@@ -832,10 +833,14 @@ class EndpointProject extends EndpointFlumip {
 
 /// Endpoint for handling settings-related operations.
 ///
-/// Deliberately **not** a [FlumipEndpoint]: this endpoint is how single sign-on
-/// gets switched off, so putting it behind a login would make a misconfiguration
-/// unrecoverable from the UI. Every method here gates itself instead, on either
-/// the settings password or an authenticated admin session.
+/// Deliberately **not** a [FlumipEndpoint]: [userSettings] has to answer before
+/// the app knows anything, and the password route below has to keep working on
+/// an install with no identities at all.
+///
+/// Every method gates itself instead, on an authenticated admin session or — only
+/// while sign-in is not being enforced — the settings password. See
+/// `SettingsService._isAdmin` for what that trades away, and for the escape that
+/// is left when the identity provider is the thing that broke.
 /// {@category Endpoint}
 class EndpointSettings extends _i1.EndpointRef {
   EndpointSettings(_i1.EndpointCaller caller) : super(caller);
@@ -843,13 +848,31 @@ class EndpointSettings extends _i1.EndpointRef {
   @override
   String get name => 'settings';
 
+  /// What the calling user may see, and how they may get in.
+  ///
+  /// Answered for **anyone**, signed in or not, and deliberately leaks nothing:
+  /// two booleans the app needs before it can decide what to draw. Without it
+  /// the Settings tab has to guess — which is what produced the behaviour this
+  /// replaced, where an administrator was shown a password box for a password
+  /// they did not need, and a user was shown one that would have worked.
+  ///
+  /// **The extension point for per-user settings**: see [UserSettingsDto].
+  ///
+  /// \param session The current session.
+  _i2.Future<_i10.UserSettingsDto> userSettings() =>
+      caller.callServerEndpoint<_i10.UserSettingsDto>(
+        'settings',
+        'userSettings',
+        {},
+      );
+
   /// Retrieves the settings.
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i10.Settings> getSettings(String? password) =>
-      caller.callServerEndpoint<_i10.Settings>(
+  _i2.Future<_i11.Settings> getSettings(String? password) =>
+      caller.callServerEndpoint<_i11.Settings>(
         'settings',
         'getSettings',
         {'password': password},
@@ -869,7 +892,7 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param settings The [Settings] object to update.
   _i2.Future<void> updateSettings(
     String? password,
-    _i10.Settings settings,
+    _i11.Settings settings,
   ) => caller.callServerEndpoint<void>(
     'settings',
     'updateSettings',
@@ -910,8 +933,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
-  _i2.Future<_i11.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
-      caller.callServerEndpoint<_i11.AuthAdminStatusDto>(
+  _i2.Future<_i12.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
+      caller.callServerEndpoint<_i12.AuthAdminStatusDto>(
         'settings',
         'getAuthAdminStatus',
         {'password': password},
@@ -955,7 +978,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i12.Protocol(),
+         _i13.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

@@ -26,10 +26,11 @@ import 'project_options.dart' as _i13;
 import 'score_method.dart' as _i14;
 import 'settings.dart' as _i15;
 import 'snp.dart' as _i16;
-import 'package:flumip_client/src/protocol/genome.dart' as _i17;
-import 'package:flumip_client/src/protocol/snp.dart' as _i18;
-import 'package:flumip_client/src/protocol/project.dart' as _i19;
-import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i20;
+import 'user_settings_dto.dart' as _i17;
+import 'package:flumip_client/src/protocol/genome.dart' as _i18;
+import 'package:flumip_client/src/protocol/snp.dart' as _i19;
+import 'package:flumip_client/src/protocol/project.dart' as _i20;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i21;
 export 'auth_admin_status_dto.dart';
 export 'auth_config_dto.dart';
 export 'auth_user_dto.dart';
@@ -45,6 +46,7 @@ export 'project_options.dart';
 export 'score_method.dart';
 export 'settings.dart';
 export 'snp.dart';
+export 'user_settings_dto.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -126,6 +128,9 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i16.Snp) {
       return _i16.Snp.fromJson(data) as T;
     }
+    if (t == _i17.UserSettingsDto) {
+      return _i17.UserSettingsDto.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i2.AuthAdminStatusDto?>()) {
       return (data != null ? _i2.AuthAdminStatusDto.fromJson(data) : null) as T;
     }
@@ -179,6 +184,9 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i16.Snp?>()) {
       return (data != null ? _i16.Snp.fromJson(data) : null) as T;
     }
+    if (t == _i1.getType<_i17.UserSettingsDto?>()) {
+      return (data != null ? _i17.UserSettingsDto.fromJson(data) : null) as T;
+    }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
@@ -200,20 +208,20 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i17.Genome>) {
-      return (data as List).map((e) => deserialize<_i17.Genome>(e)).toList()
+    if (t == List<_i18.Genome>) {
+      return (data as List).map((e) => deserialize<_i18.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i18.Snp>) {
-      return (data as List).map((e) => deserialize<_i18.Snp>(e)).toList() as T;
+    if (t == List<_i19.Snp>) {
+      return (data as List).map((e) => deserialize<_i19.Snp>(e)).toList() as T;
     }
-    if (t == List<_i19.Project>) {
-      return (data as List).map((e) => deserialize<_i19.Project>(e)).toList()
+    if (t == List<_i20.Project>) {
+      return (data as List).map((e) => deserialize<_i20.Project>(e)).toList()
           as T;
     }
-    if (t == List<_i20.FlumipUserDto>) {
+    if (t == List<_i21.FlumipUserDto>) {
       return (data as List)
-              .map((e) => deserialize<_i20.FlumipUserDto>(e))
+              .map((e) => deserialize<_i21.FlumipUserDto>(e))
               .toList()
           as T;
     }
@@ -237,6 +245,7 @@ class Protocol extends _i1.SerializationManager {
       _i14.ScoreMethod => 'ScoreMethod',
       _i15.Settings => 'Settings',
       _i16.Snp => 'Snp',
+      _i17.UserSettingsDto => 'UserSettingsDto',
       _ => null,
     };
   }
@@ -281,6 +290,8 @@ class Protocol extends _i1.SerializationManager {
         return 'Settings';
       case _i16.Snp():
         return 'Snp';
+      case _i17.UserSettingsDto():
+        return 'UserSettingsDto';
     }
     return null;
   }
@@ -335,6 +346,9 @@ class Protocol extends _i1.SerializationManager {
     }
     if (dataClassName == 'Snp') {
       return deserialize<_i16.Snp>(data['data']);
+    }
+    if (dataClassName == 'UserSettingsDto') {
+      return deserialize<_i17.UserSettingsDto>(data['data']);
     }
     return super.deserializeByClassName(data);
   }

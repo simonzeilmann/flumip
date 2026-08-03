@@ -617,12 +617,16 @@ void main() {
         );
       });
 
-      test('the settings break-glass route is unaffected', () async {
+      test('the settings endpoint is unaffected by project authorization',
+          () async {
+        // Its gate is its own — an admin session, not project access — so an
+        // admin who owns no projects at all still reaches the configuration.
+        // The settings password is refused here because sign-in is enforced;
+        // that is the settings rule, and nothing to do with this file.
         await enforceSso(session);
-        final settings = await endpoints.settings.getSettings(
-          sessionBuilder,
-          'changeme',
-        );
+        final boss = await signIn('boss@uni.example', isAdmin: true);
+        final settings =
+            await endpoints.settings.getSettings(boss.builder, null);
         expect(settings.loginRequired, isTrue);
       });
     });

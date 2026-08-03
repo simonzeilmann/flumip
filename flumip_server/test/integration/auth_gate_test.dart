@@ -110,14 +110,21 @@ void main() {
       await expectLater(endpoints.genome.getAllGenomes(signedIn), completes);
     });
 
-    test('the settings password still works — the break-glass route', () async {
-      // The switch that turns authentication off must never sit behind the thing
-      // it switches off. If this ever regresses, a misconfigured install becomes
-      // unrecoverable from the UI.
+    test('the settings password stops being accepted', () async {
+      // Deliberate, and a reversal of what this file used to assert. Once
+      // sign-in is enforced, identity is the only way into the settings, so a
+      // user who happens to know the shared password cannot use it to reach an
+      // administrator's configuration.
+      //
+      // What it costs: the UI can no longer switch authentication off while it
+      // is enforcing. Recovery for a provider that worked and then broke is
+      // FLUMIP_AUTH_ENABLED=false plus a restart, or SQL — see
+      // SettingsService._isAdmin and docs/authentication.md.
       await enforceSso(session);
-      final settings =
-          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
-      expect(settings.loginRequired, isTrue);
+      await expectLater(
+        endpoints.settings.getSettings(sessionBuilder, 'changeme'),
+        throwsA(isA<ArgumentException>()),
+      );
     });
 
     test('an admin session unlocks settings without the password', () async {
@@ -165,6 +172,19 @@ void main() {
     setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
     final session = sessionBuilder.build();
 
+    // Every settings call below goes through an admin session rather than the
+    // settings password. It used to be the password, which is the change this
+    // group now documents: while sign-in is enforced the password is refused, so
+    // an administrator who can still sign in is the only one who can turn
+    // authentication off from the UI. If they cannot sign in either, recovery is
+    // FLUMIP_AUTH_ENABLED=false plus a restart, or SQL — not this endpoint.
+    final signedInAdmin = sessionBuilder.copyWith(
+      authentication: AuthenticationOverride.authenticationInfo(
+        'boss@uni.example',
+        {adminScope},
+      ),
+    );
+
     setUp(http.reset);
 
     test('saving the settings takes effect immediately', () async {
@@ -175,10 +195,10 @@ void main() {
       );
 
       final settings =
-          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+          await endpoints.settings.getSettings(signedInAdmin, null);
       settings.loginRequired = false;
       await endpoints.settings
-          .updateSettings(sessionBuilder, 'changeme', settings);
+          .updateSettings(signedInAdmin, null, settings);
 
       // No waiting for the 30-second refresh tick: updateSettings re-resolves.
       expect(sl<AuthRuntime>().isEnforcing, isFalse);
@@ -191,7 +211,7 @@ void main() {
     test('the client secret survives an unrelated settings save', () async {
       await enforceSso(session);
       final settings =
-          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+          await endpoints.settings.getSettings(signedInAdmin, null);
 
       // The secret is never sent to the browser. Asserted on the wire format
       // rather than on the object, because these test endpoints call the server
@@ -202,7 +222,7 @@ void main() {
 
       settings.smtpServer = 'smtp.example.org';
       await endpoints.settings
-          .updateSettings(sessionBuilder, 'changeme', settings);
+          .updateSettings(signedInAdmin, null, settings);
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, 's3cret');
@@ -213,7 +233,7 @@ void main() {
     test('setOidcClientSecret writes without reading back', () async {
       await enforceSso(session);
       await endpoints.settings
-          .setOidcClientSecret(sessionBuilder, 'changeme', 'a-new-secret');
+          .setOidcClientSecret(signedInAdmin, null, 'a-new-secret');
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, 'a-new-secret');
@@ -222,7 +242,7 @@ void main() {
     test('an empty secret clears it', () async {
       await enforceSso(session);
       await endpoints.settings
-          .setOidcClientSecret(sessionBuilder, 'changeme', '  ');
+          .setOidcClientSecret(signedInAdmin, null, '  ');
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, isNull);
@@ -234,7 +254,7 @@ void main() {
         () async {
       await enforceSso(session);
       final status = await endpoints.settings
-          .getAuthAdminStatus(sessionBuilder, 'changeme');
+          .getAuthAdminStatus(signedInAdmin, null);
 
       expect(status.enabled, isTrue);
       expect(status.enforcing, isTrue);
@@ -253,7 +273,7 @@ void main() {
       await sl<AuthRuntime>().refresh(session);
 
       final status = await endpoints.settings
-          .getAuthAdminStatus(sessionBuilder, 'changeme');
+          .getAuthAdminStatus(signedInAdmin, null);
       expect(status.discoveryError, contains('Connection refused'));
     });
 

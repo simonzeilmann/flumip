@@ -1,6 +1,7 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
+import '../error_text.dart';
 import '../main.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -13,6 +14,70 @@ class SettingsTab extends StatefulWidget {
 class _SettingsTabState extends State<SettingsTab> {
   String? _errorMessage;
   Settings? settings;
+
+  /// What this caller may see, from the server. Null until the first answer.
+  ///
+  /// Asked on open rather than inferred from the session, so the tab draws the
+  /// same thing the server would enforce. Getting this wrong is what produced
+  /// the two behaviours this replaced: an administrator shown a password box for
+  /// a password they did not need, and an ordinary user shown one that worked.
+  UserSettingsDto? _access;
+
+  /// Set when the access question itself failed, so the tab can offer a retry
+  /// rather than a password box it has no reason to believe would work.
+  bool _accessFailed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ⚠️ Asked again whenever sign-in state changes, not just once here.
+    //
+    // TabBarView builds all three tabs when the app starts, so this runs before
+    // AuthController has exchanged the cookie at /auth/session for a bearer. The
+    // first answer therefore describes an anonymous caller — `isAdmin: false`,
+    // and on an install that is not enforcing, `passwordAccepted: true`. Caching
+    // that was the bug: an administrator was shown a password box, and so was
+    // everyone else, because the question had been asked before there was
+    // anybody to ask about.
+    authController.addListener(_onAuthChanged);
+    _loadAccess();
+  }
+
+  void _onAuthChanged() {
+    // Whatever was decided for the previous identity no longer applies. Drop the
+    // loaded settings too: signing out must not leave an administrator's
+    // configuration on screen.
+    setState(() {
+      _access = null;
+      settings = null;
+      _errorMessage = null;
+    });
+    _loadAccess();
+  }
+
+  Future<void> _loadAccess() async {
+    try {
+      final access = await client.settings.userSettings();
+      if (!mounted) return;
+      setState(() {
+        _access = access;
+        _accessFailed = false;
+      });
+      // An administrator needs no password, so there is nothing to ask for:
+      // load straight away rather than making them click through a box that
+      // would have accepted an empty string.
+      if (access.isAdmin) await _loadSettings();
+    } catch (e) {
+      if (!mounted) return;
+      // Deliberately NOT falling back to the password form. Doing that turns
+      // every transient failure into "type a password" — indistinguishable from
+      // a real prompt, and the reason the earlier bug was so hard to read.
+      setState(() {
+        _accessFailed = true;
+        _errorMessage = 'Could not determine your access: ${describeError(e)}';
+      });
+    }
+  }
 
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _baseDirController = TextEditingController();
@@ -61,12 +126,8 @@ class _SettingsTabState extends State<SettingsTab> {
   final ValueNotifier<bool> _demoModeNotifier = ValueNotifier(false);
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
+    authController.removeListener(_onAuthChanged);
     _passwordController.dispose();
     _baseDirController.dispose();
     _projectDirController.dispose();
@@ -198,8 +259,25 @@ class _SettingsTabState extends State<SettingsTab> {
         );
         _oidcClientSecretController.clear();
       }
+      // Captured before the save, because that is what makes this a transition
+      // rather than just a value.
+      final wasRequiringLogin = this.settings!.loginRequired;
+
       await client.settings
           .updateSettings(_passwordController.text, settings);
+
+      if (wasRequiringLogin && !settings.loginRequired) {
+        // The server has just ended every session, this one included — there is
+        // nothing left to be signed in to. Navigating to /auth/logout clears the
+        // HttpOnly cookie (only the server can) and reloads the app, which then
+        // bootstraps into the no-authentication state it has now actually got.
+        //
+        // Returning here on purpose: everything below assumes a session that no
+        // longer exists, and _loadAuthStatus would simply fail.
+        authController.signOut(siteUrl);
+        return;
+      }
+
       setState(() {
         _errorMessage = null;
         // The password may have just been changed; keep the one we authenticate
@@ -455,6 +533,47 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
+  /// What a signed-in non-administrator sees.
+  ///
+  /// **This is where per-user settings go.** There are none yet — every field on
+  /// `Settings` is server configuration — so this says so plainly rather than
+  /// showing an empty form or a password box that would be refused.
+  ///
+  /// To add one: put the field on `UserSettingsDto`, fill it in from the caller's
+  /// identity in `SettingsEndpoint.userSettings`, and render it here. The rest of
+  /// the plumbing — the endpoint, the call on open, and this branch of the tab —
+  /// already exists.
+  Widget buildUserSettingsView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 40,
+              color: Theme.of(context).disabledColor,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No settings available',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Everything on this page configures the server itself, so it is '
+              'restricted to administrators. Nothing here is specific to your '
+              'account yet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).hintColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -472,7 +591,19 @@ class _SettingsTabState extends State<SettingsTab> {
               ),
             ),
           SizedBox(height: 20),
-          if (settings == null) ...[
+          if (settings == null && _accessFailed) ...[
+            Center(
+              child: ElevatedButton(
+                onPressed: _loadAccess,
+                child: const Text('Retry'),
+              ),
+            ),
+          ] else if (settings == null && _access == null) ...[
+            const Center(child: CircularProgressIndicator()),
+          ] else if (settings == null && _access!.passwordAccepted) ...[
+            // Only reachable when sign-in is not being enforced. Once it is, the
+            // server stops accepting the password, so offering the box would be
+            // offering something that cannot work.
             Row(
               spacing: 10,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -493,6 +624,8 @@ class _SettingsTabState extends State<SettingsTab> {
                     onPressed: _loadSettings, child: Text('Load settings')),
               ],
             ),
+          ] else if (settings == null) ...[
+            buildUserSettingsView(),
           ] else ...[
             SizedBox(
               width: 400,

@@ -55,6 +55,7 @@ project:
   - requireProject:
   - requireProjectOptions:
 settings:
+  - userSettings:
   - getSettings:
   - updateSettings:
   - setOidcClientSecret:

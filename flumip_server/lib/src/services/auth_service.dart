@@ -364,6 +364,31 @@ class AuthService {
     await broadcastRevocation(session, authSessionId);
   }
 
+  /// Ends **every** session on this server, and returns how many.
+  ///
+  /// Used when an administrator switches sign-in off. Leaving sessions alive
+  /// would mean the app still shows people as signed in, and still treats an
+  /// administrator as one, on an install that no longer authenticates anybody —
+  /// their tokens would go on being accepted for as long as they last.
+  ///
+  /// ⚠️ **Deleting the rows is not sufficient**, which is why this loops rather
+  /// than being one `deleteWhere`. The bearer lookup is a read-through
+  /// `localPrio` cache, so a row deleted underneath it keeps answering until the
+  /// entry ages out — up to the token lifetime. That is the documented trap with
+  /// a manual `DELETE FROM auth_session`, and it would apply here in exactly the
+  /// same way. Each session's cache group has to be invalidated by id.
+  Future<int> revokeAllSessions(Session session) async {
+    final sessions = await AuthSession.db.find(session);
+    if (sessions.isEmpty) return 0;
+
+    // Cascades to auth_api_token, so the bearers go with the sessions.
+    await AuthSession.db.deleteWhere(session, where: (t) => t.id > 0);
+    for (final revoked in sessions) {
+      await broadcastRevocation(session, revoked.id!);
+    }
+    return sessions.length;
+  }
+
   /// Ends the session identified by a cookie value. Used by `/auth/logout`.
   Future<void> revokeByCookie(Session session, String cookieValue) async {
     final authSession = await AuthSession.db.findFirstRow(

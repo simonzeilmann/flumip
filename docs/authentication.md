@@ -241,12 +241,25 @@ sent. Build into `flumip_server/web/app` and open the server's web port instead.
 
 In order of preference:
 
-1. **The admin password still works.** The Settings tab is never behind the
-   sign-in — the switch that turns authentication off cannot sit behind the thing
-   it switches off. Open Settings, enter the password, untick "Require sign-in".
-2. **The environment override.** Set `FLUMIP_AUTH_ENABLED=false` in
+1. **Sign in as an administrator.** Any address on the admin list reaches the
+   Settings tab with no password at all; untick "Require sign-in" there. This is
+   the normal route, and it is why the admin list is worth keeping correct.
+2. **The settings password — but only if sign-in is not being enforced.**
+   ⚠️ Once sign-in *is* enforced, the password is refused, deliberately: a user
+   who knows the shared password must not be able to reach an administrator's
+   configuration with it.
+
+   In practice this still covers the most common mistake. If the provider has
+   **never** answered — a typo in the issuer, a firewall, a client ID that does
+   not exist — FLUMIP does not enforce at all (it fails open rather than locking
+   you out), so the password works and you can undo the change from the UI.
+
+   What it does not cover is a provider that worked and then broke: FLUMIP keeps
+   enforcing from its cached configuration, nobody can sign in, and the password
+   will not help. Use option 3 or 4.
+3. **The environment override.** Set `FLUMIP_AUTH_ENABLED=false` in
    `/etc/flumip/flumip_<env>.env` and `sudo systemctl restart flumip_<env>`.
-3. **The database, if you have lost the password too.**
+4. **The database.**
 
    ```sql
    UPDATE settings SET "loginRequired" = false, "settingsPassword" = 'changeme';
