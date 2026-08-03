@@ -47,6 +47,8 @@ project:
   - removeGeneFromProject:
   - addGenesToProject:
   - setGeneById:
+  - setEmailNotification:
+  - notificationsAvailable:
   - setSnpById:
   - requireProject:
   - requireProjectOptions:

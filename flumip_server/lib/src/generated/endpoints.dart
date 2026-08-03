@@ -705,6 +705,35 @@ class Endpoints extends _i1.EndpointDispatch {
                 params['genomeId'],
               ),
         ),
+        'setEmailNotification': _i1.MethodConnector(
+          name: 'setEmailNotification',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'enabled': _i1.ParameterDescription(
+              name: 'enabled',
+              type: _i1.getType<bool>(),
+              nullable: false,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint)
+                  .setEmailNotification(
+                    session,
+                    params['id'],
+                    params['enabled'],
+                  ),
+        ),
+        'notificationsAvailable': _i1.MethodConnector(
+          name: 'notificationsAvailable',
+          params: {},
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint)
+                  .notificationsAvailable(session),
+        ),
         'setSnpById': _i1.MethodConnector(
           name: 'setSnpById',
           params: {

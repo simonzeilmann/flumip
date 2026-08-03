@@ -305,4 +305,79 @@ void main() {
       );
     }, tags: ['unit']);
   });
+
+  withServerpod('Email notification flag', (sessionBuilder, endpoints) {
+    setup();
+    var session = sessionBuilder.build();
+    final projectService = sl<ProjectService>();
+
+    test('defaults to off', () async {
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+      expect(project.emailNotification, isFalse);
+    }, tags: ['unit']);
+
+    test('setEmailNotification turns it on and back off', () async {
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+
+      await projectService.setEmailNotification(session, project.id!, true);
+      var reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.emailNotification, isTrue);
+
+      await projectService.setEmailNotification(session, project.id!, false);
+      reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.emailNotification, isFalse);
+    }, tags: ['unit']);
+
+    test('stores the flag on an unowned project too', () async {
+      // Nothing can be delivered for an unowned project, but refusing the write
+      // would put the "can this send?" rule in two places. The send path is the
+      // one that decides; see MailService.resolveRecipient.
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+      expect(project.owner, isNull);
+
+      await projectService.setEmailNotification(session, project.id!, true);
+
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.emailNotification, isTrue);
+    }, tags: ['unit']);
+
+    test('stores the flag even while mail is globally disabled', () async {
+      // Same reasoning: an admin switching mail on later must not require every
+      // user to go back and re-tick their projects.
+      await overrideMailSettings(session, mailActive: false);
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+
+      await projectService.setEmailNotification(session, project.id!, true);
+
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.emailNotification, isTrue);
+    }, tags: ['unit']);
+
+    test('setEmailNotification throws when the project is missing', () async {
+      expect(
+        () => projectService.setEmailNotification(session, -1, true),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+  });
+
+  withServerpod('ProjectEndpoint.notificationsAvailable',
+      (sessionBuilder, endpoints) {
+    setup();
+    var session = sessionBuilder.build();
+
+    test('reports whether the admin has mail switched on', () async {
+      await overrideMailSettings(session, mailActive: false);
+      expect(await endpoints.project.notificationsAvailable(sessionBuilder),
+          isFalse);
+
+      await overrideMailSettings(session, mailActive: true);
+      expect(await endpoints.project.notificationsAvailable(sessionBuilder),
+          isTrue);
+    }, tags: ['integration']);
+  });
 }

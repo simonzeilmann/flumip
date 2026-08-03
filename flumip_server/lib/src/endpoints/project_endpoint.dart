@@ -3,6 +3,7 @@ import 'package:serverpod/server.dart';
 
 import '../services/authorization_service.dart';
 import '../services/project_service.dart';
+import '../services/settings_service.dart';
 import '../generated/protocol.dart';
 import 'flumip_endpoint.dart';
 
@@ -185,6 +186,47 @@ class ProjectEndpoint extends FlumipEndpoint {
       );
       rethrow;
     }
+  }
+
+  /// Turns the finish notification on or off for a project.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param enabled Whether to email the project's owner when generation ends.
+  Future<void> setEmailNotification(
+    Session session,
+    int id,
+    bool enabled,
+  ) async {
+    session.log(
+      "Setting email notification to $enabled for project with ID: $id",
+      level: LogLevel.info,
+    );
+    try {
+      await requireProject(session, id);
+      return projectService.setEmailNotification(session, id, enabled);
+    } catch (e) {
+      session.log(
+        "Error setting email notification for project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Whether an administrator has switched mail on for this install.
+  ///
+  /// The per-project notification switch is meaningless without it, so the app
+  /// asks once and hides the control when this is false. **Advisory only** — the
+  /// server decides what is actually sent, on the send path. Deliberately not
+  /// part of [SettingsEndpoint]: every method there is admin-gated, and an
+  /// ordinary user has to be able to read this to render their own switch.
+  ///
+  /// \param session The current session.
+  Future<bool> notificationsAvailable(Session session) async {
+    final settings = await SettingsService().getSettings(session);
+    return settings.mailActive;
   }
 
   /// Sets the SNP for a project by its ID.

@@ -331,4 +331,28 @@ class ProjectService {
     project.snp = snpId;
     await Project.db.updateRow(session, project);
   }
+
+  /// Turns "email me when MIP generation finishes" on or off for a project.
+  ///
+  /// The flag is stored unconditionally — including when mail is globally off,
+  /// or the project is unowned and so has nobody to notify. Whether anything is
+  /// actually sent stays decided in one place, on the send path:
+  /// `MailService.notifyProjectFinished` checks `Settings.mailActive`, and
+  /// `MailService.resolveRecipient` needs an owner. Re-checking either here
+  /// would be a second expression of the same rule — the thing
+  /// `projectIsAccessible` exists to avoid — and would additionally make the
+  /// flag impossible to set ahead of an administrator switching mail on.
+  Future<void> setEmailNotification(
+    Session session,
+    int id,
+    bool enabled,
+  ) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(message: 'Project not found');
+    }
+    project.emailNotification = enabled;
+    await Project.db.updateRow(session, project);
+  }
 }
