@@ -18,12 +18,21 @@ class _ProjectsTabState extends State<ProjectsTab> {
   String? _errorMessage;
   bool _showCreateProject = false;
   bool _notificationsAvailable = false;
+  List<FlumipUserDto>? _assignableOwners;
+
+  /// Whether the signed-in user may reassign ownership.
+  ///
+  /// Null while signed out, which is every request on a no-auth install — and
+  /// there the server refuses reassignment outright, so the controls stay hidden
+  /// exactly where they would not work.
+  bool get _isAdmin => authController.user?.isAdmin ?? false;
 
   @override
   void initState() {
     super.initState();
     _fetchProjects();
     _fetchNotificationsAvailable();
+    _fetchAssignableOwners();
   }
 
   /// Asks once whether an administrator has mail switched on, so the per-project
@@ -43,6 +52,36 @@ class _ProjectsTabState extends State<ProjectsTab> {
     } catch (_) {
       // Deliberately not surfaced: the projects themselves loaded fine, and an
       // error banner about a checkbox would be noise.
+    }
+  }
+
+  /// Loads the users a project can be handed to, for administrators only.
+  ///
+  /// Skipped entirely for everyone else rather than called and discarded: the
+  /// endpoint refuses non-admins, so calling it would log a refusal on every
+  /// ordinary page load. Fetched once for the whole list, like the mail flag.
+  void _fetchAssignableOwners() async {
+    if (!_isAdmin) return;
+    try {
+      final owners = await client.project.assignableOwners();
+      if (!mounted) return;
+      setState(() {
+        _assignableOwners = owners;
+      });
+    } catch (_) {
+      // Leaves the picker out; the projects themselves are unaffected.
+    }
+  }
+
+  /// Hands [projectID] to [ownerId], or to nobody when null.
+  Future<void> _setProjectOwner(int projectID, int? ownerId) async {
+    try {
+      await client.project.setProjectOwner(projectID, ownerId);
+      _fetchProjects();
+    } catch (e) {
+      setState(() {
+        _errorMessage = describeError(e);
+      });
     }
   }
 
@@ -120,6 +159,9 @@ class _ProjectsTabState extends State<ProjectsTab> {
                     project: _projects![index],
                     onDelete: () => _deleteProject(_projects![index].id!),
                     notificationsAvailable: _notificationsAvailable,
+                    assignableOwners: _assignableOwners,
+                    onOwnerChanged: (ownerId) =>
+                        _setProjectOwner(_projects![index].id!, ownerId),
                   );
                 },
               ),

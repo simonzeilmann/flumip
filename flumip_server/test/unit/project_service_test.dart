@@ -365,6 +365,84 @@ void main() {
     }, tags: ['unit']);
   });
 
+  withServerpod('Ownership reassignment', (sessionBuilder, endpoints) {
+    setup();
+    var session = sessionBuilder.build();
+    final projectService = sl<ProjectService>();
+
+    test('setOwner hands the project over', () async {
+      final options = await seedOptions(session);
+      final alice = await seedSignedInUser(session, email: 'a@uni.example');
+      final bob = await seedSignedInUser(session, email: 'b@uni.example');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        owner: alice.user.id,
+      );
+
+      await projectService.setOwner(session, project.id!, bob.user.id);
+
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.owner, bob.user.id);
+    }, tags: ['unit']);
+
+    test('setOwner(null) releases the project to unowned', () async {
+      final options = await seedOptions(session);
+      final alice = await seedSignedInUser(session, email: 'a@uni.example');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        owner: alice.user.id,
+      );
+
+      await projectService.setOwner(session, project.id!, null);
+
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.owner, isNull);
+    }, tags: ['unit']);
+
+    test('setOwner rejects a user that does not exist', () async {
+      // Looked up rather than trusted, so this reads as "User not found"
+      // instead of surfacing as a foreign-key violation from the driver.
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+
+      await expectLater(
+        projectService.setOwner(session, project.id!, 999999),
+        throwsMessage('User not found'),
+      );
+
+      final reloaded = await projectService.getProject(session, project.id!);
+      expect(reloaded.owner, isNull, reason: 'nothing was written');
+    }, tags: ['unit']);
+
+    test('setOwner throws when the project is missing', () async {
+      await expectLater(
+        projectService.setOwner(session, -1, null),
+        throwsMessage('Project not found'),
+      );
+    }, tags: ['unit']);
+
+    test('assignableOwners lists every user, oldest first', () async {
+      final first = await seedSignedInUser(session, email: 'first@uni.example');
+      final second =
+          await seedSignedInUser(session, email: 'second@uni.example');
+
+      final owners = await projectService.assignableOwners(session);
+
+      expect(
+        owners.map((u) => u.id),
+        containsAllInOrder([first.user.id, second.user.id]),
+      );
+    }, tags: ['unit']);
+
+    test('assignableOwners is empty on an install with no users', () async {
+      // Which is every no-auth install — the picker has nothing to offer, and
+      // the endpoint in front of this refuses the call there anyway.
+      expect(await projectService.assignableOwners(session), isEmpty);
+    }, tags: ['unit']);
+  });
+
   withServerpod('ProjectEndpoint.notificationsAvailable',
       (sessionBuilder, endpoints) {
     setup();

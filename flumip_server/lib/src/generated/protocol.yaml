@@ -48,6 +48,8 @@ project:
   - addGenesToProject:
   - setGeneById:
   - setEmailNotification:
+  - setProjectOwner:
+  - assignableOwners:
   - notificationsAvailable:
   - setSnpById:
   - requireProject:

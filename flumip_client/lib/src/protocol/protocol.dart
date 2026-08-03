@@ -19,15 +19,17 @@ import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i6;
 import 'exceptions/argument_exception.dart' as _i7;
 import 'exceptions/flumip_file_not_found_exception.dart' as _i8;
 import 'exceptions/project_access_denied_exception.dart' as _i9;
-import 'genome.dart' as _i10;
-import 'project.dart' as _i11;
-import 'project_options.dart' as _i12;
-import 'score_method.dart' as _i13;
-import 'settings.dart' as _i14;
-import 'snp.dart' as _i15;
-import 'package:flumip_client/src/protocol/genome.dart' as _i16;
-import 'package:flumip_client/src/protocol/snp.dart' as _i17;
-import 'package:flumip_client/src/protocol/project.dart' as _i18;
+import 'flumip_user_dto.dart' as _i10;
+import 'genome.dart' as _i11;
+import 'project.dart' as _i12;
+import 'project_options.dart' as _i13;
+import 'score_method.dart' as _i14;
+import 'settings.dart' as _i15;
+import 'snp.dart' as _i16;
+import 'package:flumip_client/src/protocol/genome.dart' as _i17;
+import 'package:flumip_client/src/protocol/snp.dart' as _i18;
+import 'package:flumip_client/src/protocol/project.dart' as _i19;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i20;
 export 'auth_admin_status_dto.dart';
 export 'auth_config_dto.dart';
 export 'auth_user_dto.dart';
@@ -36,6 +38,7 @@ export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
 export 'exceptions/project_access_denied_exception.dart';
+export 'flumip_user_dto.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_options.dart';
@@ -102,23 +105,26 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i9.ProjectAccessDeniedException) {
       return _i9.ProjectAccessDeniedException.fromJson(data) as T;
     }
-    if (t == _i10.Genome) {
-      return _i10.Genome.fromJson(data) as T;
+    if (t == _i10.FlumipUserDto) {
+      return _i10.FlumipUserDto.fromJson(data) as T;
     }
-    if (t == _i11.Project) {
-      return _i11.Project.fromJson(data) as T;
+    if (t == _i11.Genome) {
+      return _i11.Genome.fromJson(data) as T;
     }
-    if (t == _i12.ProjectOptions) {
-      return _i12.ProjectOptions.fromJson(data) as T;
+    if (t == _i12.Project) {
+      return _i12.Project.fromJson(data) as T;
     }
-    if (t == _i13.ScoreMethod) {
-      return _i13.ScoreMethod.fromJson(data) as T;
+    if (t == _i13.ProjectOptions) {
+      return _i13.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i14.Settings) {
-      return _i14.Settings.fromJson(data) as T;
+    if (t == _i14.ScoreMethod) {
+      return _i14.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i15.Snp) {
-      return _i15.Snp.fromJson(data) as T;
+    if (t == _i15.Settings) {
+      return _i15.Settings.fromJson(data) as T;
+    }
+    if (t == _i16.Snp) {
+      return _i16.Snp.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.AuthAdminStatusDto?>()) {
       return (data != null ? _i2.AuthAdminStatusDto.fromJson(data) : null) as T;
@@ -152,23 +158,26 @@ class Protocol extends _i1.SerializationManager {
               : null)
           as T;
     }
-    if (t == _i1.getType<_i10.Genome?>()) {
-      return (data != null ? _i10.Genome.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.FlumipUserDto?>()) {
+      return (data != null ? _i10.FlumipUserDto.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.Project?>()) {
-      return (data != null ? _i11.Project.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.Genome?>()) {
+      return (data != null ? _i11.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.ProjectOptions?>()) {
-      return (data != null ? _i12.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i12.Project?>()) {
+      return (data != null ? _i12.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.ScoreMethod?>()) {
-      return (data != null ? _i13.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.ProjectOptions?>()) {
+      return (data != null ? _i13.ProjectOptions.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.Settings?>()) {
-      return (data != null ? _i14.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.ScoreMethod?>()) {
+      return (data != null ? _i14.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.Snp?>()) {
-      return (data != null ? _i15.Snp.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.Settings?>()) {
+      return (data != null ? _i15.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i16.Snp?>()) {
+      return (data != null ? _i16.Snp.fromJson(data) : null) as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -191,15 +200,21 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i16.Genome>) {
-      return (data as List).map((e) => deserialize<_i16.Genome>(e)).toList()
+    if (t == List<_i17.Genome>) {
+      return (data as List).map((e) => deserialize<_i17.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i17.Snp>) {
-      return (data as List).map((e) => deserialize<_i17.Snp>(e)).toList() as T;
+    if (t == List<_i18.Snp>) {
+      return (data as List).map((e) => deserialize<_i18.Snp>(e)).toList() as T;
     }
-    if (t == List<_i18.Project>) {
-      return (data as List).map((e) => deserialize<_i18.Project>(e)).toList()
+    if (t == List<_i19.Project>) {
+      return (data as List).map((e) => deserialize<_i19.Project>(e)).toList()
+          as T;
+    }
+    if (t == List<_i20.FlumipUserDto>) {
+      return (data as List)
+              .map((e) => deserialize<_i20.FlumipUserDto>(e))
+              .toList()
           as T;
     }
     return super.deserialize<T>(data, t);
@@ -215,12 +230,13 @@ class Protocol extends _i1.SerializationManager {
       _i7.ArgumentException => 'ArgumentException',
       _i8.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
       _i9.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
-      _i10.Genome => 'Genome',
-      _i11.Project => 'Project',
-      _i12.ProjectOptions => 'ProjectOptions',
-      _i13.ScoreMethod => 'ScoreMethod',
-      _i14.Settings => 'Settings',
-      _i15.Snp => 'Snp',
+      _i10.FlumipUserDto => 'FlumipUserDto',
+      _i11.Genome => 'Genome',
+      _i12.Project => 'Project',
+      _i13.ProjectOptions => 'ProjectOptions',
+      _i14.ScoreMethod => 'ScoreMethod',
+      _i15.Settings => 'Settings',
+      _i16.Snp => 'Snp',
       _ => null,
     };
   }
@@ -251,17 +267,19 @@ class Protocol extends _i1.SerializationManager {
         return 'FlumipFileNotFoundException';
       case _i9.ProjectAccessDeniedException():
         return 'ProjectAccessDeniedException';
-      case _i10.Genome():
+      case _i10.FlumipUserDto():
+        return 'FlumipUserDto';
+      case _i11.Genome():
         return 'Genome';
-      case _i11.Project():
+      case _i12.Project():
         return 'Project';
-      case _i12.ProjectOptions():
+      case _i13.ProjectOptions():
         return 'ProjectOptions';
-      case _i13.ScoreMethod():
+      case _i14.ScoreMethod():
         return 'ScoreMethod';
-      case _i14.Settings():
+      case _i15.Settings():
         return 'Settings';
-      case _i15.Snp():
+      case _i16.Snp():
         return 'Snp';
     }
     return null;
@@ -297,23 +315,26 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'ProjectAccessDeniedException') {
       return deserialize<_i9.ProjectAccessDeniedException>(data['data']);
     }
+    if (dataClassName == 'FlumipUserDto') {
+      return deserialize<_i10.FlumipUserDto>(data['data']);
+    }
     if (dataClassName == 'Genome') {
-      return deserialize<_i10.Genome>(data['data']);
+      return deserialize<_i11.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i11.Project>(data['data']);
+      return deserialize<_i12.Project>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i12.ProjectOptions>(data['data']);
+      return deserialize<_i13.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i13.ScoreMethod>(data['data']);
+      return deserialize<_i14.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i14.Settings>(data['data']);
+      return deserialize<_i15.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i15.Snp>(data['data']);
+      return deserialize<_i16.Snp>(data['data']);
     }
     return super.deserializeByClassName(data);
   }

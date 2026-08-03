@@ -30,11 +30,20 @@ class ProjectTile extends StatefulWidget {
   /// decides what is actually sent.
   final bool notificationsAvailable;
 
+  /// The users this project can be handed to, or null when the viewer is not an
+  /// administrator and the picker should not appear at all.
+  final List<FlumipUserDto>? assignableOwners;
+
+  /// Called with the new owner's id, or null to release the project to unowned.
+  final void Function(int? ownerId)? onOwnerChanged;
+
   ProjectTile({
     super.key,
     required this.project,
     required this.onDelete,
     this.notificationsAvailable = false,
+    this.assignableOwners,
+    this.onOwnerChanged,
   });
 
   @override
@@ -728,7 +737,11 @@ class _ProjectTileState extends State<ProjectTile> {
               ],
             ),
           ),
-          if (_isExpanded)
+          if (_isExpanded) ...[
+            // Full width, above the three columns, so it appears once in both
+            // layouts — ownership is a property of the project, not of any one
+            // of them.
+            if (widget.assignableOwners != null) buildOwnerRow(),
             if (isScreenWide) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -754,6 +767,50 @@ class _ProjectTileState extends State<ProjectTile> {
                 ),
               ),
             ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The owner picker, shown to administrators only.
+  ///
+  /// Rendered whenever [ProjectTile.assignableOwners] is non-null; the tab
+  /// leaves it null for everyone else rather than passing an empty list, so
+  /// "not an administrator" and "an install with no users yet" stay
+  /// distinguishable.
+  Widget buildOwnerRow() {
+    final owners = widget.assignableOwners!;
+    // A DropdownButton whose value matches no item throws, and the project's
+    // owner can legitimately be missing from the list: the identity may have
+    // been deleted since the project was loaded. Fall back to showing it as
+    // unowned, which is what ON DELETE SET NULL will have made it anyway.
+    final owner = widget.project.owner;
+    final selected = owners.any((u) => u.id == owner) ? owner : null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          const Text('Owner:'),
+          const SizedBox(width: 10),
+          DropdownButton<int?>(
+            value: selected,
+            onChanged: (id) => widget.onOwnerChanged?.call(id),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('Unowned — shared with everyone'),
+              ),
+              for (final user in owners)
+                DropdownMenuItem<int?>(
+                  value: user.id,
+                  child: Text(
+                    user.displayName.isEmpty ? user.email : user.displayName,
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );

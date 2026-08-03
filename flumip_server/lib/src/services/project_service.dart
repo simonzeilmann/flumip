@@ -332,6 +332,49 @@ class ProjectService {
     await Project.db.updateRow(session, project);
   }
 
+  /// Hands a project to a different owner, or to nobody.
+  ///
+  /// A null [ownerId] makes the project **unowned**, which is not the same as
+  /// orphaned: unowned means shared, reachable by everyone, and it is the state
+  /// every project predating authorization is already in. It is the correct way
+  /// to release a project that should not belong to one person.
+  ///
+  /// The user is looked up rather than trusted, so a bad id fails here with a
+  /// readable message instead of as a foreign-key violation from the driver.
+  ///
+  /// No access check: reassignment is administrative and is gated at the
+  /// endpoint, like every other rule in this codebase. Guarding here would also
+  /// stop the unauthenticated future calls that legitimately write projects.
+  Future<void> setOwner(Session session, int id, int? ownerId) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(message: 'Project not found');
+    }
+
+    if (ownerId != null) {
+      final user = await FlumipUser.db.findById(session, ownerId);
+      if (user == null) {
+        session.log("User not found with ID: $ownerId", level: LogLevel.error);
+        throw FlumipFileNotFoundException(message: 'User not found');
+      }
+    }
+
+    project.owner = ownerId;
+    await Project.db.updateRow(session, project);
+  }
+
+  /// Every user a project can be handed to, oldest account first.
+  ///
+  /// Only ever reached through an admin-gated endpoint — this is the one place
+  /// the user list becomes visible to a client at all.
+  Future<List<FlumipUser>> assignableOwners(Session session) {
+    return FlumipUser.db.find(
+      session,
+      orderBy: (t) => t.id,
+    );
+  }
+
   /// Turns "email me when MIP generation finishes" on or off for a project.
   ///
   /// The flag is stored unconditionally — including when mail is globally off,

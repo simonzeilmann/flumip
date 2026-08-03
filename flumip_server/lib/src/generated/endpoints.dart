@@ -727,6 +727,34 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['enabled'],
                   ),
         ),
+        'setProjectOwner': _i1.MethodConnector(
+          name: 'setProjectOwner',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'ownerId': _i1.ParameterDescription(
+              name: 'ownerId',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint).setProjectOwner(
+                session,
+                params['id'],
+                params['ownerId'],
+              ),
+        ),
+        'assignableOwners': _i1.MethodConnector(
+          name: 'assignableOwners',
+          params: {},
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _i7.ProjectEndpoint)
+                  .assignableOwners(session),
+        ),
         'notificationsAvailable': _i1.MethodConnector(
           name: 'notificationsAvailable',
           params: {},

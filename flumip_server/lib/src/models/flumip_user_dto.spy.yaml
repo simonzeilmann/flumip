@@ -1,0 +1,16 @@
+### A user an administrator can hand a project to. No table — transport only.
+###
+### FlumipUser is serverOnly, so reassigning ownership needs a client-facing view
+### of it: the picker has to show who is available and send back which one was
+### chosen. Deliberately narrower than the row — no issuer, subject, or lastLogin
+### — because the picker needs a label and an id and nothing else, and this is
+### the one place where the user list becomes visible to a client at all.
+###
+### Distinct from AuthUserDto, which describes *the caller* and carries no id.
+### Both exist because they answer different questions: "who am I" and "who could
+### own this".
+class: FlumipUserDto
+fields:
+  id: int
+  email: String
+  displayName: String, default=""

@@ -133,6 +133,34 @@ void main() {
         completes,
       );
     });
+
+    test('reassigning ownership is refused, not allowed', () async {
+      // The one place that fails *closed* while single sign-on is off, against
+      // the grain of every other rule here. There is no administrator to be, so
+      // there is nothing to fail open to — and failing open would hand an
+      // unauthenticated caller a way to strip the owners that an install
+      // collected while single sign-on was on. Invisible at the time, because
+      // access is unrestricted anyway, and destructive the moment it came back.
+      final options = await seedOptions(session);
+      final user = await seedSignedInUser(session, email: 'other@uni.example');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        owner: user.user.id,
+      );
+
+      await expectLater(
+        endpoints.project.setProjectOwner(sessionBuilder, project.id!, null),
+        throwsA(isA<ProjectAccessDeniedException>()),
+      );
+      await expectLater(
+        endpoints.project.assignableOwners(sessionBuilder),
+        throwsA(isA<ProjectAccessDeniedException>()),
+      );
+
+      final reloaded = await Project.db.findById(session, project.id!);
+      expect(reloaded!.owner, user.user.id, reason: 'the owner survived');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -350,6 +378,12 @@ void main() {
           endpoints.project.setEmailNotification(b, id, true),
           throwsA(isA<ProjectAccessDeniedException>()),
         );
+        // Guarded by requireAdmin rather than requireProject, but it takes a
+        // project id, so it belongs in this enumeration all the same.
+        await expectLater(
+          endpoints.project.setProjectOwner(b, id, null),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
       });
 
       test('on FileEndpoint', () async {
@@ -449,6 +483,118 @@ void main() {
           endpoints.options.getProjectOptions(bob.builder, orphan.id!),
           completes,
         );
+      });
+    });
+
+    group('reassigning ownership', () {
+      test('an admin can hand a project to somebody else', () async {
+        await enforceSso(session);
+        final options = await seedOptions(session);
+        final alice = await signIn('alice@uni.example');
+        final bob = await signIn('bob@uni.example');
+        final boss = await signIn('boss@uni.example', isAdmin: true);
+        final id = (await seedProject(
+          session,
+          options: options.id!,
+          owner: alice.userId,
+        )).id!;
+
+        await endpoints.project.setProjectOwner(boss.builder, id, bob.userId);
+
+        // The point of reassignment: it moves who can reach it, both ways.
+        await expectLater(
+          endpoints.project.getProject(bob.builder, id),
+          completes,
+        );
+        await expectLater(
+          endpoints.project.getProject(alice.builder, id),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+      });
+
+      test('a null owner releases the project to everyone', () async {
+        await enforceSso(session);
+        final options = await seedOptions(session);
+        final alice = await signIn('alice@uni.example');
+        final bob = await signIn('bob@uni.example');
+        final boss = await signIn('boss@uni.example', isAdmin: true);
+        final id = (await seedProject(
+          session,
+          options: options.id!,
+          owner: alice.userId,
+        )).id!;
+
+        await endpoints.project.setProjectOwner(boss.builder, id, null);
+
+        // Unowned means shared, not orphaned — the state every project that
+        // predates authorization is already in.
+        await expectLater(
+          endpoints.project.getProject(bob.builder, id),
+          completes,
+        );
+        await expectLater(
+          endpoints.project.getProject(alice.builder, id),
+          completes,
+        );
+      });
+
+      test('the owner themselves may not give their project away', () async {
+        // Being allowed to use something is not being allowed to hand it over.
+        // alice passes requireProject for her own project, so this would slip
+        // through if the guard were requireProject rather than requireAdmin.
+        await enforceSso(session);
+        final options = await seedOptions(session);
+        final alice = await signIn('alice@uni.example');
+        final bob = await signIn('bob@uni.example');
+        final id = (await seedProject(
+          session,
+          options: options.id!,
+          owner: alice.userId,
+        )).id!;
+
+        await expectLater(
+          endpoints.project.setProjectOwner(alice.builder, id, bob.userId),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+      });
+
+      test('an unknown user is refused, and the owner is unchanged', () async {
+        await enforceSso(session);
+        final options = await seedOptions(session);
+        final alice = await signIn('alice@uni.example');
+        final boss = await signIn('boss@uni.example', isAdmin: true);
+        final id = (await seedProject(
+          session,
+          options: options.id!,
+          owner: alice.userId,
+        )).id!;
+
+        await expectLater(
+          endpoints.project.setProjectOwner(boss.builder, id, 999999),
+          throwsA(isA<FlumipFileNotFoundException>()),
+        );
+
+        final reloaded = await Project.db.findById(session, id);
+        expect(reloaded!.owner, alice.userId);
+      });
+
+      test('only an admin may list the users', () async {
+        await enforceSso(session);
+        final alice = await signIn('alice@uni.example');
+        final boss = await signIn('boss@uni.example', isAdmin: true);
+
+        await expectLater(
+          endpoints.project.assignableOwners(alice.builder),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+
+        final owners = await endpoints.project.assignableOwners(boss.builder);
+        expect(
+          owners.map((u) => u.email),
+          containsAll(['alice@uni.example', 'boss@uni.example']),
+        );
+        // The id is the whole reason this DTO exists — it is what gets sent back.
+        expect(owners.every((u) => u.id > 0), isTrue);
       });
     });
 
