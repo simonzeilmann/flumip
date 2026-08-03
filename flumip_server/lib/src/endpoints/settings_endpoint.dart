@@ -1,6 +1,8 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
+import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/auth/oidc_client.dart';
+import 'package:flumip_server/src/services/auth_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
@@ -10,16 +12,51 @@ import '../services/settings_service.dart';
 
 /// Endpoint for handling settings-related operations.
 ///
-/// Deliberately **not** a [FlumipEndpoint]: this endpoint is how single sign-on
-/// gets switched off, so putting it behind a login would make a misconfiguration
-/// unrecoverable from the UI. Every method here gates itself instead, on either
-/// the settings password or an authenticated admin session.
+/// Deliberately **not** a [FlumipEndpoint]: [userSettings] has to answer before
+/// the app knows anything, and the password route below has to keep working on
+/// an install with no identities at all.
+///
+/// Every method gates itself instead, on an authenticated admin session or — only
+/// while sign-in is not being enforced — the settings password. See
+/// `SettingsService._isAdmin` for what that trades away, and for the escape that
+/// is left when the identity provider is the thing that broke.
 class SettingsEndpoint extends Endpoint {
   /// Instance of the settings service.
   SettingsService get settingsService => SettingsService();
 
   /// Instance of the mail service.
   MailService get mailService => MailService();
+
+  /// What the calling user may see, and how they may get in.
+  ///
+  /// Answered for **anyone**, signed in or not, and deliberately leaks nothing:
+  /// two booleans the app needs before it can decide what to draw. Without it
+  /// the Settings tab has to guess — which is what produced the behaviour this
+  /// replaced, where an administrator was shown a password box for a password
+  /// they did not need, and a user was shown one that would have worked.
+  ///
+  /// **The extension point for per-user settings**: see [UserSettingsDto].
+  ///
+  /// \param session The current session.
+  Future<UserSettingsDto> userSettings(Session session) async {
+    final isAdmin = session.authenticated?.scopes.contains(adminScope) ?? false;
+    return UserSettingsDto(
+      isAdmin: isAdmin,
+      // Not simply !enforcing: an admin never needs the box, so saying the
+      // password is accepted would offer them a route they have no use for.
+      passwordAccepted: !isAdmin && !_isEnforcing(),
+    );
+  }
+
+  /// Mirrors `FlumipEndpoint.requireLogin`, including its refusal to throw.
+  bool _isEnforcing() {
+    if (!sl.isRegistered<AuthRuntime>()) return false;
+    try {
+      return sl<AuthRuntime>().isEnforcing;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Retrieves the settings.
   ///
@@ -63,8 +100,31 @@ class SettingsEndpoint extends Endpoint {
       // Validates the caller; throws ArgumentException('Invalid password') when
       // neither the password nor an admin session authorises this.
       await settingsService.requireAdmin(session, password);
+
+      // Read before writing, so the transition can be detected rather than
+      // inferred from the incoming object — which may not be what actually gets
+      // stored, since updateSettings merges an explicit field list.
+      final wasRequiringLogin =
+          (await settingsService.getSettings(session)).loginRequired;
+
       await settingsService.updateSettings(session, settings);
       await sl<AuthRuntime>().broadcastConfigChange(session);
+
+      final nowRequiringLogin =
+          (await settingsService.getSettings(session)).loginRequired;
+      if (wasRequiringLogin && !nowRequiringLogin) {
+        // Switching sign-in off ends every session, the caller's included.
+        // Otherwise the tokens issued while it was on stay valid for their full
+        // lifetime, so the app goes on showing people as signed in — and an
+        // administrator as an administrator — on a server that no longer
+        // authenticates anyone. The admin who threw the switch is logged out
+        // too, which is the point: there is nothing left to be signed in to.
+        final ended = await sl<AuthService>().revokeAllSessions(session);
+        session.log(
+          'Sign-in switched off; ended $ended session(s).',
+          level: LogLevel.info,
+        );
+      }
     } on ArgumentException {
       rethrow;
     } catch (e) {

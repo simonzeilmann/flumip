@@ -31,10 +31,11 @@ import 'project_options.dart' as _i18;
 import 'score_method.dart' as _i19;
 import 'settings.dart' as _i20;
 import 'snp.dart' as _i21;
-import 'package:flumip_server/src/generated/genome.dart' as _i22;
-import 'package:flumip_server/src/generated/snp.dart' as _i23;
-import 'package:flumip_server/src/generated/project.dart' as _i24;
-import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i25;
+import 'user_settings_dto.dart' as _i22;
+import 'package:flumip_server/src/generated/genome.dart' as _i23;
+import 'package:flumip_server/src/generated/snp.dart' as _i24;
+import 'package:flumip_server/src/generated/project.dart' as _i25;
+import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i26;
 export 'auth_admin_status_dto.dart';
 export 'auth_api_token.dart';
 export 'auth_config_dto.dart';
@@ -54,6 +55,7 @@ export 'project_options.dart';
 export 'score_method.dart';
 export 'settings.dart';
 export 'snp.dart';
+export 'user_settings_dto.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -1459,6 +1461,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i21.Snp) {
       return _i21.Snp.fromJson(data) as T;
     }
+    if (t == _i22.UserSettingsDto) {
+      return _i22.UserSettingsDto.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i3.AuthAdminStatusDto?>()) {
       return (data != null ? _i3.AuthAdminStatusDto.fromJson(data) : null) as T;
     }
@@ -1524,6 +1529,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i21.Snp?>()) {
       return (data != null ? _i21.Snp.fromJson(data) : null) as T;
     }
+    if (t == _i1.getType<_i22.UserSettingsDto?>()) {
+      return (data != null ? _i22.UserSettingsDto.fromJson(data) : null) as T;
+    }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
@@ -1545,20 +1553,20 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i22.Genome>) {
-      return (data as List).map((e) => deserialize<_i22.Genome>(e)).toList()
+    if (t == List<_i23.Genome>) {
+      return (data as List).map((e) => deserialize<_i23.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i23.Snp>) {
-      return (data as List).map((e) => deserialize<_i23.Snp>(e)).toList() as T;
+    if (t == List<_i24.Snp>) {
+      return (data as List).map((e) => deserialize<_i24.Snp>(e)).toList() as T;
     }
-    if (t == List<_i24.Project>) {
-      return (data as List).map((e) => deserialize<_i24.Project>(e)).toList()
+    if (t == List<_i25.Project>) {
+      return (data as List).map((e) => deserialize<_i25.Project>(e)).toList()
           as T;
     }
-    if (t == List<_i25.FlumipUserDto>) {
+    if (t == List<_i26.FlumipUserDto>) {
       return (data as List)
-              .map((e) => deserialize<_i25.FlumipUserDto>(e))
+              .map((e) => deserialize<_i26.FlumipUserDto>(e))
               .toList()
           as T;
     }
@@ -1589,6 +1597,7 @@ class Protocol extends _i1.SerializationManagerServer {
       _i19.ScoreMethod => 'ScoreMethod',
       _i20.Settings => 'Settings',
       _i21.Snp => 'Snp',
+      _i22.UserSettingsDto => 'UserSettingsDto',
       _ => null,
     };
   }
@@ -1641,6 +1650,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'Settings';
       case _i21.Snp():
         return 'Snp';
+      case _i22.UserSettingsDto():
+        return 'UserSettingsDto';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -1711,6 +1722,9 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'Snp') {
       return deserialize<_i21.Snp>(data['data']);
+    }
+    if (dataClassName == 'UserSettingsDto') {
+      return deserialize<_i22.UserSettingsDto>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);

@@ -50,7 +50,31 @@ void run(List<String> args) async {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
     print('Build your Flutter app and copy it to web/app/');
   } else {
-    pod.webServer.addRoute(FlutterRoute(flutterAppDir));
+    // ⚠️ In development, serve the app with no caching at all.
+    //
+    // FlutterRoute's default caches everything except a short list
+    // (index.html, flutter_bootstrap.js, …) for a **day**, and `main.dart.js`
+    // — which is the entire app — is not on that list and is referenced with no
+    // version query. So after a rebuild a browser that has visited before keeps
+    // running the *old* app for up to 24 hours.
+    //
+    // That is invisible and actively misleading: the UI simply behaves as it did
+    // before the change, which reads as "the fix did not work" rather than as a
+    // stale asset. It cost a full debugging round already. A hard reload also
+    // fixes it, but relying on remembering that is how the same hour gets spent
+    // twice.
+    //
+    // Production keeps the caching default, where it is worth having and where
+    // the app changes only on deploy.
+    final isDevelopment = pod.runMode == ServerpodRunMode.development;
+    pod.webServer.addRoute(
+      isDevelopment
+          ? FlutterRoute(
+              flutterAppDir,
+              cacheControlFactory: StaticRoute.privateNoCache(),
+            )
+          : FlutterRoute(flutterAppDir),
+    );
   }
 
   // Keyed on the project's track token, not its id: the route is unauthenticated

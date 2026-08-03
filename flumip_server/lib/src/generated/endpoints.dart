@@ -817,6 +817,13 @@ class Endpoints extends _i1.EndpointDispatch {
       name: 'settings',
       endpoint: endpoints['settings']!,
       methodConnectors: {
+        'userSettings': _i1.MethodConnector(
+          name: 'userSettings',
+          params: {},
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _i8.SettingsEndpoint)
+                  .userSettings(session),
+        ),
         'getSettings': _i1.MethodConnector(
           name: 'getSettings',
           params: {

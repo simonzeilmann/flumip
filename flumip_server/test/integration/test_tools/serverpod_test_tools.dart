@@ -21,9 +21,10 @@ import 'package:flumip_server/src/generated/snp.dart' as _i7;
 import 'package:flumip_server/src/generated/project_options.dart' as _i8;
 import 'package:flumip_server/src/generated/project.dart' as _i9;
 import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i10;
-import 'package:flumip_server/src/generated/settings.dart' as _i11;
-import 'package:flumip_server/src/generated/auth_admin_status_dto.dart' as _i12;
-import 'package:flumip_server/src/generated/future_calls.dart' as _i13;
+import 'package:flumip_server/src/generated/user_settings_dto.dart' as _i11;
+import 'package:flumip_server/src/generated/settings.dart' as _i12;
+import 'package:flumip_server/src/generated/auth_admin_status_dto.dart' as _i13;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i14;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -1859,7 +1860,37 @@ class _SettingsEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i11.Settings> getSettings(
+  _i3.Future<_i11.UserSettingsDto> userSettings(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'userSettings',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'userSettings',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i11.UserSettingsDto>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i12.Settings> getSettings(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
   ) async {
@@ -1882,7 +1913,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i11.Settings>);
+                as _i3.Future<_i12.Settings>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1893,7 +1924,7 @@ class _SettingsEndpoint {
   _i3.Future<void> updateSettings(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
-    _i11.Settings settings,
+    _i12.Settings settings,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1960,7 +1991,7 @@ class _SettingsEndpoint {
     });
   }
 
-  _i3.Future<_i12.AuthAdminStatusDto> getAuthAdminStatus(
+  _i3.Future<_i13.AuthAdminStatusDto> getAuthAdminStatus(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
   ) async {
@@ -1983,7 +2014,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i12.AuthAdminStatusDto>);
+                as _i3.Future<_i13.AuthAdminStatusDto>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2035,7 +2066,7 @@ class _CheckIndexProgressFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i13.CheckIndexProgressRunFutureCall().invoke(
+      await _i14.CheckIndexProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -2053,7 +2084,7 @@ class _CheckMipgenProgressFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i13.CheckMipgenProgressRunFutureCall().invoke(
+      await _i14.CheckMipgenProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
