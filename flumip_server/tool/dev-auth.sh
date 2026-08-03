@@ -53,6 +53,16 @@ require_provider() {
   fi
 }
 
+# Checked explicitly so a stopped server says so, rather than this failing
+# somewhere mid-flow and printing an empty token that looks like a bug in the
+# thing being tested.
+require_server() {
+  if ! curl -s -o /dev/null "$WEB/"; then
+    echo "No server at $WEB — start the 'Server' launch configuration first." >&2
+    exit 1
+  fi
+}
+
 cmd_enable() {
   require_provider
   sql "UPDATE settings SET
@@ -75,6 +85,13 @@ cmd_disable() {
 cmd_admins() {
   sql "UPDATE settings SET \"oidcAdminEmails\" = '${1:-}';"
   echo "Admin emails: ${1:-<none>}"
+  echo
+  echo "⚠️  Wait ~30s before signing in."
+  echo "    Admin is decided at sign-in from the config AuthRuntime last read, and this"
+  echo "    writes the database directly — it does not go through"
+  echo "    SettingsEndpoint.updateSettings, which is what normally calls"
+  echo "    broadcastConfigChange to apply a change at once. Sign in too early and you"
+  echo "    are silently an ordinary user, with the admin-only controls simply absent."
 }
 
 # Mint a bearer with no provider involved: seed the identity, a browser session,
@@ -107,6 +124,7 @@ cmd_token() {
 # The whole round trip, as a browser would do it.
 cmd_signin() {
   require_provider
+  require_server
   local email="$1" jar location callback
 
   jar="$(mktemp)"
@@ -116,6 +134,7 @@ cmd_signin() {
     | tr -d '\r' | awk 'tolower($1) == "location:" { print $2 }')"
   if [ -z "$location" ]; then
     echo "No redirect from /auth/login — is SSO enabled and enforcing?" >&2
+    echo "Check with: ./tool/dev-auth.sh status" >&2
     exit 1
   fi
 
