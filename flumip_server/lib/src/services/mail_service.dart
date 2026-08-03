@@ -80,7 +80,7 @@ class MailService {
     if (recipient == null || recipient.isEmpty) {
       session.log(
         'No recipient available for project ${project.id}, skipping '
-        'notification (pending a user system that stores email addresses)',
+        'notification (the project is unowned, so there is nobody to notify)',
         level: LogLevel.warning,
       );
       return;
@@ -118,17 +118,32 @@ class MailService {
     }
   }
 
-  /// Resolves the email address to notify for [project].
+  /// Resolves the email address to notify for [project]: its owner's.
   ///
-  /// **Extension point.** There is currently no user/auth system and no email
-  /// address stored anywhere (`Project.owner` is an unused `int?`), so this
-  /// returns null and notifications are skipped. When users exist — or a
-  /// fallback address is added to [Settings] — this is the only method that
-  /// needs to change.
+  /// Null when the project is unowned, which means nobody is notified. That is
+  /// not an edge case — it is every project created before authorization
+  /// existed, and every project created while single sign-on is off, since
+  /// nothing sets an owner without an identity to set it to. A no-auth install
+  /// therefore sends no project notifications at all; giving it any would need a
+  /// fallback address on [Settings], which nothing currently asks for.
   ///
-  /// Overridable (rather than private) so tests can supply a recipient and
-  /// exercise the delivery path that goes live once that source exists.
+  /// Null again when the owner row is gone. `Project.owner` is `onDelete=SetNull`
+  /// so a deleted identity normally leaves the column null on its own, but a
+  /// [Project] read before that deletion still carries the old id.
+  ///
+  /// This deliberately asks *who owns the project* rather than who is calling.
+  /// The only production caller is [notifyProjectFinished], reached from the
+  /// mipgen future call, which runs with no authenticated user — an ownership
+  /// lookup works there, an authorization check would not. Do not "tidy" it into
+  /// one.
+  ///
+  /// Overridable (rather than private) so tests can supply a recipient without
+  /// seeding an identity.
   Future<String?> resolveRecipient(Session session, Project project) async {
-    return null;
+    final owner = project.owner;
+    if (owner == null) return null;
+
+    final user = await FlumipUser.db.findById(session, owner);
+    return user?.email;
   }
 }

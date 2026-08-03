@@ -132,13 +132,14 @@ void main() {
     var session = sessionBuilder.build();
 
     Future<Project> seedNotifiableProject(Session session,
-        {bool emailNotification = true}) async {
+        {bool emailNotification = true, int? owner}) async {
       final options = await seedOptions(session);
       final project = await seedProject(
         session,
         name: 'demo',
         options: options.id!,
         folderName: 'proj',
+        owner: owner,
       );
       project.emailNotification = emailNotification;
       project.completedIn = const Duration(minutes: 3);
@@ -166,15 +167,38 @@ void main() {
       expect(fake.sent, isEmpty);
     }, tags: ['unit']);
 
-    test('skips when no recipient can be resolved (current default)', () async {
+    test('skips when the project is unowned, with the real MailService',
+        () async {
       await overrideMailSettings(
           session, mailActive: true, smtpServer: 'smtp.example.test');
       final project = await seedNotifiableProject(session);
-      // The production MailService resolves no recipient until a user system
-      // exists, so nothing is sent.
+      // No override: the production resolveRecipient finds no owner on a
+      // project seeded without one, which is every project on a no-auth
+      // install.
       await MailService()
           .notifyProjectFinished(session, project, failed: false);
       expect(fake.sent, isEmpty);
+    }, tags: ['unit']);
+
+    test('sends to the owner, with the real MailService', () async {
+      await overrideMailSettings(
+        session,
+        mailActive: true,
+        smtpServer: 'smtp.example.test',
+        smtpFrom: 'flumip@example.test',
+      );
+      final owner =
+          await seedSignedInUser(session, email: 'owner@example.test');
+      final project =
+          await seedNotifiableProject(session, owner: owner.user.id);
+
+      // The whole path, unoverridden: owner id -> FlumipUser -> email -> send.
+      await MailService()
+          .notifyProjectFinished(session, project, failed: false);
+
+      expect(fake.sent.length, 1);
+      expect(fake.lastSent!.to, 'owner@example.test');
+      expect(fake.lastSent!.subject, contains('demo'));
     }, tags: ['unit']);
 
     test('sends a success notification when a recipient exists', () async {
@@ -220,6 +244,54 @@ void main() {
       await RecipientMailService('user@example.test')
           .notifyProjectFinished(session, project, failed: false);
       expect(fake.sent.length, 1);
+    }, tags: ['unit']);
+  });
+
+  withServerpod('MailService.resolveRecipient', (sessionBuilder, endpoints) {
+    var session = sessionBuilder.build();
+
+    test('resolves the owning user\'s email address', () async {
+      final options = await seedOptions(session);
+      final owner =
+          await seedSignedInUser(session, email: 'owner@example.test');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        owner: owner.user.id,
+      );
+
+      expect(
+        await MailService().resolveRecipient(session, project),
+        'owner@example.test',
+      );
+    }, tags: ['unit']);
+
+    test('resolves null for an unowned project', () async {
+      // Not an edge case: this is every project predating authorization, and
+      // every project created while single sign-on is off.
+      final options = await seedOptions(session);
+      final project = await seedProject(session, options: options.id!);
+
+      expect(await MailService().resolveRecipient(session, project), isNull);
+    }, tags: ['unit']);
+
+    test('resolves null when the owning user no longer exists', () async {
+      final options = await seedOptions(session);
+      final owner =
+          await seedSignedInUser(session, email: 'ghost@example.test');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        owner: owner.user.id,
+      );
+
+      // onDelete=SetNull clears the column in the database, but this in-memory
+      // Project was read before the delete and still carries the stale id — so
+      // the lookup, not the column, is what has to cope.
+      await FlumipUser.db.deleteRow(session, owner.user);
+
+      expect(project.owner, isNotNull);
+      expect(await MailService().resolveRecipient(session, project), isNull);
     }, tags: ['unit']);
   });
 
