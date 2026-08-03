@@ -172,12 +172,20 @@ cmd_signin() {
     exit 1
   fi
 
-  # The mock provider serves a login form rather than auto-approving, which is
-  # what makes it useful in a browser: any username signs you in as that user.
+  # The provider serves a login form rather than auto-approving, which is what
+  # makes it useful in a browser: any username signs you in as that user.
   # Posting the form is the scripted equivalent of typing one in.
+  #
+  # `rq` carries the authorization request across the form, so it has to be read
+  # out of the page and sent back — posting only a username loses the redirect
+  # URI, state, nonce and PKCE challenge.
+  local rq
+  rq="$(curl -s "$location" \
+    | grep -oE 'name="rq" value="[^"]+"' | sed 's/.*value="//; s/"//')"
+
   callback="$(curl -s -o /dev/null -D - -X POST "$location" \
+    --data-urlencode "rq=$rq" \
     --data-urlencode "username=$email" \
-    --data-urlencode "claims={\"email\":\"$email\",\"name\":\"$email\"}" \
     | tr -d '\r' | awk 'tolower($1) == "location:" { print $2 }')"
   if [ -z "$callback" ]; then
     echo "The provider did not redirect back; check it is reachable at $ISSUER" >&2

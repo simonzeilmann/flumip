@@ -61,17 +61,30 @@ services:
   #   docker compose --profile auth up -d mock_oidc
   #   ./tool/dev-auth.sh enable
   #
-  # It serves a login form rather than auto-approving, which is the point: in a
-  # browser you type any username and are signed in as that user, so alice, bob
-  # and an admin need no configuration between them.
+  # Type any username into its form and you are signed in as that user, so
+  # alice, bob and an admin need no configuration between them.
   #
-  # The issuer is derived from the request host, so it is
-  # http://localhost:9999/default — the `/default` matters, and omitting it
-  # yields a discovery document whose `issuer` will not match.
+  # It is ~200 lines of our own Python (tool/mock_oidc.py) rather than an
+  # off-the-shelf mock, because ghcr.io/navikt/mock-oauth2-server does not put an
+  # `email` claim in the token on the interactive-login path and its
+  # tokenCallbacks config is not applied there — so every sign-in failed with
+  # "The identity provider did not tell this server your email address", and the
+  # only way through was hand-typing JSON into its claims box each time. Writing
+  # one is cheap here because IdTokenClaims.parse deliberately does not verify
+  # signatures, so there are no keys to manage. See the file's docstring.
+  #
+  # Stock python image, no build step: the script uses only the standard library.
   mock_oidc:
-    image: ghcr.io/navikt/mock-oauth2-server:2.1.11
+    image: python:3.12-alpine
+    command: python3 /srv/mock_oidc.py
+    volumes:
+      - ./tool/mock_oidc.py:/srv/mock_oidc.py:ro
     ports:
       - '9999:8080'
+    environment:
+      ISSUER: http://localhost:9999/default
+      DEFAULT_USER: boss@uni.example
+      DEFAULT_DOMAIN: uni.example
     restart: unless-stopped
     profiles:
       - auth
