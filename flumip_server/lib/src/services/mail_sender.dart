@@ -11,10 +11,16 @@ import 'package:mailer/smtp_server.dart';
 /// `test/support/fake_mail_sender.dart`) and exercise the notification logic
 /// without a real SMTP server.
 abstract class MailSender {
-  /// Sends a single plain-text message using the SMTP configuration held in
+  /// Sends a single message using the SMTP configuration held in
   /// [settings] ([Settings.smtpServer], [Settings.smtpPort],
   /// [Settings.smtpUser], [Settings.smtpPassword], [Settings.smtpFrom] and
   /// [Settings.startTLS]).
+  ///
+  /// [body] is the plain-text part and is always sent. [html], when given, is
+  /// sent alongside it as `multipart/alternative`: clients that render HTML show
+  /// that, the rest fall back to the text. Sending only HTML would leave the
+  /// message blank for anyone reading plain text, which is why [body] stays
+  /// required.
   ///
   /// Throws if delivery fails; callers decide whether that is fatal.
   Future<void> send({
@@ -22,6 +28,7 @@ abstract class MailSender {
     required String to,
     required String subject,
     required String body,
+    String? html,
   });
 }
 
@@ -35,6 +42,7 @@ class SmtpMailSender implements MailSender {
     required String to,
     required String subject,
     required String body,
+    String? html,
   }) async {
     // An empty user means an unauthenticated relay; mailer expects null rather
     // than an empty string in that case.
@@ -58,6 +66,8 @@ class SmtpMailSender implements MailSender {
       ..recipients.add(to)
       ..subject = subject
       ..text = body;
+    // Setting both makes mailer build multipart/alternative.
+    if (html != null) message.html = html;
 
     await mailer.send(message, server);
   }

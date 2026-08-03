@@ -220,6 +220,66 @@ void main() {
       expect(mail.body, contains('successfully'));
     }, tags: ['unit']);
 
+    test('sends both an HTML and a text part, with the run detail', () async {
+      await overrideMailSettings(
+          session, mailActive: true, smtpServer: 'smtp.example.test');
+      final genome = await seedGenome(session, name: 'hg38');
+      final snp = await seedSnp(session, name: 'common');
+      final options = await seedOptions(session);
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+        snp: snp.id,
+        genes: ['BRCA1', 'TP53'],
+      );
+      project.emailNotification = true;
+      project.completedIn = const Duration(minutes: 4, seconds: 9);
+      project.size = 2400000000;
+      await ProjectService().updateProject(session, project);
+
+      await RecipientMailService('user@example.test')
+          .notifyProjectFinished(session, project, failed: false);
+
+      final mail = fake.lastSent!;
+      // Both parts, so a plain-text reader does not receive a blank message.
+      expect(mail.html, isNotNull);
+      expect(mail.html, contains('<!doctype html>'));
+      expect(mail.body, isNot(contains('<')));
+      // The names behind the ids were resolved, not printed as numbers.
+      for (final part in [mail.body, mail.html!]) {
+        expect(part, contains('hg38'));
+        expect(part, contains('common'));
+        expect(part, contains('2 genes'));
+        expect(part, contains('4 min 09 s'));
+        expect(part, contains('2.40 GB'));
+      }
+    }, tags: ['unit']);
+
+    test('a missing genome row costs a line, not the notification', () async {
+      // Best-effort lookups: the mail is worth less than the job it reports on.
+      await overrideMailSettings(
+          session, mailActive: true, smtpServer: 'smtp.example.test');
+      final options = await seedOptions(session);
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: 999999,
+      );
+      project.emailNotification = true;
+      await ProjectService().updateProject(session, project);
+
+      await RecipientMailService('user@example.test')
+          .notifyProjectFinished(session, project, failed: false);
+
+      expect(fake.sent, hasLength(1));
+      expect(fake.lastSent!.body, isNot(contains('999999')));
+    }, tags: ['unit']);
+
     test('sends a failure notification including the error', () async {
       await overrideMailSettings(
           session, mailActive: true, smtpServer: 'smtp.example.test');

@@ -7,6 +7,9 @@ class SentMail {
   final String subject;
   final String body;
 
+  /// The HTML part, or null when the message was text-only.
+  final String? html;
+
   /// SMTP configuration the send was performed with, captured so tests can
   /// assert the settings were threaded through correctly.
   final String host;
@@ -18,6 +21,7 @@ class SentMail {
     required this.to,
     required this.subject,
     required this.body,
+    this.html,
     required this.host,
     required this.port,
     required this.from,
@@ -46,11 +50,13 @@ class FakeMailSender implements MailSender {
     required String to,
     required String subject,
     required String body,
+    String? html,
   }) async {
     sent.add(SentMail(
       to: to,
       subject: subject,
       body: body,
+      html: html,
       host: settings.smtpServer,
       port: settings.smtpPort,
       from: settings.smtpFrom,
