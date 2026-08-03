@@ -706,6 +706,38 @@ class EndpointProject extends EndpointFlumip {
     },
   );
 
+  /// Turns the finish notification on or off for a project.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param enabled Whether to email the project's owner when generation ends.
+  _i2.Future<void> setEmailNotification(
+    int id,
+    bool enabled,
+  ) => caller.callServerEndpoint<void>(
+    'project',
+    'setEmailNotification',
+    {
+      'id': id,
+      'enabled': enabled,
+    },
+  );
+
+  /// Whether an administrator has switched mail on for this install.
+  ///
+  /// The per-project notification switch is meaningless without it, so the app
+  /// asks once and hides the control when this is false. **Advisory only** — the
+  /// server decides what is actually sent, on the send path. Deliberately not
+  /// part of [SettingsEndpoint]: every method there is admin-gated, and an
+  /// ordinary user has to be able to read this to render their own switch.
+  ///
+  /// \param session The current session.
+  _i2.Future<bool> notificationsAvailable() => caller.callServerEndpoint<bool>(
+    'project',
+    'notificationsAvailable',
+    {},
+  );
+
   /// Sets the SNP for a project by its ID.
   ///
   /// \param session The current session.

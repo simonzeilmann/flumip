@@ -24,7 +24,18 @@ class ProjectTile extends StatefulWidget {
   Project project;
   final VoidCallback onDelete;
 
-  ProjectTile({super.key, required this.project, required this.onDelete});
+  /// Whether an administrator has mail switched on for this install.
+  ///
+  /// Only controls whether the notification checkbox is offered — the server
+  /// decides what is actually sent.
+  final bool notificationsAvailable;
+
+  ProjectTile({
+    super.key,
+    required this.project,
+    required this.onDelete,
+    this.notificationsAvailable = false,
+  });
 
   @override
   State<ProjectTile> createState() => _ProjectTileState();
@@ -659,6 +670,18 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
+  Future<void> setEmailNotification(bool enabled) async {
+    try {
+      await client.project.setEmailNotification(widget.project.id!, enabled);
+      await _reloadProject();
+    } catch (e) {
+      setState(() {
+        _errorMessage =
+            'Failed to change email notification: ${describeError(e)}';
+      });
+    }
+  }
+
   String _printDuration(Duration duration) {
     String negativeSign = duration.isNegative ? '-' : '';
     String twoDigits(int n) => n.toString().padLeft(2, "0");
@@ -1091,6 +1114,12 @@ class _ProjectTileState extends State<ProjectTile> {
   }
 
   Column buildMipgenStartColumn() {
+    // An unowned project has nobody to notify: the server resolves the address
+    // from Project.owner, and nothing sets an owner while single sign-on is off.
+    // Offering a live checkbox there would promise mail that never arrives, so
+    // it is shown disabled and says why rather than being hidden — the setting
+    // is real, the install just cannot act on it.
+    final hasOwner = widget.project.owner != null;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1110,6 +1139,27 @@ class _ProjectTileState extends State<ProjectTile> {
             Text('Auto delete intermediate files'),
           ],
         ),
+        if (widget.notificationsAvailable)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: hasOwner && widget.project.emailNotification,
+                onChanged: hasOwner
+                    ? (bool? value) => setEmailNotification(value ?? false)
+                    : null,
+              ),
+              Text(
+                hasOwner
+                    ? 'Email me when generation finishes'
+                    : 'Email when finished (no owner to notify)',
+                style: hasOwner
+                    ? null
+                    : TextStyle(color: Theme.of(context).disabledColor),
+              ),
+            ],
+          ),
         SizedBox(width: 10),
         ElevatedButton(onPressed: _generateMips, child: Text('Generate MIPs')),
       ],

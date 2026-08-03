@@ -346,6 +346,10 @@ void main() {
           endpoints.project.setSnpById(b, id, 1),
           throwsA(isA<ProjectAccessDeniedException>()),
         );
+        await expectLater(
+          endpoints.project.setEmailNotification(b, id, true),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
       });
 
       test('on FileEndpoint', () async {
