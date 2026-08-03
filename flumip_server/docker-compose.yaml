@@ -53,6 +53,29 @@ services:
       - '' # Default profile
       - test
 
+  # A stand-in OpenID Connect provider, for developing against single sign-on
+  # without a real identity provider. Deliberately NOT in the default profile:
+  # it is a development tool, and nothing in the test suite needs it — the
+  # backend tests drive AuthRuntime directly with a fake HTTP client.
+  #
+  #   docker compose --profile auth up -d mock_oidc
+  #   ./tool/dev-auth.sh enable
+  #
+  # It serves a login form rather than auto-approving, which is the point: in a
+  # browser you type any username and are signed in as that user, so alice, bob
+  # and an admin need no configuration between them.
+  #
+  # The issuer is derived from the request host, so it is
+  # http://localhost:9999/default — the `/default` matters, and omitting it
+  # yields a discovery document whose `issuer` will not match.
+  mock_oidc:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.11
+    ports:
+      - '9999:8080'
+    restart: unless-stopped
+    profiles:
+      - auth
+
 volumes:
   flumip_data:
   flumip_test_data:
