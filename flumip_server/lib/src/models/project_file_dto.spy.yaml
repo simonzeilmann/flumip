@@ -1,0 +1,14 @@
+### One downloadable file in a project's directory. No table — transport only.
+###
+### Carries the name and the size so the app can list what is there and say how
+### big it is *before* anyone clicks. A project that kept its intermediates can
+### be gigabytes, and "Download all" with no indication of size is how somebody
+### accidentally starts a 4 GB transfer over a hotel connection.
+###
+### The bytes themselves never travel through an endpoint — they are streamed by
+### the `/download/...` web route, which can send a file far larger than a
+### serialised endpoint response should ever hold.
+class: ProjectFileDto
+fields:
+  name: String
+  sizeBytes: int

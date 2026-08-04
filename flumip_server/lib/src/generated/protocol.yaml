@@ -9,6 +9,7 @@ file:
   - showMipsProgress:
   - showUSCSTrack:
   - getUcscTrackToken:
+  - listProjectFiles:
   - requireProject:
   - requireProjectOptions:
 genome:

@@ -47,6 +47,18 @@ sql_value() { psql_do -tAc "$1"; }
 # The server stores only sha256 hex of a token; see AuthTokens.sha256Hex.
 sha256_hex() { printf '%s' "$1" | sha256sum | cut -d' ' -f1; }
 
+# Checked before anything touches the database, because this now gates a VS Code
+# launch: a raw psql connection error there is cryptic and stops the run with no
+# hint as to why.
+require_db() {
+  if ! docker compose exec -T postgres true >/dev/null 2>&1; then
+    echo "The development database is not running." >&2
+    echo "Start it with: docker compose --profile dev up -d postgres redis" >&2
+    echo "(if docker itself is down: systemctl --user start docker-desktop)" >&2
+    exit 1
+  fi
+}
+
 require_provider() {
   if ! curl -sf "$ISSUER/.well-known/openid-configuration" >/dev/null; then
     echo "No provider at $ISSUER" >&2
@@ -66,6 +78,7 @@ require_server() {
 }
 
 cmd_enable() {
+  require_db
   require_provider
 
   # Seed a default administrator when none is configured, so there is always a
@@ -112,11 +125,13 @@ BANNER
 }
 
 cmd_disable() {
+  require_db
   sql "UPDATE settings SET \"loginRequired\" = false;"
   echo "SSO off. Opens again within the refresh tick."
 }
 
 cmd_admins() {
+  require_db
   sql "UPDATE settings SET \"oidcAdminEmails\" = '${1:-}';"
   echo "Admin emails: ${1:-<none>}"
   echo
@@ -131,6 +146,7 @@ cmd_admins() {
 # Mint a bearer with no provider involved: seed the identity, a browser session,
 # and an API token whose hash the authentication handler will find.
 cmd_token() {
+  require_db
   local email="$1" admin="${2:-}" is_admin=false
   [ "$admin" = "--admin" ] && is_admin=true
 

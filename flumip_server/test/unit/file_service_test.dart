@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:archive/archive.dart';
 
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/file_service.dart';
@@ -205,5 +208,120 @@ void main() {
       final stream = await fileService.returnFile(session, p.id, 'missing.bin');
       expect(await stream.isEmpty, isTrue);
     }, tags: ['unit']);
+
+    // --- downloads ----------------------------------------------------------
+    group('listProjectFiles', () {
+      test('returns every file with its size, sorted', () async {
+        final p = await prepareProject();
+        File('${p.dir}/b.txt').writeAsStringSync('hello');
+        File('${p.dir}/a.txt').writeAsStringSync('hi');
+        Directory('${p.dir}/sub').createSync();
+
+        final files = await fileService.listProjectFiles(session, p.id);
+
+        expect(files.map((f) => f.name), ['a.txt', 'b.txt']);
+        expect(files.first.sizeBytes, 2);
+        expect(files.last.sizeBytes, 5);
+      }, tags: ['unit']);
+
+      test('is empty for a project whose generation never ran', () async {
+        // Not an error: there is simply nothing to download yet.
+        final base = createTempDir('nofiles');
+        await overrideSettingsDirs(session, projectDir: base.path);
+        final project =
+            await seedProject(session, options: 1, folderName: 'never-ran');
+
+        expect(await fileService.listProjectFiles(session, project.id!),
+            isEmpty);
+      }, tags: ['unit']);
+    });
+
+    group('resolveProjectFile', () {
+      test('finds a file in the project directory', () async {
+        final p = await prepareProject();
+        File('${p.dir}/mips.txt').writeAsStringSync('x');
+
+        final file = await fileService.resolveProjectFile(
+          session,
+          p.id,
+          'mips.txt',
+        );
+        expect(file, isNotNull);
+        expect(await file!.readAsString(), 'x');
+      }, tags: ['unit']);
+
+      test('refuses to escape the project directory', () async {
+        // The guard. The name arrives from a URL, so anything that is not a
+        // bare file name is rejected outright — otherwise the route becomes an
+        // arbitrary-file-read on the server.
+        final p = await prepareProject();
+        final outside = File('${Directory(p.dir).parent.path}/secret.txt')
+          ..writeAsStringSync('nope');
+        expect(outside.existsSync(), isTrue, reason: 'the target really exists');
+
+        for (final name in [
+          '../secret.txt',
+          '../../etc/passwd',
+          '/etc/passwd',
+          'sub/../../secret.txt',
+          r'..\secret.txt',
+          '..',
+          '',
+        ]) {
+          expect(
+            await fileService.resolveProjectFile(session, p.id, name),
+            isNull,
+            reason: 'must refuse "$name"',
+          );
+        }
+      }, tags: ['unit']);
+
+      test('refuses a symlink pointing out of the directory', () async {
+        // A bare name is not enough on its own: the resolved path has to be
+        // inside the project directory too.
+        final p = await prepareProject();
+        final outside = File('${Directory(p.dir).parent.path}/secret.txt')
+          ..writeAsStringSync('nope');
+        Link('${p.dir}/innocent.txt').createSync(outside.path);
+
+        expect(
+          await fileService.resolveProjectFile(session, p.id, 'innocent.txt'),
+          isNull,
+        );
+      }, tags: ['unit']);
+
+      test('returns null for a name that is simply not there', () async {
+        final p = await prepareProject();
+        expect(
+          await fileService.resolveProjectFile(session, p.id, 'missing.txt'),
+          isNull,
+        );
+      }, tags: ['unit']);
+    });
+
+    group('zipProjectFiles', () {
+      test('zips every file and the archive round-trips', () async {
+        final p = await prepareProject();
+        File('${p.dir}/a.txt').writeAsStringSync('alpha');
+        File('${p.dir}/b.txt').writeAsStringSync('beta');
+
+        final zip = await fileService.zipProjectFiles(session, p.id);
+        expect(zip, isNotNull);
+        addTearDown(() => zip!.existsSync() ? zip.deleteSync() : null);
+
+        final archive = ZipDecoder().decodeBytes(await zip!.readAsBytes());
+        expect(archive.files.map((f) => f.name).toList()..sort(),
+            ['a.txt', 'b.txt']);
+        final alpha = archive.files.firstWhere((f) => f.name == 'a.txt');
+        expect(utf8.decode(alpha.content as List<int>), 'alpha');
+      }, tags: ['unit']);
+
+      test('returns null when there is nothing to zip', () async {
+        // So the route can 404 rather than hand back an empty archive, which
+        // looks like a broken download.
+        final p = await prepareProject();
+        expect(await fileService.zipProjectFiles(session, p.id), isNull);
+      }, tags: ['unit']);
+    });
   });
 }

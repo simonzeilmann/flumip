@@ -12,7 +12,7 @@
   // Linting: the "Lint" task in tasks.json analyzes both packages exactly the
   // way CI does (Ctrl+Shift+B). A shell command cannot be a launch
   // configuration, so it lives there rather than here; the "Full stack"
-  // compounds below run it first via preLaunchTask, while the individual
+  // compounds reach it through "Full stack: prepare", while the individual
   // configurations skip it to keep restarts fast.
   "version": "0.2.0",
   "configurations": [
@@ -66,11 +66,13 @@
       // The one to use for anything behind the login.
       //
       // ⚠️ Sign-in cannot be tested with the "Frontend" configurations or either
-      // "Full stack" compound, and fails *silently* if you try. `flutter run`
-      // serves the app on its own port, so it is no longer same-origin with the
-      // Serverpod web server; the session cookie is set on the web server's
-      // origin and is therefore never sent to /auth/session. Clicking sign in
-      // then does nothing at all, with no error in the console or the log.
+      // "Full stack" compound. `flutter run` serves the app on its own port, so
+      // it is not same-origin with the Serverpod web server; the session cookie
+      // is set on the web server's origin and never reaches /auth/session, which
+      // the browser blocks cross-origin anyway. The compounds therefore switch
+      // sign-in off before they start, so that combination is unreachable —
+      // running "Frontend (debug)" on its own while sign-in is enforced is the
+      // one way back into it, and there every API call returns 401.
       //
       // So this one skips `flutter run` entirely: the preLaunchTask starts the
       // mock provider, switches single sign-on on, and builds the app into
@@ -154,10 +156,18 @@
   "compounds": [
     {
       // Backend plus frontend in one click, for exercising a change end to end.
-      // Lints first, so a push-blocking analyze failure shows up here rather
-      // than in CI. Remove preLaunchTask if you want to run despite failures.
+      //
+      // The preLaunchTask switches sign-in **off** and then lints. Off is not
+      // optional here: `flutter run` serves the app on its own port, so the
+      // browser blocks the cross-origin /auth/session call and the app can never
+      // hold a bearer — with sign-in enforced every API call returns 401 behind
+      // CORS errors that name nothing useful. Use "Server (single sign-on)" when
+      // you want sign-in, and the "Auth: enable" task to put it back.
+      //
+      // Linting first also means a push-blocking analyze failure shows up here
+      // rather than in CI.
       "name": "Full stack (debug)",
-      "preLaunchTask": "Lint",
+      "preLaunchTask": "Full stack: prepare",
       "configurations": [
         "Server",
         "Frontend (debug)"
@@ -166,7 +176,7 @@
     },
     {
       "name": "Full stack (apply migrations)",
-      "preLaunchTask": "Lint",
+      "preLaunchTask": "Full stack: prepare",
       "configurations": [
         "Server (apply migrations)",
         "Frontend (debug)"
