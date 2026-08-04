@@ -691,6 +691,100 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
+  /// `2.40 GB`, `4.50 MB`, `912 bytes` — the same scale the server uses in the
+  /// notification emails, so a file is never described two different ways.
+  String _formatBytes(int bytes) {
+    if (bytes < 1000) return '$bytes bytes';
+    const units = ['kB', 'MB', 'GB', 'TB'];
+    var value = bytes / 1000;
+    var unit = 0;
+    while (value >= 1000 && unit < units.length - 1) {
+      value /= 1000;
+      unit++;
+    }
+    final decimals = value >= 100 ? 0 : (value >= 10 ? 1 : 2);
+    return '${value.toStringAsFixed(decimals)} ${units[unit]}';
+  }
+
+  /// Opens a download.
+  ///
+  /// A plain navigation rather than a fetch: the response carries
+  /// `Content-Disposition: attachment`, so the browser saves it and draws its own
+  /// progress, and the bytes never pass through this app. That is what lets a
+  /// multi-gigabyte project be downloaded at all.
+  ///
+  /// It also goes to the **web** origin, not the API one — that is where the
+  /// session cookie is valid, and a download carries no bearer header.
+  void _download(String fileName) {
+    final url = '$siteUrl/download/${widget.project.id}/'
+        '${Uri.encodeComponent(fileName)}';
+    web.window.open(url, '_blank');
+  }
+
+  Future<void> _showDownloads() async {
+    List<ProjectFileDto> files;
+    try {
+      files = await client.file.listProjectFiles(widget.project.id!);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to list files: ${describeError(e)}';
+      });
+      return;
+    }
+    if (!mounted) return;
+
+    final total = files.fold<int>(0, (sum, f) => sum + f.sizeBytes);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Download files'),
+          content: SizedBox(
+            width: 460,
+            child: files.isEmpty
+                ? const Text('This project has no files to download yet.')
+                : SingleChildScrollView(
+                    child: ListBody(
+                      children: [
+                        for (final file in files)
+                          ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(file.name),
+                            subtitle: Text(_formatBytes(file.sizeBytes)),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.download),
+                              tooltip: 'Download ${file.name}',
+                              onPressed: () => _download(file.name),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+          actions: [
+            if (files.isNotEmpty)
+              // The size is on the button on purpose: a project that kept its
+              // intermediates can be gigabytes, and "Download all" with no
+              // indication is how somebody starts a 4 GB transfer by accident.
+              TextButton.icon(
+                icon: const Icon(Icons.folder_zip),
+                label: Text(
+                  'Download all (${files.length} files, ${_formatBytes(total)})',
+                ),
+                onPressed: () => _download('all.zip'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _printDuration(Duration duration) {
     String negativeSign = duration.isNegative ? '-' : '';
     String twoDigits(int n) => n.toString().padLeft(2, "0");
@@ -1258,6 +1352,12 @@ class _ProjectTileState extends State<ProjectTile> {
         ElevatedButton(
           onPressed: _showUCSCTrack,
           child: Text('Show UCSC Track'),
+        ),
+        SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: _showDownloads,
+          icon: const Icon(Icons.download),
+          label: const Text('Download files'),
         ),
         SizedBox(height: 10),
       ],

@@ -7,6 +7,7 @@ import 'package:flumip_server/src/future_calls/demo_mode_cleanup.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
+import 'package:flumip_server/src/web/routes/download.dart';
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
 
 import 'src/generated/protocol.dart';
@@ -81,6 +82,10 @@ void run(List<String> args) async {
   // by necessity (genome.ucsc.edu is the fetcher) so an unguessable path is what
   // keeps tracks from being enumerable. See UCSCTrackRoute.
   pod.webServer.addRoute(UCSCTrackRoute(), '/ucsc_track/:token');
+
+  // Result files. Keyed on the project id and authorized against the caller's
+  // cookie — see DownloadRoute for why this is a web route and not an endpoint.
+  pod.webServer.addRoute(DownloadRoute(), '/download/:projectId/:fileName');
 
   // The sign-in flow runs on the web server, which is the origin the app itself
   // is served from — so the session cookie is set and read where the browser

@@ -422,6 +422,10 @@ void main() {
           endpoints.file.getUcscTrackToken(b, id),
           throwsA(isA<ProjectAccessDeniedException>()),
         );
+        await expectLater(
+          endpoints.file.listProjectFiles(b, id),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
       });
 
       test('on MipgenEndpoint', () async {

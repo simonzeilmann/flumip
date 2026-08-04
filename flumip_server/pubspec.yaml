@@ -15,6 +15,10 @@ dependencies:
   http: ^1.6.0
   # sha256, for hashing session tokens and the PKCE code challenge.
   crypto: ^3.0.6
+  # Zipping a project's files for the "download all" route. Written to a temp
+  # file rather than held in memory, so a large project does not have to fit in
+  # the heap twice.
+  archive: ^4.0.9
 
 dev_dependencies:
   lints: ^6.0.0

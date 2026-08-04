@@ -14,15 +14,16 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'dart:async' as _i2;
 import 'package:flumip_client/src/protocol/auth_config_dto.dart' as _i3;
 import 'package:flumip_client/src/protocol/auth_user_dto.dart' as _i4;
-import 'package:flumip_client/src/protocol/genome.dart' as _i5;
-import 'package:flumip_client/src/protocol/snp.dart' as _i6;
-import 'package:flumip_client/src/protocol/project_options.dart' as _i7;
-import 'package:flumip_client/src/protocol/project.dart' as _i8;
-import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i9;
-import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i10;
-import 'package:flumip_client/src/protocol/settings.dart' as _i11;
-import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i12;
-import 'protocol.dart' as _i13;
+import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i5;
+import 'package:flumip_client/src/protocol/genome.dart' as _i6;
+import 'package:flumip_client/src/protocol/snp.dart' as _i7;
+import 'package:flumip_client/src/protocol/project_options.dart' as _i8;
+import 'package:flumip_client/src/protocol/project.dart' as _i9;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i10;
+import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i11;
+import 'package:flumip_client/src/protocol/settings.dart' as _i12;
+import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i13;
+import 'protocol.dart' as _i14;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
@@ -146,6 +147,23 @@ class EndpointFile extends EndpointFlumip {
         {'projectID': projectID},
       );
 
+  /// Lists a project's files, so the app can offer them for download.
+  ///
+  /// Names and sizes only — the bytes come from the `/download/...` web route,
+  /// which streams them. Routing a multi-gigabyte file through a serialised
+  /// endpoint response would mean holding it in memory on both sides.
+  ///
+  /// Empty for a project whose generation never ran; that is not an error.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  _i2.Future<List<_i5.ProjectFileDto>> listProjectFiles(int projectID) =>
+      caller.callServerEndpoint<List<_i5.ProjectFileDto>>(
+        'file',
+        'listProjectFiles',
+        {'projectID': projectID},
+      );
+
   /// Refuses unless the caller is allowed to touch this project.
   ///
   /// **Every endpoint method that takes a project id must start with this.**
@@ -235,8 +253,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param id The ID of the genome to retrieve.
   /// \returns The genome with the specified ID.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<_i5.Genome> getGenome(int id) =>
-      caller.callServerEndpoint<_i5.Genome>(
+  _i2.Future<_i6.Genome> getGenome(int id) =>
+      caller.callServerEndpoint<_i6.Genome>(
         'genome',
         'getGenome',
         {'id': id},
@@ -247,8 +265,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param session The current session.
   /// \returns A list of all genomes.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i5.Genome>> getAllGenomes() =>
-      caller.callServerEndpoint<List<_i5.Genome>>(
+  _i2.Future<List<_i6.Genome>> getAllGenomes() =>
+      caller.callServerEndpoint<List<_i6.Genome>>(
         'genome',
         'getAllGenomes',
         {},
@@ -262,7 +280,7 @@ class EndpointGenome extends EndpointFlumip {
   /// \throws Exception if an error occurs during the update.
   _i2.Future<void> updateGenome(
     int id,
-    _i5.Genome genome,
+    _i6.Genome genome,
   ) => caller.callServerEndpoint<void>(
     'genome',
     'updateGenome',
@@ -288,7 +306,7 @@ class EndpointGenome extends EndpointFlumip {
   /// \param id The ID of the SNP to retrieve.
   /// \returns The SNP with the specified ID.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<_i6.Snp> getSnp(int id) => caller.callServerEndpoint<_i6.Snp>(
+  _i2.Future<_i7.Snp> getSnp(int id) => caller.callServerEndpoint<_i7.Snp>(
     'genome',
     'getSnp',
     {'id': id},
@@ -300,8 +318,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param genomeId The ID of the genome to retrieve SNPs for.
   /// \returns A list of all SNPs for the specified genome.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i6.Snp>> getAllSnpForGenome(int genomeId) =>
-      caller.callServerEndpoint<List<_i6.Snp>>(
+  _i2.Future<List<_i7.Snp>> getAllSnpForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_i7.Snp>>(
         'genome',
         'getAllSnpForGenome',
         {'genomeId': genomeId},
@@ -315,7 +333,7 @@ class EndpointGenome extends EndpointFlumip {
   /// \throws Exception if an error occurs during the update.
   _i2.Future<void> updateSnp(
     int id,
-    _i6.Snp snp,
+    _i7.Snp snp,
   ) => caller.callServerEndpoint<void>(
     'genome',
     'updateSnp',
@@ -343,8 +361,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param category The category to filter genomes by.
   /// \returns A list of genomes in the specified category.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i5.Genome>> getGenomeByCategory(String category) =>
-      caller.callServerEndpoint<List<_i5.Genome>>(
+  _i2.Future<List<_i6.Genome>> getGenomeByCategory(String category) =>
+      caller.callServerEndpoint<List<_i6.Genome>>(
         'genome',
         'getGenomeByCategory',
         {'category': category},
@@ -482,8 +500,8 @@ class EndpointOptions extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \returns The created [ProjectOptions] object.
-  _i2.Future<_i7.ProjectOptions> createProjectOptions() =>
-      caller.callServerEndpoint<_i7.ProjectOptions>(
+  _i2.Future<_i8.ProjectOptions> createProjectOptions() =>
+      caller.callServerEndpoint<_i8.ProjectOptions>(
         'options',
         'createProjectOptions',
         {},
@@ -494,9 +512,9 @@ class EndpointOptions extends EndpointFlumip {
   /// \param session The current session.
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
-  _i2.Future<_i7.ProjectOptions> insertProjectOptions(
-    _i7.ProjectOptions options,
-  ) => caller.callServerEndpoint<_i7.ProjectOptions>(
+  _i2.Future<_i8.ProjectOptions> insertProjectOptions(
+    _i8.ProjectOptions options,
+  ) => caller.callServerEndpoint<_i8.ProjectOptions>(
     'options',
     'insertProjectOptions',
     {'options': options},
@@ -507,8 +525,8 @@ class EndpointOptions extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project options to retrieve.
   /// \returns The retrieved [ProjectOptions] object.
-  _i2.Future<_i7.ProjectOptions> getProjectOptions(int id) =>
-      caller.callServerEndpoint<_i7.ProjectOptions>(
+  _i2.Future<_i8.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_i8.ProjectOptions>(
         'options',
         'getProjectOptions',
         {'id': id},
@@ -521,7 +539,7 @@ class EndpointOptions extends EndpointFlumip {
   /// \param options The [ProjectOptions] object to update.
   _i2.Future<void> updateProjectOptions(
     int id,
-    _i7.ProjectOptions options,
+    _i8.ProjectOptions options,
   ) => caller.callServerEndpoint<void>(
     'options',
     'updateProjectOptions',
@@ -593,11 +611,11 @@ class EndpointProject extends EndpointFlumip {
   /// \param options The options for the project.
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
-  _i2.Future<_i8.Project> createProject(
+  _i2.Future<_i9.Project> createProject(
     String name,
-    _i7.ProjectOptions options, [
+    _i8.ProjectOptions options, [
     String? description,
-  ]) => caller.callServerEndpoint<_i8.Project>(
+  ]) => caller.callServerEndpoint<_i9.Project>(
     'project',
     'createProject',
     {
@@ -621,8 +639,8 @@ class EndpointProject extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.
-  _i2.Future<List<_i8.Project>> getProjects() =>
-      caller.callServerEndpoint<List<_i8.Project>>(
+  _i2.Future<List<_i9.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_i9.Project>>(
         'project',
         'getProjects',
         {},
@@ -633,8 +651,8 @@ class EndpointProject extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project to retrieve.
   /// \returns The retrieved [Project] object.
-  _i2.Future<_i8.Project> getProject(int id) =>
-      caller.callServerEndpoint<_i8.Project>(
+  _i2.Future<_i9.Project> getProject(int id) =>
+      caller.callServerEndpoint<_i9.Project>(
         'project',
         'getProject',
         {'id': id},
@@ -756,8 +774,8 @@ class EndpointProject extends EndpointFlumip {
   /// business enumerating everyone with an account.
   ///
   /// \param session The current session.
-  _i2.Future<List<_i9.FlumipUserDto>> assignableOwners() =>
-      caller.callServerEndpoint<List<_i9.FlumipUserDto>>(
+  _i2.Future<List<_i10.FlumipUserDto>> assignableOwners() =>
+      caller.callServerEndpoint<List<_i10.FlumipUserDto>>(
         'project',
         'assignableOwners',
         {},
@@ -859,8 +877,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// **The extension point for per-user settings**: see [UserSettingsDto].
   ///
   /// \param session The current session.
-  _i2.Future<_i10.UserSettingsDto> userSettings() =>
-      caller.callServerEndpoint<_i10.UserSettingsDto>(
+  _i2.Future<_i11.UserSettingsDto> userSettings() =>
+      caller.callServerEndpoint<_i11.UserSettingsDto>(
         'settings',
         'userSettings',
         {},
@@ -871,8 +889,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i11.Settings> getSettings(String? password) =>
-      caller.callServerEndpoint<_i11.Settings>(
+  _i2.Future<_i12.Settings> getSettings(String? password) =>
+      caller.callServerEndpoint<_i12.Settings>(
         'settings',
         'getSettings',
         {'password': password},
@@ -892,7 +910,7 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param settings The [Settings] object to update.
   _i2.Future<void> updateSettings(
     String? password,
-    _i11.Settings settings,
+    _i12.Settings settings,
   ) => caller.callServerEndpoint<void>(
     'settings',
     'updateSettings',
@@ -933,8 +951,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
-  _i2.Future<_i12.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
-      caller.callServerEndpoint<_i12.AuthAdminStatusDto>(
+  _i2.Future<_i13.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
+      caller.callServerEndpoint<_i13.AuthAdminStatusDto>(
         'settings',
         'getAuthAdminStatus',
         {'password': password},
@@ -978,7 +996,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i13.Protocol(),
+         _i14.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

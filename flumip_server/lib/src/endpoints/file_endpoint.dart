@@ -3,6 +3,7 @@ import 'package:serverpod/server.dart';
 
 import 'package:flumip_server/service_locator.dart';
 
+import '../generated/protocol.dart';
 import '../services/file_service.dart';
 import '../services/project_service.dart';
 import '../web/routes/ucsc_track.dart';
@@ -141,6 +142,36 @@ class FileEndpoint extends FlumipEndpoint {
     } catch (e) {
       session.log(
         "Error getting UCSC track token for project ID: $projectID",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Lists a project's files, so the app can offer them for download.
+  ///
+  /// Names and sizes only — the bytes come from the `/download/...` web route,
+  /// which streams them. Routing a multi-gigabyte file through a serialised
+  /// endpoint response would mean holding it in memory on both sides.
+  ///
+  /// Empty for a project whose generation never ran; that is not an error.
+  ///
+  /// \param session The current session.
+  /// \param projectID The ID of the project.
+  Future<List<ProjectFileDto>> listProjectFiles(
+    Session session,
+    int projectID,
+  ) async {
+    try {
+      await requireProject(session, projectID);
+      final files = await fileService.listProjectFiles(session, projectID);
+      return files
+          .map((f) => ProjectFileDto(name: f.name, sizeBytes: f.sizeBytes))
+          .toList();
+    } catch (e) {
+      session.log(
+        "Error listing files for project ID: $projectID",
         level: LogLevel.error,
         exception: e,
       );

@@ -163,6 +163,31 @@
       }
     },
     {
+      // What both "Full stack" compounds run before starting.
+      //
+      // ⚠️ Switching sign-in off is the point, not a side effect. Those
+      // compounds use `flutter run`, which serves the app on its own port — so
+      // it is not same-origin with the web server, the browser refuses the
+      // cross-origin `/auth/session` call outright, and the app never gets a
+      // bearer. With sign-in *enforced* that is not a degraded experience but a
+      // broken one: every API call comes back 401 behind a wall of CORS errors
+      // that say nothing about the actual cause.
+      //
+      // So the compound removes the broken combination rather than working
+      // around it. Use "Server (single sign-on)" when you want sign-in; it
+      // builds into the directory the server serves, where the cookie works.
+      //
+      // "Auth: enable" puts it back.
+      "label": "Full stack: prepare",
+      "detail": "Switch sign-in off (flutter run cannot complete it), then lint",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Auth: disable",
+        "Lint"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Auth: banner",
       "detail": "Where to sign in and as whom",
       "type": "shell",

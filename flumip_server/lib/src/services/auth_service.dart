@@ -435,6 +435,15 @@ class AuthService {
   static String cacheGroupForSession(int authSessionId) =>
       'auth:session:$authSessionId';
 
+  /// The live session a browser cookie names, or null.
+  ///
+  /// Public for the **web routes**, which are same-origin with the app and so
+  /// receive the cookie, but are not endpoints and therefore have no
+  /// `session.authenticated` to read. `/download/...` uses it to work out who is
+  /// asking before deciding whether they may have the file.
+  Future<AuthSession?> sessionForCookie(Session session, String cookieValue) =>
+      _sessionForCookie(session, cookieValue);
+
   Future<AuthSession?> _sessionForCookie(
     Session session,
     String cookieValue,
