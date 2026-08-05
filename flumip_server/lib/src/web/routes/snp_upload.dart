@@ -152,6 +152,7 @@ class SnpUploadRoute extends Route {
   ) async {
     IOSink? sink;
     var written = 0;
+    final declared = request.body.contentLength;
     try {
       sink = paths.partial.openWrite();
       await for (final chunk in request.read(maxLength: maxBytes)) {
@@ -161,6 +162,28 @@ class SnpUploadRoute extends Route {
       await sink.flush();
       await sink.close();
       sink = null;
+
+      // ⚠️ **The completeness check, and it is not optional.** A stream that ends
+      // early without an error — a proxy that closed the connection cleanly, a
+      // client that went away between chunks — otherwise leaves a truncated file
+      // that gets renamed into place and marked ready. If an index was uploaded
+      // alongside it, tabix never runs, so nothing downstream ever looks at the
+      // bytes and the first sign of trouble is mipgen dying on a corrupt archive
+      // some minutes later.
+      if (declared != null && written != declared) {
+        await _discard(sink, paths.partial);
+        session.log(
+          'Refused a truncated upload for SNP ${snp.id}: got $written bytes of '
+          'a declared $declared.',
+          level: LogLevel.warning,
+        );
+        return Response.badRequest(
+          body: Body.fromString(
+            'The upload arrived incomplete ($written of $declared bytes). '
+            'Nothing was saved; please try again.',
+          ),
+        );
+      }
 
       await paths.partial.rename(paths.target.path);
       session.log(

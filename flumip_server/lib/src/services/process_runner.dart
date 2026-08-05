@@ -18,11 +18,22 @@ abstract class ProcessRunner {
   /// Starts [executable] and returns immediately. The started process handle is
   /// intentionally not surfaced: callers fire-and-forget and locate the running
   /// process afterwards via `pgrep` (see [ProcessService.getProcessPID]).
+  ///
+  /// [outputPath], when given, receives the child's stdout and stderr
+  /// interleaved.
+  ///
+  /// ⚠️ **Pass it for anything whose failure a user has to understand.** Without
+  /// it the child's output goes into a pipe nobody reads, so a tool that dies
+  /// explaining exactly what was wrong leaves no trace at all — which is how "MIP
+  /// generation failed" came to be the entire diagnosis for every kind of
+  /// failure. It also removes a hang: a child that writes more than the pipe
+  /// buffer holds blocks forever on an undrained pipe.
   Future<void> start(
     String executable,
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    String? outputPath,
   });
 }
 
@@ -51,12 +62,43 @@ class SystemProcessRunner implements ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    String? outputPath,
   }) async {
-    await Process.start(
+    final process = await Process.start(
       executable,
       arguments,
       workingDirectory: workingDirectory,
       runInShell: runInShell,
+    );
+
+    if (outputPath == null) {
+      // Still drained, just discarded. An undrained pipe stalls the child once
+      // it has written more than the buffer holds.
+      process.stdout.drain<void>();
+      process.stderr.drain<void>();
+      return;
+    }
+
+    // Both streams into one file, interleaved as they arrive, so the log reads
+    // in the order things actually happened. `IOSink.addStream` refuses two
+    // concurrent streams, hence listening by hand rather than piping twice.
+    final sink = File(outputPath).openWrite();
+    var openStreams = 2;
+    void closeWhenBothEnd() {
+      if (--openStreams == 0) sink.close().catchError((_) {});
+    }
+
+    process.stdout.listen(
+      sink.add,
+      onDone: closeWhenBothEnd,
+      onError: (_) => closeWhenBothEnd(),
+      cancelOnError: true,
+    );
+    process.stderr.listen(
+      sink.add,
+      onDone: closeWhenBothEnd,
+      onError: (_) => closeWhenBothEnd(),
+      cancelOnError: true,
     );
   }
 }

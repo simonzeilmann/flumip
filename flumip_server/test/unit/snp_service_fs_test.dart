@@ -8,27 +8,16 @@ import 'package:test/test.dart';
 import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_process_runner.dart';
 import '../support/seed.dart';
+import '../support/bgzf.dart';
 import '../support/temp_dir.dart';
 
 final fake = FakeProcessRunner();
-
-/// A valid BGZF header, so that a fixture VCF survives the sniff in
-/// `buildTabixIndex` rather than being rejected as plain gzip.
-final bgzfHeader = [
-  0x1f, 0x8b, 0x08, 0x04, //
-  0, 0, 0, 0, //
-  0, 0xff, //
-  6, 0, //
-  0x42, 0x43, //
-  2, 0, //
-  0, 0,
-];
 
 /// Writes a directory that looks like a finished SNP set.
 void writeSnpDir(String dir, {String stem = 'panel', bool withTbi = true}) {
   Directory(dir).createSync(recursive: true);
   File('$dir/$stem.vcf.gz')
-      .writeAsBytesSync([...bgzfHeader, ...List.filled(48, 0x78)]);
+      .writeAsBytesSync(completeBgzf(filler: 48));
   if (withTbi) File('$dir/$stem.vcf.gz.tbi').writeAsStringSync('i' * 8);
 }
 
@@ -224,7 +213,7 @@ void main() {
         Directory(dir).createSync(recursive: true);
         // FEXTRA cleared: gzip, but not BGZF.
         File('$dir/panel.vcf.gz')
-            .writeAsBytesSync([...bgzfHeader]..[3] = 0x00);
+            .writeAsBytesSync(plainGzip());
         File('$dir/panel.vcf.gz.tbi').writeAsStringSync('i');
         await service.collectCustomSnps(session);
 

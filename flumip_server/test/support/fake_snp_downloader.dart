@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flumip_server/src/services/snp_downloader.dart';
+import 'package:flumip_server/src/services/snp_service.dart';
 
 /// A single recorded call to [SnpDownloader.download].
 class DownloadInvocation {
@@ -94,21 +95,19 @@ class FakeSnpDownloader implements SnpDownloader {
     return size;
   }
 
-  /// Bytes that begin with a valid BGZF header.
+  /// Bytes of a **complete** bgzip file.
   ///
-  /// `SnpService.buildTabixIndex` sniffs the first sixteen bytes before running
-  /// tabix, so a fake payload of zeroes would be rejected as plain gzip and every
-  /// happy-path test would fail for the wrong reason.
+  /// ⚠️ Must end with the BGZF end-of-file block, not merely begin with a valid
+  /// header: `SnpService.vcfProblem` treats a missing marker as a truncated
+  /// download, which is exactly what a fake payload of header-only bytes looks
+  /// like.
   static List<int> _bgzfBytes(int size) {
-    final header = [
-      0x1f, 0x8b, 0x08, 0x04, //
-      0, 0, 0, 0, //
-      0, 0xff, //
-      6, 0, //
-      0x42, 0x43, //
-      2, 0, //
+    final marker = SnpService.bgzfEofMarker;
+    if (size <= marker.length * 2) return marker;
+    return [
+      ...marker,
+      ...List.filled(size - marker.length * 2, 0x78),
+      ...marker,
     ];
-    if (size <= header.length) return header;
-    return [...header, ...List.filled(size - header.length, 0x78)];
   }
 }

@@ -12,12 +12,16 @@ class ProcessInvocation {
   /// True when the call came through [ProcessRunner.start], false for [run].
   final bool started;
 
+  /// Where the child's output was directed, for a [ProcessRunner.start] call.
+  final String? outputPath;
+
   ProcessInvocation({
     required this.executable,
     required this.arguments,
     required this.workingDirectory,
     required this.runInShell,
     required this.started,
+    this.outputPath,
   });
 }
 
@@ -39,6 +43,10 @@ class FakeProcessRunner implements ProcessRunner {
   Object? runError;
   Object? startError;
 
+  /// Written to a start call's `outputPath`, standing in for the child's own
+  /// output so tests can exercise what is done with it.
+  String? startOutput;
+
   FakeProcessRunner({ProcessResult? defaultRunResult})
       : defaultRunResult = defaultRunResult ?? ProcessResult(0, 0, '', '');
 
@@ -49,6 +57,7 @@ class FakeProcessRunner implements ProcessRunner {
     _runStubs.clear();
     runError = null;
     startError = null;
+    startOutput = null;
     defaultRunResult = ProcessResult(0, 0, '', '');
   }
 
@@ -102,6 +111,7 @@ class FakeProcessRunner implements ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    String? outputPath,
   }) async {
     invocations.add(ProcessInvocation(
       executable: executable,
@@ -109,7 +119,15 @@ class FakeProcessRunner implements ProcessRunner {
       workingDirectory: workingDirectory,
       runInShell: runInShell,
       started: true,
+      outputPath: outputPath,
     ));
     if (startError != null) throw startError!;
+    // Stand in for the child writing something, so tests that assert on the log
+    // have a file to read.
+    if (outputPath != null && startOutput != null) {
+      final file = File(outputPath);
+      await file.parent.create(recursive: true);
+      await file.writeAsString(startOutput!);
+    }
   }
 }
