@@ -152,7 +152,7 @@
       "label": "App: build into server web/app",
       "detail": "flutter build web + copy into flumip_server/web/app — required for sign-in",
       "type": "shell",
-      "command": "flutter build web --debug --pwa-strategy=none && rm -rf ../flumip_server/web/app && cp -r build/web ../flumip_server/web/app",
+      "command": "flutter build web --debug && rm -rf ../flumip_server/web/app && cp -r build/web ../flumip_server/web/app",
       "options": {
         "cwd": "${workspaceFolder}/flumip_flutter"
       },

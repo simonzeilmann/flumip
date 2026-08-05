@@ -28,7 +28,7 @@ jobs:
       # Matches development.yml: development is the usual base, so a PR build
       # should predict the run that happens right after the merge, --wasm
       # included.
-      web_build_args: --debug --wasm --pwa-strategy=none
+      web_build_args: --debug --wasm
       # Run the test suite on PRs from this repository, and skip it on PRs from
       # a fork.
       #
