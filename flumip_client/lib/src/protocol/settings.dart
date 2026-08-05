@@ -31,7 +31,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -67,7 +66,6 @@ abstract class Settings implements _i1.SerializableModel {
        smtpServer = smtpServer ?? '',
        smtpPort = smtpPort ?? 25,
        smtpUser = smtpUser ?? '',
-       smtpPassword = smtpPassword ?? '',
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
@@ -98,7 +96,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -137,7 +134,6 @@ abstract class Settings implements _i1.SerializableModel {
       smtpServer: jsonSerialization['smtpServer'] as String?,
       smtpPort: jsonSerialization['smtpPort'] as int?,
       smtpUser: jsonSerialization['smtpUser'] as String?,
-      smtpPassword: jsonSerialization['smtpPassword'] as String?,
       smtpFrom: jsonSerialization['smtpFrom'] as String?,
       startTLS: jsonSerialization['startTLS'] == null
           ? null
@@ -194,8 +190,6 @@ abstract class Settings implements _i1.SerializableModel {
 
   String smtpUser;
 
-  String smtpPassword;
-
   String smtpFrom;
 
   bool startTLS;
@@ -239,7 +233,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -273,7 +266,6 @@ abstract class Settings implements _i1.SerializableModel {
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
       'smtpUser': smtpUser,
-      'smtpPassword': smtpPassword,
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
@@ -315,7 +307,6 @@ class _SettingsImpl extends Settings {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -345,7 +336,6 @@ class _SettingsImpl extends Settings {
          smtpServer: smtpServer,
          smtpPort: smtpPort,
          smtpUser: smtpUser,
-         smtpPassword: smtpPassword,
          smtpFrom: smtpFrom,
          startTLS: startTLS,
          loginRequired: loginRequired,
@@ -381,7 +371,6 @@ class _SettingsImpl extends Settings {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -415,7 +404,6 @@ class _SettingsImpl extends Settings {
       smtpServer: smtpServer ?? this.smtpServer,
       smtpPort: smtpPort ?? this.smtpPort,
       smtpUser: smtpUser ?? this.smtpUser,
-      smtpPassword: smtpPassword ?? this.smtpPassword,
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,

@@ -928,6 +928,39 @@ class EndpointSettings extends _i1.EndpointRef {
     },
   );
 
+  /// Stores the SMTP password, which is never sent back.
+  ///
+  /// Write-only, exactly like [setOidcClientSecret] and for the same reason: an
+  /// ordinary field is serialised on every `getSettings`, so the mail account's
+  /// password travelled to the browser in cleartext for anyone with the settings
+  /// screen open.
+  ///
+  /// An empty [secret] clears it, which is how a relay that needs no
+  /// authentication is configured. To *keep* the stored one, do not call this —
+  /// saving the rest of the settings leaves it alone.
+  _i2.Future<void> setSmtpPassword(
+    String? password,
+    String secret,
+  ) => caller.callServerEndpoint<void>(
+    'settings',
+    'setSmtpPassword',
+    {
+      'password': password,
+      'secret': secret,
+    },
+  );
+
+  /// Whether an SMTP password is stored, without revealing it.
+  ///
+  /// Lets the settings tab say "a password is stored, type here to replace it"
+  /// rather than showing an empty box that looks like nothing is configured.
+  _i2.Future<bool> smtpPasswordConfigured(String? password) =>
+      caller.callServerEndpoint<bool>(
+        'settings',
+        'smtpPasswordConfigured',
+        {'password': password},
+      );
+
   /// Everything the settings tab needs to show about the SSO setup that is not
   /// itself a stored setting.
   ///

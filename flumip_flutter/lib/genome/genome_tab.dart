@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
+import '../error_text.dart';
 import '../main.dart';
 import 'genome_details_card.dart';
 import 'genome_subcategory_list.dart';
@@ -169,14 +170,22 @@ class _GenomeTabState extends State<GenomeTab> {
   }
 
   void _toggleGenomeActive(bool value) async {
+    final genome = selectedGenome;
+    if (genome == null) return;
+    final previous = genome.active;
+
+    setState(() => genome.active = value);
     try {
-      setState(() {
-        selectedGenome!.active = value;
-      });
-      await client.genome.updateGenome(selectedGenome!.id!, selectedGenome!);
+      await client.genome.updateGenome(genome.id!, genome);
     } catch (e) {
+      // ⚠️ Put back. Without the rollback the switch stayed where the user left
+      // it even though the server had refused, so the interface asserted
+      // something untrue until the next poll happened to correct it.
+      if (!mounted) return;
       setState(() {
-        _errorMessage = '$e';
+        genome.active = previous;
+        _genomeActiveNotifier.value = previous;
+        _errorMessage = 'Could not change the genome: ${describeError(e)}';
       });
     }
   }

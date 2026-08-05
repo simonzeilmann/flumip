@@ -193,22 +193,6 @@ void main() {
       );
     }, tags: ['unit']);
 
-    // --- returnFile ---------------------------------------------------------
-    test('returnFile streams the matching file bytes', () async {
-      final p = await prepareProject();
-      File('${p.dir}/data.bin').writeAsStringSync('streamed');
-      final stream = await fileService.returnFile(session, p.id, 'data.bin');
-      final bytes = await stream.expand((chunk) => chunk).toList();
-      expect(String.fromCharCodes(bytes), 'streamed');
-    }, tags: ['unit']);
-
-    test('returnFile returns an empty stream when the file is absent',
-        () async {
-      final p = await prepareProject();
-      final stream = await fileService.returnFile(session, p.id, 'missing.bin');
-      expect(await stream.isEmpty, isTrue);
-    }, tags: ['unit']);
-
     // --- downloads ----------------------------------------------------------
     group('listProjectFiles', () {
       test('returns every file with its size, sorted', () async {

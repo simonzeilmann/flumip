@@ -15,6 +15,9 @@ class ProcessInvocation {
   /// Where the child's output was directed, for a [ProcessRunner.start] call.
   final String? outputPath;
 
+  /// The deadline the caller gave, for a [ProcessRunner.run] call.
+  final Duration? timeout;
+
   ProcessInvocation({
     required this.executable,
     required this.arguments,
@@ -22,6 +25,7 @@ class ProcessInvocation {
     required this.runInShell,
     required this.started,
     this.outputPath,
+    this.timeout,
   });
 }
 
@@ -93,6 +97,7 @@ class FakeProcessRunner implements ProcessRunner {
     List<String> arguments, {
     String? workingDirectory,
     bool runInShell = false,
+    Duration? timeout,
   }) async {
     invocations.add(ProcessInvocation(
       executable: executable,
@@ -100,6 +105,7 @@ class FakeProcessRunner implements ProcessRunner {
       workingDirectory: workingDirectory,
       runInShell: runInShell,
       started: false,
+      timeout: timeout,
     ));
     if (runError != null) throw runError!;
     return _runStubs[executable] ?? defaultRunResult;

@@ -47,8 +47,9 @@ class SmtpMailSender implements MailSender {
     // An empty user means an unauthenticated relay; mailer expects null rather
     // than an empty string in that case.
     final user = settings.smtpUser.isEmpty ? null : settings.smtpUser;
-    final password =
-        settings.smtpPassword.isEmpty ? null : settings.smtpPassword;
+    final password = (settings.smtpPassword?.isEmpty ?? true)
+        ? null
+        : settings.smtpPassword;
 
     final server = SmtpServer(
       settings.smtpServer,

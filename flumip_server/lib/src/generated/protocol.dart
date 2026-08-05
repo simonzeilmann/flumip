@@ -556,12 +556,6 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'String?',
         ),
         _i2.ColumnDefinition(
-          name: 'snp',
-          columnType: _i2.ColumnType.json,
-          isNullable: true,
-          dartType: 'List<int>?',
-        ),
-        _i2.ColumnDefinition(
           name: 'category',
           columnType: _i2.ColumnType.text,
           isNullable: true,
@@ -1212,9 +1206,8 @@ class Protocol extends _i1.SerializationManagerServer {
         _i2.ColumnDefinition(
           name: 'smtpPassword',
           columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'\'::text',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _i2.ColumnDefinition(
           name: 'smtpFrom',
@@ -1722,15 +1715,6 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<List<String>?>()) {
       return (data != null
               ? (data as List).map((e) => deserialize<String>(e)).toList()
-              : null)
-          as T;
-    }
-    if (t == List<int>) {
-      return (data as List).map((e) => deserialize<int>(e)).toList() as T;
-    }
-    if (t == _i1.getType<List<int>?>()) {
-      return (data != null
-              ? (data as List).map((e) => deserialize<int>(e)).toList()
               : null)
           as T;
     }

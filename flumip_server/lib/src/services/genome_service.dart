@@ -10,6 +10,9 @@ import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+/// Where `bwa index` output is kept, beside the FASTA it is indexing.
+const bwaIndexLogName = 'bwa-index.log';
+
 class GenomeService {
   GenomeService();
 
@@ -193,7 +196,7 @@ class GenomeService {
         continue;
       }
 
-      var snpRet = await Snp.db.insertRow(
+      await Snp.db.insertRow(
         session,
         Snp(
           name: snpDir.path.split('/').last,
@@ -206,8 +209,6 @@ class GenomeService {
           created: DateTime.now().toUtc(),
         ),
       );
-      existingGenome.snp ??= <int>[];
-      existingGenome.snp?.add(snpRet.id!);
     }
     session.log(
       "SNP folder processed: ${snpFolder.path}",
@@ -261,12 +262,7 @@ class GenomeService {
       var inserted = await Genome.db.insertRow(session, genome);
       for (var snp in snps) {
         snp.genome = inserted.id;
-        var snpRet = await Snp.db.insertRow(session, snp);
-        inserted.snp ??= <int>[];
-        inserted.snp?.add(snpRet.id!);
-      }
-      if (inserted.snp != null) {
-        await Genome.db.updateRow(session, inserted);
+        await Snp.db.insertRow(session, snp);
       }
     }
     session.log(
@@ -390,6 +386,11 @@ class GenomeService {
       ["index", genome.fastaPath!],
       workingDirectory: "${genome.path}/fa",
       runInShell: true,
+      // ⚠️ Same reasoning as mipgen's log. An index build takes hours and can
+      // fail on a truncated FASTA or a full disk; without this, bwa's
+      // explanation went into a pipe nobody read and the genome simply sat at
+      // `indexing` forever with nothing to look at.
+      outputPath: "${genome.path}/fa/$bwaIndexLogName",
     );
     genome.indexing = true;
     genome.indexPID = await processService.getProcessPID(

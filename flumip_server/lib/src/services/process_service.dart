@@ -8,6 +8,10 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 /// Service class for handling process-related operations.
+/// How long a system utility that answers immediately is given before it is
+/// treated as wedged. `ps`, `pgrep` and `kill` all return in milliseconds.
+const quickToolTimeout = Duration(seconds: 10);
+
 class ProcessService {
   ProcessService();
 
@@ -37,7 +41,13 @@ class ProcessService {
       throw ArgumentError('Project id does not exist');
     }
     var process =
-        await sl<ProcessRunner>().run("ps", ["-p", project.pid.toString()]);
+        await sl<ProcessRunner>().run(
+      "ps",
+      ["-p", project.pid.toString()],
+      // A liveness check that has not answered in ten seconds is not going
+      // to; without a deadline it would hold the progress future call open.
+      timeout: quickToolTimeout,
+    );
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for project ID: ${projectModel.id}",
@@ -140,7 +150,11 @@ class ProcessService {
     int processPID = 0;
 
     var process =
-        await sl<ProcessRunner>().run("pgrep", ["--list-full", processName]);
+        await sl<ProcessRunner>().run(
+      "pgrep",
+      ["--list-full", processName],
+      timeout: quickToolTimeout,
+    );
     if (process.exitCode == 1) {
       session.log("Process is not running", level: LogLevel.info);
       return processPID;
@@ -174,7 +188,11 @@ class ProcessService {
   Future<void> terminateProcess(Session session, int pid) async {
     session.log("Terminating process with PID: $pid", level: LogLevel.info);
     var process =
-        await sl<ProcessRunner>().run("kill", ["-9", pid.toString()]);
+        await sl<ProcessRunner>().run(
+      "kill",
+      ["-9", pid.toString()],
+      timeout: quickToolTimeout,
+    );
     if (process.exitCode > 1) {
       session.log(
         "Error terminating process with PID: $pid",

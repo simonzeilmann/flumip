@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
 
 abstract class Genome implements _i1.SerializableModel {
   Genome._({
@@ -22,7 +21,6 @@ abstract class Genome implements _i1.SerializableModel {
     this.fastaPath,
     this.refPath,
     this.snpFolder,
-    this.snp,
     this.category,
     bool? active,
     bool? indexed,
@@ -46,7 +44,6 @@ abstract class Genome implements _i1.SerializableModel {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -65,9 +62,6 @@ abstract class Genome implements _i1.SerializableModel {
       fastaPath: jsonSerialization['fastaPath'] as String?,
       refPath: jsonSerialization['refPath'] as String?,
       snpFolder: jsonSerialization['snpFolder'] as String?,
-      snp: jsonSerialization['snp'] == null
-          ? null
-          : _i2.Protocol().deserialize<List<int>>(jsonSerialization['snp']),
       category: jsonSerialization['category'] as String?,
       active: jsonSerialization['active'] == null
           ? null
@@ -101,8 +95,6 @@ abstract class Genome implements _i1.SerializableModel {
 
   String? snpFolder;
 
-  List<int>? snp;
-
   String? category;
 
   bool active;
@@ -128,7 +120,6 @@ abstract class Genome implements _i1.SerializableModel {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -148,7 +139,6 @@ abstract class Genome implements _i1.SerializableModel {
       if (fastaPath != null) 'fastaPath': fastaPath,
       if (refPath != null) 'refPath': refPath,
       if (snpFolder != null) 'snpFolder': snpFolder,
-      if (snp != null) 'snp': snp?.toJson(),
       if (category != null) 'category': category,
       'active': active,
       'indexed': indexed,
@@ -176,7 +166,6 @@ class _GenomeImpl extends Genome {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -192,7 +181,6 @@ class _GenomeImpl extends Genome {
          fastaPath: fastaPath,
          refPath: refPath,
          snpFolder: snpFolder,
-         snp: snp,
          category: category,
          active: active,
          indexed: indexed,
@@ -214,7 +202,6 @@ class _GenomeImpl extends Genome {
     Object? fastaPath = _Undefined,
     Object? refPath = _Undefined,
     Object? snpFolder = _Undefined,
-    Object? snp = _Undefined,
     Object? category = _Undefined,
     bool? active,
     bool? indexed,
@@ -231,7 +218,6 @@ class _GenomeImpl extends Genome {
       fastaPath: fastaPath is String? ? fastaPath : this.fastaPath,
       refPath: refPath is String? ? refPath : this.refPath,
       snpFolder: snpFolder is String? ? snpFolder : this.snpFolder,
-      snp: snp is List<int>? ? snp : this.snp?.map((e0) => e0).toList(),
       category: category is String? ? category : this.category,
       active: active ?? this.active,
       indexed: indexed ?? this.indexed,

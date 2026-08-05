@@ -1124,6 +1124,50 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['secret'],
                   ),
         ),
+        'setSmtpPassword': _i1.MethodConnector(
+          name: 'setSmtpPassword',
+          params: {
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+            'secret': _i1.ParameterDescription(
+              name: 'secret',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+                  .setSmtpPassword(
+                    session,
+                    params['password'],
+                    params['secret'],
+                  ),
+        ),
+        'smtpPasswordConfigured': _i1.MethodConnector(
+          name: 'smtpPasswordConfigured',
+          params: {
+            'password': _i1.ParameterDescription(
+              name: 'password',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+                  .smtpPasswordConfigured(
+                    session,
+                    params['password'],
+                  ),
+        ),
         'getAuthAdminStatus': _i1.MethodConnector(
           name: 'getAuthAdminStatus',
           params: {

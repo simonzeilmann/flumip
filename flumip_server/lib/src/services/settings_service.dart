@@ -155,7 +155,6 @@ class SettingsService {
       ..smtpServer = settings.smtpServer
       ..smtpPort = settings.smtpPort
       ..smtpUser = settings.smtpUser
-      ..smtpPassword = settings.smtpPassword
       ..smtpFrom = settings.smtpFrom
       ..startTLS = settings.startTLS
       ..loginRequired = settings.loginRequired
