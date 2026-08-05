@@ -19,7 +19,6 @@ genome:
   - collectGenomes:
   - getSnp:
   - getAllSnpForGenome:
-  - updateSnp:
   - getCategories:
   - getGenomeByCategory:
   - indexFasta:
@@ -62,3 +61,19 @@ settings:
   - setOidcClientSecret:
   - getAuthAdminStatus:
   - sendTestMail:
+snp:
+  - listSnpsForGenome:
+  - listMySnps:
+  - createUpload:
+  - finishUpload:
+  - cancelUpload:
+  - importFromUrls:
+  - retryImport:
+  - setShared:
+  - renameSnp:
+  - snpUsage:
+  - deleteCustomSnp:
+  - deleteSnpAsAdmin:
+  - collectCustomSnps:
+  - requireProject:
+  - requireProjectOptions:

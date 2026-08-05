@@ -311,23 +311,64 @@ class ProjectService {
     await Project.db.updateRow(session, project);
   }
 
-  /// Sets the SNP for a project by its ID.
+  /// Sets the SNP for a project, or clears it when [snpId] is null.
+  ///
+  /// Three checks the first version did not make, each now possible because an
+  /// SNP knows which genome it belongs to and whether its bytes have arrived:
+  ///
+  /// - **The builds must match.** VCF coordinates are build-specific, so an hg38
+  ///   file used against hs1 does not fail — it quietly designs the wrong MIPs.
+  /// - **The caller must be able to see it.** Without this, guessing an id would
+  ///   attach somebody else's private upload, and its contents could then be read
+  ///   back indirectly out of the design output.
+  /// - **It must be ready.** A failed or half-downloaded import has no usable VCF.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
-  /// \param snpId The ID of the SNP to set.
-  /// \throws [FileNotFoundException] if the project or SNP is not found.
-  Future<void> setSnpById(Session session, int id, int snpId) async {
+  /// \param snpId The ID of the SNP to set, or null to use no SNP.
+  /// \throws [FlumipFileNotFoundException] if the project or SNP is not found.
+  /// \throws [ArgumentException] if the SNP is for another genome or not ready.
+  Future<void> setSnpById(Session session, int id, int? snpId) async {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
       throw FlumipFileNotFoundException(message: 'Project not found');
     }
+
+    if (snpId == null) {
+      project.snp = null;
+      await Project.db.updateRow(session, project);
+      return;
+    }
+
     var snp = await Snp.db.findById(session, snpId);
     if (snp == null) {
       session.log("Snp not found with ID: $snpId", level: LogLevel.error);
       throw FlumipFileNotFoundException(message: 'Snp not found');
     }
+    await authz.requireSnpAccess(session, snp);
+
+    if (snp.genome != null && snp.genome != project.genome) {
+      session.log(
+        "Refused SNP $snpId for project $id: it is for genome ${snp.genome}, "
+        "the project uses ${project.genome}",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'That SNP set is for a different genome build.',
+      );
+    }
+
+    if (snp.status != SnpImportStatus.ready) {
+      session.log(
+        "Refused SNP $snpId for project $id: status is ${snp.status.name}",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'That SNP set is not ready to use yet.',
+      );
+    }
+
     project.snp = snpId;
     await Project.db.updateRow(session, project);
   }

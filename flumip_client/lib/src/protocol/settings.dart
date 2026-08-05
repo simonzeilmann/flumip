@@ -20,6 +20,7 @@ abstract class Settings implements _i1.SerializableModel {
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -47,6 +48,7 @@ abstract class Settings implements _i1.SerializableModel {
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
+       snpSourceAllowedHosts = snpSourceAllowedHosts ?? '',
        toolsDir = toolsDir ?? '/opt/flumip/tools',
        mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
        exonExtractScript =
@@ -85,6 +87,7 @@ abstract class Settings implements _i1.SerializableModel {
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -119,6 +122,8 @@ abstract class Settings implements _i1.SerializableModel {
       projectDir: jsonSerialization['projectDir'] as String?,
       genomeDir: jsonSerialization['genomeDir'] as String?,
       customSnpDir: jsonSerialization['customSnpDir'] as String?,
+      snpSourceAllowedHosts:
+          jsonSerialization['snpSourceAllowedHosts'] as String?,
       toolsDir: jsonSerialization['toolsDir'] as String?,
       mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
       exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
@@ -166,6 +171,8 @@ abstract class Settings implements _i1.SerializableModel {
   String genomeDir;
 
   String customSnpDir;
+
+  String snpSourceAllowedHosts;
 
   String toolsDir;
 
@@ -221,6 +228,7 @@ abstract class Settings implements _i1.SerializableModel {
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -254,6 +262,7 @@ abstract class Settings implements _i1.SerializableModel {
       'projectDir': projectDir,
       'genomeDir': genomeDir,
       'customSnpDir': customSnpDir,
+      'snpSourceAllowedHosts': snpSourceAllowedHosts,
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
@@ -295,6 +304,7 @@ class _SettingsImpl extends Settings {
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -324,6 +334,7 @@ class _SettingsImpl extends Settings {
          projectDir: projectDir,
          genomeDir: genomeDir,
          customSnpDir: customSnpDir,
+         snpSourceAllowedHosts: snpSourceAllowedHosts,
          toolsDir: toolsDir,
          mipgenExecutable: mipgenExecutable,
          exonExtractScript: exonExtractScript,
@@ -359,6 +370,7 @@ class _SettingsImpl extends Settings {
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -389,6 +401,8 @@ class _SettingsImpl extends Settings {
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,
       customSnpDir: customSnpDir ?? this.customSnpDir,
+      snpSourceAllowedHosts:
+          snpSourceAllowedHosts ?? this.snpSourceAllowedHosts,
       toolsDir: toolsDir ?? this.toolsDir,
       mipgenExecutable: mipgenExecutable ?? this.mipgenExecutable,
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,

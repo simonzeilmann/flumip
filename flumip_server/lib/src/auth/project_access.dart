@@ -78,3 +78,61 @@ bool projectIsAccessible({
 
   return false;
 }
+
+/// Whether [principal] may *see* an SNP that is [private] and owned by [owner].
+///
+/// ⚠️ **The clause order differs from [projectIsAccessible], and the difference
+/// is the point.** There, a null owner grants access to everybody, because every
+/// project predating authorization is unowned and hiding them would look exactly
+/// like data loss. Here a null owner is **not** a grant. `Snp.private` has never
+/// been read by anything, so there is no body of existing private SNPs that a
+/// stricter rule could strand — which means this can be strict from its first
+/// day, and a private SNP whose owner was deleted (`onDelete=SetNull`) falls
+/// closed rather than open.
+///
+/// The order of the clauses is the policy:
+///
+/// 1. **Not private → everyone.** Global scanned SNPs and shared custom ones.
+///    First, so a global stays visible whether or not anybody is signed in.
+/// 2. **Not enforcing → everything.** No identities exist on such an install, so
+///    there is nobody to attribute an upload to and nobody to hide it from. The
+///    same position the rest of the codebase takes.
+/// 3. **Admins see everything.**
+/// 4. Otherwise the owner matches, or access is refused.
+bool snpIsAccessible({
+  required bool enforcing,
+  required Principal principal,
+  required bool private,
+  required int? owner,
+}) {
+  if (!private) return true;
+  if (!enforcing) return true;
+  if (principal.isAdmin) return true;
+
+  final userId = principal.userId;
+  if (userId == null) return false;
+  return owner == userId;
+}
+
+/// Whether [principal] may *change or delete* an SNP owned by [owner].
+///
+/// Stricter than [snpIsAccessible] in the one way that matters: a **shared**
+/// custom SNP is visible to everybody but writable only by whoever added it.
+/// Ownership survives sharing, so putting a panel up for the lab to use is not
+/// the same as handing them the ability to delete it.
+///
+/// An SNP with no owner — every global one — is writable by nobody but an
+/// administrator. That is what keeps the ordinary delete button away from the
+/// reference genome tree.
+bool snpIsWritable({
+  required bool enforcing,
+  required Principal principal,
+  required int? owner,
+}) {
+  if (!enforcing) return true;
+  if (principal.isAdmin) return true;
+
+  final userId = principal.userId;
+  if (userId == null) return false;
+  return owner != null && owner == userId;
+}

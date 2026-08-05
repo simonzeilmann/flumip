@@ -13,6 +13,8 @@ import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
+import 'package:flumip_server/src/services/snp_downloader.dart';
+import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:get_it/get_it.dart';
 
 GetIt sl = GetIt.instance;
@@ -20,11 +22,12 @@ GetIt sl = GetIt.instance;
 /// Registers the application services with the service locator.
 ///
 /// [processRunner] overrides the process abstraction, [mailSender] the SMTP
-/// abstraction and [httpClient] the calls to the identity provider; tests pass
-/// fakes so that process-, mail- and OIDC-dependent logic can run without the
-/// real external tools, an SMTP server or a running provider. They default to
-/// [SystemProcessRunner] (delegates to `dart:io`), [SmtpMailSender] and
-/// [PackageHttpJsonClient].
+/// abstraction, [httpClient] the calls to the identity provider and
+/// [snpDownloader] the fetching of a remote SNP file; tests pass fakes so that
+/// process-, mail-, OIDC- and download-dependent logic can run without the real
+/// external tools, an SMTP server, a running provider or a network. They default
+/// to [SystemProcessRunner] (delegates to `dart:io`), [SmtpMailSender],
+/// [PackageHttpJsonClient] and [HttpSnpDownloader].
 ///
 /// [authRuntime] lets a test install a runtime with a synthetic environment, so
 /// the environment-variable precedence rules can be exercised without mutating
@@ -37,6 +40,7 @@ void setup({
   MailSender? mailSender,
   HttpJsonClient? httpClient,
   AuthRuntime? authRuntime,
+  SnpDownloader? snpDownloader,
 }) {
   sl.allowReassignment = true;
   // Important to register services that might be used in AppModel constructor first
@@ -47,11 +51,15 @@ void setup({
   sl.registerSingleton<HttpJsonClient>(
     httpClient ?? const PackageHttpJsonClient(),
   );
+  sl.registerSingleton<SnpDownloader>(
+    snpDownloader ?? const HttpSnpDownloader(),
+  );
   sl.registerSingleton<SettingsService>(SettingsService());
   sl.registerSingleton<ProjectService>(ProjectService());
   sl.registerSingleton<ProcessService>(ProcessService());
   sl.registerSingleton<GenomeService>(GenomeService());
   sl.registerSingleton<FileService>(FileService());
+  sl.registerSingleton<SnpService>(SnpService());
   sl.registerSingleton<OptionsService>(OptionsService());
   sl.registerSingleton<MipgenService>(MipgenService());
   sl.registerSingleton<MailService>(MailService());

@@ -109,22 +109,13 @@ class GenomeEndpoint extends FlumipEndpoint {
     }
   }
 
-  /// Updates an SNP.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the SNP to update.
-  /// \param snp The updated SNP data.
-  /// \throws Exception if an error occurs during the update.
-  Future<void> updateSnp(Session session, int id, Snp snp) async {
-    session.log('Updating SNP with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.updateSnp(session, id, snp);
-    } catch (e) {
-      session.log('Error updating SNP with ID: $id',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
+  // `updateSnp` used to live here. It took a whole client-supplied `Snp` row and
+  // handed it straight to `Snp.db.updateRow` with no check of any kind, which was
+  // survivable only because an SNP had nothing worth rewriting and nothing in the
+  // app ever called it. It now would: `owner`, `private`, `status` and `vcfPath`
+  // are all on the row, so the same method would let anyone take over, unshare or
+  // repoint anybody's SNP. Replaced by `SnpEndpoint.renameSnp` and
+  // `SnpEndpoint.setShared`, which change one thing each and are guarded.
 
   /// Retrieves all genome categories.
   ///

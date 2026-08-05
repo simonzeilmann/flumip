@@ -87,3 +87,47 @@ String resolveSiteUrl() {
   if (!kIsWeb) return developmentSiteUrl;
   return siteUrlFor(Uri.base);
 }
+
+/// Whether a raw-body upload to the site origin can carry the session cookie.
+///
+/// True in every install, where the app is served by the web server itself, so
+/// the `PUT /snp_upload/...` is same-origin: the browser attaches the HttpOnly
+/// cookie by itself and there is no preflight.
+///
+/// ⚠️ **False during a `flutter run`**, which serves the app on its own port
+/// while [resolveSiteUrl] points at the development backend. The upload then
+/// becomes cross-origin, so the browser sends an `OPTIONS` preflight that a relic
+/// `Route(methods: {Method.put})` does not answer — and the upload never starts,
+/// reported as an opaque CORS error naming nothing useful.
+///
+/// This is the same structural limitation that already makes sign-in untestable
+/// in that configuration; see the comments in `.vscode/launch.json`. The app
+/// detects it and says so rather than failing mysteriously. **Importing by URL
+/// still works there**, because that is an ordinary bearer-authenticated endpoint
+/// call on the API origin, which keeps half the development loop alive.
+/// ⚠️ `Uri.origin` **throws** rather than returning null for a URL with no scheme
+/// or host, and `Uri.tryParse('')` succeeds — so a mis-set `SITE_URL` build define
+/// would take the whole app down at startup, since the answer is computed in a
+/// top-level `final`. Both sides are guarded, and anything unusable answers
+/// "not same-origin", which merely disables uploading.
+bool uploadsAreSameOrigin(Uri pageUrl, String siteUrl) {
+  final site = Uri.tryParse(siteUrl);
+  if (site == null) return false;
+  return _originOrNull(site) != null &&
+      _originOrNull(site) == _originOrNull(pageUrl);
+}
+
+String? _originOrNull(Uri url) {
+  if (url.scheme.isEmpty || url.host.isEmpty) return null;
+  try {
+    return url.origin;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Whether this build can upload files to the server.
+bool resolveUploadsAvailable() {
+  if (!kIsWeb) return false;
+  return uploadsAreSameOrigin(Uri.base, resolveSiteUrl());
+}

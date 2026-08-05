@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flumip_flutter/snp/snp_section.dart';
 
 class GenomeDetailsCard extends StatelessWidget {
   final Genome genome;
@@ -7,8 +8,6 @@ class GenomeDetailsCard extends StatelessWidget {
   final VoidCallback onDeleteIndex;
   final VoidCallback onIndexGenome;
   final void Function(bool) onToggleGenomeActive;
-  final Future<List<Snp>> Function() fetchSnps;
-  final double Function(num, int) truncateToDecimalPlaces;
 
   const GenomeDetailsCard({
     super.key,
@@ -17,8 +16,6 @@ class GenomeDetailsCard extends StatelessWidget {
     required this.onDeleteIndex,
     required this.onIndexGenome,
     required this.onToggleGenomeActive,
-    required this.fetchSnps,
-    required this.truncateToDecimalPlaces,
   });
 
   @override
@@ -112,68 +109,11 @@ class GenomeDetailsCard extends StatelessWidget {
                   label: Text('Index'),
                 ),
               ),
-            if (genome.snp != null) ...[
-              Divider(height: 24, thickness: 1),
-              Row(
-                children: [
-                  Icon(Icons.scatter_plot, color: Colors.purple),
-                  SizedBox(width: 8),
-                  Text("SNPs:", style: TextStyle(fontWeight: FontWeight.bold)),
-                ],
-              ),
-              SizedBox(height: 8),
-              Expanded(
-                child: FutureBuilder<List<Snp>>(
-                  future: fetchSnps(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return Text('No SNPs available');
-                    } else {
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: snapshot.data!.length,
-                        separatorBuilder: (context, _) => SizedBox(height: 6),
-                        itemBuilder: (context, index) {
-                          final snp = snapshot.data![index];
-                          return Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.label_important, color: Colors.purple),
-                                      SizedBox(width: 8),
-                                      Text(snp.name, style: TextStyle(fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  if (snp.description != "")
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text('Description: ${snp.description}', style: TextStyle(color: Colors.black54)),
-                                    ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text('Size: ${truncateToDecimalPlaces(snp.size / 1000000000, 2)} Gb', style: TextStyle(color: Colors.black54)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
+            // ⚠️ Deliberately not gated on `genome.snp != null`. That field is
+            // the denormalised list of *scanned* ids, so a genome whose only SNP
+            // sets are custom used to show nothing here at all — and therefore
+            // offered no way to add one either.
+            Expanded(child: SnpSection(genome: genome)),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
+import 'package:flumip_server/src/generated/snp_import_status.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:test/test.dart';
 
@@ -232,6 +233,47 @@ void main() {
         () => projectService.setSnpById(session, project.id!, -1),
         throwsMessage('Snp not found'),
       );
+    }, tags: ['unit']);
+
+    test('setSnpById refuses an SNP called against another genome', () async {
+      // VCF coordinates are build-specific, so this does not fail at run time —
+      // it quietly designs the wrong MIPs. The check exists because the SNP now
+      // records which build it belongs to.
+      final hg38 = await seedGenome(session, name: 'hg38');
+      final hs1 = await seedGenome(session, name: 'hs1');
+      final project =
+          await seedProject(session, options: 1, genome: hg38.id);
+      final wrongBuild = await seedSnp(session, name: 'hs1 snps', genome: hs1.id);
+      expect(
+        () => projectService.setSnpById(session, project.id!, wrongBuild.id!),
+        throwsMessage('different genome build'),
+      );
+    }, tags: ['unit']);
+
+    test('setSnpById refuses an SNP whose bytes have not arrived', () async {
+      final genome = await seedGenome(session, name: 'hg38');
+      final project = await seedProject(session, options: 1, genome: genome.id);
+      final pending = await seedSnp(session,
+          name: 'downloading',
+          genome: genome.id,
+          custom: true,
+          status: SnpImportStatus.downloading);
+      expect(
+        () => projectService.setSnpById(session, project.id!, pending.id!),
+        throwsMessage('not ready to use'),
+      );
+    }, tags: ['unit']);
+
+    test('setSnpById with null clears the selection', () async {
+      final genome = await seedGenome(session, name: 'hg38');
+      final snp = await seedSnp(session, name: 'common', genome: genome.id);
+      final project = await seedProject(session,
+          options: 1, genome: genome.id, snp: snp.id);
+
+      await projectService.setSnpById(session, project.id!, null);
+
+      expect((await projectService.getProject(session, project.id!)).snp,
+          isNull);
     }, tags: ['unit']);
 
     test('updateProject persists field changes', () async {

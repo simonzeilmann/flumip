@@ -153,9 +153,9 @@ void main() {
 
     // --- More genome delegations -------------------------------------------
     test('genome: snp getters, category filter and updates', () async {
-      final s1 = await seedSnp(session, name: 'common');
       final genome =
-          await seedGenome(session, name: 'hg38', category: 'human', snp: [s1.id!]);
+          await seedGenome(session, name: 'hg38', category: 'human');
+      final s1 = await seedSnp(session, name: 'common', genome: genome.id);
       final byCat =
           await endpoints.genome.getGenomeByCategory(sessionBuilder, 'human');
       expect(byCat.map((g) => g.name), contains('hg38'));
@@ -166,8 +166,58 @@ void main() {
       expect(gotSnp.name, 'common');
       await endpoints.genome.updateGenome(
           sessionBuilder, genome.id!, genome..description = 'x');
-      await endpoints.genome
-          .updateSnp(sessionBuilder, s1.id!, gotSnp..description = 'y');
+    }, tags: ['integration']);
+
+    // --- SnpEndpoint delegations -------------------------------------------
+    test('snp: listing, renaming and sharing round-trip', () async {
+      final genome = await seedGenome(session, name: 'hg38');
+      final snp = await seedSnp(session,
+          name: 'my panel', genome: genome.id, custom: true, private: true);
+
+      final listed =
+          await endpoints.snp.listSnpsForGenome(sessionBuilder, genome.id!);
+      expect(listed.single.name, 'my panel');
+
+      final renamed = await endpoints.snp
+          .renameSnp(sessionBuilder, snp.id!, 'renamed', 'a note');
+      expect(renamed.name, 'renamed');
+      expect(renamed.description, 'a note');
+
+      final shared =
+          await endpoints.snp.setShared(sessionBuilder, snp.id!, true);
+      expect(shared.private, isFalse);
+
+      expect(
+        (await endpoints.snp.listMySnps(sessionBuilder)).single.id,
+        snp.id,
+      );
+    }, tags: ['integration']);
+
+    test('snp: a global SNP cannot be changed through the ordinary path',
+        () async {
+      // The split between deleteCustomSnp and deleteSnpAsAdmin is what keeps a
+      // user's delete button away from the shared genome tree. If this ever
+      // passes, that separation has been lost.
+      final scanned = await seedSnp(session, name: 'dbsnp');
+      await expectLater(
+        endpoints.snp.deleteCustomSnp(sessionBuilder, scanned.id!),
+        throwsA(isA<ProjectAccessDeniedException>()),
+      );
+      await expectLater(
+        endpoints.snp.setShared(sessionBuilder, scanned.id!, true),
+        throwsA(isA<ProjectAccessDeniedException>()),
+      );
+    }, tags: ['integration']);
+
+    test('snp: usage names the projects using an SNP', () async {
+      final genome = await seedGenome(session, name: 'hg38');
+      final snp = await seedSnp(session, genome: genome.id, custom: true);
+      final options = await seedOptions(session);
+      await seedProject(session,
+          name: 'Cardio panel', options: options.id!, snp: snp.id);
+
+      final usage = await endpoints.snp.snpUsage(sessionBuilder, snp.id!);
+      expect(usage.single.projectName, 'Cardio panel');
     }, tags: ['integration']);
 
     // --- Settings + file readers -------------------------------------------
@@ -194,6 +244,7 @@ void main() {
         projectDir: '/rt/projects',
         genomeDir: '/rt/genomes',
         customSnpDir: '/rt/snp',
+        snpSourceAllowedHosts: 'rt.example, ftp.rt.example',
         toolsDir: '/rt/tools',
         mipgenExecutable: '/rt/mipgen',
         exonExtractScript: '/rt/exons.sh',

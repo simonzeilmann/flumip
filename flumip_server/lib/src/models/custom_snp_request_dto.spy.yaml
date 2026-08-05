@@ -1,0 +1,18 @@
+### What the app sends to add a custom SNP, whether by upload or by URL. No table.
+###
+### The bytes themselves never travel through an endpoint — an upload streams to
+### the `/snp_upload/...` web route, and a URL import is fetched by the server.
+### This carries only the description of what is being added.
+class: CustomSnpRequestDto
+fields:
+  name: String
+  description: String, default=''
+  ### The build the VCF is called against. Required: there is no sensible default,
+  ### and guessing wrong produces wrong MIPs rather than an error.
+  genomeId: int
+  ### True keeps it visible to the uploader alone. The share toggle flips it later.
+  private: bool, default=true
+  ### For the URL flow: the `.vcf.gz` address and optionally its `.vcf.gz.tbi`.
+  ### Ignored by `createUpload`. Validated server-side before the row is inserted —
+  ### see `snpSourceUrlRejection`.
+  urls: List<String>?

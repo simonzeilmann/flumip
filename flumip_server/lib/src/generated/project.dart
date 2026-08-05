@@ -138,6 +138,13 @@ abstract class Project
 
   int? genome;
 
+  /// The chosen SNP set, or null for "no SNP masking".
+  ///
+  /// onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  /// rather than leave a project aimed at a row that is gone. `generateMips`
+  /// refuses to run when this points at an SNP that is not ready, so a project
+  /// whose SNP was deleted fails loudly instead of quietly designing different
+  /// MIPs.
   int? snp;
 
   List<String>? tags;
@@ -419,98 +426,212 @@ class _ProjectImpl extends Project {
 class ProjectUpdateTable extends _i1.UpdateTable<ProjectTable> {
   ProjectUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) =>
-      _i1.ColumnValue(table.name, value);
+  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
+    table.name,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> folderName(String? value) =>
-      _i1.ColumnValue(table.folderName, value);
+  _i1.ColumnValue<String, String> folderName(String? value) => _i1.ColumnValue(
+    table.folderName,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> description(String value) =>
-      _i1.ColumnValue(table.description, value);
+  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
+    table.description,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> genome(int? value) =>
-      _i1.ColumnValue(table.genome, value);
+  _i1.ColumnValue<int, int> genome(int? value) => _i1.ColumnValue(
+    table.genome,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> snp(int? value) =>
-      _i1.ColumnValue(table.snp, value);
+  _i1.ColumnValue<int, int> snp(int? value) => _i1.ColumnValue(
+    table.snp,
+    value,
+  );
 
   _i1.ColumnValue<List<String>, List<String>> tags(List<String>? value) =>
-      _i1.ColumnValue(table.tags, value);
+      _i1.ColumnValue(
+        table.tags,
+        value,
+      );
 
   _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(table.created, value);
+      _i1.ColumnValue(
+        table.created,
+        value,
+      );
 
-  _i1.ColumnValue<int, int> owner(int? value) =>
-      _i1.ColumnValue(table.owner, value);
+  _i1.ColumnValue<int, int> owner(int? value) => _i1.ColumnValue(
+    table.owner,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> department(int? value) =>
-      _i1.ColumnValue(table.department, value);
+  _i1.ColumnValue<int, int> department(int? value) => _i1.ColumnValue(
+    table.department,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> trackToken(String? value) =>
-      _i1.ColumnValue(table.trackToken, value);
+  _i1.ColumnValue<String, String> trackToken(String? value) => _i1.ColumnValue(
+    table.trackToken,
+    value,
+  );
 
   _i1.ColumnValue<List<String>, List<String>> genes(List<String>? value) =>
-      _i1.ColumnValue(table.genes, value);
+      _i1.ColumnValue(
+        table.genes,
+        value,
+      );
 
-  _i1.ColumnValue<bool, bool> bedFileCreated(bool value) =>
-      _i1.ColumnValue(table.bedFileCreated, value);
+  _i1.ColumnValue<bool, bool> bedFileCreated(bool value) => _i1.ColumnValue(
+    table.bedFileCreated,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> active(bool value) =>
-      _i1.ColumnValue(table.active, value);
+  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
+    table.active,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> pid(int? value) =>
-      _i1.ColumnValue(table.pid, value);
+  _i1.ColumnValue<int, int> pid(int? value) => _i1.ColumnValue(
+    table.pid,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> size(int value) =>
-      _i1.ColumnValue(table.size, value);
+  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
+    table.size,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> emailNotification(bool value) =>
-      _i1.ColumnValue(table.emailNotification, value);
+  _i1.ColumnValue<bool, bool> emailNotification(bool value) => _i1.ColumnValue(
+    table.emailNotification,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> options(int value) =>
-      _i1.ColumnValue(table.options, value);
+  _i1.ColumnValue<int, int> options(int value) => _i1.ColumnValue(
+    table.options,
+    value,
+  );
 
   _i1.ColumnValue<DateTime, DateTime> started(DateTime? value) =>
-      _i1.ColumnValue(table.started, value);
+      _i1.ColumnValue(
+        table.started,
+        value,
+      );
 
   _i1.ColumnValue<Duration, Duration> completedIn(Duration? value) =>
-      _i1.ColumnValue(table.completedIn, value);
+      _i1.ColumnValue(
+        table.completedIn,
+        value,
+      );
 
-  _i1.ColumnValue<String, String> error(String value) =>
-      _i1.ColumnValue(table.error, value);
+  _i1.ColumnValue<String, String> error(String value) => _i1.ColumnValue(
+    table.error,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> cleanup(bool value) =>
-      _i1.ColumnValue(table.cleanup, value);
+  _i1.ColumnValue<bool, bool> cleanup(bool value) => _i1.ColumnValue(
+    table.cleanup,
+    value,
+  );
 }
 
 class ProjectTable extends _i1.Table<int?> {
   ProjectTable({super.tableRelation}) : super(tableName: 'project') {
     updateTable = ProjectUpdateTable(this);
-    name = _i1.ColumnString('name', this);
-    folderName = _i1.ColumnString('folderName', this);
-    description = _i1.ColumnString('description', this, hasDefault: true);
-    genome = _i1.ColumnInt('genome', this);
-    snp = _i1.ColumnInt('snp', this);
-    tags = _i1.ColumnSerializable<List<String>>('tags', this);
-    created = _i1.ColumnDateTime('created', this, hasDefault: true);
-    owner = _i1.ColumnInt('owner', this);
-    department = _i1.ColumnInt('department', this);
-    trackToken = _i1.ColumnString('trackToken', this);
-    genes = _i1.ColumnSerializable<List<String>>('genes', this);
-    bedFileCreated = _i1.ColumnBool('bedFileCreated', this, hasDefault: true);
-    active = _i1.ColumnBool('active', this, hasDefault: true);
-    pid = _i1.ColumnInt('pid', this);
-    size = _i1.ColumnInt('size', this, hasDefault: true);
+    name = _i1.ColumnString(
+      'name',
+      this,
+    );
+    folderName = _i1.ColumnString(
+      'folderName',
+      this,
+    );
+    description = _i1.ColumnString(
+      'description',
+      this,
+      hasDefault: true,
+    );
+    genome = _i1.ColumnInt(
+      'genome',
+      this,
+    );
+    snp = _i1.ColumnInt(
+      'snp',
+      this,
+    );
+    tags = _i1.ColumnSerializable<List<String>>(
+      'tags',
+      this,
+    );
+    created = _i1.ColumnDateTime(
+      'created',
+      this,
+      hasDefault: true,
+    );
+    owner = _i1.ColumnInt(
+      'owner',
+      this,
+    );
+    department = _i1.ColumnInt(
+      'department',
+      this,
+    );
+    trackToken = _i1.ColumnString(
+      'trackToken',
+      this,
+    );
+    genes = _i1.ColumnSerializable<List<String>>(
+      'genes',
+      this,
+    );
+    bedFileCreated = _i1.ColumnBool(
+      'bedFileCreated',
+      this,
+      hasDefault: true,
+    );
+    active = _i1.ColumnBool(
+      'active',
+      this,
+      hasDefault: true,
+    );
+    pid = _i1.ColumnInt(
+      'pid',
+      this,
+    );
+    size = _i1.ColumnInt(
+      'size',
+      this,
+      hasDefault: true,
+    );
     emailNotification = _i1.ColumnBool(
       'emailNotification',
       this,
       hasDefault: true,
     );
-    options = _i1.ColumnInt('options', this);
-    started = _i1.ColumnDateTime('started', this);
-    completedIn = _i1.ColumnDuration('completedIn', this);
-    error = _i1.ColumnString('error', this, hasDefault: true);
-    cleanup = _i1.ColumnBool('cleanup', this, hasDefault: true);
+    options = _i1.ColumnInt(
+      'options',
+      this,
+    );
+    started = _i1.ColumnDateTime(
+      'started',
+      this,
+    );
+    completedIn = _i1.ColumnDuration(
+      'completedIn',
+      this,
+    );
+    error = _i1.ColumnString(
+      'error',
+      this,
+      hasDefault: true,
+    );
+    cleanup = _i1.ColumnBool(
+      'cleanup',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final ProjectUpdateTable updateTable;
@@ -523,6 +644,13 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt genome;
 
+  /// The chosen SNP set, or null for "no SNP masking".
+  ///
+  /// onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  /// rather than leave a project aimed at a row that is gone. `generateMips`
+  /// refuses to run when this points at an SNP that is not ready, so a project
+  /// whose SNP was deleted fails loudly instead of quietly designing different
+  /// MIPs.
   late final _i1.ColumnInt snp;
 
   late final _i1.ColumnSerializable<List<String>> tags;
@@ -772,7 +900,10 @@ class ProjectRepository {
     Project row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Project>(row, transaction: transaction);
+    return session.db.insertRow<Project>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Updates all [Project]s in the list and returns the updated rows. If
@@ -857,7 +988,10 @@ class ProjectRepository {
     List<Project> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<Project>(rows, transaction: transaction);
+    return session.db.delete<Project>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Deletes a single [Project].
@@ -866,7 +1000,10 @@ class ProjectRepository {
     Project row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Project>(row, transaction: transaction);
+    return session.db.deleteRow<Project>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Deletes all rows matching the [where] expression.

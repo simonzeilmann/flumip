@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/main.dart';
+import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../error_text.dart';
@@ -55,13 +56,18 @@ class _ProjectTileState extends State<ProjectTile> {
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
   late Genome genome = Genome(name: 'default');
-  late Snp snp = Snp(
-    name: 'default',
-    vcfPath: '',
-    tbiPath: '',
-    folder: '',
-    active: false,
-  );
+
+  /// The project's chosen SNP set, or null while it is still being fetched.
+  ///
+  /// This used to be a `Snp(name: 'default', …)` sentinel standing in for a
+  /// nullable. Besides reading oddly, it meant every new required field on the
+  /// model broke this file at compile time for no reason.
+  Snp? snp;
+
+  /// Cached so the `FutureBuilder` below does not fire a fresh query on every
+  /// rebuild — and this tile rebuilds every ten seconds while expanded.
+  Future<List<Snp>>? _snpsForGenome;
+
   final TextEditingController _genesController = TextEditingController();
   String? _errorMessage;
   Timer? _timer;
@@ -86,13 +92,8 @@ class _ProjectTileState extends State<ProjectTile> {
     setState(() {
       _isExpanded = !_isExpanded;
       genome = Genome(name: 'default');
-      snp = Snp(
-        name: 'default',
-        vcfPath: '',
-        tbiPath: '',
-        folder: '',
-        active: false,
-      );
+      snp = null;
+      _snpsForGenome = null;
     });
     if (_isExpanded) {
       await _reloadProject();
@@ -652,11 +653,16 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<List<Snp>> getSnpForGene(int geneId) async {
+  /// The SNP sets this caller may use with [genomeId].
+  ///
+  /// Goes through `client.snp`, not `client.genome`: only that one filters by
+  /// visibility, and having the picker and the genome tab disagree about what
+  /// exists would be worse than either being wrong on its own.
+  Future<List<Snp>> getSnpForGenome(int genomeId) async {
     try {
-      return await client.genome.getAllSnpForGenome(geneId);
+      return await client.snp.listSnpsForGenome(genomeId);
     } catch (e) {
-      _errorMessage = 'Failed to load snps for genome: ${describeError(e)}';
+      _errorMessage = 'Failed to load SNP sets: ${describeError(e)}';
       return [];
     }
   }
@@ -670,12 +676,16 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  Future<void> setSnp(int snpId) async {
+  /// Sets the project's SNP set, or clears it when [snpId] is null.
+  Future<void> setSnp(int? snpId) async {
     try {
       await client.project.setSnpById(widget.project.id!, snpId);
       await _reloadProject();
     } catch (e) {
-      _errorMessage = 'Failed to set snp: ${describeError(e)}';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not set the SNP set: ${describeError(e)}')),
+      );
     }
   }
 
@@ -975,19 +985,17 @@ class _ProjectTileState extends State<ProjectTile> {
           ],
         ],
         SizedBox(height: 10),
+        // ⚠️ The `genome.snp != null` gate is gone. That is the list of *scanned*
+        // ids, so a genome whose only SNP sets are custom offered no picker at
+        // all. The picker also no longer disappears once a choice is made — see
+        // buildSnpSelector.
         if (widget.project.genome != null &&
-            genome.snp != null &&
-            widget.project.snp == null &&
             !widget.project.active &&
             widget.project.completedIn == null)
-          buildSnpSelector(),
-        if (widget.project.snp != null) ...[
+          buildSnpSelector()
+        else if (widget.project.snp != null) ...[
           Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (snp.name == 'default') ...[
-            Text('loading...'),
-          ] else ...[
-            Text(snp.name),
-          ],
+          Text(snp?.name ?? 'loading...'),
         ],
         SizedBox(height: 10),
         if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
@@ -1095,6 +1103,13 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  /// The SNP picker.
+  ///
+  /// Two-way, unlike the first version, which vanished the moment a selection was
+  /// made. That was tolerable when an SNP set was an immortal scan result. Custom
+  /// ones can fail to import or be deleted out from under a project, so being
+  /// able to change or clear the choice is now the difference between fixing a
+  /// project and abandoning it.
   Column buildSnpSelector() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1102,30 +1117,71 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text("Select SNP (optional):"),
         FutureBuilder<List<Snp>>(
-          future: getSnpForGene(genome.id!),
+          future: _snpsForGenome ??= getSnpForGenome(genome.id!),
           builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return DropdownButton<Snp>(
-                value: null,
-                onChanged: (Snp? selectedSnp) {
-                  if (selectedSnp != null) {
-                    snp = selectedSnp;
-                    setSnp(selectedSnp.id!);
-                    _reloadProject();
-                  }
-                },
-                items: snapshot.data!
-                    .map(
-                      (snp) =>
-                          DropdownMenuItem(value: snp, child: Text(snp.name)),
-                    )
-                    .toList(),
-              );
-            } else if (snapshot.hasError) {
-              return Text('Failed to load snps: ${snapshot.error}');
-            } else {
-              return CircularProgressIndicator();
+            if (snapshot.hasError) {
+              return Text('Failed to load SNP sets: ${snapshot.error}');
             }
+            if (!snapshot.hasData) return CircularProgressIndicator();
+
+            final snps = snapshot.data!;
+            if (snps.isEmpty) {
+              return Text(
+                'No SNP sets for this genome.',
+                style: TextStyle(color: Colors.black54),
+              );
+            }
+
+            // ⚠️ A DropdownButton whose value matches no item throws. Now that an
+            // SNP can be deleted, or stop being visible to us, `project.snp` can
+            // point at something no longer in this list. Same guard, and same
+            // reason, as buildOwnerRow.
+            final selected = snps
+                .where((s) => s.id == widget.project.snp)
+                .firstOrNull;
+            final dangling = widget.project.snp != null && selected == null;
+
+            return Column(
+              children: [
+                DropdownButton<Snp?>(
+                  value: selected,
+                  onChanged: (Snp? chosen) {
+                    setSnp(chosen?.id);
+                  },
+                  items: [
+                    DropdownMenuItem<Snp?>(
+                      value: null,
+                      child: Text('No SNP'),
+                    ),
+                    ...snps.map(
+                      (s) => DropdownMenuItem<Snp?>(
+                        value: s,
+                        enabled: s.status == SnpImportStatus.ready,
+                        child: Text(
+                          s.status == SnpImportStatus.ready
+                              ? s.name
+                              : '${s.name} (${statusLabel(s.status)})',
+                          style: TextStyle(
+                            color: s.status == SnpImportStatus.ready
+                                ? null
+                                : Colors.black38,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (dangling)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'The SNP set this project was using is no longer '
+                      'available. Pick another, or none.',
+                      style: TextStyle(color: Colors.orange, fontSize: 12),
+                    ),
+                  ),
+              ],
+            );
           },
         ),
       ],

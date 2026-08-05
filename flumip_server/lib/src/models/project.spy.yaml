@@ -5,7 +5,14 @@ fields:
   folderName: String?, scope=serverOnly
   description: String, default=''
   genome: int?
-  snp: int?
+  ### The chosen SNP set, or null for "no SNP masking".
+  ###
+  ### onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  ### rather than leave a project aimed at a row that is gone. `generateMips`
+  ### refuses to run when this points at an SNP that is not ready, so a project
+  ### whose SNP was deleted fails loudly instead of quietly designing different
+  ### MIPs.
+  snp: int?, relation(parent=snp, onDelete=SetNull)
   tags: List<String>?
   created: DateTime, default=now
   ### The FlumipUser who created the project, or null.

@@ -124,6 +124,13 @@ abstract class Project implements _i1.SerializableModel {
 
   int? genome;
 
+  /// The chosen SNP set, or null for "no SNP masking".
+  ///
+  /// onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  /// rather than leave a project aimed at a row that is gone. `generateMips`
+  /// refuses to run when this points at an SNP that is not ready, so a project
+  /// whose SNP was deleted fails loudly instead of quietly designing different
+  /// MIPs.
   int? snp;
 
   List<String>? tags;

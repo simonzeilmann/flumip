@@ -119,6 +119,22 @@ class _GenomeTabState extends State<GenomeTab> {
     }
   }
 
+  void _collectCustomSnps() async {
+    try {
+      await client.snp.collectCustomSnps();
+      _reloadSelectedGenome();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rechecked the custom SNP sets.')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '$e';
+      });
+    }
+  }
+
   void _deleteIndex() async {
     try {
       await client.genome.deleteFastaIndex(selectedGenome!.id!);
@@ -165,18 +181,6 @@ class _GenomeTabState extends State<GenomeTab> {
     }
   }
 
-  Future<List<Snp>> _fetchSnps() async {
-    try {
-      final snps = await client.genome.getAllSnpForGenome(selectedGenome!.id!);
-      return snps;
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-      return [];
-    }
-  }
-
   double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
       (value * pow(10, fractionalDigits)).truncate() /
           pow(10, fractionalDigits);
@@ -187,9 +191,22 @@ class _GenomeTabState extends State<GenomeTab> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          ElevatedButton(
-            onPressed: _collectGenomes,
-            child: Text('Collect Genomes'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _collectGenomes,
+                child: Text('Collect Genomes'),
+              ),
+              SizedBox(width: 12),
+              // The genome scan already covers custom SNP sets, so this is only
+              // for rechecking them without walking the whole genome tree —
+              // which on a real install is hundreds of gigabytes of stat calls.
+              OutlinedButton(
+                onPressed: _collectCustomSnps,
+                child: Text('Recheck SNP sets'),
+              ),
+            ],
           ),
           SizedBox(height: 50),
           Expanded(
@@ -278,8 +295,6 @@ class _GenomeTabState extends State<GenomeTab> {
                         onDeleteIndex: _showIndexDeleteDialog,
                         onIndexGenome: _indexGenome,
                         onToggleGenomeActive: _toggleGenomeActive,
-                        fetchSnps: _fetchSnps,
-                        truncateToDecimalPlaces: _truncateToDecimalPlaces,
                       ),
                     ),
                   ),
