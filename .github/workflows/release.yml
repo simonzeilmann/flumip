@@ -57,7 +57,7 @@ jobs:
       - name: Build frontend
         run: |
           cd flumip_flutter
-          flutter build web --release --wasm \
+          flutter build web --release --wasm --pwa-strategy=none \
             --dart-define=APP_VERSION=${{ env.APP_VERSION }} \
             --dart-define=SITE_TITLE=FLUMIP \
             --output ../flumip_server/web/app
