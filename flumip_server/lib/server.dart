@@ -9,6 +9,7 @@ import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
 import 'package:flumip_server/src/web/routes/download.dart';
+import 'package:flumip_server/src/web/routes/service_worker_tombstone.dart';
 import 'package:flumip_server/src/web/routes/snp_upload.dart';
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
 
@@ -53,32 +54,46 @@ void run(List<String> args) async {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
     print('Build your Flutter app and copy it to web/app/');
   } else {
-    // ⚠️ In development, serve the app with no caching at all.
+    // ⚠️ Serve the app with no caching. Everywhere, not only in development.
     //
-    // FlutterRoute's default caches everything except a short list
-    // (index.html, flutter_bootstrap.js, …) for a **day**, and `main.dart.js`
-    // — which is the entire app — is not on that list and is referenced with no
-    // version query. So after a rebuild a browser that has visited before keeps
-    // running the *old* app for up to 24 hours.
+    // FlutterRoute's default caches everything except a short list (index.html,
+    // flutter_bootstrap.js, …) for a **day**, and `main.dart.js` — which is the
+    // entire app — is not on that list and is referenced with no version query.
+    // So after a deploy, a browser that has visited before keeps running the
+    // *old* app for up to 24 hours.
     //
-    // That is invisible and actively misleading: the UI simply behaves as it did
-    // before the change, which reads as "the fix did not work" rather than as a
-    // stale asset. It cost a full debugging round already. A hard reload also
-    // fixes it, but relying on remembering that is how the same hour gets spent
-    // twice.
+    // That is invisible and actively misleading: the UI behaves as it did before
+    // the change, which reads as "the fix did not work" rather than as a stale
+    // asset. It cost a debugging round in development, and then cost another one
+    // on staging — where the comment that used to sit here said production
+    // "keeps the caching default, where it is worth having". It was not worth
+    // having. A deploy nobody can see is not a deploy.
     //
-    // Production keeps the caching default, where it is worth having and where
-    // the app changes only on deploy.
-    final isDevelopment = pod.runMode == ServerpodRunMode.development;
+    // The cost of switching it off is one revalidation of a few hundred kilobytes
+    // per page load, and `etag` makes that a 304 in the ordinary case. That is a
+    // trade worth making for an internal tool on a fast network, and it is the
+    // difference between "reload" and "close every tab you have open".
+    //
+    // Note this is only half the fix: a service worker sits *in front* of the
+    // HTTP cache and ignores all of this, which is why builds now pass
+    // `--pwa-strategy=none` and `/flutter_service_worker.js` is served by
+    // ServiceWorkerTombstoneRoute, which unregisters anything still installed.
     pod.webServer.addRoute(
-      isDevelopment
-          ? FlutterRoute(
-              flutterAppDir,
-              cacheControlFactory: StaticRoute.privateNoCache(),
-            )
-          : FlutterRoute(flutterAppDir),
+      FlutterRoute(
+        flutterAppDir,
+        cacheControlFactory: StaticRoute.privateNoCache(),
+      ),
     );
   }
+
+  // ⚠️ A route rather than a file, and it must out-rank the Flutter fallback.
+  // Deleting the file instead would leave old workers installed forever, because
+  // FlutterRoute answers a missing file with index.html and a 200 rather than a
+  // 404 — see ServiceWorkerTombstoneRoute for the whole story.
+  pod.webServer.addRoute(
+    ServiceWorkerTombstoneRoute(),
+    '/flutter_service_worker.js',
+  );
 
   // Keyed on the project's track token, not its id: the route is unauthenticated
   // by necessity (genome.ucsc.edu is the fetcher) so an unguessable path is what
