@@ -14,6 +14,13 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 /// Service class for handling MIP generation related operations.
+/// Where mipgen's own output is kept, inside the project directory.
+///
+/// A normal project file, so it is listed and downloadable alongside the
+/// results — which is the right place for it: when a run fails, this is the file
+/// somebody needs to send you.
+const mipgenLogName = 'mipgen.log';
+
 class MipgenService {
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
   MipgenService();
@@ -249,11 +256,17 @@ class MipgenService {
       "Starting MIP generation process with arguments: $arg",
       level: LogLevel.info,
     );
+    final projectDir = "${settings.projectDir}/${project.folderName}";
     await sl<ProcessRunner>().start(
       settings.mipgenExecutable,
       arg,
-      workingDirectory: "${settings.projectDir}/${project.folderName}",
+      workingDirectory: projectDir,
       runInShell: true,
+      // ⚠️ Without this, mipgen's own explanation of what went wrong goes into a
+      // pipe nobody reads, and every failure reaches the user as the single
+      // string "MIP generation failed". It lands in the project directory, so it
+      // is listed and downloadable like any other result file.
+      outputPath: "$projectDir/$mipgenLogName",
     );
     project.started = DateTime.now();
     project.active = true;
@@ -275,6 +288,35 @@ class MipgenService {
       project,
       delay: const Duration(seconds: 15),
     );
+  }
+
+  /// The last thing mipgen said before it stopped, or an empty string.
+  ///
+  /// Only the tail is used: mipgen echoes its whole configuration on startup,
+  /// which is a screenful of noise, and the useful part is always at the end.
+  /// Blank lines and its own progress chatter are dropped so the message is the
+  /// error rather than the last `[mipgen] feature #N`.
+  Future<String> _lastWordsOf(Settings settings, Project project) async {
+    try {
+      final log = File(
+        "${settings.projectDir}/${project.folderName}/$mipgenLogName",
+      );
+      if (!await log.exists()) return '';
+
+      final lines = (await log.readAsLines())
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty && !l.startsWith('[mipgen] feature #'))
+          .toList();
+      if (lines.isEmpty) return '';
+
+      final tail = lines.length > 3 ? lines.sublist(lines.length - 3) : lines;
+      final joined = tail.join(' — ');
+      return joined.length > 400 ? '${joined.substring(0, 400)}…' : joined;
+    } catch (_) {
+      // A diagnosis is a nicety; failing to read it must not stop the project
+      // being marked finished.
+      return '';
+    }
   }
 
   /// Schedules a delayed future call that polls the MIP generation progress for
@@ -332,7 +374,14 @@ class MipgenService {
           "MIP generation failed for project ID: ${project.id}",
           level: LogLevel.warning,
         );
-        project.error = "MIP generation failed";
+        // Say *why*, if mipgen said anything. Its last words are almost always
+        // the actual cause — a missing index, an unreadable file, a region that
+        // is not in the genome — and they used to be thrown away.
+        final reason = await _lastWordsOf(settings, project);
+        project.error = reason.isEmpty
+            ? "MIP generation failed, and mipgen said nothing about why. "
+                  "Check $mipgenLogName in this project's files."
+            : "MIP generation failed: $reason";
       } else {
         project.size = await fileService.getDirSize(
           "${settings.projectDir}/${project.folderName!}",

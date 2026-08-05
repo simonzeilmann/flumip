@@ -8,19 +8,10 @@ import 'package:test/test.dart';
 import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_process_runner.dart';
 import '../support/seed.dart';
+import '../support/bgzf.dart';
 import '../support/temp_dir.dart';
 
 final fake = FakeProcessRunner();
-
-final bgzfHeader = [
-  0x1f, 0x8b, 0x08, 0x04, //
-  0, 0, 0, 0, //
-  0, 0xff, //
-  6, 0, //
-  0x42, 0x43, //
-  2, 0, //
-  0, 0,
-];
 
 void main() {
   withServerpod('SnpService.resolveUploadTarget', (sessionBuilder, endpoints) {
@@ -200,13 +191,13 @@ void main() {
       final dir = await service.createUserDirectory(session, snp.id!);
       if (withVcf) {
         File('${dir.path}/panel.vcf.gz')
-            .writeAsBytesSync(vcfBytes ?? bgzfHeader);
+            .writeAsBytesSync(vcfBytes ?? completeBgzf());
       }
       if (withTbi) {
         File('${dir.path}/panel.vcf.gz.tbi').writeAsStringSync('index');
       }
       for (var i = 0; i < extraVcfs; i++) {
-        File('${dir.path}/extra$i.vcf.gz').writeAsBytesSync(bgzfHeader);
+        File('${dir.path}/extra$i.vcf.gz').writeAsBytesSync(completeBgzf());
       }
       snp.folder = dir.path;
       await Snp.db.updateRow(session, snp);
@@ -267,7 +258,7 @@ void main() {
     }, tags: ['unit']);
 
     test('a plain gzip VCF is caught by the sniff, not by tabix', () async {
-      final snp = await uploaded(vcfBytes: [...bgzfHeader]..[3] = 0x00);
+      final snp = await uploaded(vcfBytes: plainGzip());
 
       await service.settleUpload(session, snp);
 
@@ -347,7 +338,7 @@ void main() {
         ),
       );
       // Stands in for what the PUT route writes.
-      File('${created.folder}/panel.vcf.gz').writeAsBytesSync(bgzfHeader);
+      File('${created.folder}/panel.vcf.gz').writeAsBytesSync(completeBgzf());
       File('${created.folder}/panel.vcf.gz.tbi').writeAsStringSync('index');
 
       final finished =

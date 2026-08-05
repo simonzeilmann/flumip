@@ -195,6 +195,35 @@ void main() {
           ['-snp_file', '/data/snp/dbsnp.vcf.gz']));
     }, tags: ['unit']);
 
+    test('generateMips directs mipgen\'s output into the project directory',
+        () async {
+      // ⚠️ Without this, mipgen's own explanation of a failure goes into a pipe
+      // nobody reads, and every failure reaches the user as the bare string
+      // "MIP generation failed".
+      final base = createTempDir('genmips');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      final options = await seedOptions(session);
+      final genome =
+          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
+      final project = await seedProject(session,
+          name: 'demo',
+          options: options.id!,
+          folderName: 'proj',
+          genome: genome.id);
+      Directory('${base.path}/proj').createSync(recursive: true);
+      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen -project_name demo\n');
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final started =
+          fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
+      expect(started.outputPath, '${base.path}/proj/$mipgenLogName');
+    }, tags: ['unit']);
+
     test('generateMips refuses to run when the chosen SNP is not ready',
         () async {
       // ⚠️ A behaviour change, and the point of it. The old code simply left
@@ -271,9 +300,47 @@ void main() {
       await mipgenService.mipgenIsFinished(
           session, await ProjectService().getProject(session, p.id));
       final project = await ProjectService().getProject(session, p.id);
-      expect(project.error, 'MIP generation failed');
+      // With no log to read, it says so and points at the file to look for,
+      // rather than repeating a bare "failed".
+      expect(project.error, contains('MIP generation failed'));
+      expect(project.error, contains(mipgenLogName));
       expect(project.active, isFalse);
       expect(project.pid, 0);
+    }, tags: ['unit']);
+
+    test('a failure reports what mipgen actually said', () async {
+      // ⚠️ The whole point. "MIP generation failed" used to be the entire
+      // diagnosis for every kind of failure, so a run that died explaining
+      // exactly what was wrong was indistinguishable from one that vanished.
+      final p = await prepare(withProgress: false);
+      File('${p.dir}/$mipgenLogName').writeAsStringSync(
+        '-trf off\n'
+        '[mipgen] feature #1\n'
+        '[mipgen] feature #2\n'
+        'could not open snp file: no index found\n',
+      );
+
+      await mipgenService.mipgenIsFinished(
+          session, await ProjectService().getProject(session, p.id));
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.error, contains('no index found'));
+      // Its own progress chatter is dropped, or the "reason" would just be the
+      // last feature number it reached.
+      expect(project.error, isNot(contains('feature #')));
+    }, tags: ['unit']);
+
+    test('a very long complaint is truncated rather than stored whole',
+        () async {
+      final p = await prepare(withProgress: false);
+      File('${p.dir}/$mipgenLogName')
+          .writeAsStringSync('x' * 5000);
+
+      await mipgenService.mipgenIsFinished(
+          session, await ProjectService().getProject(session, p.id));
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.error.length, lessThan(500));
     }, tags: ['unit']);
 
     test('finalizes successfully and generates the UCSC track', () async {

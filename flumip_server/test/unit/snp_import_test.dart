@@ -11,6 +11,7 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_process_runner.dart';
 import '../support/fake_snp_downloader.dart';
 import '../support/seed.dart';
+import '../support/bgzf.dart';
 import '../support/temp_dir.dart';
 
 /// [SnpService] with the future-call scheduling stubbed out, so the import can be
@@ -27,17 +28,6 @@ class NoScheduleSnpService extends SnpService {
 
 final fake = FakeProcessRunner();
 final downloader = FakeSnpDownloader();
-
-/// The BGZF header `buildTabixIndex` sniffs for before running tabix.
-final bgzfHeader = [
-  0x1f, 0x8b, 0x08, 0x04, //
-  0, 0, 0, 0, //
-  0, 0xff, //
-  6, 0, //
-  0x42, 0x43, //
-  2, 0, //
-  0, 0,
-];
 
 void main() {
   withServerpod('SnpService.runImport', (sessionBuilder, endpoints) {
@@ -351,7 +341,7 @@ void main() {
       await overrideSettingsDirs(session, customSnpDir: root.path);
       final dir = Directory('${root.path}/user/1')..createSync(recursive: true);
       final vcf = File('${dir.path}/panel.vcf.gz')
-        ..writeAsBytesSync(header ?? bgzfHeader);
+        ..writeAsBytesSync(header ?? completeBgzf());
       return seedSnp(
         session,
         name: 'to index',
@@ -367,8 +357,7 @@ void main() {
       // ⚠️ The commonest mistake by far, and tabix's own message for it is not
       // something a biologist should have to decode. Answering in words — with
       // the bgzip command to fix it — is the whole point of sniffing first.
-      final plainGzip = [...bgzfHeader]..[3] = 0x00; // FEXTRA cleared
-      final snp = await unindexed(header: plainGzip);
+      final snp = await unindexed(header: plainGzip());
 
       await SnpService().buildTabixIndex(session, snp);
 
