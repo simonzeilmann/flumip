@@ -54,7 +54,7 @@ void main() {
         expect(snps.single.size, greaterThan(0));
       }, tags: ['unit']);
 
-      test('links the SNP to the genome both ways', () async {
+      test('links the SNP to the genome', () async {
         final root = await useTempCustomDir();
         final genome = await seedGenome(session, name: 'hg38');
         writeSnpDir('$root/common/hg38/mypanel');
@@ -63,8 +63,6 @@ void main() {
 
         final snp = (await Snp.db.find(session, where: (t) => t.id > 0)).single;
         expect(snp.genome, genome.id);
-        final reloaded = await Genome.db.findById(session, genome.id!);
-        expect(reloaded!.snp, contains(snp.id));
       }, tags: ['unit']);
 
       test('is idempotent across repeated runs', () async {
@@ -397,33 +395,6 @@ void main() {
         expect(fresh.existsSync(), isTrue);
       }, tags: ['unit']);
     });
-
-    group('backfilling the genome link', () {
-      test('links a pre-existing SNP through the old Genome.snp list', () async {
-        // ⚠️ The upgrade path. Every SNP on an existing install has a null
-        // `genome`, and getAllSnpForGenome now queries on that column — so
-        // without this the first start after upgrading empties every picker.
-        await useTempCustomDir();
-        final snp = await seedSnp(session, name: 'dbsnp');
-        final genome =
-            await seedGenome(session, name: 'hg38', snp: [snp.id!]);
-
-        await service.backfillGenomeLinks(session);
-
-        final reloaded = await Snp.db.findById(session, snp.id!);
-        expect(reloaded!.genome, genome.id);
-      }, tags: ['unit']);
-
-      test('leaves an SNP no genome claims alone', () async {
-        await useTempCustomDir();
-        final snp = await seedSnp(session, name: 'orphan');
-        await seedGenome(session, name: 'hg38');
-
-        await service.backfillGenomeLinks(session);
-
-        expect((await Snp.db.findById(session, snp.id!))!.genome, isNull);
-      }, tags: ['unit']);
-    });
   });
 
   withServerpod('SnpService.deleteSnp', (sessionBuilder, endpoints) {
@@ -434,7 +405,7 @@ void main() {
     test('removes the files first, then the row', () async {
       final root = createTempDir('flumip_snp');
       await overrideSettingsDirs(session, customSnpDir: root.path);
-      final genome = await seedGenome(session, name: 'hg38');
+      await seedGenome(session, name: 'hg38');
       final dir = '${root.path}/common/hg38/mypanel';
       writeSnpDir(dir);
       await service.collectCustomSnps(session);
@@ -444,8 +415,6 @@ void main() {
 
       expect(Directory(dir).existsSync(), isFalse);
       expect(await Snp.db.findById(session, snp.id!), isNull);
-      final reloaded = await Genome.db.findById(session, genome.id!);
-      expect(reloaded!.snp ?? [], isNot(contains(snp.id)));
     }, tags: ['unit']);
 
     test('a re-scan does not bring a deleted SNP back', () async {

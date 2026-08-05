@@ -32,7 +32,7 @@ abstract class Settings
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
+    this.smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -69,7 +69,6 @@ abstract class Settings
        smtpServer = smtpServer ?? '',
        smtpPort = smtpPort ?? 25,
        smtpUser = smtpUser ?? '',
-       smtpPassword = smtpPassword ?? '',
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
@@ -200,7 +199,7 @@ abstract class Settings
 
   String smtpUser;
 
-  String smtpPassword;
+  String? smtpPassword;
 
   String smtpFrom;
 
@@ -285,7 +284,7 @@ abstract class Settings
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
       'smtpUser': smtpUser,
-      'smtpPassword': smtpPassword,
+      if (smtpPassword != null) 'smtpPassword': smtpPassword,
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
@@ -322,7 +321,6 @@ abstract class Settings
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
       'smtpUser': smtpUser,
-      'smtpPassword': smtpPassword,
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
@@ -456,7 +454,7 @@ class _SettingsImpl extends Settings {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
+    Object? smtpPassword = _Undefined,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
@@ -491,7 +489,7 @@ class _SettingsImpl extends Settings {
       smtpServer: smtpServer ?? this.smtpServer,
       smtpPort: smtpPort ?? this.smtpPort,
       smtpUser: smtpUser ?? this.smtpUser,
-      smtpPassword: smtpPassword ?? this.smtpPassword,
+      smtpPassword: smtpPassword is String? ? smtpPassword : this.smtpPassword,
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
@@ -601,10 +599,11 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
     value,
   );
 
-  _i1.ColumnValue<String, String> smtpPassword(String value) => _i1.ColumnValue(
-    table.smtpPassword,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpPassword(String? value) =>
+      _i1.ColumnValue(
+        table.smtpPassword,
+        value,
+      );
 
   _i1.ColumnValue<String, String> smtpFrom(String value) => _i1.ColumnValue(
     table.smtpFrom,
@@ -759,7 +758,6 @@ class SettingsTable extends _i1.Table<int?> {
     smtpPassword = _i1.ColumnString(
       'smtpPassword',
       this,
-      hasDefault: true,
     );
     smtpFrom = _i1.ColumnString(
       'smtpFrom',

@@ -21,6 +21,12 @@ import 'package:serverpod/server.dart';
 /// somebody needs to send you.
 const mipgenLogName = 'mipgen.log';
 
+/// How long a helper tool gets before it is treated as wedged.
+///
+/// The exon-extraction script and the UCSC track generator both read a gene
+/// list and write a file; minutes, not hours.
+const helperToolTimeout = Duration(minutes: 15);
+
 class MipgenService {
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
   MipgenService();
@@ -93,7 +99,13 @@ class MipgenService {
       "Running exon extract script with arguments: $arg",
       level: LogLevel.info,
     );
-    var process = await sl<ProcessRunner>().run(settings.exonExtractScript, arg);
+    var process = await sl<ProcessRunner>().run(
+      settings.exonExtractScript,
+      arg,
+      // Called straight from a request: without a deadline a wedged script
+      // holds the connection open until something else gives up.
+      timeout: helperToolTimeout,
+    );
 
     if (process.exitCode != 0 || process.stdout == "") {
       session.log(
@@ -143,6 +155,17 @@ class MipgenService {
     );
 
     var settings = await settingsService.getSettings(session);
+
+    // Checked rather than assumed, the way createBedFile already does it. A
+    // project with no genome otherwise died on the null-check below and reached
+    // the user as a 500 instead of a sentence.
+    if (project.genome == null) {
+      session.log(
+        "No genome found in project ID: $projectID",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(message: 'No genome found in project');
+    }
 
     var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.fastaPath == null || genome.fastaPath!.isEmpty) {
@@ -195,7 +218,10 @@ class MipgenService {
       options.minCaptureSize.toString(),
       "-max_capture_size",
       options.maxCaptureSize.toString(),
-      if (options.armLengths!.isNotEmpty) ...[
+      // Nullable on the model, and a null used to take the whole run down here.
+      // The test seed helper carries a comment about working around it, which is
+      // a fair sign it was a trap rather than an invariant.
+      if (options.armLengths?.isNotEmpty ?? false) ...[
         "-arm_lengths",
         options.armLengths!,
       ],
@@ -451,13 +477,22 @@ class MipgenService {
       arg,
       workingDirectory: projectDir,
       runInShell: true,
+      timeout: helperToolTimeout,
     );
 
     if (process.exitCode != 0) {
+      // ⚠️ Recorded, not merely logged. The track is an optional extra, so this
+      // must not fail the run — but a project whose track silently never
+      // appeared, with the reason only in the server log, is how somebody
+      // spends an afternoon wondering where their UCSC link went.
+      final reason = firstLineOf(process.stderr.toString());
       session.log(
-        "UCSC track generation failed for project ID: ${project.id}",
+        "UCSC track generation failed for project ID: ${project.id}: $reason",
         level: LogLevel.error,
       );
+      project.error = project.error.isEmpty
+          ? 'The MIPs were generated, but the UCSC track was not: $reason'
+          : project.error;
     }
   }
 }

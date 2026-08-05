@@ -186,7 +186,6 @@ class _SettingsTabState extends State<SettingsTab> {
         _smtpServerController.text = settings.smtpServer;
         _smtpPortController.text = settings.smtpPort.toString();
         _smtpUserController.text = settings.smtpUser;
-        _smtpPasswordController.text = settings.smtpPassword;
         _smtpFromController.text = settings.smtpFrom;
         _mailActiveNotifier.value = settings.mailActive;
         _startTLSNotifier.value = settings.startTLS;
@@ -204,6 +203,7 @@ class _SettingsTabState extends State<SettingsTab> {
         _oidcClientSecretController.clear();
       });
       await _loadAuthStatus();
+      await _loadSmtpPasswordStatus();
     }
     on ArgumentException catch (e) {
       setState(() {
@@ -236,7 +236,6 @@ class _SettingsTabState extends State<SettingsTab> {
         smtpServer: _smtpServerController.text,
         smtpPort: int.tryParse(_smtpPortController.text) ?? 25,
         smtpUser: _smtpUserController.text,
-        smtpPassword: _smtpPasswordController.text,
         smtpFrom: _smtpFromController.text,
         startTLS: _startTLSNotifier.value,
         loginRequired: _loginRequiredNotifier.value,
@@ -257,6 +256,19 @@ class _SettingsTabState extends State<SettingsTab> {
       // finds the secret already in place rather than refusing as incomplete.
       // oidcClientSecret cannot travel in the Settings object above: it is a
       // serverOnly field and has no client-side counterpart.
+      // Same reasoning as the OIDC secret below: serverOnly, so it has no
+      // client-side counterpart to travel in the Settings object. Typing
+      // something replaces the stored password; leaving the box empty keeps it,
+      // which is why an unrelated save cannot blank it by accident.
+      if (_smtpPasswordController.text.isNotEmpty) {
+        await client.settings.setSmtpPassword(
+          _passwordController.text,
+          _smtpPasswordController.text,
+        );
+        _smtpPasswordController.clear();
+        _smtpPasswordConfigured = true;
+      }
+
       if (_oidcClientSecretController.text.isNotEmpty) {
         await client.settings.setOidcClientSecret(
           _passwordController.text,
@@ -290,6 +302,7 @@ class _SettingsTabState extends State<SettingsTab> {
         _passwordController.text = settings.settingsPassword;
       });
       await _loadAuthStatus();
+      await _loadSmtpPasswordStatus();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Settings updated successfully')),
@@ -306,6 +319,27 @@ class _SettingsTabState extends State<SettingsTab> {
   ///
   /// Failure is not fatal — the rest of the settings tab still works — so this
   /// only clears the panel rather than showing an error banner.
+  /// Whether the server holds an SMTP password.
+  ///
+  /// The password itself is never sent, so without this an empty box would be
+  /// indistinguishable from no password at all — and an admin would retype one
+  /// every time they touched an unrelated setting.
+  bool _smtpPasswordConfigured = false;
+
+  Future<void> _loadSmtpPasswordStatus() async {
+    try {
+      final configured = await client.settings
+          .smtpPasswordConfigured(_passwordController.text);
+      if (!mounted) return;
+      setState(() => _smtpPasswordConfigured = configured);
+    } catch (_) {
+      // Not knowing is not the same as knowing there is none, but the only cost
+      // of guessing low here is slightly more cautious wording.
+      if (!mounted) return;
+      setState(() => _smtpPasswordConfigured = false);
+    }
+  }
+
   Future<void> _loadAuthStatus() async {
     try {
       final status =
@@ -745,7 +779,22 @@ class _SettingsTabState extends State<SettingsTab> {
                       obscureText: true,
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: InputDecoration(labelText: 'SMTP password'),
+                      decoration: InputDecoration(
+                        labelText: 'SMTP password',
+                        helperMaxLines: 3,
+                        helperText: _smtpPasswordConfigured
+                            ? 'A password is stored. Type here to replace it; '
+                                'leave empty to keep it.'
+                            : 'No password stored. Leave empty for a relay that '
+                                'needs no authentication.',
+                        suffixIcon: _smtpPasswordConfigured
+                            ? const Tooltip(
+                                message: 'A password is stored on the server. '
+                                    'It is never sent back to the browser.',
+                                child: Icon(Icons.check, size: 18),
+                              )
+                            : null,
+                      ),
                       keyboardType: TextInputType.text,
                     ),
                     TextField(

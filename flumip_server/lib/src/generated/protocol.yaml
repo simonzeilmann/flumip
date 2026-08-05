@@ -59,6 +59,8 @@ settings:
   - getSettings:
   - updateSettings:
   - setOidcClientSecret:
+  - setSmtpPassword:
+  - smtpPasswordConfigured:
   - getAuthAdminStatus:
   - sendTestMail:
 snp:

@@ -7,7 +7,6 @@ fields:
   fastaPath: String?
   refPath: String?
   snpFolder: String?
-  snp: List<int>?
   category: String?
   active: bool, default=true
   indexed: bool, default=false

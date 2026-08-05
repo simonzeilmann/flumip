@@ -165,6 +165,49 @@ class SettingsEndpoint extends Endpoint {
     }
   }
 
+  /// Stores the SMTP password, which is never sent back.
+  ///
+  /// Write-only, exactly like [setOidcClientSecret] and for the same reason: an
+  /// ordinary field is serialised on every `getSettings`, so the mail account's
+  /// password travelled to the browser in cleartext for anyone with the settings
+  /// screen open.
+  ///
+  /// An empty [secret] clears it, which is how a relay that needs no
+  /// authentication is configured. To *keep* the stored one, do not call this —
+  /// saving the rest of the settings leaves it alone.
+  Future<void> setSmtpPassword(
+    Session session,
+    String? password,
+    String secret,
+  ) async {
+    session.log("Setting the SMTP password", level: LogLevel.info);
+    try {
+      await settingsService.requireAdmin(session, password);
+      final settings = await settingsService.getSettings(session);
+      settings.smtpPassword = secret.isEmpty ? null : secret;
+      await Settings.db.updateRow(session, settings);
+    } on ArgumentException {
+      rethrow;
+    } catch (e) {
+      session.log("Error setting the SMTP password",
+          level: LogLevel.error, exception: e);
+      rethrow;
+    }
+  }
+
+  /// Whether an SMTP password is stored, without revealing it.
+  ///
+  /// Lets the settings tab say "a password is stored, type here to replace it"
+  /// rather than showing an empty box that looks like nothing is configured.
+  Future<bool> smtpPasswordConfigured(
+    Session session,
+    String? password,
+  ) async {
+    await settingsService.requireAdmin(session, password);
+    final settings = await settingsService.getSettings(session);
+    return settings.smtpPassword?.isNotEmpty ?? false;
+  }
+
   /// Everything the settings tab needs to show about the SSO setup that is not
   /// itself a stored setting.
   ///

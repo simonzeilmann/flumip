@@ -234,6 +234,10 @@ void main() {
     // client-editable fields onto the stored row. A field added to the model but
     // forgotten in that list would silently write its default on every save, so
     // this round-trips every one of them with a distinct value.
+    //
+    // `smtpPassword` and `oidcClientSecret` are deliberately absent: both are
+    // serverOnly and write-only, set through their own endpoints and never sent
+    // back. See the secrecy tests below.
     test('settings: updateSettings round-trips every client-editable field',
         () async {
       final current =
@@ -255,7 +259,6 @@ void main() {
         smtpServer: 'smtp.rt.example',
         smtpPort: 2525,
         smtpUser: 'rt-user',
-        smtpPassword: 'rt-pass',
         smtpFrom: 'rt@flumip.local',
         startTLS: false,
         loginRequired: false,

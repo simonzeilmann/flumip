@@ -26,7 +26,16 @@ fields:
   smtpServer: String, default=""
   smtpPort: int, default=25
   smtpUser: String, default=""
-  smtpPassword: String, default=""
+  # Never leaves the server. Written only through
+  # SettingsEndpoint.setSmtpPassword, never serialized to the browser — it used
+  # to be an ordinary field, so every `getSettings` call sent the mail account's
+  # password to whoever had the settings screen open, in cleartext.
+  #
+  # Nullable because serverOnly fields must be: the client cannot supply one, so
+  # it deserializes as null on the way in. SettingsService.updateSettings leaves
+  # it out of the merge, which is what stops an unrelated save from blanking it.
+  # Same shape as oidcClientSecret, for the same reason.
+  smtpPassword: String?, scope=serverOnly
   smtpFrom: String, default="flumip@yourdomain.com"
   startTLS: bool, default=true
   loginRequired: bool, default=false

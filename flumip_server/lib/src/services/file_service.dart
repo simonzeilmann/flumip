@@ -146,7 +146,11 @@ class FileService {
     for (var d in dir) {
       if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
         session.log("Deleting byproduct file: ${d.path}", level: LogLevel.info);
-        d.delete();
+        // ⚠️ Awaited. Without it this reported "byproducts deleted
+        // successfully" before they were, and a delete that failed — a
+        // permission problem, a file still held open — surfaced as an unhandled
+        // async error rather than as this method failing.
+        await d.delete();
       }
     }
     session.log(
@@ -313,34 +317,12 @@ class FileService {
     return List.empty();
   }
 
-  Future<Stream<List<int>>> returnFile(
-    Session session,
-    int projectID,
-    String fileName,
-  ) async {
-    session.log(
-      "Returning file $fileName for project ID: $projectID",
-      level: LogLevel.info,
-    );
-    List<FileSystemEntity> dir = await _getFileList(session, projectID);
-
-    for (var d in dir) {
-      if (d.path.endsWith(fileName)) {
-        File f = File(d.path);
-        session.log(
-          "File $fileName found for project ID: $projectID",
-          level: LogLevel.info,
-        );
-        return f.openRead();
-      }
-    }
-
-    session.log(
-      "No file $fileName found for project ID: $projectID",
-      level: LogLevel.warning,
-    );
-    return Stream.empty();
-  }
+  // `returnFile` used to live here: a suffix-matching reader that streamed any
+  // project file whose path merely *ended* with the requested name, with no
+  // traversal guard of any kind. It was superseded by `resolveProjectFile` plus
+  // the `/download/...` route, and nothing has called it since — but leaving a
+  // guardless reader lying about invites somebody to reach for it believing it
+  // is the safe one. Use `resolveProjectFile`.
 
   Future<String> readFileAsString(
     Session session,

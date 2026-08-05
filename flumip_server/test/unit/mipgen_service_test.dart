@@ -148,6 +148,52 @@ void main() {
       expect(reloaded.active, isTrue);
     }, tags: ['unit']);
 
+    test('generateMips refuses a project with no genome, in words', () async {
+      // It used to dereference project.genome! and reach the user as a 500,
+      // while createBedFile checked the very same thing properly.
+      final base = createTempDir('genmips');
+      await overrideSettingsDirs(session, projectDir: base.path);
+      final options = await seedOptions(session);
+      final project = await seedProject(session,
+          options: options.id!, folderName: 'proj');
+      Directory('${base.path}/proj').createSync(recursive: true);
+      expect(
+        () => NoScheduleMipgenService().generateMips(session, project.id!, false),
+        throwsMessage('No genome found in project'),
+      );
+    }, tags: ['unit']);
+
+    test('generateMips survives options with no arm lengths', () async {
+      // armLengths is nullable and was dereferenced with `!`, so a null took the
+      // whole run down. The seed helper even carries a note about seeding an
+      // empty string to dodge it.
+      final base = createTempDir('genmips');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      final options =
+          await ProjectOptions.db.insertRow(session, ProjectOptions());
+      final genome =
+          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
+      final project = await seedProject(session,
+          name: 'demo',
+          options: options.id!,
+          folderName: 'proj',
+          genome: genome.id);
+      Directory('${base.path}/proj').createSync(recursive: true);
+      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen -project_name demo\n');
+
+      await expectLater(
+        NoScheduleMipgenService().generateMips(session, project.id!, false),
+        completes,
+      );
+      final started =
+          fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
+      expect(started.arguments, isNot(contains('-arm_lengths')));
+    }, tags: ['unit']);
+
     test('generateMips throws when the genome has no fasta path', () async {
       final base = createTempDir('genmips');
       await overrideSettingsDirs(session, projectDir: base.path);

@@ -172,11 +172,11 @@ void main() {
       expect(g.indexed, isTrue);
       expect(g.refPath, endsWith('refGene.txt'));
       expect(g.fastaPath, endsWith('hg38.fa'));
-      expect(g.snp, isNotNull);
-      expect(g.snp!.length, 1);
       final snps = await genomeService.getAllSnps(session);
       expect(snps.length, 1);
       expect(snps.single.name, '00-common');
+      // The link lives on the SNP now, not in a list on the genome.
+      expect(snps.single.genome, g.id);
     }, tags: ['unit']);
 
     test('throws when the genome directory does not exist', () async {
