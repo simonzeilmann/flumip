@@ -13,9 +13,11 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'package:flumip_server/src/generated/genome.dart' as _i2;
 import 'package:flumip_server/src/generated/project.dart' as _i3;
-import 'dart:async' as _i4;
-import '../future_calls/check_index_progress_future_call.dart' as _i5;
-import '../future_calls/check_mipgen_progress_future_call.dart' as _i6;
+import 'package:flumip_server/src/generated/snp.dart' as _i4;
+import 'dart:async' as _i5;
+import '../future_calls/check_index_progress_future_call.dart' as _i6;
+import '../future_calls/check_mipgen_progress_future_call.dart' as _i7;
+import '../future_calls/import_snp_future_call.dart' as _i8;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
@@ -54,10 +56,14 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  void initialize(_i1.FutureCallManager futureCallManager, String serverId) {
+  void initialize(
+    _i1.FutureCallManager futureCallManager,
+    String serverId,
+  ) {
     var registeredFutureCalls = <String, _i1.FutureCall>{
       'CheckIndexProgressRunFutureCall': CheckIndexProgressRunFutureCall(),
       'CheckMipgenProgressRunFutureCall': CheckMipgenProgressRunFutureCall(),
+      'ImportSnpRunFutureCall': ImportSnpRunFutureCall(),
     };
     _futureCallManager = futureCallManager;
     _serverId = serverId;
@@ -67,29 +73,39 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  _FutureCallRef callAtTime(DateTime time, {String? identifier}) {
-    return _FutureCallRef((name, object) {
-      return _effectiveFutureCallManager.scheduleFutureCall(
-        name,
-        object,
-        time,
-        _effectiveServerId,
-        identifier,
-      );
-    });
+  _FutureCallRef callAtTime(
+    DateTime time, {
+    String? identifier,
+  }) {
+    return _FutureCallRef(
+      (name, object) {
+        return _effectiveFutureCallManager.scheduleFutureCall(
+          name,
+          object,
+          time,
+          _effectiveServerId,
+          identifier,
+        );
+      },
+    );
   }
 
   @override
-  _FutureCallRef callWithDelay(Duration delay, {String? identifier}) {
-    return _FutureCallRef((name, object) {
-      return _effectiveFutureCallManager.scheduleFutureCall(
-        name,
-        object,
-        DateTime.now().toUtc().add(delay),
-        _effectiveServerId,
-        identifier,
-      );
-    });
+  _FutureCallRef callWithDelay(
+    Duration delay, {
+    String? identifier,
+  }) {
+    return _FutureCallRef(
+      (name, object) {
+        return _effectiveFutureCallManager.scheduleFutureCall(
+          name,
+          object,
+          DateTime.now().toUtc().add(delay),
+          _effectiveServerId,
+          identifier,
+        );
+      },
+    );
   }
 
   @override
@@ -110,6 +126,8 @@ class _FutureCallRef {
   late final checkMipgenProgress = _CheckMipgenProgressFutureCallDispatcher(
     _invokeFutureCall,
   );
+
+  late final importSnp = _ImportSnpFutureCallDispatcher(_invokeFutureCall);
 }
 
 class _CheckIndexProgressFutureCallDispatcher {
@@ -118,7 +136,10 @@ class _CheckIndexProgressFutureCallDispatcher {
   final _InvokeFutureCall _invokeFutureCall;
 
   Future<void> run(_i2.Genome object) {
-    return _invokeFutureCall('CheckIndexProgressRunFutureCall', object);
+    return _invokeFutureCall(
+      'CheckIndexProgressRunFutureCall',
+      object,
+    );
   }
 }
 
@@ -128,20 +149,61 @@ class _CheckMipgenProgressFutureCallDispatcher {
   final _InvokeFutureCall _invokeFutureCall;
 
   Future<void> run(_i3.Project object) {
-    return _invokeFutureCall('CheckMipgenProgressRunFutureCall', object);
+    return _invokeFutureCall(
+      'CheckMipgenProgressRunFutureCall',
+      object,
+    );
+  }
+}
+
+class _ImportSnpFutureCallDispatcher {
+  _ImportSnpFutureCallDispatcher(this._invokeFutureCall);
+
+  final _InvokeFutureCall _invokeFutureCall;
+
+  Future<void> run(_i4.Snp object) {
+    return _invokeFutureCall(
+      'ImportSnpRunFutureCall',
+      object,
+    );
   }
 }
 
 class CheckIndexProgressRunFutureCall extends _i1.FutureCall<_i2.Genome> {
   @override
-  _i4.Future<void> invoke(_i1.Session session, _i2.Genome? object) async {
-    await _i5.CheckIndexProgressFutureCall().run(session, object!);
+  _i5.Future<void> invoke(
+    _i1.Session session,
+    _i2.Genome? object,
+  ) async {
+    await _i6.CheckIndexProgressFutureCall().run(
+      session,
+      object!,
+    );
   }
 }
 
 class CheckMipgenProgressRunFutureCall extends _i1.FutureCall<_i3.Project> {
   @override
-  _i4.Future<void> invoke(_i1.Session session, _i3.Project? object) async {
-    await _i6.CheckMipgenProgressFutureCall().run(session, object!);
+  _i5.Future<void> invoke(
+    _i1.Session session,
+    _i3.Project? object,
+  ) async {
+    await _i7.CheckMipgenProgressFutureCall().run(
+      session,
+      object!,
+    );
+  }
+}
+
+class ImportSnpRunFutureCall extends _i1.FutureCall<_i4.Snp> {
+  @override
+  _i5.Future<void> invoke(
+    _i1.Session session,
+    _i4.Snp? object,
+  ) async {
+    await _i8.ImportSnpFutureCall().run(
+      session,
+      object!,
+    );
   }
 }

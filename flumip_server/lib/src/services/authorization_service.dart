@@ -168,6 +168,76 @@ class AuthorizationService {
         .toList();
   }
 
+  /// Refuses if the caller may not see [snp].
+  ///
+  /// Costs no query at all: everything the rule needs is already on the row.
+  Future<void> requireSnpAccess(Session session, Snp snp) async {
+    final enforcing = isEnforcing;
+    final who = enforcing ? await principal(session) : Principal.anonymous;
+    if (snpIsAccessible(
+      enforcing: enforcing,
+      principal: who,
+      private: snp.private,
+      owner: snp.owner,
+    )) {
+      return;
+    }
+
+    session.log(
+      'Refused access to SNP ${snp.id} for $who',
+      level: LogLevel.warning,
+    );
+    throw ProjectAccessDeniedException();
+  }
+
+  /// Refuses if the caller may not change or delete [snp].
+  ///
+  /// Stricter than [requireSnpAccess]: a shared SNP is readable by everyone but
+  /// only its owner — or an administrator — may touch it.
+  Future<void> requireSnpWrite(Session session, Snp snp) async {
+    final enforcing = isEnforcing;
+    if (!enforcing) return;
+
+    final who = await principal(session);
+    if (snpIsWritable(enforcing: enforcing, principal: who, owner: snp.owner)) {
+      return;
+    }
+
+    session.log(
+      'Refused a change to SNP ${snp.id} for $who',
+      level: LogLevel.warning,
+    );
+    throw ProjectAccessDeniedException();
+  }
+
+  /// The subset of [all] the caller is allowed to see.
+  ///
+  /// Filtered in Dart with the same predicate the single-SNP gate uses, for the
+  /// reason spelled out on [visibleProjects]: two expressions of one rule is how
+  /// a list ends up offering something that selecting it then refuses.
+  Future<List<Snp>> visibleSnps(Session session, List<Snp> all) async {
+    final enforcing = isEnforcing;
+    if (!enforcing) return all;
+
+    final who = await principal(session);
+    return all
+        .where(
+          (s) => snpIsAccessible(
+            enforcing: enforcing,
+            principal: who,
+            private: s.private,
+            owner: s.owner,
+          ),
+        )
+        .toList();
+  }
+
+  /// The `flumip_user` id to stamp on an SNP being added, or null.
+  ///
+  /// Delegates to [ownerForNewProject] rather than repeating it, so "null while
+  /// single sign-on is off" stays a single decision.
+  Future<int?> ownerForNewSnp(Session session) => ownerForNewProject(session);
+
   /// Refuses unless the caller is a signed-in administrator.
   ///
   /// ⚠️ **This inverts the fail-open ordering the rest of this class follows**,

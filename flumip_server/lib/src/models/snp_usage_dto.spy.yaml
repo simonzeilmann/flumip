@@ -1,0 +1,8 @@
+### One project currently pointing at an SNP. No table.
+###
+### Shown in the delete confirmation, so that nobody removes a file three running
+### designs depend on without being told which three.
+class: SnpUsageDto
+fields:
+  projectId: int
+  projectName: String

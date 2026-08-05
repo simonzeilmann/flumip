@@ -120,4 +120,102 @@ void main() {
       expect(resolveSiteUrl(), developmentSiteUrl);
     });
   });
+
+
+  group('uploadsAreSameOrigin', () {
+    test('an install is same-origin, so the cookie travels', () {
+      // The app is served by the web server itself, which is where the session
+      // cookie lives — the whole reason a raw PUT can be authorized at all.
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('https://flumip.uni.example/'),
+          'https://flumip.uni.example',
+        ),
+        isTrue,
+      );
+    });
+
+    test('a path on the page does not matter, only the origin', () {
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('https://flumip.uni.example/some/deep/link'),
+          'https://flumip.uni.example',
+        ),
+        isTrue,
+      );
+    });
+
+    test('a localhost install on a matching port is same-origin', () {
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('http://localhost:8082/'),
+          'http://localhost:8082',
+        ),
+        isTrue,
+      );
+    });
+
+    test('a flutter run is NOT same-origin', () {
+      // ⚠️ The case this exists for. `flutter run` serves the app on 8083 while
+      // resolveSiteUrl points at the development backend on 8082, so the PUT is
+      // cross-origin, preflights, and never starts. Same structural reason
+      // sign-in cannot be tested there.
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('http://localhost:8083/'),
+          'http://localhost:8082',
+        ),
+        isFalse,
+      );
+    });
+
+    test('a different scheme is not the same origin', () {
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('http://flumip.uni.example/'),
+          'https://flumip.uni.example',
+        ),
+        isFalse,
+      );
+    });
+
+    test('a different host is not the same origin', () {
+      expect(
+        uploadsAreSameOrigin(
+          Uri.parse('https://flumip.uni.example/'),
+          'https://other.uni.example',
+        ),
+        isFalse,
+      );
+    });
+
+    test('an unparseable site URL is not treated as same-origin', () {
+      expect(
+        uploadsAreSameOrigin(Uri.parse('https://flumip.uni.example/'), ''),
+        isFalse,
+      );
+    });
+
+    test('a malformed site URL does not crash the app', () {
+      // ⚠️ resolveUploadsAvailable runs in a top-level `final`, so a throw here
+      // would take the whole app down at startup rather than merely disabling
+      // uploading. SITE_URL is a build define, so a bad one is plausible.
+      for (final bad in ['', '   ', 'not a url', '://nope', 'flumip.example']) {
+        expect(
+          () => uploadsAreSameOrigin(Uri.parse('https://x.example/'), bad),
+          returnsNormally,
+          reason: 'site URL "$bad"',
+        );
+        expect(uploadsAreSameOrigin(Uri.parse('https://x.example/'), bad),
+            isFalse);
+      }
+    });
+
+    test('a page URL with no origin is handled too', () {
+      expect(
+        uploadsAreSameOrigin(Uri.parse('about:blank'), 'https://x.example'),
+        isFalse,
+      );
+    });
+  });
 }

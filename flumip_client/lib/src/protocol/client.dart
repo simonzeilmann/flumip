@@ -23,7 +23,9 @@ import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i10;
 import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i11;
 import 'package:flumip_client/src/protocol/settings.dart' as _i12;
 import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i13;
-import 'protocol.dart' as _i14;
+import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart' as _i14;
+import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _i15;
+import 'protocol.dart' as _i16;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
@@ -324,24 +326,6 @@ class EndpointGenome extends EndpointFlumip {
         'getAllSnpForGenome',
         {'genomeId': genomeId},
       );
-
-  /// Updates an SNP.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the SNP to update.
-  /// \param snp The updated SNP data.
-  /// \throws Exception if an error occurs during the update.
-  _i2.Future<void> updateSnp(
-    int id,
-    _i7.Snp snp,
-  ) => caller.callServerEndpoint<void>(
-    'genome',
-    'updateSnp',
-    {
-      'id': id,
-      'snp': snp,
-    },
-  );
 
   /// Retrieves all genome categories.
   ///
@@ -796,14 +780,16 @@ class EndpointProject extends EndpointFlumip {
     {},
   );
 
-  /// Sets the SNP for a project by its ID.
+  /// Sets the SNP for a project, or clears it.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
-  /// \param snpId The ID of the SNP to set.
+  /// \param snpId The ID of the SNP to set, or null for no SNP masking. Clearing
+  ///   became necessary once an SNP set could be deleted or fail to import, which
+  ///   can leave a project pointing at one it can no longer use.
   _i2.Future<void> setSnpById(
     int id,
-    int snpId,
+    int? snpId,
   ) => caller.callServerEndpoint<void>(
     'project',
     'setSnpById',
@@ -976,6 +962,265 @@ class EndpointSettings extends _i1.EndpointRef {
   );
 }
 
+/// Everything to do with SNP sets that a user, rather than the server's
+/// administrator, brought along.
+///
+/// Reading and listing live here too, because they have to be visibility-filtered
+/// and `GenomeEndpoint` has no notion of who owns what.
+/// {@category Endpoint}
+class EndpointSnp extends EndpointFlumip {
+  EndpointSnp(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'snp';
+
+  /// Every SNP for a genome that this caller may see.
+  ///
+  /// Filtered twice over: once for visibility, and again to hide somebody else's
+  /// half-finished import. A shared SNP that is still downloading is nobody's
+  /// business but its owner's until it works.
+  ///
+  /// \param session The current session.
+  /// \param genomeId The genome whose SNP sets to list.
+  _i2.Future<List<_i7.Snp>> listSnpsForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_i7.Snp>>(
+        'snp',
+        'listSnpsForGenome',
+        {'genomeId': genomeId},
+      );
+
+  /// Every custom SNP this caller added, whatever state it is in.
+  ///
+  /// Unlike [listSnpsForGenome] this shows failed and in-flight imports, because
+  /// this is the list somebody goes to in order to fix or remove one. An
+  /// administrator gets every custom SNP on the server, which is what makes
+  /// cleaning up after a departed colleague possible.
+  ///
+  /// Doubles as the app's answer to "which of these are mine?" — the session
+  /// carries no user id, so the client works it out from the ids in this list.
+  _i2.Future<List<_i7.Snp>> listMySnps() =>
+      caller.callServerEndpoint<List<_i7.Snp>>(
+        'snp',
+        'listMySnps',
+        {},
+      );
+
+  /// Announces a custom SNP set whose files the browser is about to send.
+  ///
+  /// Step one of three. Returns a `pending` row with its directory made, so the
+  /// browser knows where to `PUT` — the path is derived from the row id and can
+  /// therefore never be influenced by anything a user typed.
+  ///
+  /// ```
+  /// 1. createUpload(dto)                       -> Snp (pending)
+  /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
+  /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
+  /// ```
+  _i2.Future<_i7.Snp> createUpload(_i14.CustomSnpRequestDto request) =>
+      caller.callServerEndpoint<_i7.Snp>(
+        'snp',
+        'createUpload',
+        {'request': request},
+      );
+
+  /// Step three: works out what actually arrived and settles the row.
+  ///
+  /// Reads the directory rather than trusting the client's account of what it
+  /// sent, so a browser that dropped the second `PUT` cannot leave a row claiming
+  /// to be complete.
+  _i2.Future<_i7.Snp> finishUpload(int snpId) =>
+      caller.callServerEndpoint<_i7.Snp>(
+        'snp',
+        'finishUpload',
+        {'snpId': snpId},
+      );
+
+  /// Removes a custom SNP set whose upload never completed.
+  ///
+  /// Distinct from [deleteCustomSnp] only in intent: this is the "cancel" the app
+  /// offers on a `pending` row, and refusing anything further along stops it
+  /// double-serving as a delete without confirmation.
+  _i2.Future<void> cancelUpload(int snpId) => caller.callServerEndpoint<void>(
+    'snp',
+    'cancelUpload',
+    {'snpId': snpId},
+  );
+
+  /// Adds a custom SNP set whose files the server fetches for itself.
+  ///
+  /// `request.urls` is the `.vcf.gz` address and optionally its `.vcf.gz.tbi`.
+  /// Returns immediately with a `pending` row; the bytes arrive on a future call
+  /// and the app watches `status` and `bytesDownloaded`.
+  ///
+  /// ⚠️ **Every URL is validated synchronously, before the row is inserted.** A
+  /// rejected address comes back as an error on this call rather than as a
+  /// `failed` row the user has to go and find — and, more to the point, the
+  /// address check is what stops this endpoint being a request proxy into the
+  /// deployment's own network. See `snpSourceUrlRejection`.
+  _i2.Future<_i7.Snp> importFromUrls(_i14.CustomSnpRequestDto request) =>
+      caller.callServerEndpoint<_i7.Snp>(
+        'snp',
+        'importFromUrls',
+        {'request': request},
+      );
+
+  /// Puts a failed import back in the queue and reschedules it.
+  ///
+  /// Starts over rather than resuming: a half-download that silently continued
+  /// against a *changed* remote file would produce a corrupt archive, which is a
+  /// worse outcome than fetching a gigabyte twice.
+  _i2.Future<_i7.Snp> retryImport(int snpId) =>
+      caller.callServerEndpoint<_i7.Snp>(
+        'snp',
+        'retryImport',
+        {'snpId': snpId},
+      );
+
+  /// Shares an SNP with everyone on this server, or takes it back.
+  ///
+  /// Only its owner — or an administrator — may do this, even once it is shared.
+  /// Ownership survives sharing.
+  ///
+  /// \param session The current session.
+  /// \param snpId The SNP to change.
+  /// \param shared True to make it visible to everybody.
+  _i2.Future<_i7.Snp> setShared(
+    int snpId,
+    bool shared,
+  ) => caller.callServerEndpoint<_i7.Snp>(
+    'snp',
+    'setShared',
+    {
+      'snpId': snpId,
+      'shared': shared,
+    },
+  );
+
+  /// Renames an SNP and rewrites its description.
+  ///
+  /// Cosmetic only: the files on disk are named after the row id, never after
+  /// this, so nothing has to move and no path changes.
+  _i2.Future<_i7.Snp> renameSnp(
+    int snpId,
+    String name,
+    String description,
+  ) => caller.callServerEndpoint<_i7.Snp>(
+    'snp',
+    'renameSnp',
+    {
+      'snpId': snpId,
+      'name': name,
+      'description': description,
+    },
+  );
+
+  /// The projects currently using this SNP.
+  ///
+  /// Read before a delete is confirmed, so the dialog can name them rather than
+  /// warning in the abstract.
+  _i2.Future<List<_i15.SnpUsageDto>> snpUsage(int snpId) =>
+      caller.callServerEndpoint<List<_i15.SnpUsageDto>>(
+        'snp',
+        'snpUsage',
+        {'snpId': snpId},
+      );
+
+  /// Deletes a custom SNP and its files. Its owner, or an administrator.
+  ///
+  /// Refuses a global SNP outright. Removing one of those deletes files out of
+  /// the shared genome tree, which is a different decision needing a different
+  /// gate — see [deleteSnpAsAdmin]. Keeping them as separate methods is what stops
+  /// an ordinary user's delete button from ever being able to reach one.
+  _i2.Future<void> deleteCustomSnp(int snpId) =>
+      caller.callServerEndpoint<void>(
+        'snp',
+        'deleteCustomSnp',
+        {'snpId': snpId},
+      );
+
+  /// Deletes **any** SNP, including a global one, along with its files.
+  ///
+  /// ⚠️ **Irreversible, and it reaches outside this application's own data.** A
+  /// global SNP's files are part of the hand-assembled genome tree; dbSNP is
+  /// tens of gigabytes and hours of transfer, quite possibly on a shared mount.
+  /// There is no undo and no tombstone — restoring means putting the files back
+  /// and collecting again, which produces a new row with a new id.
+  ///
+  /// Gated by [SettingsService.requireAdmin] rather than
+  /// `AuthorizationService.requireAdmin`, and the difference matters. The latter
+  /// deliberately *throws* while single sign-on is off, on the grounds that
+  /// reassigning ownership is meaningless without identities. That reasoning does
+  /// not carry here: a no-auth install can perfectly well have a broken global SNP
+  /// that needs removing, and it has an established administrative credential in
+  /// the settings password. [SettingsService.requireAdmin] already implements
+  /// exactly that dual gate — an admin session, or the password while sign-in is
+  /// not enforced.
+  ///
+  /// \param settingsPassword Ignored when the caller is a signed-in admin.
+  /// \param force Required when projects are still using it. Without it the call
+  ///   refuses and names them, so nobody removes a file three running designs
+  ///   depend on by accident.
+  _i2.Future<void> deleteSnpAsAdmin(
+    int snpId,
+    String? settingsPassword, {
+    required bool force,
+  }) => caller.callServerEndpoint<void>(
+    'snp',
+    'deleteSnpAsAdmin',
+    {
+      'snpId': snpId,
+      'settingsPassword': settingsPassword,
+      'force': force,
+    },
+  );
+
+  /// Rescans the custom SNP directory.
+  ///
+  /// Ungated, matching `GenomeEndpoint.collectGenomes`, which has always been.
+  /// It creates nothing a user did not already put on the server's disk, and
+  /// gating both is a defensible hardening for another day.
+  _i2.Future<void> collectCustomSnps() => caller.callServerEndpoint<void>(
+    'snp',
+    'collectCustomSnps',
+    {},
+  );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'snp',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'snp',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
+}
+
 class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
@@ -996,7 +1241,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i14.Protocol(),
+         _i16.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -1012,6 +1257,7 @@ class Client extends _i1.ServerpodClientShared {
     options = EndpointOptions(this);
     project = EndpointProject(this);
     settings = EndpointSettings(this);
+    snp = EndpointSnp(this);
   }
 
   late final EndpointAuth auth;
@@ -1028,6 +1274,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointSettings settings;
 
+  late final EndpointSnp snp;
+
   @override
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
     'auth': auth,
@@ -1037,6 +1285,7 @@ class Client extends _i1.ServerpodClientShared {
     'options': options,
     'project': project,
     'settings': settings,
+    'snp': snp,
   };
 
   @override

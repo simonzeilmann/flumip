@@ -483,13 +483,16 @@ class FileService {
     }
 
     int totalSize = 0;
-    await dir.list(recursive: true, followLinks: false).forEach((
-      FileSystemEntity entity,
-    ) async {
+    // `await for`, not `forEach` with an async callback. The callback version
+    // returned as soon as the stream was drained, before its bodies had all run,
+    // so the total was whatever happened to have been added by then — a different
+    // number on every call for a large tree. Latent while this only fed a display
+    // figure; it now decides a per-SNP size.
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
       if (entity is File) {
-        totalSize += entity.lengthSync();
+        totalSize += await entity.length();
       }
-    });
+    }
 
     return totalSize;
   }

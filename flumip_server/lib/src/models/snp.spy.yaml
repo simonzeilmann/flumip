@@ -1,3 +1,18 @@
+### One SNP dataset: a bgzip'd VCF plus its tabix index.
+###
+### Two provenances, told apart by [custom]:
+###
+### - **Global** (`custom: false`) — found by `GenomeService.collectGenomes` under
+###   `Settings.genomeDir`. Owned by nobody, visible to everybody, and removable
+###   only by an administrator, because removing one deletes files out of the
+###   shared genome tree.
+### - **Custom** (`custom: true`) — added by a user, living under
+###   `Settings.customSnpDir`. Has an [owner], a [genome] and a [status], because
+###   the bytes arrive after the row does.
+###
+### `folder` is the scanner's idempotency key and stays that way. For a custom SNP
+### the folder is derived from the row id, so the row is authoritative and a scan
+### only reconciles what is on disk against it.
 class: Snp
 table: snp
 fields:
@@ -6,6 +21,59 @@ fields:
   vcfPath: String
   tbiPath: String
   folder: String
+  ### Written true by the scanner since the beginning and read by nothing. Left
+  ### alone on purpose: [status] is the flag that actually decides whether an SNP
+  ### can be used, and dropping a column earns migration risk for no behaviour
+  ### change.
   active: bool
+  ### Visible only to [owner] and to administrators. The share toggle clears it.
+  ###
+  ### See `snpIsAccessible`, and note that the rule differs from
+  ### `projectIsAccessible`: here a null owner is *not* a grant.
   private: bool, default=false
   size: int, default=0
+  ### The genome build this SNP is called against. Chosen when a custom SNP is
+  ### added; filled in by the scanner for globals from the enclosing directory.
+  ###
+  ### This, not `Genome.snp`, is the authoritative link — VCF coordinates are
+  ### build-specific, so an hg38 file used against hs1 silently produces wrong
+  ### MIPs. `Genome.snp` is still maintained so nothing that reads it breaks.
+  ###
+  ### SetNull rather than Cascade: deleting a genome must not destroy a user's
+  ### uploaded file. Such an SNP appears in no picker and its owner can delete it.
+  genome: int?, relation(parent=genome, onDelete=SetNull)
+  ### The FlumipUser who added this, or null. Null for every global SNP and for
+  ### anything added while single sign-on is off — mirroring `Project.owner`,
+  ### including onDelete=SetNull, because deleting an identity must not delete the
+  ### data they contributed.
+  owner: int?, relation(parent=flumip_user, onDelete=SetNull)
+  ### False for scanner-discovered SNPs under `genomeDir`, true for anything under
+  ### `customSnpDir`. Decides which of the two delete paths applies.
+  custom: bool, default=false
+  ### Where the bytes are in their journey. `ready` is the only status mipgen will
+  ### accept, and it is the default so that every row predating this feature —
+  ### which means every global SNP — is usable with no data migration.
+  status: SnpImportStatus, default=ready
+  ### Why it failed, or which step it is on. Never holds a remote response body: a
+  ### fetched error page can contain anything and this string is rendered in the
+  ### app.
+  statusMessage: String, default=''
+  ### Where the files were fetched from, for provenance and for retry. Null for
+  ### uploads and for globals. Stored with any userinfo stripped.
+  sourceVcfUrl: String?
+  sourceTbiUrl: String?
+  bytesDownloaded: int, default=0
+  ### From Content-Length when the server sent one, 0 when it did not.
+  totalBytes: int, default=0
+  ### Heartbeat, written on every status change and every throttled progress
+  ### update, so a reconcile pass can tell a live import from one whose server
+  ### died mid-flight.
+  statusUpdated: DateTime?
+  created: DateTime, default=now
+indexes:
+  snp_genome_idx:
+    fields: genome
+  snp_owner_idx:
+    fields: owner
+  snp_folder_idx:
+    fields: folder

@@ -44,6 +44,13 @@ Future<Snp> seedSnp(
   String folder = '/tmp/snp',
   bool active = true,
   bool private = false,
+  int? genome,
+  int? owner,
+  bool custom = false,
+  SnpImportStatus status = SnpImportStatus.ready,
+  String statusMessage = '',
+  DateTime? statusUpdated,
+  int size = 0,
 }) {
   return Snp.db.insertRow(
     session,
@@ -54,6 +61,14 @@ Future<Snp> seedSnp(
       folder: folder,
       active: active,
       private: private,
+      genome: genome,
+      owner: owner,
+      custom: custom,
+      status: status,
+      statusMessage: statusMessage,
+      statusUpdated: statusUpdated,
+      size: size,
+      created: DateTime.now().toUtc(),
     ),
   );
 }

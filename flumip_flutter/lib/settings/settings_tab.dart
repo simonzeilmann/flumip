@@ -84,6 +84,8 @@ class _SettingsTabState extends State<SettingsTab> {
   final TextEditingController _projectDirController = TextEditingController();
   final TextEditingController _genomeDirController = TextEditingController();
   final TextEditingController _customSnpDirController = TextEditingController();
+  final TextEditingController _snpSourceAllowedHostsController =
+      TextEditingController();
   final TextEditingController _toolsDirController = TextEditingController();
   final TextEditingController _mipgenExecutableController =
       TextEditingController();
@@ -133,6 +135,7 @@ class _SettingsTabState extends State<SettingsTab> {
     _projectDirController.dispose();
     _genomeDirController.dispose();
     _customSnpDirController.dispose();
+    _snpSourceAllowedHostsController.dispose();
     _toolsDirController.dispose();
     _mipgenExecutableController.dispose();
     _exonExtractScriptController.dispose();
@@ -172,6 +175,7 @@ class _SettingsTabState extends State<SettingsTab> {
         _projectDirController.text = settings.projectDir;
         _genomeDirController.text = settings.genomeDir;
         _customSnpDirController.text = settings.customSnpDir;
+        _snpSourceAllowedHostsController.text = settings.snpSourceAllowedHosts;
         _toolsDirController.text = settings.toolsDir;
         _mipgenExecutableController.text = settings.mipgenExecutable;
         _exonExtractScriptController.text = settings.exonExtractScript;
@@ -221,6 +225,7 @@ class _SettingsTabState extends State<SettingsTab> {
         projectDir: _projectDirController.text,
         genomeDir: _genomeDirController.text,
         customSnpDir: _customSnpDirController.text,
+        snpSourceAllowedHosts: _snpSourceAllowedHostsController.text,
         toolsDir: _toolsDirController.text,
         mipgenExecutable: _mipgenExecutableController.text,
         exonExtractScript: _exonExtractScriptController.text,
@@ -651,6 +656,20 @@ class _SettingsTabState extends State<SettingsTab> {
                     controller: _customSnpDirController,
                     decoration:
                         InputDecoration(labelText: 'Custom SNP directory'),
+                    keyboardType: TextInputType.text,
+                  ),
+                  TextField(
+                    controller: _snpSourceAllowedHostsController,
+                    decoration: InputDecoration(
+                      labelText: 'Allowed SNP download hosts',
+                      helperText:
+                          'Comma-separated, e.g. ftp.ncbi.nlm.nih.gov, '
+                          'hgdownload.soe.ucsc.edu. Subdomains match. Leave '
+                          'empty to allow any public address.\n'
+                          'Filling this in is what closes the DNS-rebinding '
+                          'gap the address checks cannot.',
+                      helperMaxLines: 4,
+                    ),
                     keyboardType: TextInputType.text,
                   ),
                   TextField(

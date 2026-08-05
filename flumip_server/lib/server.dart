@@ -4,10 +4,12 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/future_calls/demo_mode_cleanup.dart';
+import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
 import 'package:flumip_server/src/web/routes/download.dart';
+import 'package:flumip_server/src/web/routes/snp_upload.dart';
 import 'package:flumip_server/src/web/routes/ucsc_track.dart';
 
 import 'src/generated/protocol.dart';
@@ -87,6 +89,11 @@ void run(List<String> args) async {
   // cookie — see DownloadRoute for why this is a web route and not an endpoint.
   pod.webServer.addRoute(DownloadRoute(), '/download/:projectId/:fileName');
 
+  // Uploaded SNP files, the same shape in reverse: the file is the whole request
+  // body, so a gigabyte goes socket-to-disk without the process holding it, and
+  // the browser's own session cookie authorizes it. See SnpUploadRoute.
+  pod.webServer.addRoute(SnpUploadRoute(), '/snp_upload/:snpId/:fileName');
+
   // The sign-in flow runs on the web server, which is the origin the app itself
   // is served from — so the session cookie is set and read where the browser
   // actually is. The API server is a different origin and uses a bearer header.
@@ -115,6 +122,32 @@ void run(List<String> args) async {
   // unreachable at boot", and prunes expired sessions on the same tick.
   await _withSession(pod, authRuntime.refresh);
   authRuntime.startPeriodicRefresh(pod);
+
+  // Reconcile the SNP tree once the database is migrated. This is what heals an
+  // import that was cut off by the restart we just performed — the row would
+  // otherwise sit at `downloading` forever, since the thing that was updating it
+  // no longer exists. It also backfills the genome link on every SNP predating
+  // custom SNPs, without which the pickers would come up empty after upgrading.
+  //
+  // Deliberately not on the periodic tick: this walks only `customSnpDir`, but
+  // `collectGenomes` — which also calls it — walks the whole genome tree with a
+  // recursive size count, and that is hundreds of gigabytes of stat calls for
+  // data that changes only when somebody puts a file there.
+  await _withSession(pod, (session) async {
+    try {
+      await sl<SnpService>().collectCustomSnps(session);
+    } catch (e, stackTrace) {
+      // Never fatal. A server that will not start because a data directory is
+      // missing is far worse than one whose SNP list is briefly stale, and the
+      // "Collect" button re-runs exactly this.
+      session.log(
+        'Could not reconcile SNPs at startup; the server is running anyway.',
+        level: LogLevel.error,
+        exception: e,
+        stackTrace: stackTrace,
+      );
+    }
+  });
 }
 
 /// Runs [action] with a short-lived internal session, always closing it.

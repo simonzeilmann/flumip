@@ -289,12 +289,14 @@ class ProjectEndpoint extends FlumipEndpoint {
     return settings.mailActive;
   }
 
-  /// Sets the SNP for a project by its ID.
+  /// Sets the SNP for a project, or clears it.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
-  /// \param snpId The ID of the SNP to set.
-  Future<void> setSnpById(Session session, int id, int snpId) async {
+  /// \param snpId The ID of the SNP to set, or null for no SNP masking. Clearing
+  ///   became necessary once an SNP set could be deleted or fail to import, which
+  ///   can leave a project pointing at one it can no longer use.
+  Future<void> setSnpById(Session session, int id, int? snpId) async {
     session.log("Setting snp to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);

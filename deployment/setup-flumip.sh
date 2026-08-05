@@ -611,8 +611,29 @@ $(echo -e "${YELLOW}Next steps:${NC}")
        # proxy_pass http://127.0.0.1:${API_PORT}; for the API
        sudo certbot --nginx -d ${PUBLIC_HOST}
 
+     IMPORTANT for uploads and downloads. nginx defaults will break both, and
+     the failures look like application bugs rather than proxy limits. In the
+     server block that proxies the web app, set:
+
+       client_max_body_size 4G;        # default is 1m: an SNP upload is 100M-1.5G
+       proxy_request_buffering off;    # stream the upload through, do not spool it
+       proxy_buffering off;            # so a download starts at once
+       proxy_read_timeout 3600s;       # a slow gigabyte legitimately takes a while
+       proxy_send_timeout 3600s;
+
+     Without client_max_body_size, nginx answers 413 for any real VCF before
+     FLUMIP ever sees the request. Without proxy_request_buffering off, nginx
+     writes the whole file to its own spool first, so a 1 GB upload costs twice
+     the disk and reports no progress until it is finished.
+
      Then re-run this script with --host set to that domain so the generated
      config advertises the right public URL.
+
+     Whatever hostname you settle on, browse to exactly the one you built the
+     frontend with. The app compares its own origin against the SITE_URL it was
+     built with to decide whether an upload can carry your session, so reaching
+     the same server as www.${PUBLIC_HOST}, or over plain http, disables
+     uploading with an explanation. Importing SNP sets by URL is unaffected.
 
   4. Optional: connect this server to your organisation's single sign-on.
      FLUMIP runs with no authentication by default, which is fine for a trusted

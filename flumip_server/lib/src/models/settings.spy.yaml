@@ -6,6 +6,16 @@ fields:
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"
   customSnpDir: String, default="/opt/flumip/data/custom_snp"
+  # Comma-separated hosts the server may fetch custom SNP files from, matched
+  # exactly or as a subdomain. Empty means any public address, which is the
+  # default because a fresh install has no way to know which sources a lab uses.
+  #
+  # ⚠️ Filling this in is the practical answer to DNS rebinding, which
+  # `snpSourceUrlRejection` cannot close on its own. On a hospital or university
+  # network, listing the three or four real sources — ftp.ncbi.nlm.nih.gov,
+  # ftp.ensembl.org, hgdownload.soe.ucsc.edu — turns off the whole class of
+  # attack. See docs/authorization.md.
+  snpSourceAllowedHosts: String, default=""
   toolsDir: String, default="/opt/flumip/tools"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"

@@ -1,10 +1,16 @@
+import 'dart:async';
+import 'dart:js_interop';
+
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flumip_flutter/access_controller.dart';
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/auth/auth_controller.dart';
 import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
 import 'package:flumip_flutter/project/projects_tab.dart';
 import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
+import 'package:flumip_flutter/snp/snp_upload_controller.dart';
+import 'package:flumip_flutter/snp/web_snp_transport.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -40,6 +46,42 @@ final authController = AuthController.forApp(
   navigate: (url) => web.window.location.href = url,
 );
 
+/// What this caller may do, asked of the server rather than inferred.
+///
+/// A single owner for the question, because there were already two answers to it
+/// in this app and this is the one that decides whether a destructive button
+/// appears. It re-asks whenever sign-in state changes, because `TabBarView`
+/// builds every tab before the bearer token exists.
+final accessController = AccessController(
+  fetchAccess: () => client.settings.userSettings(),
+  auth: authController,
+);
+
+/// Browser uploads of custom SNP files.
+///
+/// ⚠️ Top-level rather than owned by a widget, because an upload takes minutes and
+/// has to survive the dialog closing, the tab changing, and `TabBarView`
+/// rebuilding. None of those should cancel a transfer somebody started.
+final snpUploads = SnpUploadController(
+  transport: WebSnpTransport(siteUrl: siteUrl),
+  finishUpload: (snpId) => client.snp.finishUpload(snpId),
+);
+
+/// Asks the browser to confirm before the page goes away.
+///
+/// Returning a string is the old contract and still what triggers the prompt;
+/// browsers show their own wording rather than this text.
+String _warnBeforeUnload(web.BeforeUnloadEvent event) {
+  event.preventDefault();
+  return 'An upload is still in progress.';
+}
+
+/// Whether this build can upload at all.
+///
+/// False during a `flutter run`, where the app and the web server are different
+/// origins — the same reason sign-in does not work there. See `api_config.dart`.
+final bool uploadsAvailable = resolveUploadsAvailable();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -51,6 +93,19 @@ void main() async {
   // usable app rather than a blank screen.
   await authController.bootstrap();
   client.authKeyProvider = authController.authKeyProvider;
+
+  // After the bearer is installed, so the first answer describes the real caller
+  // rather than an anonymous one. Not awaited: it never throws, and the app must
+  // not wait on it to draw.
+  unawaited(accessController.reload());
+
+  // ⚠️ Warn before leaving with an upload in flight. Closing the tab aborts the
+  // transfer and leaves a `pending` row with a partial file the server will sweep
+  // a day later — recoverable, but not what anybody intended.
+  snpUploads.addListener(() {
+    web.window.onbeforeunload =
+        snpUploads.anyLive ? _warnBeforeUnload.toJS : null;
+  });
 
   runApp(const MyApp());
 }

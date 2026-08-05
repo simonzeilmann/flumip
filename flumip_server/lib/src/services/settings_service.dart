@@ -143,6 +143,7 @@ class SettingsService {
       ..projectDir = settings.projectDir
       ..genomeDir = settings.genomeDir
       ..customSnpDir = settings.customSnpDir
+      ..snpSourceAllowedHosts = settings.snpSourceAllowedHosts
       ..toolsDir = settings.toolsDir
       ..mipgenExecutable = settings.mipgenExecutable
       ..exonExtractScript = settings.exonExtractScript

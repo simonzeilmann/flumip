@@ -148,6 +148,29 @@ class MipgenService {
     Snp? snp;
     if (project.snp != null) {
       snp = await genomeService.getSnp(session, project.snp!);
+
+      // ⚠️ Loud rather than quiet, and this is a change in behaviour. The old
+      // code simply left `-snp_file` off the command line when the paths were
+      // empty, so a project whose SNP had gone bad still ran — and produced a
+      // perfectly plausible set of MIPs designed without the masking the user
+      // asked for. Nothing about the result would have said so. Now that an SNP
+      // can fail to import or be deleted out from under a project, that failure
+      // mode is reachable in normal use, and a refusal somebody has to read is
+      // the only honest answer.
+      if (snp.status != SnpImportStatus.ready ||
+          snp.vcfPath.isEmpty ||
+          snp.tbiPath.isEmpty) {
+        session.log(
+          "Refusing to run project ${project.id}: SNP ${snp.id} is "
+          "${snp.status.name} and cannot be used.",
+          level: LogLevel.error,
+        );
+        throw ArgumentException(
+          message:
+              'The SNP set "${snp.name}" is not usable '
+              '(${snp.status.name}). Pick another one, or none, and try again.',
+        );
+      }
     }
 
     List<String> arg = [
@@ -157,10 +180,10 @@ class MipgenService {
       project.name,
       "-bwa_genome_index",
       genome.fastaPath!,
-      if (snp != null && snp.vcfPath.isNotEmpty && snp.tbiPath.isNotEmpty) ...[
-        "-snp_file",
-        snp.vcfPath,
-      ],
+      // Only the VCF goes on the command line; mipgen finds the tabix index
+      // beside it by convention. The guard above has already established that
+      // both are present.
+      if (snp != null) ...["-snp_file", snp.vcfPath],
       "-min_capture_size",
       options.minCaptureSize.toString(),
       "-max_capture_size",
