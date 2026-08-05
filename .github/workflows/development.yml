@@ -11,5 +11,5 @@ jobs:
   checks:
     uses: ./.github/workflows/checks.yml
     with:
-      web_build_args: --debug --wasm --pwa-strategy=none
+      web_build_args: --debug --wasm
     secrets: inherit
