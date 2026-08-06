@@ -174,6 +174,7 @@ class _SettingsTabState extends State<SettingsTab> {
     try {
       final settings =
           await client.settings.getSettings(_passwordController.text);
+      if (!mounted) return;
       setState(() {
         _errorMessage = null;
         this.settings = settings;
@@ -212,11 +213,13 @@ class _SettingsTabState extends State<SettingsTab> {
       await _loadSmtpPasswordStatus();
     }
     on ArgumentException catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.message;
       });
     }
     catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = '$e';
       });
@@ -301,6 +304,7 @@ class _SettingsTabState extends State<SettingsTab> {
         return;
       }
 
+      if (!mounted) return;
       setState(() {
         _errorMessage = null;
         // The password may have just been changed; keep the one we authenticate

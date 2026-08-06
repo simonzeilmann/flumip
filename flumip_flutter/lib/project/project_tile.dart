@@ -119,6 +119,11 @@ class _ProjectTileState extends State<ProjectTile> {
       if (widget.project.snp != null) {
         snpUpdate = await client.genome.getSnp(widget.project.snp!);
       }
+      // ⚠️ Four awaits happened above. Deleting the project disposes this tile
+      // while they are still in flight, and `setState` after dispose throws —
+      // which Flutter paints as the red error screen over the whole tab. This is
+      // the guard that was missing.
+      if (!mounted) return;
       setState(() {
         widget.project = projectUpdate;
         projectOptions = options;
@@ -133,16 +138,27 @@ class _ProjectTileState extends State<ProjectTile> {
       // Stop the ten-second poll when the answer will not change. Without this,
       // a project that has stopped being ours mid-session — revoked session,
       // ownership reassigned — re-reports the same refusal every ten seconds for
-      // as long as the tile stays expanded.
-      if (isAccessDenied(e)) {
+      // as long as the tile stays expanded. A project that has been *deleted*
+      // is the same situation: it is not coming back, so stop asking rather than
+      // reporting the same failure six times a minute.
+      if (isAccessDenied(e) || _isGone(e)) {
         _timer?.cancel();
         _timer = null;
       }
+      if (!mounted) return;
+      // A deleted project needs no error at all — the row is on its way out.
+      if (_isGone(e)) return;
       setState(() {
         _errorMessage = 'Failed to reload project: ${describeError(e)}';
       });
     }
   }
+
+  /// Whether this error means the project no longer exists.
+  ///
+  /// The poll and the delete race by nature: a tick can be in flight when the
+  /// row is removed, and the answer comes back as "not found".
+  static bool _isGone(Object error) => error is FlumipFileNotFoundException;
 
   Future<void> _addGene(String gene) async {
     try {
@@ -701,6 +717,7 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.setEmailNotification(widget.project.id!, enabled);
       await _reloadProject();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage =
             'Failed to change email notification: ${describeError(e)}';

@@ -82,6 +82,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
       await client.project.setProjectOwner(projectID, ownerId);
       _fetchProjects();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = describeError(e);
       });
@@ -91,23 +92,40 @@ class _ProjectsTabState extends State<ProjectsTab> {
   void _fetchProjects() async {
     try {
       final projects = await client.project.getProjects();
+      if (!mounted) return;
       setState(() {
         _errorMessage = null;
         _projects = projects..sort((a, b) => b.created.compareTo(a.created));
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = describeError(e);
       });
     }
   }
 
+  /// Deletes a project, taking its row off the list straight away.
+  ///
+  /// ⚠️ Optimistic on purpose. The server deletes the project's directory before
+  /// it answers, which for a multi-gigabyte result is seconds — and the old code
+  /// waited for that before refetching, so the row you had just deleted sat
+  /// there looking untouched the whole time. It is put back if the server
+  /// refuses.
   void _deleteProject(int projectID) async {
+    final before = _projects;
+    setState(() {
+      _errorMessage = null;
+      _projects = _projects?.where((p) => p.id != projectID).toList();
+    });
+
     try {
       await client.project.deleteProject(projectID);
       _fetchProjects();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
+        _projects = before;
         _errorMessage = describeError(e);
       });
     }
@@ -166,13 +184,23 @@ class _ProjectsTabState extends State<ProjectsTab> {
               child: ListView.builder(
                 itemCount: _projects!.length,
                 itemBuilder: (context, index) {
+                  final project = _projects![index];
                   return ProjectTile(
-                    project: _projects![index],
-                    onDelete: () => _deleteProject(_projects![index].id!),
+                    // ⚠️ Keyed on the project id, and this is load-bearing.
+                    // Without a key Flutter matches children by position, so
+                    // deleting one project hands its `State` — its expanded
+                    // flag, its ten-second poll, its loaded genome and SNP, and
+                    // the mutable `widget.project` it writes back into — to
+                    // whichever project shuffles up into that slot. That is the
+                    // "zombie" row: a tile showing one project's details under
+                    // another project's name.
+                    key: ValueKey(project.id),
+                    project: project,
+                    onDelete: () => _deleteProject(project.id!),
                     notificationsAvailable: _notificationsAvailable,
                     assignableOwners: _assignableOwners,
                     onOwnerChanged: (ownerId) =>
-                        _setProjectOwner(_projects![index].id!, ownerId),
+                        _setProjectOwner(project.id!, ownerId),
                   );
                 },
               ),
