@@ -747,7 +747,10 @@ class _ProjectTileState extends State<ProjectTile> {
             // of them.
             if (widget.assignableOwners != null) buildOwnerRow(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              // ⚠️ A bottom inset, not just horizontal. The columns used to run
+              // flush into the tile's own border, so the last row of the design
+              // options sat on the line.
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
               child: ResponsiveRow(
                 // Was `MediaQuery.sizeOf(context).width >= 795`, i.e. about
                 // 265px a column. ResponsiveRow measures the tile rather than
@@ -1191,10 +1194,13 @@ class _ProjectTileState extends State<ProjectTile> {
             color: context.colours.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
+        // ⚠️ 26 rows two pixels apart read as a wall. The line height does most
+        // of the work here — padding alone separates the rows without making an
+        // individual one easier to read across.
         for (final (label, value) in rows)
           Padding(
-            padding: const EdgeInsets.only(bottom: 2),
+            padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1204,13 +1210,17 @@ class _ProjectTileState extends State<ProjectTile> {
                     label,
                     style: context.text.bodySmall?.copyWith(
                       color: context.colours.onSurfaceVariant,
+                      height: 1.3,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
-                  child: Text(value, style: context.text.bodySmall),
+                  child: Text(
+                    value,
+                    style: context.text.bodySmall?.copyWith(height: 1.3),
+                  ),
                 ),
               ],
             ),
