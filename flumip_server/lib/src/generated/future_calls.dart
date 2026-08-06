@@ -17,7 +17,8 @@ import 'package:flumip_server/src/generated/snp.dart' as _i4;
 import 'dart:async' as _i5;
 import '../future_calls/check_index_progress_future_call.dart' as _i6;
 import '../future_calls/check_mipgen_progress_future_call.dart' as _i7;
-import '../future_calls/import_snp_future_call.dart' as _i8;
+import '../future_calls/demo_mode_cleanup_future_call.dart' as _i8;
+import '../future_calls/import_snp_future_call.dart' as _i9;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
@@ -63,6 +64,7 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
     var registeredFutureCalls = <String, _i1.FutureCall>{
       'CheckIndexProgressRunFutureCall': CheckIndexProgressRunFutureCall(),
       'CheckMipgenProgressRunFutureCall': CheckMipgenProgressRunFutureCall(),
+      'DemoModeCleanupRunFutureCall': DemoModeCleanupRunFutureCall(),
       'ImportSnpRunFutureCall': ImportSnpRunFutureCall(),
     };
     _futureCallManager = futureCallManager;
@@ -127,6 +129,10 @@ class _FutureCallRef {
     _invokeFutureCall,
   );
 
+  late final demoModeCleanup = _DemoModeCleanupFutureCallDispatcher(
+    _invokeFutureCall,
+  );
+
   late final importSnp = _ImportSnpFutureCallDispatcher(_invokeFutureCall);
 }
 
@@ -151,6 +157,19 @@ class _CheckMipgenProgressFutureCallDispatcher {
   Future<void> run(_i3.Project object) {
     return _invokeFutureCall(
       'CheckMipgenProgressRunFutureCall',
+      object,
+    );
+  }
+}
+
+class _DemoModeCleanupFutureCallDispatcher {
+  _DemoModeCleanupFutureCallDispatcher(this._invokeFutureCall);
+
+  final _InvokeFutureCall _invokeFutureCall;
+
+  Future<void> run(_i3.Project object) {
+    return _invokeFutureCall(
+      'DemoModeCleanupRunFutureCall',
       object,
     );
   }
@@ -195,13 +214,26 @@ class CheckMipgenProgressRunFutureCall extends _i1.FutureCall<_i3.Project> {
   }
 }
 
+class DemoModeCleanupRunFutureCall extends _i1.FutureCall<_i3.Project> {
+  @override
+  _i5.Future<void> invoke(
+    _i1.Session session,
+    _i3.Project? object,
+  ) async {
+    await _i8.DemoModeCleanupFutureCall().run(
+      session,
+      object!,
+    );
+  }
+}
+
 class ImportSnpRunFutureCall extends _i1.FutureCall<_i4.Snp> {
   @override
   _i5.Future<void> invoke(
     _i1.Session session,
     _i4.Snp? object,
   ) async {
-    await _i8.ImportSnpFutureCall().run(
+    await _i9.ImportSnpFutureCall().run(
       session,
       object!,
     );

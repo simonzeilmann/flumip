@@ -1103,6 +1103,13 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: 'false',
         ),
         _i2.ColumnDefinition(
+          name: 'demoModeRetentionHours',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '168',
+        ),
+        _i2.ColumnDefinition(
           name: 'baseDir',
           columnType: _i2.ColumnType.text,
           isNullable: false,

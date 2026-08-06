@@ -209,6 +209,8 @@ class _FutureCalls {
 
   late final checkMipgenProgress = _CheckMipgenProgressFutureCall();
 
+  late final demoModeCleanup = _DemoModeCleanupFutureCall();
+
   late final importSnp = _ImportSnpFutureCall();
 }
 
@@ -2649,6 +2651,24 @@ class _CheckMipgenProgressFutureCall {
         .internalBuild();
     try {
       await _i17.CheckMipgenProgressRunFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+}
+
+class _DemoModeCleanupFutureCall {
+  Future<void> run(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i10.Project object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i17.DemoModeCleanupRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );

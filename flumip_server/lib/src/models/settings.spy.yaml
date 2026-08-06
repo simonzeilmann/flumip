@@ -2,6 +2,13 @@ class: Settings
 table: settings
 fields:
   demoMode: bool, default=false
+  ### How long a project survives on a demo install, in hours. 168 = 7 days.
+  ###
+  ### ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  ### raising it spares projects that were already queued. Lowering it cannot
+  ### pull a scheduled deletion earlier — that project keeps the deadline it was
+  ### created with. See DemoModeCleanup.
+  demoModeRetentionHours: int, default=168
   baseDir: String, default="/opt/flumip"
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"

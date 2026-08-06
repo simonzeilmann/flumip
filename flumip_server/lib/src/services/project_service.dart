@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
@@ -67,15 +68,15 @@ class ProjectService {
     );
     var project = await Project.db.insertRow(session, projectRow);
 
-    // Schedule demo mode cleanup
-    await session.serverpod.futureCallWithDelay(
-      'demoModeCleanup',
-      project,
-      const Duration(days: 7),
-      identifier: project.folderName,
-    );
-
     var settings = await SettingsService().getSettings(session);
+
+    // Scheduled whether or not demo mode is on, because the flag is read again
+    // when the call fires — so switching demo mode on later still sweeps
+    // projects created before it.
+    await session.serverpod.futureCalls
+        .callWithDelay(demoRetention(settings), identifier: project.folderName)
+        .demoModeCleanup
+        .run(project);
     await Directory("${settings.projectDir}/${project.folderName}").create();
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
     return project;
@@ -150,7 +151,7 @@ class ProjectService {
       }
 
       try {
-        await session.serverpod.cancelFutureCall(folderName);
+        await session.serverpod.futureCalls.cancel(folderName);
       } catch (e) {
         session.log(
           'Deleted project $id but could not cancel its future calls.',

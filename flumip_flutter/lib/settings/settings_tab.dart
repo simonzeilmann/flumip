@@ -1,11 +1,13 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../error_text.dart';
 import '../main.dart';
 import '../ui/error_banner.dart';
 import '../ui/layout.dart';
 import '../ui/responsive_row.dart';
+import '../ui/theme.dart';
 import 'settings_access_views.dart';
 import '../ui/form_section.dart';
 import 'sso_settings.dart';
@@ -132,6 +134,8 @@ class _SettingsTabState extends State<SettingsTab> {
   final ValueNotifier<bool> _startTLSNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _loginRequiredNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _demoModeNotifier = ValueNotifier(false);
+  final TextEditingController _demoRetentionController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -158,6 +162,7 @@ class _SettingsTabState extends State<SettingsTab> {
     _startTLSNotifier.dispose();
     _loginRequiredNotifier.dispose();
     _demoModeNotifier.dispose();
+    _demoRetentionController.dispose();
     _newPasswordController.dispose();
     _oidcIssuerController.dispose();
     _oidcClientIdController.dispose();
@@ -199,6 +204,8 @@ class _SettingsTabState extends State<SettingsTab> {
         _loginRequiredNotifier.value = settings.loginRequired;
         _newPasswordController.text = settings.settingsPassword;
         _demoModeNotifier.value = settings.demoMode;
+        _demoRetentionController.text =
+            settings.demoModeRetentionHours.toString();
         _oidcIssuerController.text = settings.oidcIssuer;
         _oidcClientIdController.text = settings.oidcClientId;
         _oidcScopesController.text = settings.oidcScopes;
@@ -250,6 +257,10 @@ class _SettingsTabState extends State<SettingsTab> {
         loginRequired: _loginRequiredNotifier.value,
         settingsPassword: _newPasswordController.text,
         demoMode: _demoModeNotifier.value,
+        // The server clamps this to 1..8760, so a nonsense entry becomes the
+        // nearest sane value rather than being rejected.
+        demoModeRetentionHours:
+            int.tryParse(_demoRetentionController.text) ?? 168,
         oidcIssuer: _oidcIssuerController.text.trim(),
         oidcClientId: _oidcClientIdController.text.trim(),
         oidcScopes: _oidcScopesController.text.trim(),
@@ -743,13 +754,41 @@ class _SettingsTabState extends State<SettingsTab> {
           SwitchListTile(
             value: _demoModeNotifier.value,
             title: const Text('Demo mode'),
-            subtitle: const Text(
-              'Projects are deleted automatically after a short while.',
-            ),
+            subtitle: const Text('Projects are deleted automatically.'),
             contentPadding: EdgeInsets.zero,
             onChanged: (value) =>
                 setState(() => _demoModeNotifier.value = value),
           ),
+          if (_demoModeNotifier.value)
+            ResponsiveRow(
+              minChildWidth: 220,
+              flex: const [1, 2],
+              children: [
+                TextField(
+                  controller: _demoRetentionController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    labelText: 'Keep projects for (hours)',
+                    helperText: '168 is a week.',
+                  ),
+                ),
+                // ⚠️ Says plainly which way the setting bites. Raising it
+                // reprieves projects already queued for deletion; lowering it
+                // cannot pull an existing deadline forward, because nothing
+                // wakes up earlier than the time it was given.
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Raising this spares projects already scheduled for '
+                    'deletion. Lowering it applies to new projects only.',
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.colours.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       );
 

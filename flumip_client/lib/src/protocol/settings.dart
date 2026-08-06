@@ -16,6 +16,7 @@ abstract class Settings implements _i1.SerializableModel {
   Settings._({
     this.id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -43,6 +44,7 @@ abstract class Settings implements _i1.SerializableModel {
     String? oidcAdminEmails,
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
+       demoModeRetentionHours = demoModeRetentionHours ?? 168,
        baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
@@ -81,6 +83,7 @@ abstract class Settings implements _i1.SerializableModel {
   factory Settings({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -115,6 +118,8 @@ abstract class Settings implements _i1.SerializableModel {
       demoMode: jsonSerialization['demoMode'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+      demoModeRetentionHours:
+          jsonSerialization['demoModeRetentionHours'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
       projectDir: jsonSerialization['projectDir'] as String?,
       genomeDir: jsonSerialization['genomeDir'] as String?,
@@ -159,6 +164,14 @@ abstract class Settings implements _i1.SerializableModel {
   int? id;
 
   bool demoMode;
+
+  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  ///
+  /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  /// raising it spares projects that were already queued. Lowering it cannot
+  /// pull a scheduled deletion earlier — that project keeps the deadline it was
+  /// created with. See DemoModeCleanup.
+  int demoModeRetentionHours;
 
   String baseDir;
 
@@ -218,6 +231,7 @@ abstract class Settings implements _i1.SerializableModel {
   Settings copyWith({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -251,6 +265,7 @@ abstract class Settings implements _i1.SerializableModel {
       '__className__': 'Settings',
       if (id != null) 'id': id,
       'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -292,6 +307,7 @@ class _SettingsImpl extends Settings {
   _SettingsImpl({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -321,6 +337,7 @@ class _SettingsImpl extends Settings {
   }) : super._(
          id: id,
          demoMode: demoMode,
+         demoModeRetentionHours: demoModeRetentionHours,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
@@ -356,6 +373,7 @@ class _SettingsImpl extends Settings {
   Settings copyWith({
     Object? id = _Undefined,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -386,6 +404,8 @@ class _SettingsImpl extends Settings {
     return Settings(
       id: id is int? ? id : this.id,
       demoMode: demoMode ?? this.demoMode,
+      demoModeRetentionHours:
+          demoModeRetentionHours ?? this.demoModeRetentionHours,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,
