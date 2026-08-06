@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../error_text.dart';
 import '../main.dart';
 import '../ui/error_banner.dart';
+import '../ui/theme.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -521,11 +522,11 @@ class _SettingsTabState extends State<SettingsTab> {
                     ? 'Reached the provider. Authorization endpoint: '
                         '${status.authorizationEndpoint}'
                     : status.discoveryError ?? 'Not configured yet.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: status.discoveryOk
-                          ? Colors.green[800]
-                          : Colors.red[800],
-                    ),
+                style: context.text.bodySmall?.copyWith(
+                  color: status.discoveryOk
+                      ? context.status.success
+                      : context.colours.error,
+                ),
               ),
             ),
         ],
@@ -535,13 +536,17 @@ class _SettingsTabState extends State<SettingsTab> {
       // permanently, so the server stays reachable until this is sorted.
       if (status != null && status.enabled && !status.enforcing)
         Container(
-          color: Colors.orange[100],
-          padding: const EdgeInsets.all(8),
-          child: const Text(
+          decoration: BoxDecoration(
+            color: context.status.warningContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Text(
             'Sign-in is switched on but is not being enforced yet, because the '
             'configuration is incomplete or the provider could not be reached. '
             'The server stays reachable without signing in until it works, so '
             'that a half-finished setup cannot lock you out.',
+            style: TextStyle(color: context.status.onWarningContainer),
           ),
         ),
       const Divider(),

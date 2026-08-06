@@ -3,6 +3,7 @@ import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flumip_flutter/ui/dialog_body.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/format.dart';
@@ -794,7 +795,7 @@ class _ProjectTileState extends State<ProjectTile> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: context.colours.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -934,7 +935,7 @@ class _ProjectTileState extends State<ProjectTile> {
             widget.project.error.isNotEmpty)
           Text(
             'Error: ${widget.project.error}',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: context.colours.error),
           ),
       ],
     );
@@ -946,7 +947,10 @@ class _ProjectTileState extends State<ProjectTile> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (_errorMessage != null)
-          Text(_errorMessage!, style: TextStyle(color: Colors.red)),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: context.colours.error),
+          ),
         if (widget.project.genome == null) buildGenomeSelector(),
         if (widget.project.genome != null) ...[
           Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1100,7 +1104,7 @@ class _ProjectTileState extends State<ProjectTile> {
             if (snps.isEmpty) {
               return Text(
                 'No SNP sets for this genome.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: context.colours.onSurfaceVariant),
               );
             }
 
@@ -1136,7 +1140,7 @@ class _ProjectTileState extends State<ProjectTile> {
                           style: TextStyle(
                             color: s.status == SnpImportStatus.ready
                                 ? null
-                                : Colors.black38,
+                                : context.colours.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -1149,7 +1153,10 @@ class _ProjectTileState extends State<ProjectTile> {
                     child: Text(
                       'The SNP set this project was using is no longer '
                       'available. Pick another, or none.',
-                      style: TextStyle(color: Colors.orange, fontSize: 12),
+                      style: TextStyle(
+                        color: context.status.warning,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
               ],
@@ -1266,7 +1273,7 @@ class _ProjectTileState extends State<ProjectTile> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor: context.colours.surfaceContainerHighest,
                   contentPadding: EdgeInsets.symmetric(
                     vertical: 10,
                     horizontal: 15,

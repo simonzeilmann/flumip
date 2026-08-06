@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_flutter/ui/dialog_body.dart';
 
 /// What an administrative delete was confirmed with.
@@ -55,14 +56,14 @@ class DeleteCustomSnpDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (usageFailed)
-              const Text(
+              Text(
                 'Could not check which projects are using it.',
-                style: TextStyle(color: Colors.orange),
+                style: TextStyle(color: context.status.warning),
               )
             else if (usage.isEmpty)
-              const Text(
+              Text(
                 'No projects are using it.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: context.colours.onSurfaceVariant),
               )
             else
               _UsageWarning(usage: usage),
@@ -76,7 +77,10 @@ class DeleteCustomSnpDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(true),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.colours.error,
+            foregroundColor: context.colours.onError,
+          ),
           child: const Text('Delete'),
         ),
       ],
@@ -146,12 +150,12 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.warning_amber, color: Colors.red, size: 32),
+          Icon(Icons.warning_amber, color: context.colours.error, size: 32),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Delete "${snp.name}" as administrator',
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: context.colours.error),
             ),
           ),
         ],
@@ -189,14 +193,14 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
               ]),
               const SizedBox(height: 16),
               if (widget.usageFailed)
-                const Text(
+                Text(
                   'Could not check which projects are using it.',
-                  style: TextStyle(color: Colors.orange),
+                  style: TextStyle(color: context.status.warning),
                 )
               else if (widget.usage.isEmpty)
-                const Text(
+                Text(
                   'No projects are using it.',
-                  style: TextStyle(color: Colors.black54),
+                  style: TextStyle(color: context.colours.onSurfaceVariant),
                 )
               else ...[
                 _UsageWarning(usage: widget.usage),
@@ -255,7 +259,10 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
                     ),
                   )
               : null,
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: context.colours.error,
+            foregroundColor: context.colours.onError,
+          ),
           child: const Text('Delete permanently'),
         ),
       ],
@@ -275,9 +282,9 @@ class _UsageWarning extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red[50],
+        color: context.colours.errorContainer,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
+        border: Border.all(color: context.colours.error.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,9 +299,12 @@ class _UsageWarning extends StatelessWidget {
           // "as of a moment ago" rather than a claim of certainty: this was read
           // before the dialog opened, and a project can adopt the SNP while it
           // sits here. That is what the force flag is really for.
-          const Text(
+          Text(
             'Checked a moment ago. Deleting it will leave them with no SNP set.',
-            style: TextStyle(color: Colors.black54, fontSize: 12),
+            style: TextStyle(
+              color: context.colours.onErrorContainer,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -315,13 +325,13 @@ class _PathBlock extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: context.colours.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: context.colours.outlineVariant),
       ),
       child: SelectableText(
         paths.join('\n'),
-        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        style: context.mono.copyWith(fontSize: 12),
       ),
     );
   }
