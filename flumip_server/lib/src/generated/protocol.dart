@@ -763,6 +763,13 @@ class Protocol extends _i1.SerializationManagerServer {
           columnDefault: '\'\'::text',
         ),
         _i2.ColumnDefinition(
+          name: 'warning',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'::text',
+        ),
+        _i2.ColumnDefinition(
           name: 'cleanup',
           columnType: _i2.ColumnType.boolean,
           isNullable: false,

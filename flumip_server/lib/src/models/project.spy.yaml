@@ -49,6 +49,18 @@ fields:
   started: DateTime?
   completedIn: Duration?
   error: String, default=''
+  ### Something worth knowing about a run that nonetheless succeeded.
+  ###
+  ### ⚠️ Distinct from [error], and the distinction is the point. Finalizing a
+  ### finished run does several things after the MIPs are safely on disk — sizing
+  ### the output, timing it, generating the UCSC track — and any of those
+  ### throwing used to land in `error`, which marks the whole project failed. A
+  ### project whose MIPs designed perfectly well would report "MIP generation
+  ### failed" because a track file could not be written.
+  ###
+  ### `error` means there is no result. `warning` means there is a result and
+  ### something about it is worth reading.
+  warning: String, default=''
   cleanup: bool, default=false
 indexes:
   project_owner_idx:

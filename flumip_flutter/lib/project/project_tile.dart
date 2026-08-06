@@ -756,10 +756,16 @@ class _ProjectTileState extends State<ProjectTile> {
                 minChildWidth: 260,
                 spacing: 10,
                 stackSpacing: 25,
+                // ⚠️ One `SelectionArea` per column, nested inside the app-wide
+                // one. Without them a drag across the design options runs on
+                // into the results beside it, so copying the parameters gets you
+                // the parameters *and* whatever sat to their right. A nested
+                // SelectionArea claims its subtree, which scopes the drag to the
+                // column it started in.
                 children: [
-                  buildGenomeSelectorColumn(),
-                  buildProjectOptionsColumn(),
-                  buildProjectActionColumn(),
+                  SelectionArea(child: buildGenomeSelectorColumn()),
+                  SelectionArea(child: buildProjectOptionsColumn()),
+                  SelectionArea(child: buildProjectActionColumn()),
                 ],
               ),
             ),
@@ -820,22 +826,54 @@ class _ProjectTileState extends State<ProjectTile> {
   /// clicks away and stale the moment the modal drew.
   Widget buildProjectActionColumn() {
     final project = widget.project;
-    final running = project.active && project.completedIn == null;
-    final finished = !project.active && project.completedIn != null;
+    // One derivation, shared with the collapsed row's pill, so the two cannot
+    // disagree about what this project is doing.
+    final state = ProjectState.of(project);
+    final idle = !state.isRunning && !state.isFinished;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 16,
       children: [
-        if (!running && !finished) _bedFileStep(),
-        if (project.bedFileCreated == true && !running && !finished)
-          buildMipgenStartColumn(),
-        if (running)
+        if (idle) _bedFileStep(),
+        if (project.bedFileCreated == true && idle) buildMipgenStartColumn(),
+        if (state.isRunning)
           MipgenProgressPanel(progress: _progress, elapsed: _elapsed()),
-        if (finished && project.error.isEmpty) buildMipgenResultColumn(),
-        if (finished && project.error.isNotEmpty)
+        if (state.succeeded) buildMipgenResultColumn(),
+        if (state == ProjectState.failed)
           ErrorBanner('The design failed: ${project.error}'),
       ],
+    );
+  }
+
+  /// Something worth reading about a run that nonetheless worked.
+  ///
+  /// ⚠️ Deliberately not an [ErrorBanner]. The MIPs are there and downloadable;
+  /// dressing a missing UCSC track as a failure sends people looking for results
+  /// they already have.
+  Widget _warningBanner(String message) {
+    final status = context.status;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: status.warningContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber, size: 18, color: status.onWarningContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SelectableText(
+              message,
+              style: context.text.bodySmall?.copyWith(
+                color: status.onWarningContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -849,6 +887,9 @@ class _ProjectTileState extends State<ProjectTile> {
       ProjectState.readyToRun => (status.info, Icons.play_circle_outline),
       ProjectState.running => (status.info, Icons.autorenew),
       ProjectState.complete => (status.success, Icons.check_circle),
+      // Complete, but flagged: amber rather than green, so the row says there is
+      // something to read without claiming the run failed.
+      ProjectState.completeWithWarning => (status.warning, Icons.check_circle),
       ProjectState.failed => (context.colours.error, Icons.error_outline),
     };
     return StatusPill(label: state.label, icon: icon, colour: colour);
@@ -1313,6 +1354,11 @@ class _ProjectTileState extends State<ProjectTile> {
             Text('Design complete', style: context.text.labelLarge),
           ],
         ),
+        const SizedBox(height: 8),
+        if (widget.project.warning.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _warningBanner(widget.project.warning),
+        ],
         const SizedBox(height: 8),
         _resultFact('Took', _printDuration(widget.project.completedIn!)),
         _resultFact('Output', formatBytes(widget.project.size)),

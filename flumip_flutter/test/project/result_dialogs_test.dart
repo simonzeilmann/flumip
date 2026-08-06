@@ -137,8 +137,9 @@ void main() {
       expect(find.text('1 line'), findsOneWidget);
     });
 
-    testWidgets('a summary replaces the line count where one is given',
-        (tester) async {
+    testWidgets('a summary replaces the line count where one is given', (
+      tester,
+    ) async {
       // ⚠️ "10 lines" was the misleading part: a result file interleaves MIPs
       // with mipgen's remarks, so the count says nothing about what was
       // produced.

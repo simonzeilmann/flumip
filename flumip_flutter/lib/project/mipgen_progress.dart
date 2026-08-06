@@ -150,6 +150,35 @@ class MipgenProgressPanel extends StatefulWidget {
 }
 
 class _MipgenProgressPanelState extends State<MipgenProgressPanel> {
+  final _logScroll = ScrollController();
+
+  @override
+  void didUpdateWidget(MipgenProgressPanel old) {
+    super.didUpdateWidget(old);
+    // New lines arrived while the log is open — follow them.
+    if (_showAll && widget.progress.lines.length != old.progress.lines.length) {
+      _scrollToEnd();
+    }
+  }
+
+  @override
+  void dispose() {
+    _logScroll.dispose();
+    super.dispose();
+  }
+
+  /// Keeps the newest line in view.
+  ///
+  /// ⚠️ After the frame, not during it: the list has not been laid out when the
+  /// build that opens it runs, so `maxScrollExtent` is still 0 and the jump
+  /// would go nowhere.
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_logScroll.hasClients) return;
+      _logScroll.jumpTo(_logScroll.position.maxScrollExtent);
+    });
+  }
+
   /// ⚠️ Whether the whole log is shown **in place**. It used to open in a modal,
   /// which covered the progress bar being watched and froze at whatever the log
   /// said when it drew — on a view whose whole point is that it keeps changing.
@@ -200,24 +229,34 @@ class _MipgenProgressPanelState extends State<MipgenProgressPanel> {
                 ),
             ],
           ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: fraction,
-              minHeight: 6,
-              backgroundColor: context.status.onInfoContainer.withValues(
-                alpha: 0.15,
+          // ⚠️ Only when there is a real fraction to show. An *indeterminate*
+          // bar beside the spinner is two things moving to say one thing —
+          // "something is happening" — and the spinner already says it. A
+          // determinate bar says something the spinner cannot.
+          if (fraction != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: fraction,
+                minHeight: 6,
+                backgroundColor: context.status.onInfoContainer.withValues(
+                  alpha: 0.15,
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 10),
           _log(context, tail),
           if (total > tail.length || _showAll)
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => setState(() => _showAll = !_showAll),
+                onPressed: () {
+                  setState(() => _showAll = !_showAll);
+                  // Opening the log lands at the end, where the run is now.
+                  if (_showAll) _scrollToEnd();
+                },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: const Size(0, 32),
@@ -275,7 +314,9 @@ class _MipgenProgressPanelState extends State<MipgenProgressPanel> {
       ),
       padding: const EdgeInsets.all(8),
       child: Scrollbar(
+        controller: _logScroll,
         child: ListView.builder(
+          controller: _logScroll,
           // Built lazily: a long run's log is thousands of lines, and this sits
           // inside a subtree that rebuilds every three seconds.
           itemCount: widget.progress.lines.length,

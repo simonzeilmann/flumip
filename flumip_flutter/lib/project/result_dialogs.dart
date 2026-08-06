@@ -57,8 +57,7 @@ class _TextFileDialog extends StatelessWidget {
           Expanded(child: Text(title)),
           if (!empty)
             Text(
-              summary ??
-                  '${lines.length} line${lines.length == 1 ? '' : 's'}',
+              summary ?? '${lines.length} line${lines.length == 1 ? '' : 's'}',
               style: context.text.bodySmall?.copyWith(
                 color: context.colours.onSurfaceVariant,
               ),

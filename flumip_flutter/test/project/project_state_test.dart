@@ -10,21 +10,22 @@ Project p({
   bool active = false,
   Duration? completedIn,
   String error = '',
-}) =>
-    Project(
-      id: 1,
-      name: 'test',
-      description: '',
-      genes: genes,
-      genome: genome,
-      bedFileCreated: bedFileCreated,
-      active: active,
-      completedIn: completedIn,
-      error: error,
-      size: 0,
-      options: 1,
-      created: DateTime(2026),
-    );
+  String warning = '',
+}) => Project(
+  id: 1,
+  name: 'test',
+  description: '',
+  genes: genes,
+  genome: genome,
+  bedFileCreated: bedFileCreated,
+  active: active,
+  completedIn: completedIn,
+  error: error,
+  warning: warning,
+  size: 0,
+  options: 1,
+  created: DateTime(2026),
+);
 
 void main() {
   group('ProjectState.of', () {
@@ -64,6 +65,31 @@ void main() {
       );
     });
 
+    test('completed with a warning is still complete', () {
+      // ⚠️ The whole point of the warning field. Finalizing does things after
+      // the MIPs are safely on disk — the UCSC track, for one — and a failure
+      // there used to land in `error`, reporting a perfectly good run as failed.
+      final state = ProjectState.of(
+        p(completedIn: const Duration(minutes: 6), warning: 'no track'),
+      );
+      expect(state, ProjectState.completeWithWarning);
+      expect(state.succeeded, isTrue);
+      expect(state.label, 'Complete');
+    });
+
+    test('an error still wins over a warning', () {
+      expect(
+        ProjectState.of(
+          p(
+            completedIn: const Duration(minutes: 6),
+            error: 'boom',
+            warning: 'also this',
+          ),
+        ),
+        ProjectState.failed,
+      );
+    });
+
     test('completed with an error is failed', () {
       expect(
         ProjectState.of(
@@ -77,9 +103,7 @@ void main() {
       // ⚠️ Re-running a finished project leaves `completedIn` set from last
       // time. Checking it first would report a live run as "Complete".
       expect(
-        ProjectState.of(
-          p(active: true, bedFileCreated: true),
-        ),
+        ProjectState.of(p(active: true, bedFileCreated: true)),
         ProjectState.running,
       );
     });
@@ -99,8 +123,10 @@ void main() {
     test('a header on its own does not', () {
       // ⚠️ The case from project kjh-jhk: the run wrote the file with its header
       // and no MIPs, and opening it showed an empty box with a scrollbar.
-      expect(resultHasData(['>mip_key logistic_score chr ext_probe_start']),
-          isFalse);
+      expect(
+        resultHasData(['>mip_key logistic_score chr ext_probe_start']),
+        isFalse,
+      );
     });
 
     test('headers and blank lines together do not', () {

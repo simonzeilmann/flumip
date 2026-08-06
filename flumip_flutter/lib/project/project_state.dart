@@ -22,6 +22,9 @@ enum ProjectState {
   /// Finished, with results.
   complete,
 
+  /// Finished, with results, and something worth reading about them.
+  completeWithWarning,
+
   /// Finished, badly.
   failed;
 
@@ -33,7 +36,12 @@ enum ProjectState {
     // previous run.
     if (project.active && project.completedIn == null) return running;
     if (project.completedIn != null) {
-      return project.error.isEmpty ? complete : failed;
+      if (project.error.isNotEmpty) return failed;
+      // ⚠️ Still complete. A warning means the MIPs are there and something
+      // about the run is worth reading — a UCSC track that could not be built,
+      // say. Reporting that as a failure is what this distinction exists to
+      // stop.
+      return project.warning.isEmpty ? complete : completeWithWarning;
     }
     if (project.bedFileCreated) return readyToRun;
     final hasGenes = project.genes?.isNotEmpty == true;
@@ -47,11 +55,16 @@ enum ProjectState {
     readyToRun => 'Ready to run',
     running => 'Designing',
     complete => 'Complete',
+    completeWithWarning => 'Complete',
     failed => 'Failed',
   };
 
   /// Whether the design is going, which is what drives the faster poll.
   bool get isRunning => this == running;
 
-  bool get isFinished => this == complete || this == failed;
+  bool get isFinished =>
+      this == complete || this == completeWithWarning || this == failed;
+
+  /// Whether the run produced usable results, warning or not.
+  bool get succeeded => this == complete || this == completeWithWarning;
 }
