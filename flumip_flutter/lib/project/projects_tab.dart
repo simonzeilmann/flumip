@@ -2,6 +2,8 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/layout.dart';
+
 import '../main.dart';
 import 'create_project_widget.dart';
 import '../error_text.dart';
@@ -127,9 +129,13 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return ContentWidth(
       padding: const EdgeInsets.all(16),
       child: Column(
+        // ⚠️ ContentWidth gives a tight width, but a Column still centres its
+        // children on the cross axis by default — which would leave the error
+        // banner shrink-wrapped to its text in the middle of a 1400px band.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
         children: [
           if (!_showCreateProject)
@@ -166,8 +172,10 @@ class _ProjectsTabState extends State<ProjectsTab> {
                 },
               ),
             ),
+          // Centred explicitly: under `stretch` it would otherwise be handed
+          // the full band width and draw its spinner against the left edge.
           if (_projects == null && _errorMessage == null)
-            const CircularProgressIndicator(),
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

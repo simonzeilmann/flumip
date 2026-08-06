@@ -27,8 +27,9 @@ class ResponsiveRow extends StatelessWidget {
     this.minChildWidth = 300,
     this.flex = const [],
     this.spacing = 16,
+    double? stackSpacing,
     this.crossAxisAlignment = CrossAxisAlignment.start,
-  });
+  }) : stackSpacing = stackSpacing ?? spacing;
 
   final List<Widget> children;
 
@@ -44,7 +45,16 @@ class ResponsiveRow extends StatelessWidget {
   /// Shorter than [children], or empty, means the rest default to 1.
   final List<int> flex;
 
+  /// The gutter between columns when they sit side by side.
   final double spacing;
+
+  /// The gap between them once they stack, which usually wants to be larger.
+  ///
+  /// A 10px gutter reads as "these are columns of one thing"; 10px of vertical
+  /// space between three stacked sections reads as one undifferentiated run.
+  /// Defaults to [spacing] when the distinction does not matter.
+  final double stackSpacing;
+
   final CrossAxisAlignment crossAxisAlignment;
 
   int _flexAt(int i) => i < flex.length ? flex[i] : 1;
@@ -65,7 +75,7 @@ class ResponsiveRow extends StatelessWidget {
         if (!fits) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: spacing,
+            spacing: stackSpacing,
             children: children,
           );
         }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../error_text.dart';
+import '../ui/responsive_row.dart';
 
 class CreateProjectWidget extends StatefulWidget {
   final VoidCallback onProjectCreated;
@@ -194,7 +195,6 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
 
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 1020;
     return Flexible(
       fit: FlexFit.tight,
       child: SingleChildScrollView(
@@ -233,33 +233,22 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
                 ),
               ],
             ),
-            if (_showOptions) ...[
-              if (isScreenWide) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      Expanded(child: buildFirstOptionsColumn()),
-                      Expanded(child: buildSecondOptionsColumn()),
-                      Expanded(child: buildThirdOptionsColumn()),
-                    ],
-                  ),
+            if (_showOptions)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: ResponsiveRow(
+                  // Was `>= 1020`, i.e. about 340px a column. These columns hold
+                  // labelled number fields like 'Masked Arm Threshold', which is
+                  // why they want more room than the project tile's.
+                  minChildWidth: 330,
+                  spacing: 10,
+                  children: [
+                    buildFirstOptionsColumn(),
+                    buildSecondOptionsColumn(),
+                    buildThirdOptionsColumn(),
+                  ],
                 ),
-              ] else ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    spacing: 10,
-                    children: [
-                      buildFirstOptionsColumn(),
-                      buildSecondOptionsColumn(),
-                      buildThirdOptionsColumn(),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+              ),
             SizedBox(height: 35),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

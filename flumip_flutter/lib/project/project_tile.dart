@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/responsive_row.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/main.dart';
@@ -809,7 +810,6 @@ class _ProjectTileState extends State<ProjectTile> {
 
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 795;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
@@ -846,31 +846,23 @@ class _ProjectTileState extends State<ProjectTile> {
             // layouts — ownership is a property of the project, not of any one
             // of them.
             if (widget.assignableOwners != null) buildOwnerRow(),
-            if (isScreenWide) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(child: buildGenomeSelectorColumn()),
-                    Expanded(child: buildProjectOptionsColumn()),
-                    Expanded(child: buildProjectActionColumn()),
-                  ],
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ResponsiveRow(
+                // Was `MediaQuery.sizeOf(context).width >= 795`, i.e. about
+                // 265px a column. ResponsiveRow measures the tile rather than
+                // the window, which is what keeps this honest now that the list
+                // is capped: a wide monitor no longer implies a wide tile.
+                minChildWidth: 260,
+                spacing: 10,
+                stackSpacing: 25,
+                children: [
+                  buildGenomeSelectorColumn(),
+                  buildProjectOptionsColumn(),
+                  buildProjectActionColumn(),
+                ],
               ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  spacing: 25,
-                  children: [
-                    buildGenomeSelectorColumn(),
-                    buildProjectOptionsColumn(),
-                    buildProjectActionColumn(),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
         ],
       ),
