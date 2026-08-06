@@ -5,13 +5,14 @@ import 'package:flumip_flutter/ui/dialog_body.dart';
 import 'package:flumip_flutter/ui/error_banner.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
 import 'genome_picker_dialog.dart';
+import 'mipgen_progress.dart';
+import 'result_dialogs.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../error_text.dart';
 
@@ -77,14 +78,50 @@ class _ProjectTileState extends State<ProjectTile> {
   String? _errorMessage;
   Timer? _timer;
 
+  /// The run's progress file, re-read while the design is going.
+  MipgenProgress _progress = const MipgenProgress.empty();
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
-      if (_isExpanded) {
+    // ⚠️ No timer until the tile is opened. This was an unconditional
+    // `Timer.periodic(10s)` created for *every* tile in the list, so a hundred
+    // projects meant a hundred timers waking up to find the tile collapsed and
+    // do nothing.
+  }
+
+  /// Schedules the next refresh, or stops.
+  ///
+  /// Faster while a design is running, because that is the only time the project
+  /// changes on its own — and it is exactly when somebody is watching it.
+  void _rearm() {
+    _timer?.cancel();
+    _timer = null;
+    if (!_isExpanded) return;
+
+    final running = widget.project.active && widget.project.completedIn == null;
+    _timer = Timer(
+      running ? const Duration(seconds: 3) : const Duration(seconds: 15),
+      () {
+        if (!mounted) return;
         _reloadProject();
-      }
-    });
+      },
+    );
+  }
+
+  /// Reads the progress file, best-effort.
+  ///
+  /// Never surfaces its own failure: the run's state comes from the project row,
+  /// and an unreadable progress file is not worth an error banner over a design
+  /// that is going fine.
+  Future<void> _loadProgress() async {
+    try {
+      final lines = await client.file.showMipsProgress(widget.project.id!);
+      if (!mounted) return;
+      setState(() => _progress = MipgenProgress(lines: lines));
+    } catch (_) {
+      // Left as it was; the panel keeps showing the last line it had.
+    }
   }
 
   @override
@@ -102,6 +139,9 @@ class _ProjectTileState extends State<ProjectTile> {
     });
     if (_isExpanded) {
       await _reloadProject();
+    } else {
+      _timer?.cancel();
+      _timer = null;
     }
   }
 
@@ -134,6 +174,13 @@ class _ProjectTileState extends State<ProjectTile> {
           snp = snpUpdate;
         }
       });
+
+      // Only while something is actually being written, so a finished project
+      // does not re-read its log forever.
+      if (projectUpdate.active && projectUpdate.completedIn == null) {
+        await _loadProgress();
+      }
+      _rearm();
     } catch (e) {
       // Stop the ten-second poll when the answer will not change. Without this,
       // a project that has stopped being ours mid-session — revoked session,
@@ -151,6 +198,7 @@ class _ProjectTileState extends State<ProjectTile> {
       setState(() {
         _errorMessage = 'Failed to reload project: ${describeError(e)}';
       });
+      _rearm();
     }
   }
 
@@ -246,168 +294,46 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _showMipsResult() async {
     try {
-      final result = await client.file.showMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("MIPs copied to clipboard")),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+      final lines = await client.file.showMipsResult(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'MIPs result',
+        lines: lines,
+        emptyMessage: 'No MIPs result file found.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load MIPs result: ${describeError(e)}'),
-          ),
-        );
-      }
+      _say('Could not load the mips result: ${describeError(e)}');
     }
   }
 
   Future<void> _showSnpMipsResult() async {
     try {
-      final result = await client.file.showSnpMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('SNP MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No SNP MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+      final lines = await client.file.showSnpMipsResult(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'SNP MIPs result',
+        lines: lines,
+        emptyMessage: 'No SNP MIPs result file found.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to load SNP MIPs result: ${describeError(e)}',
-            ),
-          ),
-        );
-      }
+      _say('Could not load the snp mips result: ${describeError(e)}');
     }
   }
 
   Future<void> _showProgress() async {
     try {
-      final result = await client.file.showMipsProgress(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Progress'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No progress file found.')]
-                      : result.map((line) => Text(line)).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+      final lines = await client.file.showMipsProgress(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'Design log',
+        lines: lines,
+        emptyMessage: 'No progress file yet.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load progress: ${describeError(e)}'),
-          ),
-        );
-      }
+      _say('Could not load the design log: ${describeError(e)}');
     }
   }
 
@@ -490,141 +416,74 @@ class _ProjectTileState extends State<ProjectTile> {
     return map;
   }
 
+  /// Opens the project's region in the UCSC genome browser.
+  ///
+  /// ⚠️ **This used to be two modals deep.** The first dialog dumped the raw
+  /// contents of the track file — which nobody needs to read — and carried a
+  /// button that opened a *second* dialog listing the regions to choose from. So
+  /// the useful list sat underneath the useless one, and a project with a single
+  /// region still made you read a file to reach one link.
+  ///
+  /// Now: one region opens straight through, several show one picker, and the
+  /// track file itself is a separate action for whoever wants it.
   Future<void> _showUCSCTrack() async {
+    final List<String> track;
+    final String trackToken;
     try {
-      final result = await client.file.showUSCSTrack(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('UCSC Track'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No UCSC Track file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      // Fetched here rather than with the track itself so the
-                      // token is only ever minted when somebody actually opens
-                      // UCSC.
-                      final String trackToken;
-                      try {
-                        trackToken = await client.file.getUcscTrackToken(
-                          widget.project.id!,
-                        );
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Could not build the UCSC track link: '
-                                '${describeError(e)}',
-                              ),
-                            ),
-                          );
-                        }
-                        return;
-                      }
-                      // `context` here belongs to the dialog builder, not to the
-                      // State, so State.mounted says nothing about it — hence
-                      // context.mounted rather than the mounted check used
-                      // elsewhere in this file.
-                      if (!context.mounted) return;
-                      var ucscTrack = _generateUCSCTrackUrl(result, trackToken);
-                      if (ucscTrack.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("No UCSC Track found")),
-                        );
-                        return;
-                      }
-                      if (ucscTrack.length == 1) {
-                        web.window.open(ucscTrack.values.first, 'new tab');
-                      } else {
-                        if (mounted) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('Select UCSC Track'),
-                                content: SingleChildScrollView(
-                                  child: ListBody(
-                                    children: ucscTrack.entries
-                                        .map(
-                                          (entry) => TextButton(
-                                            onPressed: () {
-                                              web.window.open(
-                                                entry.value,
-                                                'new tab',
-                                              );
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text(entry.key),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      }
-                    },
-                    child: Text('Open in UCSC Track browser'),
-                  ),
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
+      track = await client.file.showUSCSTrack(widget.project.id!);
+      if (track.isEmpty) {
+        _say('This project has no UCSC track file.');
+        return;
       }
+      // Fetched only now, so the token is minted when somebody actually opens
+      // UCSC rather than whenever the results are looked at.
+      trackToken = await client.file.getUcscTrackToken(widget.project.id!);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to load SNP MIPs result: ${describeError(e)}',
-            ),
-          ),
-        );
-      }
+      _say('Could not build the UCSC track link: ${describeError(e)}');
+      return;
     }
+    if (!mounted) return;
+
+    final regions = _generateUCSCTrackUrl(track, trackToken);
+    if (regions.isEmpty) {
+      _say('The track file names no regions to show.');
+      return;
+    }
+
+    // One region is not a choice, so do not stage one.
+    if (regions.length == 1) {
+      web.window.open(regions.values.first, '_blank');
+      return;
+    }
+
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (_) => UcscTrackDialog(regions: regions),
+    );
+    if (chosen != null) web.window.open(chosen, '_blank');
+  }
+
+  /// Shows the track file itself, for when the URL is not the point.
+  Future<void> _showUCSCTrackFile() async {
+    try {
+      final track = await client.file.showUSCSTrack(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'UCSC track file',
+        lines: track,
+        emptyMessage: 'This project has no UCSC track file.',
+      );
+    } catch (e) {
+      _say('Could not load the track file: ${describeError(e)}');
+    }
+  }
+
+  void _say(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showDeleteConfirmationDialog() {
@@ -915,60 +774,75 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Column buildProjectActionColumn() {
+  /// What can be done with this project, and what it is doing right now.
+  ///
+  /// ⚠️ Was a centred stack of `ElevatedButton`s with `SizedBox(height: 5)`
+  /// between them and no statement of state at all — a running design showed a
+  /// single button called "Show Progress", so "is this still going?" was three
+  /// clicks away and stale the moment the modal drew.
+  Widget buildProjectActionColumn() {
+    final project = widget.project;
+    final running = project.active && project.completedIn == null;
+    final finished = !project.active && project.completedIn != null;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 16,
       children: [
-        if (widget.project.genes?.isNotEmpty == true &&
-            widget.project.genome != null &&
-            widget.project.bedFileCreated == false) ...[
-          ElevatedButton(
-            onPressed: _createBedFile,
-            child: Text('Create BED File'),
-          ),
-        ],
-        if (widget.project.bedFileCreated == false &&
-            (widget.project.genes == null ||
-                widget.project.genes?.isEmpty == true ||
-                widget.project.genome == null)) ...[
-          Tooltip(
-            message: "Select a genome and add genes to create a BED file.",
-            child: ElevatedButton(
-              onPressed: null,
-              child: Text('Create BED File'),
-            ),
-          ),
-        ],
-        SizedBox(height: 5),
-        if (widget.project.bedFileCreated == true &&
-            widget.project.active == false &&
-            widget.project.completedIn == null)
+        if (!running && !finished) _bedFileStep(),
+        if (project.bedFileCreated == true && !running && !finished)
           buildMipgenStartColumn(),
-        SizedBox(height: 5),
-        if (widget.project.active == true && widget.project.completedIn == null)
-          buildMipgenProgressColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isEmpty)
-          buildMipgenResultColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isNotEmpty)
-          Text(
-            'Error: ${widget.project.error}',
-            style: TextStyle(color: context.colours.error),
+        if (running)
+          MipgenProgressPanel(
+            progress: _progress,
+            elapsed: _elapsed(),
+            onShowLog: _showProgress,
           ),
+        if (finished && project.error.isEmpty) buildMipgenResultColumn(),
+        if (finished && project.error.isNotEmpty)
+          ErrorBanner('The design failed: ${project.error}'),
       ],
     );
   }
 
-  /// Genome, SNP and genes — the three things a run needs before it can start.
+  /// How long the current run has been going.
   ///
-  /// ⚠️ Was three loosely-related blocks of centred text and controls with
-  /// `SizedBox(height: 10)` between them. It reads as a form now, because that is
-  /// what it is: each input is a labelled row, and each says what is currently
-  /// chosen rather than swapping the control out for a `Text` once set.
+  /// `Project.started` is stamped when the run begins and is what `completedIn`
+  /// is measured against, so it is the right clock here too.
+  Duration? _elapsed() {
+    final started = widget.project.started;
+    if (started == null) return null;
+    final elapsed = DateTime.now().toUtc().difference(started.toUtc());
+    // Clock skew between server and browser would otherwise read "-3s".
+    return elapsed.isNegative ? Duration.zero : elapsed;
+  }
+
+  /// Step one: the target regions mipgen designs against.
+  Widget _bedFileStep() {
+    if (widget.project.bedFileCreated == true) {
+      return Row(
+        children: [
+          Icon(Icons.check_circle, size: 18, color: context.status.success),
+          const SizedBox(width: 8),
+          Text('BED file ready', style: context.text.bodyMedium),
+        ],
+      );
+    }
+
+    final ready =
+        widget.project.genes?.isNotEmpty == true &&
+        widget.project.genome != null;
+    return Tooltip(
+      message: ready
+          ? 'Builds the target regions mipgen will design against.'
+          : 'Choose a genome and add at least one gene first.',
+      child: FilledButton.tonal(
+        onPressed: ready ? _createBedFile : null,
+        child: const Text('Create BED file'),
+      ),
+    );
+  }
+
   Widget buildGenomeSelectorColumn() {
     final editable =
         !widget.project.active && widget.project.completedIn == null;
@@ -1336,101 +1210,130 @@ class _ProjectTileState extends State<ProjectTile> {
     _genesController.clear();
   }
 
-  Column buildMipgenStartColumn() {
+  /// The switches that change how the run behaves, and the button that starts it.
+  Widget buildMipgenStartColumn() {
     // An unowned project has nobody to notify: the server resolves the address
     // from Project.owner, and nothing sets an owner while single sign-on is off.
-    // Offering a live checkbox there would promise mail that never arrives, so
-    // it is shown disabled and says why rather than being hidden — the setting
-    // is real, the install just cannot act on it.
+    // Offering a live switch there would promise mail that never arrives, so it
+    // is shown disabled and says why rather than being hidden — the setting is
+    // real, the install just cannot act on it.
     final hasOwner = widget.project.owner != null;
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: _deleteExcessFiles,
-              onChanged: (bool? value) {
-                setState(() {
-                  _deleteExcessFiles = value ?? false;
-                });
-              },
-            ),
-            Text('Auto delete intermediate files'),
-          ],
+        SwitchListTile(
+          value: _deleteExcessFiles,
+          title: const Text('Delete intermediate files'),
+          subtitle: const Text('Keeps only the results. Saves a lot of disk.'),
+          contentPadding: EdgeInsets.zero,
+          onChanged: (value) => setState(() => _deleteExcessFiles = value),
         ),
         if (widget.notificationsAvailable)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Checkbox(
-                value: hasOwner && widget.project.emailNotification,
-                onChanged: hasOwner
-                    ? (bool? value) => setEmailNotification(value ?? false)
-                    : null,
-              ),
-              Text(
-                hasOwner
-                    ? 'Email me when generation finishes'
-                    : 'Email when finished (no owner to notify)',
-                style: hasOwner
-                    ? null
-                    : TextStyle(color: Theme.of(context).disabledColor),
-              ),
-            ],
+          SwitchListTile(
+            value: hasOwner && widget.project.emailNotification,
+            title: const Text('Email me when it finishes'),
+            subtitle: hasOwner
+                ? null
+                : const Text('This project has no owner to notify.'),
+            contentPadding: EdgeInsets.zero,
+            onChanged: hasOwner ? setEmailNotification : null,
           ),
-        SizedBox(width: 10),
-        ElevatedButton(onPressed: _generateMips, child: Text('Generate MIPs')),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _generateMips,
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Generate MIPs'),
+        ),
       ],
     );
   }
 
-  Column buildMipgenProgressColumn() {
+  /// What came out of a finished run.
+  ///
+  /// The progress column that used to sit between this and the start column is
+  /// gone: while a run is going the tile now shows [MipgenProgressPanel] inline
+  /// instead of a button that opened the log in a modal.
+  Widget buildMipgenResultColumn() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ElevatedButton(onPressed: _showProgress, child: Text('Show Progress')),
-        SizedBox(height: 10),
+        Row(
+          children: [
+            Icon(Icons.check_circle, size: 18, color: context.status.success),
+            const SizedBox(width: 8),
+            Text('Design complete', style: context.text.labelLarge),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _resultFact('Took', _printDuration(widget.project.completedIn!)),
+        _resultFact('Output', formatBytes(widget.project.size)),
+        const SizedBox(height: 12),
+        // Wrap, not a column of full-width buttons: these are four peers, and at
+        // this pane's width they sit two-up rather than in a tall stack.
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: _showMipsResult,
+              child: const Text('MIPs result'),
+            ),
+            OutlinedButton(
+              onPressed: _showSnpMipsResult,
+              child: const Text('SNP MIPs result'),
+            ),
+            // Split button: the common case is one press, and the raw track
+            // file — which the old flow made you read first — is tucked behind
+            // the caret for whoever actually wants it.
+            OutlinedButton.icon(
+              onPressed: _showUCSCTrack,
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('UCSC'),
+            ),
+            MenuAnchor(
+              menuChildren: [
+                MenuItemButton(
+                  onPressed: _showUCSCTrackFile,
+                  child: const Text('View track file'),
+                ),
+                MenuItemButton(
+                  onPressed: _showProgress,
+                  child: const Text('View design log'),
+                ),
+              ],
+              builder: (context, controller, child) => IconButton(
+                icon: const Icon(Icons.more_horiz),
+                tooltip: 'More',
+                onPressed: () =>
+                    controller.isOpen ? controller.close() : controller.open(),
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: _showDownloads,
+              icon: const Icon(Icons.download, size: 18),
+              label: const Text('Download'),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Column buildMipgenResultColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _resultFact(String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Row(
       children: [
-        Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
-        SizedBox(height: 10),
-        Text('Output size: ${formatBytes(widget.project.size)}'),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showMipsResult,
-          child: Text('Show MIPs Result'),
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: context.text.bodySmall?.copyWith(
+              color: context.colours.onSurfaceVariant,
+            ),
+          ),
         ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showSnpMipsResult,
-          child: Text('Show SNP MIPs Result'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showUCSCTrack,
-          child: Text('Show UCSC Track'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: _showDownloads,
-          icon: const Icon(Icons.download),
-          label: const Text('Download files'),
-        ),
-        SizedBox(height: 10),
+        Expanded(flex: 3, child: Text(value, style: context.text.bodySmall)),
       ],
-    );
-  }
+    ),
+  );
 }
