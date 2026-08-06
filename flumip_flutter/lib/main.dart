@@ -11,6 +11,7 @@ import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -117,7 +118,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: siteTitle,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: buildAppTheme(),
       home: const _AuthGate(child: MyHomePage(title: 'Flumip')),
     );
   }

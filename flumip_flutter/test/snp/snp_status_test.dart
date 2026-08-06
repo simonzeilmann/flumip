@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
+import 'package:flumip_flutter/ui/status_colors.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -38,35 +39,13 @@ void main() {
     });
   });
 
-  group('pollInterval', () {
-    test('is brisk while something can still move', () {
-      expect(pollInterval(anyLive: true), const Duration(seconds: 2));
-    });
-
-    test('relaxes once everything has settled', () {
-      expect(pollInterval(anyLive: false), const Duration(seconds: 20));
-    });
-
-    test('backs off after failures', () {
-      expect(pollInterval(anyLive: true, consecutiveFailures: 1),
-          const Duration(seconds: 4));
-      expect(pollInterval(anyLive: true, consecutiveFailures: 2),
-          const Duration(seconds: 8));
-    });
-
-    test('the backoff is capped so it always recovers', () {
-      // Without the cap, a server that was down for a while would take hours to
-      // be noticed coming back.
-      expect(pollInterval(anyLive: true, consecutiveFailures: 99),
-          const Duration(seconds: 16));
-    });
-  });
-
   group('labels', () {
     test('every status has a label, a colour and an icon', () {
       for (final status in SnpImportStatus.values) {
         expect(statusLabel(status), isNotEmpty);
-        expect(() => statusColour(status), returnsNormally);
+        // The palette is passed in rather than read from a BuildContext,
+        // which is what lets this stay a VM test.
+        expect(() => statusColour(status, StatusColors.light), returnsNormally);
         expect(() => statusIcon(status), returnsNormally);
       }
     });

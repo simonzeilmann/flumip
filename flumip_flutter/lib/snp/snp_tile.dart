@@ -2,6 +2,8 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
+import 'package:flumip_flutter/ui/status_pill.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -76,7 +78,7 @@ class SnpTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Wrap(spacing: 6, runSpacing: 4, children: _chips()),
+            Wrap(spacing: 6, runSpacing: 4, children: _chips(context)),
             if (snp.description.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -105,35 +107,42 @@ class SnpTile extends StatelessWidget {
     );
   }
 
-  List<Widget> _chips() => [
-        if (!snp.custom)
-          const _Chip(label: 'Global', colour: Colors.blueGrey)
-        else ...[
-          const _Chip(label: 'Custom', colour: Colors.purple),
-          if (isMine)
-            _Chip(
-              label: snp.private ? 'Private' : 'Shared',
-              icon: snp.private ? Icons.lock_outline : Icons.public,
-              colour: snp.private ? Colors.grey : Colors.teal,
-            )
-          else
-            const _Chip(
-              label: 'Shared by someone else',
-              icon: Icons.public,
-              colour: Colors.teal,
-            ),
-        ],
-        // ⚠️ On every SNP set, global ones included. The first version hid this
-        // on globals, on the theory that they are ready by construction and a
-        // "Ready" badge on each is noise — but that stopped being true the moment
-        // the reconcile pass could mark one `failed` for missing files or
-        // `indexing` while its index is rebuilt. Hiding the chip hid the failure.
-        _Chip(
-          label: statusLabel(snp.status),
-          icon: statusIcon(snp.status),
-          colour: statusColour(snp.status),
-        ),
-      ];
+  List<Widget> _chips(BuildContext context) {
+    final colours = context.colours;
+    final status = context.status;
+    return [
+      if (!snp.custom)
+        StatusPill(label: 'Global', colour: colours.outline)
+      else ...[
+        StatusPill(label: 'Custom', colour: colours.primary),
+        if (isMine)
+          StatusPill(
+            label: snp.private ? 'Private' : 'Shared',
+            icon: snp.private ? Icons.lock_outline : Icons.public,
+            colour: snp.private ? colours.outline : status.info,
+          )
+        else
+          // Was 'Shared by someone else', which wrapped onto two lines in a
+          // narrow tile and pushed the status chip down with it.
+          StatusPill(
+            label: 'Shared with you',
+            icon: Icons.public,
+            colour: status.info,
+            tooltip: 'Added by another user and shared with everyone',
+          ),
+      ],
+      // ⚠️ On every SNP set, global ones included. The first version hid this
+      // on globals, on the theory that they are ready by construction and a
+      // "Ready" badge on each is noise — but that stopped being true the moment
+      // the reconcile pass could mark one `failed` for missing files or
+      // `indexing` while its index is rebuilt. Hiding the chip hid the failure.
+      StatusPill(
+        label: statusLabel(snp.status),
+        icon: statusIcon(snp.status),
+        colour: statusColour(snp.status, status),
+      ),
+    ];
+  }
 
   Widget _progress() {
     final fraction = progressFraction(snp.bytesDownloaded, snp.totalBytes);
@@ -269,43 +278,6 @@ class SnpTile extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.colour, this.icon});
-
-  final String label;
-  final Color colour;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colour.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colour.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: colour),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              color: colour,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

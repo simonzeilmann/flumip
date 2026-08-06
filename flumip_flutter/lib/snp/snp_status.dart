@@ -1,6 +1,12 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/status_colors.dart';
+
+// `pollInterval` moved to `lib/poll.dart` once the genome tab needed the same
+// rule. Re-exported so the SNP widgets still get their polling from one import.
+export '../poll.dart' show pollInterval;
+
 /// Pure helpers for describing where an SNP's bytes are in their journey.
 ///
 /// Kept out of the widgets so they can be tested on the Dart VM, which is where
@@ -24,14 +30,30 @@ String statusLabel(SnpImportStatus status) => switch (status) {
     };
 
 /// The colour a status chip is drawn in.
-Color statusColour(SnpImportStatus status) => switch (status) {
-      SnpImportStatus.pending => Colors.grey,
-      SnpImportStatus.downloading => Colors.blue,
-      // Orange matches how the genome tab already shows an index being built.
-      SnpImportStatus.indexing => Colors.orange,
-      SnpImportStatus.ready => Colors.green,
-      SnpImportStatus.failed => Colors.red,
+///
+/// ⚠️ Takes the palette rather than a `BuildContext`, which is what keeps this
+/// file testable on the Dart VM — where every test in this app runs.
+/// [StatusColors] is const-constructible, so a test passes `StatusColors.light`
+/// and never builds a widget tree.
+///
+/// The five have to be distinguishable at a glance, so this is the one place
+/// semantic colour survives the move to scheme roles. `error` is the only one
+/// Material 3 supplies; the rest come from the theme extension.
+Color statusColour(SnpImportStatus status, StatusColors colours) =>
+    switch (status) {
+      SnpImportStatus.pending => colours.neutral,
+      SnpImportStatus.downloading => colours.info,
+      // Warning, not success: an index being built is work in progress, and the
+      // genome tab shows its own indexing state the same way.
+      SnpImportStatus.indexing => colours.warning,
+      SnpImportStatus.ready => colours.success,
+      SnpImportStatus.failed => _errorRed,
     };
+
+/// Failure is the one role Material 3 does define, but `statusColour` cannot
+/// reach a `ColorScheme` without a context. This matches `ColorScheme.error` for
+/// the app's seed closely enough that the two never look like different reds.
+const Color _errorRed = Color(0xFFBA1A1A);
 
 /// The icon beside the label.
 IconData statusIcon(SnpImportStatus status) => switch (status) {
@@ -51,18 +73,3 @@ IconData statusIcon(SnpImportStatus status) => switch (status) {
 double? progressFraction(int done, int total) =>
     total <= 0 ? null : (done / total).clamp(0.0, 1.0);
 
-/// How long to wait before asking the server again.
-///
-/// Tight while something can still move, because two seconds is about the pace of
-/// a byte counter somebody is actually watching. Slow otherwise: 20 seconds is
-/// the cost of noticing an SNP a colleague has just shared, and is the same order
-/// as the genome tab's existing five-second poll.
-///
-/// [consecutiveFailures] backs the interval off so that a server that has gone
-/// away is not hammered, capped so it always recovers within a minute or so.
-Duration pollInterval({required bool anyLive, int consecutiveFailures = 0}) {
-  final base = anyLive
-      ? const Duration(seconds: 2)
-      : const Duration(seconds: 20);
-  return base * (1 << consecutiveFailures.clamp(0, 3));
-}
