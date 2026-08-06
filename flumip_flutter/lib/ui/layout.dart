@@ -64,10 +64,12 @@ class ContentWidth extends StatelessWidget {
 
   /// Forms — the settings tab.
   ///
-  /// Two ~430px field columns plus a gutter. Narrower than [content] on purpose:
-  /// a form is not a table, and a value like `/opt/flumip/data/genomes` needs
-  /// about 400px not to scroll inside its own field.
-  static const double form = 900;
+  /// Two ~510px field columns plus a gutter. Narrower than [content] on purpose:
+  /// a form is not a table. But not as narrow as it first looks, because the
+  /// values here are absolute paths — `/opt/flumip/MIPGEN/tools/`
+  /// `extract_coding_gene_exons.sh` needs about 420px, and at 900 it was
+  /// truncated inside its own field.
+  static const double form = 1080;
 
   /// The genome master–detail, which uses width productively — but 3400px of SNP
   /// tile is still absurd.

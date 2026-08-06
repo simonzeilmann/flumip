@@ -263,7 +263,13 @@ class MyHomePageState extends State<MyHomePage> {
             if (authController.state == AuthState.signedIn)
               _SignedInMenu(user: authController.user!),
           ],
+          // Scrollable + centred so the three tabs sit at their natural width
+          // in the middle. Stretched across a full-width app bar they end up
+          // hundreds of pixels apart, and the selected tab's highlight covers a
+          // third of the screen.
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             tabs: [
               Tab(text: 'Projects', icon: Icon(Icons.folder)),
               Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns)),
