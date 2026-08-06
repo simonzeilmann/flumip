@@ -4,6 +4,7 @@ import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/snp/snp_validation.dart';
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
 
 /// How the bytes are going to arrive.
 enum AddSnpMode {
@@ -165,7 +166,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Add a custom SNP set'),
-      content: SizedBox(
+      content: DialogBody(
         width: 560,
         child: SingleChildScrollView(
           child: Column(

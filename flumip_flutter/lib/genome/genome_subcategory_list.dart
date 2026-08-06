@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+
+import '../format.dart';
 import 'package:flumip_client/flumip_client.dart';
 
 class GenomeSubcategoryList extends StatelessWidget {
   final List<Genome> genomes;
   final Genome? selectedGenome;
   final void Function(int genomeId) onGenomeSelected;
-  final double Function(num, int) truncateToDecimalPlaces;
 
   const GenomeSubcategoryList({
     super.key,
     required this.genomes,
     required this.selectedGenome,
     required this.onGenomeSelected,
-    required this.truncateToDecimalPlaces,
   });
 
   @override
@@ -76,7 +76,7 @@ class GenomeSubcategoryList extends StatelessWidget {
                               Icon(Icons.storage, color: Colors.orange, size: 18),
                               SizedBox(width: 6),
                               Text(
-                                'Size: ${truncateToDecimalPlaces(genome.size / 1000000000, 2)} GB',
+                                'Size: ${formatBytes(genome.size)}',
                                 style: TextStyle(color: Colors.black54),
                               ),
                             ],

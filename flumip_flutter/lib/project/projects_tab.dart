@@ -3,6 +3,7 @@ import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flutter/material.dart';
 
 import '../ui/layout.dart';
+import '../ui/error_banner.dart';
 
 import '../main.dart';
 import 'create_project_widget.dart';
@@ -151,10 +152,9 @@ class _ProjectsTabState extends State<ProjectsTab> {
               onAbort: _onAbort,
             ),
           if (_errorMessage != null)
-            Container(
-              color: Colors.red[300],
-              padding: const EdgeInsets.all(8),
-              child: Text(_errorMessage!),
+            ErrorBanner(
+              _errorMessage!,
+              onDismiss: () => setState(() => _errorMessage = null),
             ),
           if (!_showCreateProject && _projects != null)
             Expanded(

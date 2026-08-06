@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../main.dart';
 import '../error_text.dart';
 import '../ui/responsive_row.dart';
+import '../ui/error_banner.dart';
 
 class CreateProjectWidget extends StatefulWidget {
   final VoidCallback onProjectCreated;
@@ -202,11 +203,7 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
         child: Column(
           children: [
             if (_errorMessage != null)
-              Container(
-                color: Colors.red[300],
-                padding: const EdgeInsets.all(8),
-                child: Text(_errorMessage!),
-              ),
+              ErrorBanner(_errorMessage!),
             SizedBox(height: 5),
             TextField(
               controller: _nameController,

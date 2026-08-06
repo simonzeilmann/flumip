@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../error_text.dart';
 import '../main.dart';
+import '../ui/error_banner.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -620,14 +621,9 @@ class _SettingsTabState extends State<SettingsTab> {
         spacing: 30,
         children: [
           if (_errorMessage != null)
-            Container(
-              color: Colors.red[300],
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  Text(_errorMessage!),
-                ],
-              ),
+            ErrorBanner(
+              _errorMessage!,
+              onDismiss: () => setState(() => _errorMessage = null),
             ),
           SizedBox(height: 20),
           if (settings == null && _accessFailed) ...[

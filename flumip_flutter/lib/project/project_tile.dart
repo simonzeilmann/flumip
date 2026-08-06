@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
+import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flutter/services.dart';
@@ -702,21 +703,6 @@ class _ProjectTileState extends State<ProjectTile> {
     }
   }
 
-  /// `2.40 GB`, `4.50 MB`, `912 bytes` — the same scale the server uses in the
-  /// notification emails, so a file is never described two different ways.
-  String _formatBytes(int bytes) {
-    if (bytes < 1000) return '$bytes bytes';
-    const units = ['kB', 'MB', 'GB', 'TB'];
-    var value = bytes / 1000;
-    var unit = 0;
-    while (value >= 1000 && unit < units.length - 1) {
-      value /= 1000;
-      unit++;
-    }
-    final decimals = value >= 100 ? 0 : (value >= 10 ? 1 : 2);
-    return '${value.toStringAsFixed(decimals)} ${units[unit]}';
-  }
-
   /// Opens a download.
   ///
   /// A plain navigation rather than a fetch: the response carries
@@ -751,7 +737,7 @@ class _ProjectTileState extends State<ProjectTile> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Download files'),
-          content: SizedBox(
+          content: DialogBody(
             width: 460,
             child: files.isEmpty
                 ? const Text('This project has no files to download yet.')
@@ -763,7 +749,7 @@ class _ProjectTileState extends State<ProjectTile> {
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             title: Text(file.name),
-                            subtitle: Text(_formatBytes(file.sizeBytes)),
+                            subtitle: Text(formatBytes(file.sizeBytes)),
                             trailing: IconButton(
                               icon: const Icon(Icons.download),
                               tooltip: 'Download ${file.name}',
@@ -782,7 +768,7 @@ class _ProjectTileState extends State<ProjectTile> {
               TextButton.icon(
                 icon: const Icon(Icons.folder_zip),
                 label: Text(
-                  'Download all (${files.length} files, ${_formatBytes(total)})',
+                  'Download all (${files.length} files, ${formatBytes(total)})',
                 ),
                 onPressed: () => _download('all.zip'),
               ),
@@ -803,10 +789,6 @@ class _ProjectTileState extends State<ProjectTile> {
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
     return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
-
-  double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
-      (value * pow(10, fractionalDigits)).truncate() /
-      pow(10, fractionalDigits);
 
   @override
   Widget build(BuildContext context) {
@@ -831,9 +813,7 @@ class _ProjectTileState extends State<ProjectTile> {
               spacing: 12,
               children: <Widget>[
                 Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
-                Text(
-                  '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
-                ),
+                Text(formatBytes(widget.project.size)),
                 IconButton(
                   icon: Icon(Icons.delete),
                   onPressed: _showDeleteConfirmationDialog,
@@ -1384,7 +1364,7 @@ class _ProjectTileState extends State<ProjectTile> {
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
         SizedBox(height: 10),
         Text(
-          'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
+          'Output size: ${formatBytes(widget.project.size)}',
         ),
         SizedBox(height: 10),
         ElevatedButton(

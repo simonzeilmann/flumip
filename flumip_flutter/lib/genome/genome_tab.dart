@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
@@ -190,10 +189,6 @@ class _GenomeTabState extends State<GenomeTab> {
     }
   }
 
-  double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
-      (value * pow(10, fractionalDigits)).truncate() /
-          pow(10, fractionalDigits);
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -291,7 +286,6 @@ class _GenomeTabState extends State<GenomeTab> {
                         genomes: genomes,
                         selectedGenome: selectedGenome,
                         onGenomeSelected: (id) => _fetchGenome(id),
-                        truncateToDecimalPlaces: _truncateToDecimalPlaces,
                       ),
                     ),
                   ),

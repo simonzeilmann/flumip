@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
 
 /// What an administrative delete was confirmed with.
 class AdminDeleteConfirmation {
@@ -42,7 +43,7 @@ class DeleteCustomSnpDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Delete "${snp.name}"?'),
-      content: SizedBox(
+      content: DialogBody(
         width: 460,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -155,7 +156,7 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
           ),
         ],
       ),
-      content: SizedBox(
+      content: DialogBody(
         width: 520,
         child: SingleChildScrollView(
           child: Column(
