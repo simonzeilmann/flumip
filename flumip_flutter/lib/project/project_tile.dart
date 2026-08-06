@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
 import 'package:flumip_flutter/ui/dialog_body.dart';
+import 'package:flumip_flutter/ui/error_banner.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
+import 'genome_picker_dialog.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
@@ -687,7 +689,9 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not set the SNP set: ${describeError(e)}')),
+        SnackBar(
+          content: Text('Could not set the SNP set: ${describeError(e)}'),
+        ),
       );
     }
   }
@@ -714,7 +718,8 @@ class _ProjectTileState extends State<ProjectTile> {
   /// It also goes to the **web** origin, not the API one — that is where the
   /// session cookie is valid, and a download carries no bearer header.
   void _download(String fileName) {
-    final url = '$siteUrl/download/${widget.project.id}/'
+    final url =
+        '$siteUrl/download/${widget.project.id}/'
         '${Uri.encodeComponent(fileName)}';
     web.window.open(url, '_blank');
   }
@@ -941,142 +946,135 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Column buildGenomeSelectorColumn() {
+  /// Genome, SNP and genes — the three things a run needs before it can start.
+  ///
+  /// ⚠️ Was three loosely-related blocks of centred text and controls with
+  /// `SizedBox(height: 10)` between them. It reads as a form now, because that is
+  /// what it is: each input is a labelled row, and each says what is currently
+  /// chosen rather than swapping the control out for a `Text` once set.
+  Widget buildGenomeSelectorColumn() {
+    final editable =
+        !widget.project.active && widget.project.completedIn == null;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
       children: [
         if (_errorMessage != null)
-          Text(
+          ErrorBanner(
             _errorMessage!,
-            style: TextStyle(color: context.colours.error),
+            onDismiss: () => setState(() => _errorMessage = null),
           ),
-        if (widget.project.genome == null) buildGenomeSelector(),
-        if (widget.project.genome != null) ...[
-          Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (genome.name == 'default') ...[
-            Text('loading...'),
-          ] else ...[
-            Text(genome.name),
-          ],
-        ],
-        SizedBox(height: 10),
-        // ⚠️ The `genome.snp != null` gate is gone. That is the list of *scanned*
-        // ids, so a genome whose only SNP sets are custom offered no picker at
-        // all. The picker also no longer disappears once a choice is made — see
-        // buildSnpSelector.
-        if (widget.project.genome != null &&
-            !widget.project.active &&
-            widget.project.completedIn == null)
-          buildSnpSelector()
-        else if (widget.project.snp != null) ...[
-          Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
-          Text(snp?.name ?? 'loading...'),
-        ],
-        SizedBox(height: 10),
-        if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
-          buildGeneColumn(),
-        if (widget.project.bedFileCreated == false) buildAddGeneColumn(),
+        _inputRow(label: 'Genome', child: _genomeValue(editable)),
+        _inputRow(
+          label: 'SNP set',
+          child: widget.project.genome == null
+              ? Text(
+                  'Choose a genome first.',
+                  style: TextStyle(color: context.colours.onSurfaceVariant),
+                )
+              : editable
+              ? buildSnpSelector()
+              : Text(snp?.name ?? 'None'),
+        ),
+        _inputRow(label: 'Genes', child: buildGeneColumn()),
       ],
     );
   }
 
-  Column buildGenomeSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+  /// A label above its control, so the three inputs read as one form.
+  Widget _inputRow({required String label, required Widget child}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: context.text.labelLarge?.copyWith(
+          color: context.colours.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 6),
+      child,
+    ],
+  );
+
+  /// What genome is chosen, and the way to change it.
+  ///
+  /// ⚠️ The picker used to disappear the moment a genome was set, replaced by
+  /// plain text — so a genome chosen by mistake could not be corrected without
+  /// deleting the project.
+  Widget _genomeValue(bool editable) {
+    final chosen = widget.project.genome != null;
+    final loading = chosen && genome.name == 'default';
+
+    if (!editable) {
+      return Text(
+        loading
+            ? 'Loading…'
+            : chosen
+            ? genome.name
+            : 'None',
+      );
+    }
+
+    return Row(
       children: [
-        Text("Select Category:"),
-        FutureBuilder<List<String>>(
-          future: getGenomeCategories(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (snapshot.data!.isNotEmpty) {
-                return DropdownButton<String>(
-                  value: null,
-                  onChanged: (String? category) {
-                    if (category != null) {
-                      getGenomeByCategory(category).then((genomes) {
-                        if (context.mounted) {
-                          genomes.sort((a, b) => a.name.compareTo(b.name));
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Select Genome:'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    for (var selectedGenome in genomes)
-                                      if (selectedGenome.active) ...[
-                                        if (selectedGenome.indexed) ...[
-                                          ListTile(
-                                            title: Text(selectedGenome.name),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else if (selectedGenome.indexing) ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (indexing)",
-                                            ),
-                                            subtitle: Text(
-                                              "Genome is currently unavailable",
-                                            ),
-                                            onTap: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (not indexed)",
-                                            ),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
-                                      ],
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      });
-                    } else {
-                      Text("No genomes available");
-                    }
-                  },
-                  items: snapshot.data!
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ),
-                      )
-                      .toList(),
-                );
-              } else {
-                return Text("No categories available");
-              }
-            } else if (snapshot.hasError) {
-              return Text('Failed to load gene categories: ${snapshot.error}');
-            } else {
-              return CircularProgressIndicator();
-            }
-          },
+        Expanded(
+          child: Text(
+            loading
+                ? 'Loading…'
+                : chosen
+                ? genome.name
+                : 'None chosen',
+            style: chosen
+                ? null
+                : TextStyle(color: context.colours.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(width: 8),
+        OutlinedButton(
+          onPressed: _pickGenome,
+          child: Text(chosen ? 'Change' : 'Choose'),
         ),
       ],
     );
+  }
+
+  /// Opens the picker and applies the answer.
+  ///
+  /// One dialog. The old flow was a category `DropdownButton` whose `onChanged`
+  /// fetched genomes and *then* opened a dialog — two controls for one decision,
+  /// with the dropdown hard-coded to `null` so it never reflected the choice.
+  Future<void> _pickGenome() async {
+    List<String> categories;
+    try {
+      categories = await getGenomeCategories();
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _errorMessage = 'Could not load genomes: ${describeError(e)}',
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    final picked = await showDialog<Genome>(
+      context: context,
+      builder: (_) => GenomePickerDialog(
+        categories: categories,
+        loadGenomes: getGenomeByCategory,
+        initialCategory: widget.project.genome != null ? genome.category : null,
+        selectedGenomeId: widget.project.genome,
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      genome = picked;
+      // The SNP list belongs to the old genome; drop it so the picker refetches.
+      _snpsForGenome = null;
+    });
+    await setGenome(picked.id!);
+    await _reloadProject();
   }
 
   /// The SNP picker.
@@ -1086,217 +1084,239 @@ class _ProjectTileState extends State<ProjectTile> {
   /// ones can fail to import or be deleted out from under a project, so being
   /// able to change or clear the choice is now the difference between fixing a
   /// project and abandoning it.
-  Column buildSnpSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text("Select SNP (optional):"),
-        FutureBuilder<List<Snp>>(
-          future: _snpsForGenome ??= getSnpForGenome(genome.id!),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Text('Failed to load SNP sets: ${snapshot.error}');
-            }
-            if (!snapshot.hasData) return CircularProgressIndicator();
+  Widget buildSnpSelector() {
+    // The label lives on the row above now, so this is just the control.
+    return FutureBuilder<List<Snp>>(
+      future: _snpsForGenome ??= getSnpForGenome(genome.id!),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Failed to load SNP sets: ${snapshot.error}');
+        }
+        if (!snapshot.hasData) return CircularProgressIndicator();
 
-            final snps = snapshot.data!;
-            if (snps.isEmpty) {
-              return Text(
-                'No SNP sets for this genome.',
-                style: TextStyle(color: context.colours.onSurfaceVariant),
-              );
-            }
+        final snps = snapshot.data!;
+        if (snps.isEmpty) {
+          return Text(
+            'No SNP sets for this genome.',
+            style: TextStyle(color: context.colours.onSurfaceVariant),
+          );
+        }
 
-            // ⚠️ A DropdownButton whose value matches no item throws. Now that an
-            // SNP can be deleted, or stop being visible to us, `project.snp` can
-            // point at something no longer in this list. Same guard, and same
-            // reason, as buildOwnerRow.
-            final selected = snps
-                .where((s) => s.id == widget.project.snp)
-                .firstOrNull;
-            final dangling = widget.project.snp != null && selected == null;
+        // ⚠️ A DropdownButton whose value matches no item throws. Now that an
+        // SNP can be deleted, or stop being visible to us, `project.snp` can
+        // point at something no longer in this list. Same guard, and same
+        // reason, as buildOwnerRow.
+        final selected = snps
+            .where((s) => s.id == widget.project.snp)
+            .firstOrNull;
+        final dangling = widget.project.snp != null && selected == null;
 
-            return Column(
-              children: [
-                DropdownButton<Snp?>(
-                  value: selected,
-                  onChanged: (Snp? chosen) {
-                    setSnp(chosen?.id);
-                  },
-                  items: [
-                    DropdownMenuItem<Snp?>(
-                      value: null,
-                      child: Text('No SNP'),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // A form field rather than a bare DropdownButton, so it carries
+            // the same outline and density as every other input.
+            DropdownButtonFormField<Snp?>(
+              initialValue: selected,
+              isExpanded: true,
+              decoration: const InputDecoration(helperText: 'Optional.'),
+              onChanged: (Snp? chosen) {
+                setSnp(chosen?.id);
+              },
+              items: [
+                DropdownMenuItem<Snp?>(value: null, child: Text('No SNP set')),
+                ...snps.map(
+                  (s) => DropdownMenuItem<Snp?>(
+                    value: s,
+                    enabled: s.status == SnpImportStatus.ready,
+                    child: Text(
+                      s.status == SnpImportStatus.ready
+                          ? s.name
+                          : '${s.name} (${statusLabel(s.status)})',
+                      style: TextStyle(
+                        color: s.status == SnpImportStatus.ready
+                            ? null
+                            : context.colours.onSurfaceVariant,
+                      ),
                     ),
-                    ...snps.map(
-                      (s) => DropdownMenuItem<Snp?>(
-                        value: s,
-                        enabled: s.status == SnpImportStatus.ready,
-                        child: Text(
-                          s.status == SnpImportStatus.ready
-                              ? s.name
-                              : '${s.name} (${statusLabel(s.status)})',
-                          style: TextStyle(
-                            color: s.status == SnpImportStatus.ready
-                                ? null
-                                : context.colours.onSurfaceVariant,
-                          ),
+                  ),
+                ),
+              ],
+            ),
+            if (dangling)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'The SNP set this project was using is no longer '
+                  'available. Pick another, or none.',
+                  style: TextStyle(color: context.status.warning, fontSize: 12),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// The MIP design parameters this project was created with.
+  ///
+  /// ⚠️ Was 26 centred `Text('Label: value')` lines with `spacing: 3`, every
+  /// boolean spelled out twice as an `if/else` pair. Now a left-aligned
+  /// definition list, which is what it always was.
+  Widget buildProjectOptionsColumn() {
+    final o = projectOptions;
+    final rows = <(String, String)>[
+      ('Min capture size', '${o.minCaptureSize}'),
+      ('Max capture size', '${o.maxCaptureSize}'),
+      if (o.armLengths != null && o.armLengths!.isNotEmpty)
+        ('Arm lengths', o.armLengths!),
+      ('Arm length sums', o.armLengthSums),
+      ('Ext min length', '${o.extMinLength}'),
+      ('Ext max length', '${o.extMaxLength}'),
+      ('Lig min length', '${o.ligMinLength}'),
+      ('Tag sizes', o.tagSizes),
+      ('Masked arm threshold', '${o.maskedArmThreshold}'),
+      ('Target arm copy', '${o.targetArmCopy}'),
+      ('Max arm copy product', '${o.maxArmCopyProduct}'),
+      if (o.genomeDir != null) ('Genome dir', o.genomeDir!),
+      ('Feature flank', '${o.featureFlank}'),
+      ('Capture increment', '${o.captureIncrement}'),
+      ('Max MIP overlap', '${o.maxMipOverlap}'),
+      ('Starting MIP overlap', '${o.startingMipOverlap}'),
+      ('Tandem Repeats Finder', _onOff(o.trf)),
+      ('Logistic heuristic', _onOff(o.logisticHeuristic)),
+      ('Check copy number', _onOff(o.checkCopyNumber)),
+      ('Seal both strands', _onOff(o.sealBothStrands)),
+      ('Half seal both strands', _onOff(o.halfSealBothStrands)),
+      ('Double tile, strand unaware', _onOff(o.doubleTileStrandUnaware)),
+      (
+        'Double tile, strands separately',
+        _onOff(o.doubleTileStrandsSeparately),
+      ),
+      // `.name`, not the enum's toString, which would print `ScoreMethod.logistic`.
+      ('Score method', o.scoreMethod.name),
+      ('Logistic optimal score', '${o.logisticOptimalScore}'),
+      ('SVR optimal score', '${o.svrOptimalScore}'),
+      ('Logistic priority score', '${o.logisticPriorityScore}'),
+      ('SVR priority score', '${o.svrPriorityScore}'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Design options',
+          style: context.text.labelLarge?.copyWith(
+            color: context.colours.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (final (label, value) in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    label,
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.colours.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: Text(value, style: context.text.bodySmall),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  static String _onOff(bool value) => value ? 'on' : 'off';
+
+  /// The genes on the panel, as removable chips, with the add field beneath.
+  ///
+  /// ⚠️ Was a centred `Column` of `Row(Text + IconButton)` — one gene per line,
+  /// so a twenty-gene panel was a twenty-line list — plus a separate builder for
+  /// the add field that hand-rolled its own border, fill and padding and so
+  /// stopped matching every other field once the app had an
+  /// `InputDecorationTheme`.
+  Widget buildGeneColumn() {
+    final genes = widget.project.genes ?? const <String>[];
+    final editable = widget.project.bedFileCreated == false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (genes.isEmpty)
+          Text(
+            'None yet.',
+            style: TextStyle(color: context.colours.onSurfaceVariant),
+          )
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final gene in genes)
+                editable
+                    ? InputChip(
+                        label: Text(gene),
+                        labelStyle: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                        ),
+                        onDeleted: () => _removeGene(gene),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                      )
+                    : Chip(
+                        label: Text(gene),
+                        labelStyle: const TextStyle(
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
-                    ),
-                  ],
+            ],
+          ),
+        if (editable) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _genesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Add a gene',
+                    hintText: 'e.g. BRCA1',
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: _submitGene,
                 ),
-                if (dangling)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'The SNP set this project was using is no longer '
-                      'available. Pick another, or none.',
-                      style: TextStyle(
-                        color: context.status.warning,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Column buildProjectOptionsColumn() {
-    return Column(
-      spacing: 3,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text('Project Options:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
-        Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths != null &&
-            projectOptions.armLengths!.isNotEmpty)
-          Text('Arm Lengths: ${projectOptions.armLengths}'),
-        Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
-        Text('Ext Min Length: ${projectOptions.extMinLength}'),
-        Text('Ext Max Length: ${projectOptions.extMaxLength}'),
-        Text('Lig Min Length: ${projectOptions.ligMinLength}'),
-        Text('Tag Sizes: ${projectOptions.tagSizes}'),
-        Text('Masked Arm Threshold: ${projectOptions.maskedArmThreshold}'),
-        Text('Target Arm Copy: ${projectOptions.targetArmCopy}'),
-        Text('Max Arm Copy Product: ${projectOptions.maxArmCopyProduct}'),
-        if (projectOptions.trf) Text('TRF: on') else Text('TRF: off'),
-        if (projectOptions.genomeDir != null)
-          Text('Genome Dir: ${projectOptions.genomeDir}'),
-        Text('Feature Flank: ${projectOptions.featureFlank}'),
-        Text('Capture Increment: ${projectOptions.captureIncrement}'),
-        if (projectOptions.logisticHeuristic)
-          Text('Logistic Heuristic: on')
-        else
-          Text('Logistic Heuristic: off'),
-        Text('Max Mip Overlap: ${projectOptions.maxMipOverlap}'),
-        Text('Starting Mip Overlap: ${projectOptions.startingMipOverlap}'),
-        if (projectOptions.checkCopyNumber)
-          Text('Check Copy Number: on')
-        else
-          Text('Check Copy Number: off'),
-        if (projectOptions.sealBothStrands)
-          Text('Seal Both Strands: on')
-        else
-          Text('Seal Both Strands: off'),
-        if (projectOptions.halfSealBothStrands)
-          Text('Half Seal Both Strands: on')
-        else
-          Text('Half Seal Both Strands: off'),
-        if (projectOptions.doubleTileStrandUnaware)
-          Text('Double Tile Strand Unaware: on')
-        else
-          Text('Double Tile Strand Unaware: off'),
-        if (projectOptions.doubleTileStrandsSeparately)
-          Text('Double Tile Strands Separately: on')
-        else
-          Text('Double Tile Strands Separately: off'),
-        Text('Score Method: ${projectOptions.scoreMethod}'),
-        Text('Logistic Optimal Score: ${projectOptions.logisticOptimalScore}'),
-        Text('SVR Optimal Score: ${projectOptions.svrOptimalScore}'),
-        Text(
-          'Logistic Priority Score: ${projectOptions.logisticPriorityScore}',
-        ),
-        Text('SVR Priority Score: ${projectOptions.svrPriorityScore}'),
-        SizedBox(height: 5),
-      ],
-    );
-  }
-
-  Column buildGeneColumn() {
-    return Column(
-      children: [
-        Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Column(
-          children: widget.project.genes!.map((gene) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(gene, style: TextStyle(fontStyle: FontStyle.italic)),
-                if (widget.project.bedFileCreated == false)
-                  IconButton(
-                    icon: Icon(Icons.remove_circle_outline),
-                    onPressed: () => _removeGene(gene),
-                  ),
-              ],
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Column buildAddGeneColumn() {
-    return Column(
-      children: [
-        SizedBox(height: 15),
-        Row(
-          spacing: 10,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _genesController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'add gene',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: context.colours.surfaceContainerHighest,
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                onSubmitted: (value) {
-                  _addGene(value);
-                  _genesController.clear();
-                },
               ),
-            ),
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                _addGene(_genesController.text);
-                _genesController.clear();
-              },
-            ),
-          ],
-        ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.add),
+                tooltip: 'Add gene',
+                onPressed: () => _submitGene(_genesController.text),
+              ),
+            ],
+          ),
+        ],
       ],
     );
+  }
+
+  void _submitGene(String value) {
+    final gene = value.trim();
+    // Was unguarded, so pressing the button with an empty box sent an empty gene
+    // name to the server and produced a failure for no reason.
+    if (gene.isEmpty) return;
+    _addGene(gene);
+    _genesController.clear();
   }
 
   Column buildMipgenStartColumn() {
@@ -1370,9 +1390,7 @@ class _ProjectTileState extends State<ProjectTile> {
       children: [
         Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
         SizedBox(height: 10),
-        Text(
-          'Output size: ${formatBytes(widget.project.size)}',
-        ),
+        Text('Output size: ${formatBytes(widget.project.size)}'),
         SizedBox(height: 10),
         ElevatedButton(
           onPressed: _showMipsResult,
