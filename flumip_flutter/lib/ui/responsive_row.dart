@@ -69,8 +69,8 @@ class ResponsiveRow extends StatelessWidget {
             minChildWidth * children.length + spacing * (children.length - 1);
         // An unbounded width — inside a horizontal scroll view, say — has room
         // for anything, so lay out wide rather than dividing by infinity.
-        final fits = !constraints.hasBoundedWidth ||
-            constraints.maxWidth >= needed;
+        final fits =
+            !constraints.hasBoundedWidth || constraints.maxWidth >= needed;
 
         if (!fits) {
           return Column(

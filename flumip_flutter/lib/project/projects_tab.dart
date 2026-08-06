@@ -130,6 +130,16 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
   @override
   Widget build(BuildContext context) {
+    // The create form replaces the list rather than sitting above it, and it is
+    // given the full width so its own pinned action bar can span the window the
+    // way the settings one does. It caps its fields itself.
+    if (_showCreateProject) {
+      return CreateProjectWidget(
+        onProjectCreated: _onProjectCreated,
+        onAbort: _onAbort,
+      );
+    }
+
     return ContentWidth(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -139,24 +149,19 @@ class _ProjectsTabState extends State<ProjectsTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
         children: [
-          if (!_showCreateProject)
-            Center(
-              child: ElevatedButton(
-                onPressed: _toggleCreateProject,
-                child: const Text('Create Project'),
-              ),
+          Center(
+            child: FilledButton.icon(
+              onPressed: _toggleCreateProject,
+              icon: const Icon(Icons.add),
+              label: const Text('Create project'),
             ),
-          if (_showCreateProject)
-            CreateProjectWidget(
-              onProjectCreated: _onProjectCreated,
-              onAbort: _onAbort,
-            ),
+          ),
           if (_errorMessage != null)
             ErrorBanner(
               _errorMessage!,
               onDismiss: () => setState(() => _errorMessage = null),
             ),
-          if (!_showCreateProject && _projects != null)
+          if (_projects != null)
             Expanded(
               child: ListView.builder(
                 itemCount: _projects!.length,

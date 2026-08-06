@@ -7,7 +7,7 @@ import '../ui/error_banner.dart';
 import '../ui/layout.dart';
 import '../ui/responsive_row.dart';
 import 'settings_access_views.dart';
-import 'settings_section.dart';
+import '../ui/form_section.dart';
 import 'sso_settings.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -476,7 +476,7 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         Expanded(child: body),
         if (saveBar)
-          SettingsSaveBar(
+          FormSaveBar(
             onSave: updateSettings,
             maxWidth: ContentWidth.form,
           ),
@@ -504,7 +504,7 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
-  SettingsSection _storageSection() => SettingsSection(
+  FormSection _storageSection() => FormSection(
         title: 'Storage',
         description: 'Where the server keeps projects, genomes and SNP sets.',
         children: [
@@ -539,7 +539,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
       );
 
-  SettingsSection _toolsSection() => SettingsSection(
+  FormSection _toolsSection() => FormSection(
         title: 'External tools',
         description: 'Absolute paths to MIPGEN and the scripts around it.',
         children: [
@@ -570,7 +570,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
       );
 
-  SettingsSection _mailSection() => SettingsSection(
+  FormSection _mailSection() => FormSection(
         title: 'Mail',
         description: 'Used for job notifications. Optional.',
         children: [
@@ -683,7 +683,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
       );
 
-  SettingsSection _signInSection(BuildContext context) => SettingsSection(
+  FormSection _signInSection(BuildContext context) => FormSection(
         title: 'Sign-in',
         description: 'Single sign-on through an OpenID Connect provider. '
             'Off means anyone who can reach the server can use it.',
@@ -718,7 +718,7 @@ class _SettingsTabState extends State<SettingsTab> {
   /// These two had no heading at all before — the password field sat between the
   /// sign-in block and a "Demo mode" checkbox, with nothing saying what either
   /// was for.
-  SettingsSection _securitySection() => SettingsSection(
+  FormSection _securitySection() => FormSection(
         title: 'Security',
         children: [
           TextField(

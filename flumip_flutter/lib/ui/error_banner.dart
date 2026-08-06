@@ -35,8 +35,9 @@ class ErrorBanner extends StatelessWidget {
           Expanded(
             child: SelectableText(
               message,
-              style: context.text.bodySmall
-                  ?.copyWith(color: colours.onErrorContainer),
+              style: context.text.bodySmall?.copyWith(
+                color: colours.onErrorContainer,
+              ),
             ),
           ),
           if (onDismiss != null)
