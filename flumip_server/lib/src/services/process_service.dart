@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/genome.dart';
 import 'package:flumip_server/src/generated/project.dart';
@@ -11,6 +13,13 @@ import 'package:serverpod/server.dart';
 /// How long a system utility that answers immediately is given before it is
 /// treated as wedged. `ps`, `pgrep` and `kill` all return in milliseconds.
 const quickToolTimeout = Duration(seconds: 10);
+
+/// How far down a process tree [ProcessService.terminateProcess] will walk.
+/// mipgen's own tree is two or three deep; this is headroom, not a target.
+const _maxTreeDepth = 8;
+
+/// How many descendants it will collect before giving up and killing those.
+const _maxTreeSize = 200;
 
 class ProcessService {
   ProcessService();
@@ -185,19 +194,86 @@ class ProcessService {
     return processPID;
   }
 
+  /// Kills [pid] **and everything it started**.
+  ///
+  /// ⚠️ `kill -9 <pid>` alone is not enough here, and the gap is expensive.
+  /// mipgen spawns bwa and friends, and killing only mipgen leaves those
+  /// children running — reparented to init, still pinned to every core, still
+  /// writing into a project directory that is on its way to being deleted. On a
+  /// design cancelled after a minute that is hours of CPU nobody is waiting for.
+  ///
+  /// Children are collected before anything is killed: once a parent dies its
+  /// children are reparented, and `pgrep -P` can no longer find them from here.
+  /// They are then killed leaves-first so that a parent cannot fork again while
+  /// its descendants are being taken down.
   Future<void> terminateProcess(Session session, int pid) async {
-    session.log("Terminating process with PID: $pid", level: LogLevel.info);
-    var process =
-        await sl<ProcessRunner>().run(
-      "kill",
-      ["-9", pid.toString()],
-      timeout: quickToolTimeout,
-    );
-    if (process.exitCode > 1) {
+    session.log("Terminating process tree at PID: $pid", level: LogLevel.info);
+
+    final tree = await _descendants(session, pid);
+    // Leaves first, parent last.
+    for (final target in [...tree.reversed, pid]) {
+      final result = await sl<ProcessRunner>().run(
+        "kill",
+        ["-9", target.toString()],
+        timeout: quickToolTimeout,
+      );
+      // Exit code 1 is "no such process", which is the ordinary outcome for a
+      // child that finished between the walk and the kill.
+      if (result.exitCode > 1) {
+        session.log(
+          "Error terminating process with PID: $target",
+          level: LogLevel.error,
+        );
+      }
+    }
+
+    if (tree.isNotEmpty) {
       session.log(
-        "Error terminating process with PID: $pid",
-        level: LogLevel.error,
+        "Terminated ${tree.length} child process(es) of PID $pid",
+        level: LogLevel.info,
       );
     }
+  }
+
+  /// Every descendant of [pid], breadth-first, parents before children.
+  ///
+  /// Bounded twice over: [_maxTreeDepth] on how deep it will walk and
+  /// [_maxTreeSize] on how many it will collect. A process that forks while
+  /// being walked would otherwise keep this loop going indefinitely, inside a
+  /// delete request somebody is waiting on.
+  Future<List<int>> _descendants(Session session, int pid) async {
+    final found = <int>[];
+    var frontier = [pid];
+
+    for (var depth = 0; depth < _maxTreeDepth && frontier.isNotEmpty; depth++) {
+      final next = <int>[];
+      for (final parent in frontier) {
+        if (found.length >= _maxTreeSize) break;
+        final result = await sl<ProcessRunner>().run(
+          "pgrep",
+          ["-P", parent.toString()],
+          timeout: quickToolTimeout,
+        );
+        // 1 means "no children", which is the common case and not an error.
+        if (result.exitCode != 0) continue;
+        for (final line in const LineSplitter().convert(result.stdout)) {
+          final child = int.tryParse(line.trim());
+          if (child == null || child <= 1) continue;
+          if (found.contains(child)) continue;
+          found.add(child);
+          next.add(child);
+        }
+      }
+      frontier = next;
+    }
+
+    if (found.length >= _maxTreeSize) {
+      session.log(
+        "Process tree at PID $pid hit the $_maxTreeSize-process cap; "
+        "killing what was found.",
+        level: LogLevel.warning,
+      );
+    }
+    return found;
   }
 }

@@ -44,6 +44,14 @@ class FakeProcessRunner implements ProcessRunner {
   final Map<String, ProcessResult> _runStubs = {};
 
   ProcessResult defaultRunResult;
+
+  /// Answers a `run` from its arguments, consulted before [stubRun].
+  ///
+  /// Needed where one executable must answer differently per call — walking a
+  /// process tree asks `pgrep -P <pid>` once per node and expects a different
+  /// answer each time, which a per-executable stub cannot express.
+  ProcessResult? Function(String executable, List<String> arguments)? runHandler;
+
   Object? runError;
   Object? startError;
 
@@ -60,6 +68,7 @@ class FakeProcessRunner implements ProcessRunner {
     invocations.clear();
     _runStubs.clear();
     runError = null;
+    runHandler = null;
     startError = null;
     startOutput = null;
     defaultRunResult = ProcessResult(0, 0, '', '');
@@ -108,7 +117,8 @@ class FakeProcessRunner implements ProcessRunner {
       timeout: timeout,
     ));
     if (runError != null) throw runError!;
-    return _runStubs[executable] ?? defaultRunResult;
+    final handled = runHandler?.call(executable, arguments);
+    return handled ?? _runStubs[executable] ?? defaultRunResult;
   }
 
   @override

@@ -76,8 +76,9 @@ void main() {
       expect(chosen, 'https://ucsc/two');
     });
 
-    testWidgets('is a single dialog — nothing opens on top of it',
-        (tester) async {
+    testWidgets('is a single dialog — nothing opens on top of it', (
+      tester,
+    ) async {
       // ⚠️ The regression guard. The flow this replaces showed the raw track
       // file in one dialog and opened a *second* dialog from a button inside it
       // to pick the region.

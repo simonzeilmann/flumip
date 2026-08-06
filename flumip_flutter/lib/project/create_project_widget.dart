@@ -10,7 +10,8 @@ import '../ui/layout.dart';
 import '../ui/responsive_row.dart';
 
 class CreateProjectWidget extends StatefulWidget {
-  final VoidCallback onProjectCreated;
+  /// Called with the project that was just created, so the list can open it.
+  final void Function(Project project) onProjectCreated;
   final VoidCallback onAbort;
 
   const CreateProjectWidget({
@@ -181,14 +182,14 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       );
       final ProjectOptions optionsInDB = await client.options
           .insertProjectOptions(options);
-      await client.project.createProject(
+      final created = await client.project.createProject(
         _nameController.text,
         optionsInDB,
         _descriptionController.text,
       );
       _nameController.clear();
       _descriptionController.clear();
-      widget.onProjectCreated();
+      widget.onProjectCreated(created);
     } catch (e) {
       setState(() {
         _errorMessage = describeError(e);

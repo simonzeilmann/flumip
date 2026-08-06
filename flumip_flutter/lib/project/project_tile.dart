@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flumip_flutter/ui/dialog_body.dart';
 import 'package:flumip_flutter/ui/error_banner.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
+import 'package:flumip_flutter/ui/status_pill.dart';
 import 'genome_picker_dialog.dart';
 import 'mipgen_progress.dart';
+import 'project_state.dart';
 import 'result_dialogs.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_client/flumip_client.dart';
@@ -44,6 +46,9 @@ class ProjectTile extends StatefulWidget {
   /// Called with the new owner's id, or null to release the project to unowned.
   final void Function(int? ownerId)? onOwnerChanged;
 
+  /// Opens without a click, for a project that has just been created.
+  final bool initiallyExpanded;
+
   ProjectTile({
     super.key,
     required this.project,
@@ -51,6 +56,7 @@ class ProjectTile extends StatefulWidget {
     this.notificationsAvailable = false,
     this.assignableOwners,
     this.onOwnerChanged,
+    this.initiallyExpanded = false,
   });
 
   @override
@@ -58,7 +64,7 @@ class ProjectTile extends StatefulWidget {
 }
 
 class _ProjectTileState extends State<ProjectTile> {
-  bool _isExpanded = false;
+  late bool _isExpanded = widget.initiallyExpanded;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
   late Genome genome = Genome(name: 'default');
@@ -84,6 +90,8 @@ class _ProjectTileState extends State<ProjectTile> {
   @override
   void initState() {
     super.initState();
+    // A tile that opens itself still has to load what it is going to show.
+    if (_isExpanded) _reloadProject();
     // ⚠️ No timer until the tile is opened. This was an unconditional
     // `Timer.periodic(10s)` created for *every* tile in the list, so a hundred
     // projects meant a hundred timers waking up to find the tile collapsed and
@@ -296,6 +304,10 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       final lines = await client.file.showMipsResult(widget.project.id!);
       if (!mounted) return;
+      if (!resultHasData(lines)) {
+        _say('This run produced no MIPs.');
+        return;
+      }
       await showTextFileDialog(
         context,
         title: 'MIPs result',
@@ -311,6 +323,14 @@ class _ProjectTileState extends State<ProjectTile> {
     try {
       final lines = await client.file.showSnpMipsResult(widget.project.id!);
       if (!mounted) return;
+      // ⚠️ Not just `lines.isEmpty`. The file is written with its header row
+      // even when the run produced no SNP-overlapping MIPs, so a "present but
+      // empty" result used to open a dialog containing one header line and
+      // nothing else, which reads as a bug rather than as an answer.
+      if (!resultHasData(lines)) {
+        _say('This run produced no SNP MIPs.');
+        return;
+      }
       await showTextFileDialog(
         context,
         title: 'SNP MIPs result',
@@ -318,7 +338,7 @@ class _ProjectTileState extends State<ProjectTile> {
         emptyMessage: 'No SNP MIPs result file found.',
       );
     } catch (e) {
-      _say('Could not load the snp mips result: ${describeError(e)}');
+      _say('Could not load the SNP MIPs result: ${describeError(e)}');
     }
   }
 
@@ -689,15 +709,31 @@ class _ProjectTileState extends State<ProjectTile> {
               ),
               onPressed: _toggleExpand,
             ),
-            title: Text(widget.project.name),
-            subtitle: Text(widget.project.description),
+            // ⚠️ SelectableText, not Text. A project name is something people
+            // copy into a lab notebook or an email, and in a Flutter web build
+            // ordinary text cannot be selected at all.
+            title: SelectableText(
+              widget.project.name,
+              style: context.text.titleMedium,
+            ),
+            subtitle: widget.project.description.isEmpty
+                ? null
+                : SelectableText(
+                    widget.project.description,
+                    style: context.text.bodySmall,
+                    maxLines: 2,
+                  ),
             trailing: Wrap(
               spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
+                // What this project is doing, without having to open it.
+                _statePill(),
                 Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
                 Text(formatBytes(widget.project.size)),
                 IconButton(
                   icon: Icon(Icons.delete),
+                  tooltip: 'Delete project',
                   onPressed: _showDeleteConfirmationDialog,
                 ),
               ],
@@ -793,16 +829,27 @@ class _ProjectTileState extends State<ProjectTile> {
         if (project.bedFileCreated == true && !running && !finished)
           buildMipgenStartColumn(),
         if (running)
-          MipgenProgressPanel(
-            progress: _progress,
-            elapsed: _elapsed(),
-            onShowLog: _showProgress,
-          ),
+          MipgenProgressPanel(progress: _progress, elapsed: _elapsed()),
         if (finished && project.error.isEmpty) buildMipgenResultColumn(),
         if (finished && project.error.isNotEmpty)
           ErrorBanner('The design failed: ${project.error}'),
       ],
     );
+  }
+
+  /// The collapsed row's state indicator.
+  Widget _statePill() {
+    final state = ProjectState.of(widget.project);
+    final status = context.status;
+    final (colour, icon) = switch (state) {
+      ProjectState.draft => (context.colours.outline, Icons.edit_outlined),
+      ProjectState.needsBedFile => (status.warning, Icons.pending_outlined),
+      ProjectState.readyToRun => (status.info, Icons.play_circle_outline),
+      ProjectState.running => (status.info, Icons.autorenew),
+      ProjectState.complete => (status.success, Icons.check_circle),
+      ProjectState.failed => (context.colours.error, Icons.error_outline),
+    };
+    return StatusPill(label: state.label, icon: icon, colour: colour);
   }
 
   /// How long the current run has been going.
@@ -1224,7 +1271,7 @@ class _ProjectTileState extends State<ProjectTile> {
         SwitchListTile(
           value: _deleteExcessFiles,
           title: const Text('Delete intermediate files'),
-          subtitle: const Text('Keeps only the results. Saves a lot of disk.'),
+          subtitle: const Text('Saves a lot of disk space.'),
           contentPadding: EdgeInsets.zero,
           onChanged: (value) => setState(() => _deleteExcessFiles = value),
         ),

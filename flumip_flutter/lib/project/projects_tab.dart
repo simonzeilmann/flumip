@@ -137,7 +137,12 @@ class _ProjectsTabState extends State<ProjectsTab> {
     });
   }
 
-  void _onProjectCreated() {
+  /// The project to open on the next build, so a new one does not need a click
+  /// on the chevron before it can be set up.
+  int? _openProjectId;
+
+  void _onProjectCreated(Project created) {
+    setState(() => _openProjectId = created.id);
     _fetchProjects();
     _toggleCreateProject();
   }
@@ -196,6 +201,10 @@ class _ProjectsTabState extends State<ProjectsTab> {
                     // another project's name.
                     key: ValueKey(project.id),
                     project: project,
+                    // A project created a moment ago opens straight away —
+                    // there is nothing in it yet, and setting it up is the only
+                    // reason it exists.
+                    initiallyExpanded: project.id == _openProjectId,
                     onDelete: () => _deleteProject(project.id!),
                     notificationsAvailable: _notificationsAvailable,
                     assignableOwners: _assignableOwners,

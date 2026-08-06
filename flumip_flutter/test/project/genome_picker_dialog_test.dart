@@ -12,18 +12,17 @@ Genome g({
   bool active = true,
   int size = 3100000000,
   String category = 'human',
-}) =>
-    Genome(
-      id: id,
-      name: name,
-      description: '',
-      category: category,
-      path: '/opt/flumip/data/genomes/human/$name',
-      size: size,
-      indexed: indexed,
-      indexing: indexing,
-      active: active,
-    );
+}) => Genome(
+  id: id,
+  name: name,
+  description: '',
+  category: category,
+  path: '/opt/flumip/data/genomes/human/$name',
+  size: size,
+  indexed: indexed,
+  indexing: indexing,
+  active: active,
+);
 
 /// Returns the genome the dialog was closed with, or null.
 Future<Genome?> pumpPicker(
@@ -46,7 +45,8 @@ Future<Genome?> pumpPicker(
                 context: context,
                 builder: (_) => GenomePickerDialog(
                   categories: categories,
-                  loadGenomes: loadGenomes ??
+                  loadGenomes:
+                      loadGenomes ??
                       (c) async => genomes[c] ?? const <Genome>[],
                   initialCategory: initialCategory,
                   selectedGenomeId: selectedGenomeId,
@@ -78,8 +78,9 @@ void main() {
     expect(find.text('hg38'), findsOneWidget);
   });
 
-  testWidgets('with several categories, none opens until asked',
-      (tester) async {
+  testWidgets('with several categories, none opens until asked', (
+    tester,
+  ) async {
     await pumpPicker(
       tester,
       categories: const ['human', 'mouse'],
@@ -138,8 +139,9 @@ void main() {
     expect(find.text('Choose a genome'), findsNothing);
   });
 
-  testWidgets('a genome being indexed is disabled and says why',
-      (tester) async {
+  testWidgets('a genome being indexed is disabled and says why', (
+    tester,
+  ) async {
     // ⚠️ The old dialog made this look broken: the row was tappable and tapping
     // it just closed the dialog with nothing changed.
     await pumpPicker(
@@ -194,20 +196,22 @@ void main() {
     );
 
     ListTile tileFor(String name) => tester.widget<ListTile>(
-          find.ancestor(of: find.text(name), matching: find.byType(ListTile)),
-        );
+      find.ancestor(of: find.text(name), matching: find.byType(ListTile)),
+    );
     expect(tileFor('hg38').selected, isTrue);
     expect(tileFor('hg19').selected, isFalse);
   });
 
-  testWidgets('an empty category says so rather than showing nothing',
-      (tester) async {
+  testWidgets('an empty category says so rather than showing nothing', (
+    tester,
+  ) async {
     await pumpPicker(tester, genomes: const {'human': []});
     expect(find.text('No genomes in this category.'), findsOneWidget);
   });
 
-  testWidgets('an install with no genomes points at the genomes tab',
-      (tester) async {
+  testWidgets('an install with no genomes points at the genomes tab', (
+    tester,
+  ) async {
     await pumpPicker(tester, categories: const []);
     expect(find.textContaining('Genomes & SNP tab'), findsOneWidget);
   });

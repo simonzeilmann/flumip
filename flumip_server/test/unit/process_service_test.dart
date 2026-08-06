@@ -1,5 +1,7 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/process_service.dart';
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';
@@ -10,6 +12,10 @@ void main() {
   withServerpod('ProcessService', (sessionBuilder, endpoints) {
     final fake = FakeProcessRunner();
     setup(processRunner: fake);
+    // ⚠️ The fake is shared across the group and accumulates every invocation,
+    // so a test that asserts on `runCalls` rather than `lastFor` would otherwise
+    // see the previous tests' calls too.
+    setUp(fake.reset);
     var session = sessionBuilder.build();
     final processService = sl<ProcessService>();
 
@@ -103,6 +109,61 @@ void main() {
       fake.stubRun('kill', exitCode: 2, stderr: 'kill: boom');
       await processService.terminateProcess(session, 4242);
       expect(fake.lastFor('kill')!.arguments, ['-9', '4242']);
+    }, tags: ['unit']);
+
+    test('terminateProcess kills the children too, leaves first', () async {
+      // ⚠️ The whole point. mipgen spawns bwa; killing only mipgen leaves those
+      // children running, reparented to init, still pinned to every core and
+      // still writing into a directory that is about to be deleted.
+      //   100 -> 101, 102
+      //   101 -> 103
+      fake.runHandler = (executable, arguments) {
+        if (executable != 'pgrep') return null;
+        final parent = arguments.last;
+        return switch (parent) {
+          '100' => ProcessResult(0, 0, '101\n102\n', ''),
+          '101' => ProcessResult(0, 0, '103\n', ''),
+          _ => ProcessResult(0, 1, '', ''),
+        };
+      };
+
+      await processService.terminateProcess(session, 100);
+
+      final killed = fake.runCalls
+          .where((c) => c.executable == 'kill')
+          .map((c) => c.arguments.last)
+          .toList();
+      expect(killed.toSet(), {'100', '101', '102', '103'});
+      // The parent goes last, so it cannot fork again mid-teardown.
+      expect(killed.last, '100');
+      expect(killed.indexOf('103'), lessThan(killed.indexOf('101')));
+    }, tags: ['unit']);
+
+    test('terminateProcess survives a process that has no children', () async {
+      fake.stubRun('pgrep', exitCode: 1);
+      await processService.terminateProcess(session, 7);
+      final killed = fake.runCalls.where((c) => c.executable == 'kill');
+      expect(killed.length, 1);
+      expect(killed.single.arguments, ['-9', '7']);
+    }, tags: ['unit']);
+
+    test('terminateProcess does not loop forever on a cyclic tree', () async {
+      // Cannot happen with real pids, but a bounded walk is the difference
+      // between a bug and a hung delete request.
+      fake.runHandler = (executable, arguments) => executable == 'pgrep'
+          ? ProcessResult(0, 0, '999\n', '')
+          : null;
+
+      await processService.terminateProcess(session, 5).timeout(
+            const Duration(seconds: 5),
+          );
+
+      // 999 is collected once and never revisited.
+      final killed = fake.runCalls
+          .where((c) => c.executable == 'kill')
+          .map((c) => c.arguments.last)
+          .toList();
+      expect(killed, ['999', '5']);
     }, tags: ['unit']);
   });
 }

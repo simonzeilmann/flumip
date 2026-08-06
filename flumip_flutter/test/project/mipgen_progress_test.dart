@@ -76,16 +76,15 @@ void main() {
   });
 
   group('the panel', () {
-    Future<void> pump(WidgetTester tester, MipgenProgress progress,
-        {Duration? elapsed}) {
+    Future<void> pump(
+      WidgetTester tester,
+      MipgenProgress progress, {
+      Duration? elapsed,
+    }) {
       return tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MipgenProgressPanel(
-              progress: progress,
-              elapsed: elapsed,
-              onShowLog: () {},
-            ),
+            body: MipgenProgressPanel(progress: progress, elapsed: elapsed),
           ),
         ),
       );
@@ -94,6 +93,47 @@ void main() {
     testWidgets('says what the run is doing', (tester) async {
       await pump(tester, const MipgenProgress(lines: ['designing arm pairs']));
       expect(find.text('designing arm pairs'), findsOneWidget);
+    });
+
+    testWidgets('shows the last five lines, not just the last one', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        MipgenProgress(lines: List.generate(9, (i) => 'step $i')),
+      );
+
+      for (final i in [4, 5, 6, 7, 8]) {
+        expect(find.text('step $i'), findsOneWidget, reason: 'step $i');
+      }
+      // Older lines are behind "show full log".
+      expect(find.text('step 3'), findsNothing);
+    });
+
+    testWidgets('the full log expands in place rather than in a modal', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        MipgenProgress(lines: List.generate(40, (i) => 'step $i')),
+      );
+
+      await tester.tap(find.textContaining('Show full log'));
+      // ⚠️ `pump`, not `pumpAndSettle`: the panel carries an indeterminate
+      // spinner, which by design never stops animating, so nothing ever settles.
+      await tester.pump();
+
+      // ⚠️ No dialog: the panel it would cover is the thing being watched.
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('step 0'), findsOneWidget);
+      expect(find.text('Show less'), findsOneWidget);
+    });
+
+    testWidgets('offers no expander when everything already fits', (
+      tester,
+    ) async {
+      await pump(tester, const MipgenProgress(lines: ['a', 'b']));
+      expect(find.textContaining('Show full log'), findsNothing);
     });
 
     testWidgets('says something before the log exists', (tester) async {
@@ -121,8 +161,9 @@ void main() {
       expect(find.text('2h 5m'), findsOneWidget);
     });
 
-    testWidgets('an out-of-range value does not take the tab down',
-        (tester) async {
+    testWidgets('an out-of-range value does not take the tab down', (
+      tester,
+    ) async {
       await pump(tester, const MipgenProgress(lines: ['999%']));
       expect(tester.takeException(), isNull);
     });

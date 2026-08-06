@@ -33,8 +33,7 @@ const String appVersion = String.fromEnvironment(
   defaultValue: 'debug',
 );
 
-var client = Client(apiUrl)
-  ..connectivityMonitor = FlutterConnectivityMonitor();
+var client = Client(apiUrl)..connectivityMonitor = FlutterConnectivityMonitor();
 
 /// Sign-in state for the whole app.
 ///
@@ -104,8 +103,9 @@ void main() async {
   // transfer and leaves a `pending` row with a partial file the server will sweep
   // a day later — recoverable, but not what anybody intended.
   snpUploads.addListener(() {
-    web.window.onbeforeunload =
-        snpUploads.anyLive ? _warnBeforeUnload.toJS : null;
+    web.window.onbeforeunload = snpUploads.anyLive
+        ? _warnBeforeUnload.toJS
+        : null;
   });
 
   runApp(const MyApp());
@@ -277,8 +277,15 @@ class MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+        // ⚠️ `SelectionArea` wraps the whole app body, because in a Flutter web
+        // build ordinary `Text` cannot be selected at all — which for an app
+        // full of gene names, file paths and genome coordinates is the wrong
+        // default. Fields and buttons keep their own behaviour; this only makes
+        // static text selectable.
+        body: const SelectionArea(
+          child: TabBarView(
+            children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+          ),
         ),
         bottomNavigationBar: SizedBox(
           height: 52,
