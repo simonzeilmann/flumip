@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import '../error_text.dart';
 import '../main.dart';
 import '../ui/error_banner.dart';
-import '../ui/theme.dart';
+import '../ui/layout.dart';
+import '../ui/responsive_row.dart';
+import 'settings_access_views.dart';
+import 'settings_section.dart';
+import 'sso_settings.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -354,205 +358,6 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
-  /// Whether an environment variable has taken over [envName].
-  ///
-  /// Such a field is shown read-only: saving it would silently have no effect,
-  /// because the environment wins in [AuthConfig.resolve].
-  bool _overriddenByEnv(String envName) =>
-      _authStatus?.envOverrides.contains(envName) ?? false;
-
-  /// A text field that turns read-only when the environment supplies the value.
-  Widget _oidcField({
-    required TextEditingController controller,
-    required String label,
-    required String envName,
-    String? hintText,
-    String? helperText,
-  }) {
-    final overridden = _overriddenByEnv(envName);
-    return TextField(
-      controller: controller,
-      readOnly: overridden,
-      autocorrect: false,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        helperText: overridden ? 'Set by $envName in the environment' : helperText,
-        helperMaxLines: 3,
-        suffixIcon: overridden
-            ? Tooltip(
-                message: 'An environment variable overrides this setting, so '
-                    'editing it here has no effect.',
-                child: const Icon(Icons.lock_outline, size: 18),
-              )
-            : null,
-      ),
-    );
-  }
-
-  /// The single sign-on fields, shown only when sign-in is required.
-  List<Widget> _ssoFields(BuildContext context) {
-    final status = _authStatus;
-    final secretConfigured = status?.secretConfigured ?? false;
-    return [
-      const Divider(),
-      // The most important thing on this screen. A mismatch between the URI this
-      // server computes and the one registered with the provider is by far the
-      // most common way an OIDC setup fails, and the error appears at the
-      // provider — where the admin cannot see our value. So show it.
-      if (status != null && status.redirectUri.isNotEmpty)
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 6,
-              children: [
-                Text(
-                  'Redirect URI to register with your identity provider',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                SelectableText(
-                  status.redirectUri,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontFamily: 'monospace',
-                      ),
-                ),
-                Text(
-                  'It must match exactly. If your server sits behind a reverse '
-                  'proxy, set the public URL below so this is the address the '
-                  'browser actually uses.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      _oidcField(
-        controller: _oidcIssuerController,
-        label: 'OIDC issuer',
-        envName: 'FLUMIP_OIDC_ISSUER',
-        hintText: 'https://login.example.org/realms/staff',
-        helperText: 'Without a trailing slash. '
-            '/.well-known/openid-configuration is appended to it.',
-      ),
-      _oidcField(
-        controller: _oidcClientIdController,
-        label: 'Client ID',
-        envName: 'FLUMIP_OIDC_CLIENT_ID',
-      ),
-      // Write-only: the server never sends it back, so the field starts empty
-      // and an empty field on save means "leave it alone".
-      TextField(
-        controller: _oidcClientSecretController,
-        obscureText: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        readOnly: _overriddenByEnv('FLUMIP_OIDC_CLIENT_SECRET'),
-        decoration: InputDecoration(
-          labelText: 'Client secret',
-          helperMaxLines: 3,
-          helperText: _overriddenByEnv('FLUMIP_OIDC_CLIENT_SECRET')
-              ? 'Set by FLUMIP_OIDC_CLIENT_SECRET in the environment'
-              : secretConfigured
-                  ? 'A secret is stored. Type here to replace it; leave empty to '
-                      'keep it.'
-                  : 'No secret stored yet.',
-          suffixIcon: secretConfigured
-              ? const Tooltip(
-                  message: 'A client secret is stored on the server. It is '
-                      'never sent back to the browser.',
-                  child: Icon(Icons.check, size: 18),
-                )
-              : null,
-        ),
-      ),
-      _oidcField(
-        controller: _authPublicUrlController,
-        label: 'Public URL of this server',
-        envName: 'FLUMIP_PUBLIC_URL',
-        hintText: 'https://flumip.example.org',
-        helperText: 'Needed when a reverse proxy terminates TLS, because the '
-            'server otherwise uses its own scheme, host and port.',
-      ),
-      _oidcField(
-        controller: _oidcAllowedDomainsController,
-        label: 'Allowed email domains',
-        envName: 'FLUMIP_OIDC_ALLOWED_DOMAINS',
-        hintText: 'example.org, dept.example.org',
-        helperText: 'Comma-separated. Leave empty to allow everyone your '
-            'provider authenticates.',
-      ),
-      _oidcField(
-        controller: _oidcAdminEmailsController,
-        label: 'Administrator email addresses',
-        envName: 'FLUMIP_OIDC_ADMIN_EMAILS',
-        hintText: 'you@example.org',
-        helperText: 'Comma-separated. These accounts can open this settings tab '
-            'without the password.',
-      ),
-      TextField(
-        controller: _oidcScopesController,
-        autocorrect: false,
-        decoration: const InputDecoration(
-          labelText: 'Scopes',
-          helperText: 'Space-separated. "openid" is required; "email" is needed '
-              'to identify users.',
-          helperMaxLines: 2,
-        ),
-      ),
-      TextField(
-        controller: _oidcButtonLabelController,
-        decoration: const InputDecoration(labelText: 'Sign-in button label'),
-      ),
-      // Validates the configuration here, with a readable message, rather than
-      // at someone's first sign-in attempt. Same idea as the test email above.
-      Row(
-        children: [
-          ElevatedButton(
-            onPressed: _loadAuthStatus,
-            child: const Text('Test connection'),
-          ),
-          const SizedBox(width: 10),
-          if (status != null)
-            Expanded(
-              child: Text(
-                status.discoveryOk
-                    ? 'Reached the provider. Authorization endpoint: '
-                        '${status.authorizationEndpoint}'
-                    : status.discoveryError ?? 'Not configured yet.',
-                style: context.text.bodySmall?.copyWith(
-                  color: status.discoveryOk
-                      ? context.status.success
-                      : context.colours.error,
-                ),
-              ),
-            ),
-        ],
-      ),
-      // Enforcement is deliberately conditional on a working configuration:
-      // requiring a sign-in with no way to sign in would lock everyone out
-      // permanently, so the server stays reachable until this is sorted.
-      if (status != null && status.enabled && !status.enforcing)
-        Container(
-          decoration: BoxDecoration(
-            color: context.status.warningContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            'Sign-in is switched on but is not being enforced yet, because the '
-            'configuration is incomplete or the provider could not be reached. '
-            'The server stays reachable without signing in until it works, so '
-            'that a half-finished setup cannot lock you out.',
-            style: TextStyle(color: context.status.onWarningContainer),
-          ),
-        ),
-      const Divider(),
-    ];
-  }
-
   Future<void> sendTestMail() async {
     final to = _testMailController.text.trim();
     if (to.isEmpty) {
@@ -621,290 +426,332 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        spacing: 30,
-        children: [
-          if (_errorMessage != null)
-            ErrorBanner(
-              _errorMessage!,
-              onDismiss: () => setState(() => _errorMessage = null),
-            ),
-          SizedBox(height: 20),
-          if (settings == null && _accessFailed) ...[
-            Center(
-              child: ElevatedButton(
-                onPressed: _loadAccess,
-                child: const Text('Retry'),
-              ),
-            ),
-          ] else if (settings == null && _access == null) ...[
-            const Center(child: CircularProgressIndicator()),
-          ] else if (settings == null && _access!.passwordAccepted) ...[
-            // Only reachable when sign-in is not being enforced. Once it is, the
-            // server stops accepting the password, so offering the box would be
-            // offering something that cannot work.
-            Row(
-              spacing: 10,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 250,
-                  child: TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: const InputDecoration(
-                        border: OutlineInputBorder(), labelText: 'Password'),
-                    onSubmitted: (_) => _loadSettings(),
-                  ),
+    if (settings == null && _accessFailed) {
+      return _shell(SettingsRetryView(onRetry: _loadAccess));
+    }
+    if (settings == null && _access == null) {
+      return _shell(const Center(child: CircularProgressIndicator()));
+    }
+    if (settings == null && _access!.passwordAccepted) {
+      // Only reachable when sign-in is not being enforced. Once it is, the
+      // server stops accepting the password, so offering the box would be
+      // offering something that cannot work.
+      return _shell(
+        SettingsPasswordGate(
+          controller: _passwordController,
+          onSubmit: _loadSettings,
+        ),
+      );
+    }
+    if (settings == null) return _shell(const NoSettingsView());
+    return _shell(_adminForm(context), saveBar: true);
+  }
+
+  /// The error banner sits above whichever branch is showing.
+  ///
+  /// ⚠️ **Above, not inside the form.** The `_accessFailed` branch renders only a
+  /// button; the sentence explaining why comes from here. Move this into
+  /// `_adminForm` and that branch becomes an unexplained button on a blank
+  /// screen.
+  ///
+  /// It is also outside the scroll view, which is the other half of the fix: it
+  /// used to be the first child of the `SingleChildScrollView`, so a failed save
+  /// from the bottom of a long form showed the user nothing at all.
+  Widget _shell(Widget body, {bool saveBar = false}) {
+    return Column(
+      children: [
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(maxWidth: ContentWidth.form),
+                child: ErrorBanner(
+                  _errorMessage!,
+                  onDismiss: () => setState(() => _errorMessage = null),
                 ),
-                ElevatedButton(
-                    onPressed: _loadSettings, child: Text('Load settings')),
-              ],
-            ),
-          ] else if (settings == null) ...[
-            buildUserSettingsView(),
-          ] else ...[
-            SizedBox(
-              width: 400,
-              child: Column(
-                spacing: 3,
-                children: [
-                  TextField(
-                    controller: _baseDirController,
-                    decoration: InputDecoration(labelText: 'Base directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _projectDirController,
-                    decoration: InputDecoration(labelText: 'Project directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _genomeDirController,
-                    decoration: InputDecoration(labelText: 'Genome directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _customSnpDirController,
-                    decoration:
-                        InputDecoration(labelText: 'Custom SNP directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _snpSourceAllowedHostsController,
-                    decoration: InputDecoration(
-                      labelText: 'Allowed SNP download hosts',
-                      helperText:
-                          'Comma-separated, e.g. ftp.ncbi.nlm.nih.gov, '
-                          'hgdownload.soe.ucsc.edu. Subdomains match. Leave '
-                          'empty to allow any public address.\n'
-                          'Filling this in is what closes the DNS-rebinding '
-                          'gap the address checks cannot.',
-                      helperMaxLines: 4,
-                    ),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _toolsDirController,
-                    decoration: InputDecoration(labelText: 'Tools directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _mipgenExecutableController,
-                    decoration: InputDecoration(labelText: 'MIPGEN executable'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _exonExtractScriptController,
-                    decoration:
-                        InputDecoration(labelText: 'Exon extract script'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _ucscTrackGeneratorController,
-                    decoration:
-                        InputDecoration(labelText: 'UCSC track generator'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _bigGenePredToGenePredExecutable,
-                    decoration: InputDecoration(
-                        labelText: 'BigGenePred to GenePred executable'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _binCreationScript,
-                    decoration:
-                        InputDecoration(labelText: 'Bin creation script'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  Row(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _mailActiveNotifier,
-                        builder: (context, value, child) {
-                          return Checkbox(
-                            value: value,
-                            onChanged: (value) {
-                              setState(() {
-                                _mailActiveNotifier.value = value!;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      Text('Mail active'),
-                    ],
-                  ),
-                  if (_mailActiveNotifier.value) ...[
-                    TextField(
-                      controller: _smtpServerController,
-                      decoration: InputDecoration(labelText: 'SMTP server'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpPortController,
-                      decoration: InputDecoration(labelText: 'SMTP port'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: _smtpUserController,
-                      decoration: InputDecoration(labelText: 'SMTP user'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpPasswordController,
-                      obscureText: true,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      decoration: InputDecoration(
-                        labelText: 'SMTP password',
-                        helperMaxLines: 3,
-                        helperText: _smtpPasswordConfigured
-                            ? 'A password is stored. Type here to replace it; '
-                                'leave empty to keep it.'
-                            : 'No password stored. Leave empty for a relay that '
-                                'needs no authentication.',
-                        suffixIcon: _smtpPasswordConfigured
-                            ? const Tooltip(
-                                message: 'A password is stored on the server. '
-                                    'It is never sent back to the browser.',
-                                child: Icon(Icons.check, size: 18),
-                              )
-                            : null,
-                      ),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpFromController,
-                      decoration: InputDecoration(labelText: 'SMTP from'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    Row(
-                      children: [
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _startTLSNotifier,
-                          builder: (context, value, child) {
-                            return Checkbox(
-                              value: value,
-                              onChanged: (value) {
-                                _startTLSNotifier.value = value!;
-                              },
-                            );
-                          },
-                        ),
-                        Text('Start TLS'),
-                      ],
-                    ),
-                    // Validates the SMTP configuration above without having to
-                    // run a job. Uses the currently saved settings, so save
-                    // first after changing them.
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _testMailController,
-                            decoration: InputDecoration(
-                              labelText: 'Send test email to',
-                              hintText: 'you@example.com',
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            autocorrect: false,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        ElevatedButton(
-                          onPressed: sendTestMail,
-                          child: Text('Send test email'),
-                        ),
-                      ],
-                    ),
-                  ],
-                  Row(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _loginRequiredNotifier,
-                        builder: (context, value, child) {
-                          return Checkbox(
-                            value: value,
-                            // setState, unlike the SMTP checkbox above, because
-                            // this one reveals the fields below it.
-                            onChanged: (value) {
-                              setState(() {
-                                _loginRequiredNotifier.value = value!;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      const Expanded(
-                        child: Text('Require sign-in (single sign-on)'),
-                      ),
-                    ],
-                  ),
-                  if (_loginRequiredNotifier.value) ..._ssoFields(context),
-                  TextField(
-                    controller: _newPasswordController,
-                    obscureText: true,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: InputDecoration(labelText: 'New password'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  Row(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _demoModeNotifier,
-                        builder: (context, value, child) {
-                          return Checkbox(
-                            value: value,
-                            onChanged: (value) {
-                              setState(() {
-                                _demoModeNotifier.value = value!;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      Text('Demo mode'),
-                    ],
-                  ),
-                ],
               ),
             ),
-            Center(
-              child: ElevatedButton(
-                onPressed: updateSettings,
-                child: Text('Update settings'),
-              ),
-            ),
-            SizedBox(height: 50),
+          ),
+        Expanded(child: body),
+        if (saveBar)
+          SettingsSaveBar(
+            onSave: updateSettings,
+            maxWidth: ContentWidth.form,
+          ),
+      ],
+    );
+  }
+
+  Widget _adminForm(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: ContentWidth(
+        maxWidth: ContentWidth.form,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 20,
+          children: [
+            _storageSection(),
+            _toolsSection(),
+            _mailSection(),
+            _signInSection(context),
+            _securitySection(),
           ],
-        ],
+        ),
       ),
     );
   }
+
+  SettingsSection _storageSection() => SettingsSection(
+        title: 'Storage',
+        description: 'Where the server keeps projects, genomes and SNP sets.',
+        children: [
+          ResponsiveRow(
+            minChildWidth: 280,
+            children: [
+              _path(_baseDirController, 'Base directory'),
+              _path(_projectDirController, 'Project directory'),
+            ],
+          ),
+          ResponsiveRow(
+            minChildWidth: 280,
+            children: [
+              _path(_genomeDirController, 'Genome directory'),
+              _path(_customSnpDirController, 'Custom SNP directory'),
+            ],
+          ),
+          // Full width, and on its own: the helper runs to four lines, and
+          // pairing it would set the height of whatever sat beside it.
+          TextField(
+            controller: _snpSourceAllowedHostsController,
+            decoration: const InputDecoration(
+              labelText: 'Allowed SNP download hosts',
+              helperText: 'Comma-separated, e.g. ftp.ncbi.nlm.nih.gov, '
+                  'hgdownload.soe.ucsc.edu. Subdomains match. Leave empty to '
+                  'allow any public address.\n'
+                  'Filling this in is what closes the DNS-rebinding gap the '
+                  'address checks cannot.',
+              helperMaxLines: 4,
+            ),
+          ),
+        ],
+      );
+
+  SettingsSection _toolsSection() => SettingsSection(
+        title: 'External tools',
+        description: 'Absolute paths to MIPGEN and the scripts around it.',
+        children: [
+          ResponsiveRow(
+            minChildWidth: 280,
+            children: [
+              _path(_toolsDirController, 'Tools directory'),
+              _path(_mipgenExecutableController, 'MIPGEN executable'),
+            ],
+          ),
+          ResponsiveRow(
+            minChildWidth: 280,
+            children: [
+              _path(_exonExtractScriptController, 'Exon extract script'),
+              _path(_ucscTrackGeneratorController, 'UCSC track generator'),
+            ],
+          ),
+          ResponsiveRow(
+            minChildWidth: 280,
+            children: [
+              _path(
+                _bigGenePredToGenePredExecutable,
+                'BigGenePred to GenePred executable',
+              ),
+              _path(_binCreationScript, 'Bin creation script'),
+            ],
+          ),
+        ],
+      );
+
+  SettingsSection _mailSection() => SettingsSection(
+        title: 'Mail',
+        description: 'Used for job notifications. Optional.',
+        children: [
+          SwitchListTile(
+            value: _mailActiveNotifier.value,
+            title: const Text('Send email'),
+            subtitle: const Text(
+              'Off means no notifications are sent, whatever a project asks for.',
+            ),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (value) =>
+                setState(() => _mailActiveNotifier.value = value),
+          ),
+          if (_mailActiveNotifier.value) ...[
+            ResponsiveRow(
+              minChildWidth: 200,
+              // A hostname wants the room; a five-digit port does not. Equal
+              // columns would leave the port field 430px wide for four
+              // characters, which is what it had before.
+              flex: const [3, 1],
+              children: [
+                TextField(
+                  controller: _smtpServerController,
+                  decoration: const InputDecoration(labelText: 'SMTP server'),
+                ),
+                TextField(
+                  controller: _smtpPortController,
+                  decoration: const InputDecoration(labelText: 'Port'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+            ResponsiveRow(
+              minChildWidth: 260,
+              children: [
+                TextField(
+                  controller: _smtpUserController,
+                  decoration: const InputDecoration(labelText: 'SMTP user'),
+                ),
+                TextField(
+                  controller: _smtpFromController,
+                  decoration: const InputDecoration(labelText: 'From address'),
+                ),
+              ],
+            ),
+            // ⚠️ Write-only, and the controller is owned by this state. The save
+            // path reads `.text`, sends it, then clears it — so an empty field
+            // means "keep what is stored".
+            TextField(
+              controller: _smtpPasswordController,
+              obscureText: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: 'SMTP password',
+                helperMaxLines: 3,
+                helperText: _smtpPasswordConfigured
+                    ? 'A password is stored. Type here to replace it; leave '
+                        'empty to keep it.'
+                    : 'No password stored. Leave empty for a relay that needs '
+                        'no authentication.',
+                suffixIcon: _smtpPasswordConfigured
+                    ? const Tooltip(
+                        message: 'A password is stored on the server. It is '
+                            'never sent back to the browser.',
+                        child: Icon(Icons.check, size: 18),
+                      )
+                    : null,
+              ),
+            ),
+            SwitchListTile(
+              value: _startTLSNotifier.value,
+              title: const Text('Start TLS'),
+              contentPadding: EdgeInsets.zero,
+              // ⚠️ setState, which the Checkbox this replaces omitted. That was
+              // harmless only because it sat inside a ValueListenableBuilder and
+              // nothing below it was conditional on the value. A SwitchListTile
+              // is not, so without this the switch would not move.
+              onChanged: (value) =>
+                  setState(() => _startTLSNotifier.value = value),
+            ),
+            // Validates the SMTP configuration above without having to run a
+            // job. Uses the currently saved settings, so save first after
+            // changing them.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _testMailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Send test email to',
+                      hintText: 'you@example.com',
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: OutlinedButton(
+                    onPressed: sendTestMail,
+                    child: const Text('Send test email'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      );
+
+  SettingsSection _signInSection(BuildContext context) => SettingsSection(
+        title: 'Sign-in',
+        description: 'Single sign-on through an OpenID Connect provider. '
+            'Off means anyone who can reach the server can use it.',
+        children: [
+          SwitchListTile(
+            value: _loginRequiredNotifier.value,
+            title: const Text('Require sign-in'),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (value) =>
+                setState(() => _loginRequiredNotifier.value = value),
+          ),
+          if (_loginRequiredNotifier.value)
+            // ⚠️ Not const: _authStatus arrives asynchronously, and a
+            // const-elided widget would never show the env-override markers.
+            SsoSettings(
+              issuerController: _oidcIssuerController,
+              clientIdController: _oidcClientIdController,
+              clientSecretController: _oidcClientSecretController,
+              publicUrlController: _authPublicUrlController,
+              allowedDomainsController: _oidcAllowedDomainsController,
+              adminEmailsController: _oidcAdminEmailsController,
+              scopesController: _oidcScopesController,
+              buttonLabelController: _oidcButtonLabelController,
+              status: _authStatus,
+              onTestConnection: _loadAuthStatus,
+            ),
+        ],
+      );
+
+  /// The settings password and demo mode.
+  ///
+  /// These two had no heading at all before — the password field sat between the
+  /// sign-in block and a "Demo mode" checkbox, with nothing saying what either
+  /// was for.
+  SettingsSection _securitySection() => SettingsSection(
+        title: 'Security',
+        children: [
+          TextField(
+            controller: _newPasswordController,
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            // ⚠️ Not a write-only field, unlike the two secrets above: the
+            // current value is loaded into it and sent back verbatim on save.
+            // So the helper must not say "leave empty to keep it" — emptying it
+            // sets an empty password.
+            decoration: const InputDecoration(
+              labelText: 'Settings password',
+              helperText: 'Opens this tab on an install without sign-in. '
+                  'Editing it here changes it when you save.',
+            ),
+          ),
+          SwitchListTile(
+            value: _demoModeNotifier.value,
+            title: const Text('Demo mode'),
+            subtitle: const Text(
+              'Projects are deleted automatically after a short while.',
+            ),
+            contentPadding: EdgeInsets.zero,
+            onChanged: (value) =>
+                setState(() => _demoModeNotifier.value = value),
+          ),
+        ],
+      );
+
+  TextField _path(TextEditingController controller, String label) => TextField(
+        controller: controller,
+        autocorrect: false,
+        decoration: InputDecoration(labelText: label),
+      );
 }
