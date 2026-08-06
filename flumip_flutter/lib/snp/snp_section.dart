@@ -10,6 +10,9 @@ import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flumip_flutter/snp/snp_tile.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/error_banner.dart';
+import '../ui/theme.dart';
+
 /// The SNP sets available for one genome, with whatever a user may do to them.
 ///
 /// Replaces the read-only listing that used to live inside `GenomeDetailsCard`.
@@ -319,50 +322,53 @@ class _SnpSectionState extends State<SnpSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(height: 24, thickness: 1),
-        Row(
-          children: [
-            const Icon(Icons.scatter_plot, color: Colors.purple),
-            const SizedBox(width: 8),
-            const Text(
-              'SNP sets',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const Spacer(),
-            if (snps != null)
+        // No leading Divider: the detail pane owns the one divider between its
+        // header and this. There used to be two, 24px apart.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 16, 4),
+          child: Row(
+            children: [
+              // The count is part of the heading. It was a bare numeral floating
+              // to the right of the title, which reads as nothing at all.
               Text(
-                '${snps.length}',
-                style: const TextStyle(color: Colors.black54),
+                snps == null ? 'SNP sets' : 'SNP sets (${snps.length})',
+                style: context.text.titleSmall,
               ),
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: _add,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                minimumSize: const Size(0, 32),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _add,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 32),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         if (_errorMessage != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
+            padding: const EdgeInsets.fromLTRB(24, 0, 16, 8),
+            child: ErrorBanner(
               _errorMessage!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              onDismiss: () => setState(() => _errorMessage = null),
             ),
           ),
-        const SizedBox(height: 8),
         Expanded(
           child: switch (snps) {
             null => const Center(child: CircularProgressIndicator()),
-            [] => const Text(
-                'No SNP sets for this genome yet.',
-                style: TextStyle(color: Colors.black54),
+            // Centred, to match the loading state it replaces. It used to be
+            // left-aligned, so the pane visibly jumped when the load finished.
+            [] => Center(
+                child: Text(
+                  'No SNP sets for this genome yet.',
+                  style: context.text.bodyMedium
+                      ?.copyWith(color: context.colours.onSurfaceVariant),
+                ),
               ),
             _ => ListView.separated(
+                padding: const EdgeInsets.fromLTRB(24, 4, 16, 16),
                 itemCount: snps.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 6),
                 itemBuilder: (context, i) => SnpTile(

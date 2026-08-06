@@ -63,11 +63,6 @@ class SnpTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  snp.custom ? Icons.label_important : Icons.dns,
-                  color: snp.custom ? Colors.purple : Colors.blueGrey,
-                ),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     snp.name,
@@ -84,7 +79,7 @@ class SnpTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   snp.description,
-                  style: const TextStyle(color: Colors.black54),
+                  style: TextStyle(color: context.colours.onSurfaceVariant),
                 ),
               ),
             Padding(
@@ -92,15 +87,18 @@ class SnpTile extends StatelessWidget {
               child: Text(
                 '${formatBytes(snp.size)} · '
                 'added ${DateFormat('dd.MM.yyyy').format(snp.created)}',
-                style: const TextStyle(color: Colors.black54, fontSize: 12),
+                style: TextStyle(
+                  color: context.colours.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
             ),
             if (upload != null)
-              _uploadProgress(upload!)
+              _uploadProgress(context, upload!)
             else if (!isTerminal(snp.status))
-              _progress(),
+              _progress(context),
             if (upload == null && snp.status == SnpImportStatus.failed)
-              _failure(),
+              _failure(context),
           ],
         ),
       ),
@@ -144,7 +142,7 @@ class SnpTile extends StatelessWidget {
     ];
   }
 
-  Widget _progress() {
+  Widget _progress(BuildContext context) {
     final fraction = progressFraction(snp.bytesDownloaded, snp.totalBytes);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -158,7 +156,10 @@ class SnpTile extends StatelessWidget {
                 ? '${formatBytes(snp.bytesDownloaded)} of '
                     '${formatBytes(snp.totalBytes)}'
                 : statusLabel(snp.status),
-            style: const TextStyle(color: Colors.black54, fontSize: 12),
+            style: TextStyle(
+                  color: context.colours.onSurfaceVariant,
+                  fontSize: 12,
+                ),
           ),
         ],
       ),
@@ -166,7 +167,7 @@ class SnpTile extends StatelessWidget {
   }
 
   /// The bar for a browser upload, driven by this tab rather than by the row.
-  Widget _uploadProgress(UploadJob job) => Padding(
+  Widget _uploadProgress(BuildContext context, UploadJob job) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,8 +181,8 @@ class SnpTile extends StatelessWidget {
                     child: Text(
                       'Uploading ${job.fileLabel} — '
                       '${formatBytes(job.sent)} of ${formatBytes(job.total)}',
-                      style: const TextStyle(
-                        color: Colors.black54,
+                      style: TextStyle(
+                        color: context.colours.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -200,13 +201,13 @@ class SnpTile extends StatelessWidget {
             ] else
               SelectableText(
                 job.error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: TextStyle(color: context.colours.error, fontSize: 12),
               ),
           ],
         ),
       );
 
-  Widget _failure() => Padding(
+  Widget _failure(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +217,7 @@ class SnpTile extends StatelessWidget {
             // truncating them would throw away the useful half.
             SelectableText(
               snp.statusMessage,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: TextStyle(color: context.colours.error, fontSize: 12),
             ),
             if (_mayEdit)
               TextButton.icon(
@@ -233,6 +234,7 @@ class SnpTile extends StatelessWidget {
       );
 
   Widget _menu(BuildContext context) {
+    final destructive = TextStyle(color: context.colours.error);
     return PopupMenuButton<SnpAction>(
       onSelected: onAction,
       itemBuilder: (context) => [
@@ -262,20 +264,17 @@ class SnpTile extends StatelessWidget {
             child: Text('Cancel — no files arrived'),
           ),
         if (_mayEdit)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: SnpAction.delete,
-            child: Text('Delete…', style: TextStyle(color: Colors.red)),
+            child: Text('Delete…', style: destructive),
           ),
         // Visually separated, because it is a different kind of act: it can
         // reach the server's reference data, and it cannot be undone.
-        if (isAdmin) const PopupMenuDivider(),
+        if (isAdmin && _mayEdit) const PopupMenuDivider(),
         if (isAdmin)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: SnpAction.adminDelete,
-            child: Text(
-              'Delete as administrator…',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text('Delete as administrator…', style: destructive),
           ),
       ],
     );
