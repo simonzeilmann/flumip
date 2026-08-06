@@ -81,14 +81,55 @@ class MipgenProgress {
 ///
 /// Header lines start with `>`, the same convention mipgen uses in its other
 /// outputs.
-bool resultHasData(List<String> lines) {
-  for (final line in lines) {
-    final trimmed = line.trim();
-    if (trimmed.isEmpty) continue;
-    if (trimmed.startsWith('>')) continue;
-    return true;
+bool resultHasData(List<String> lines) => ResultCounts.of(lines).mips > 0;
+
+/// What is actually in a mipgen result file.
+///
+/// ⚠️ Line count is a poor summary of these files, and misreading one is what
+/// prompted this. A `.snp_mips.txt` interleaves designed MIPs with
+/// `>Alternate MIP(s) could not be generated for SNP in arms of MIP #N` notes,
+/// so a ten-line file can be four MIPs and five notes — and at a glance, with
+/// the notes spread through it, it reads as though nothing was produced.
+class ResultCounts {
+  const ResultCounts({required this.mips, required this.notes});
+
+  /// Rows describing a designed MIP.
+  final int mips;
+
+  /// mipgen's own remarks. Every `>` line except the column header.
+  final int notes;
+
+  static ResultCounts of(List<String> lines) {
+    var mips = 0;
+    var notes = 0;
+    var seenHeader = false;
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (!trimmed.startsWith('>')) {
+        mips++;
+        continue;
+      }
+      // The first `>` line is the column header — `>mip_key logistic_score …` —
+      // not a remark about the run, so counting it as a note would overstate
+      // them by one on every file.
+      if (!seenHeader) {
+        seenHeader = true;
+        continue;
+      }
+      notes++;
+    }
+    return ResultCounts(mips: mips, notes: notes);
   }
-  return false;
+
+  /// A one-line summary for the dialog header.
+  String get summary {
+    final mipPart = mips == 1 ? '1 MIP' : '$mips MIPs';
+    if (notes == 0) return mips == 0 ? 'no MIPs' : mipPart;
+    final notePart = notes == 1 ? '1 note' : '$notes notes';
+    return '${mips == 0 ? 'no MIPs' : mipPart} · $notePart';
+  }
 }
 
 /// The live panel shown while a design run is going.

@@ -137,6 +137,36 @@ void main() {
       expect(find.text('1 line'), findsOneWidget);
     });
 
+    testWidgets('a summary replaces the line count where one is given',
+        (tester) async {
+      // ⚠️ "10 lines" was the misleading part: a result file interleaves MIPs
+      // with mipgen's remarks, so the count says nothing about what was
+      // produced.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showTextFileDialog(
+                  context,
+                  title: 'SNP MIPs result',
+                  lines: const ['>header', '>note', 'a row', 'another'],
+                  summary: '2 MIPs · 1 note',
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 MIPs · 1 note'), findsOneWidget);
+      expect(find.text('4 lines'), findsNothing);
+    });
+
     testWidgets('an empty file says so and offers no copy', (tester) async {
       await pumpViewer(tester, lines: const []);
       expect(find.text('No result file found.'), findsOneWidget);

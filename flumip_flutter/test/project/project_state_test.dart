@@ -116,4 +116,57 @@ void main() {
       expect(resultHasData(['chr1 100 a>b']), isTrue);
     });
   });
+
+  group('ResultCounts', () {
+    /// The real shape of `kjh-jhk.snp_mips.txt`, read off disk: a column header,
+    /// four designed MIPs, and five remarks interleaved between them.
+    const kjhJhk = [
+      '>mip_key\tlogistic_score\tchr\text_probe_start',
+      '>Alternate MIP(s) could not be generated for SNP in arms of MIP #1',
+      '>Alternate MIP(s) could not be generated for SNP in arms of MIP #3',
+      '17:43049098-43049259/20,23/-\t0.980682\t17',
+      '>Alternate MIP(s) could not be generated for SNP in arms of MIP #14',
+      '17:43074397-43074558/16,27/-\t0.962823\t17',
+      '17:43076441-43076602/21,24/-\t0.944653\t17',
+      '17:43093543-43093704/18,25/-\t0.982997\t17',
+      '>Alternate MIP(s) could not be generated for SNP in arms of MIP #48',
+      '>Alternate MIP(s) could not be generated for SNP in arms of MIP #61',
+    ];
+
+    test('separates designed MIPs from mipgen\'s remarks', () {
+      final counts = ResultCounts.of(kjhJhk);
+      expect(counts.mips, 4);
+      expect(counts.notes, 5);
+    });
+
+    test('summarises the split, which "10 lines" did not', () {
+      expect(ResultCounts.of(kjhJhk).summary, '4 MIPs · 5 notes');
+    });
+
+    test('the column header is not counted as a note', () {
+      // ⚠️ Otherwise every file overstates its remarks by one.
+      final counts = ResultCounts.of(['>mip_key score chr', 'a row']);
+      expect(counts.notes, 0);
+      expect(counts.summary, '1 MIP');
+    });
+
+    test('a clean run says only how many it produced', () {
+      final counts = ResultCounts.of(['>header', 'a', 'b', 'c']);
+      expect(counts.summary, '3 MIPs');
+    });
+
+    test('a run that produced nothing says so', () {
+      expect(ResultCounts.of(['>header']).summary, 'no MIPs');
+      expect(
+        ResultCounts.of(['>header', '>could not be generated']).summary,
+        'no MIPs · 1 note',
+      );
+    });
+
+    test('blank lines count as neither', () {
+      final counts = ResultCounts.of(['>header', '', '  ', 'a row']);
+      expect(counts.mips, 1);
+      expect(counts.notes, 0);
+    });
+  });
 }

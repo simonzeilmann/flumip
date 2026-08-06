@@ -19,11 +19,16 @@ Future<void> showTextFileDialog(
   required String title,
   required List<String> lines,
   String emptyMessage = 'Nothing here yet.',
+  String? summary,
 }) {
   return showDialog<void>(
     context: context,
-    builder: (context) =>
-        _TextFileDialog(title: title, lines: lines, emptyMessage: emptyMessage),
+    builder: (context) => _TextFileDialog(
+      title: title,
+      lines: lines,
+      emptyMessage: emptyMessage,
+      summary: summary,
+    ),
   );
 }
 
@@ -32,11 +37,16 @@ class _TextFileDialog extends StatelessWidget {
     required this.title,
     required this.lines,
     required this.emptyMessage,
+    this.summary,
   });
 
   final String title;
   final List<String> lines;
   final String emptyMessage;
+
+  /// What the file contains, where a line count would mislead — a result file
+  /// says "4 MIPs · 5 notes" rather than "10 lines". Falls back to the count.
+  final String? summary;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +57,8 @@ class _TextFileDialog extends StatelessWidget {
           Expanded(child: Text(title)),
           if (!empty)
             Text(
-              '${lines.length} line${lines.length == 1 ? '' : 's'}',
+              summary ??
+                  '${lines.length} line${lines.length == 1 ? '' : 's'}',
               style: context.text.bodySmall?.copyWith(
                 color: context.colours.onSurfaceVariant,
               ),
@@ -75,14 +86,26 @@ class _TextFileDialog extends StatelessWidget {
                   child: Scrollbar(
                     child: ListView.builder(
                       itemCount: lines.length,
-                      itemBuilder: (context, i) => SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SelectableText(
-                          lines[i],
-                          maxLines: 1,
-                          style: context.mono.copyWith(fontSize: 12),
-                        ),
-                      ),
+                      itemBuilder: (context, i) {
+                        // mipgen's own remarks are dimmed so the designed MIPs
+                        // stand out. Interleaved in the same weight, a handful
+                        // of "could not be generated" notes made a file with
+                        // real results read as though it had none.
+                        final isNote = lines[i].trimLeft().startsWith('>');
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SelectableText(
+                            lines[i],
+                            maxLines: 1,
+                            style: context.mono.copyWith(
+                              fontSize: 12,
+                              color: isNote
+                                  ? context.colours.onSurfaceVariant
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

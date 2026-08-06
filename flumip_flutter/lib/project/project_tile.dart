@@ -312,6 +312,7 @@ class _ProjectTileState extends State<ProjectTile> {
         context,
         title: 'MIPs result',
         lines: lines,
+        summary: ResultCounts.of(lines).summary,
         emptyMessage: 'No MIPs result file found.',
       );
     } catch (e) {
@@ -335,6 +336,7 @@ class _ProjectTileState extends State<ProjectTile> {
         context,
         title: 'SNP MIPs result',
         lines: lines,
+        summary: ResultCounts.of(lines).summary,
         emptyMessage: 'No SNP MIPs result file found.',
       );
     } catch (e) {
