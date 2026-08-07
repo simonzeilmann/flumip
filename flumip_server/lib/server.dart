@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
-import 'package:flumip_server/src/future_calls/demo_mode_cleanup.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -39,12 +38,6 @@ void run(List<String> args) async {
   // to fix it. Ours resolves an unknown token to null, which comes out as a
   // clean 401 that the client can recover from.
   pod.authenticationHandler = flumipAuthenticationHandler;
-
-  // CheckIndexProgress / CheckMipgenProgress are spec future calls and are
-  // registered automatically from the generated code. DemoModeCleanup still
-  // uses the legacy string-keyed API (identifier-based scheduling/cancellation)
-  // and is registered manually.
-  pod.registerFutureCall(DemoModeCleanup(), 'demoModeCleanup');
 
   // Setup the flutter project server.
   final flutterAppDir = Directory('web/app');

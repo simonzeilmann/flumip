@@ -17,6 +17,7 @@ abstract class Settings
   Settings._({
     this.id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -46,6 +47,7 @@ abstract class Settings
     String? oidcAdminEmails,
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
+       demoModeRetentionHours = demoModeRetentionHours ?? 168,
        baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
@@ -84,6 +86,7 @@ abstract class Settings
   factory Settings({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -120,6 +123,8 @@ abstract class Settings
       demoMode: jsonSerialization['demoMode'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+      demoModeRetentionHours:
+          jsonSerialization['demoModeRetentionHours'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
       projectDir: jsonSerialization['projectDir'] as String?,
       genomeDir: jsonSerialization['genomeDir'] as String?,
@@ -168,6 +173,14 @@ abstract class Settings
   int? id;
 
   bool demoMode;
+
+  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  ///
+  /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  /// raising it spares projects that were already queued. Lowering it cannot
+  /// pull a scheduled deletion earlier — that project keeps the deadline it was
+  /// created with. See DemoModeCleanup.
+  int demoModeRetentionHours;
 
   String baseDir;
 
@@ -234,6 +247,7 @@ abstract class Settings
   Settings copyWith({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -269,6 +283,7 @@ abstract class Settings
       '__className__': 'Settings',
       if (id != null) 'id': id,
       'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -306,6 +321,7 @@ abstract class Settings
       '__className__': 'Settings',
       if (id != null) 'id': id,
       'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -371,6 +387,7 @@ class _SettingsImpl extends Settings {
   _SettingsImpl({
     int? id,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -402,6 +419,7 @@ class _SettingsImpl extends Settings {
   }) : super._(
          id: id,
          demoMode: demoMode,
+         demoModeRetentionHours: demoModeRetentionHours,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
@@ -439,6 +457,7 @@ class _SettingsImpl extends Settings {
   Settings copyWith({
     Object? id = _Undefined,
     bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -471,6 +490,8 @@ class _SettingsImpl extends Settings {
     return Settings(
       id: id is int? ? id : this.id,
       demoMode: demoMode ?? this.demoMode,
+      demoModeRetentionHours:
+          demoModeRetentionHours ?? this.demoModeRetentionHours,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,
@@ -516,6 +537,12 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
     table.demoMode,
     value,
   );
+
+  _i1.ColumnValue<int, int> demoModeRetentionHours(int value) =>
+      _i1.ColumnValue(
+        table.demoModeRetentionHours,
+        value,
+      );
 
   _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
     table.baseDir,
@@ -680,6 +707,11 @@ class SettingsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
+    demoModeRetentionHours = _i1.ColumnInt(
+      'demoModeRetentionHours',
+      this,
+      hasDefault: true,
+    );
     baseDir = _i1.ColumnString(
       'baseDir',
       this,
@@ -824,6 +856,14 @@ class SettingsTable extends _i1.Table<int?> {
 
   late final _i1.ColumnBool demoMode;
 
+  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  ///
+  /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  /// raising it spares projects that were already queued. Lowering it cannot
+  /// pull a scheduled deletion earlier — that project keeps the deadline it was
+  /// created with. See DemoModeCleanup.
+  late final _i1.ColumnInt demoModeRetentionHours;
+
   late final _i1.ColumnString baseDir;
 
   late final _i1.ColumnString projectDir;
@@ -884,6 +924,7 @@ class SettingsTable extends _i1.Table<int?> {
   List<_i1.Column> get columns => [
     id,
     demoMode,
+    demoModeRetentionHours,
     baseDir,
     projectDir,
     genomeDir,

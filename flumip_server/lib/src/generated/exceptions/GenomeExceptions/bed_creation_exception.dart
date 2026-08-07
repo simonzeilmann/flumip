@@ -38,12 +38,18 @@ abstract class BedCreationException
   BedCreationException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
-    return {'__className__': 'BedCreationException', 'message': message};
+    return {
+      '__className__': 'BedCreationException',
+      'message': message,
+    };
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
-    return {'__className__': 'BedCreationException', 'message': message};
+    return {
+      '__className__': 'BedCreationException',
+      'message': message,
+    };
   }
 
   @override

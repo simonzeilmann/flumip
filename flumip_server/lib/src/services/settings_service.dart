@@ -5,6 +5,18 @@ import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+/// How long a project survives on a demo install.
+///
+/// Clamped, because the value is typed into a settings box and both ends are
+/// reachable by accident. Zero or negative would delete a project the instant it
+/// was created — including the one whose creation scheduled the call — and an
+/// absurd figure would schedule a future call so far out that it is effectively
+/// a leak. One hour to a year.
+Duration demoRetention(Settings settings) {
+  final hours = settings.demoModeRetentionHours.clamp(1, 24 * 365);
+  return Duration(hours: hours);
+}
+
 /// A service class for handling settings-related operations.
 class SettingsService {
   SettingsService();
@@ -139,6 +151,7 @@ class SettingsService {
 
     stored
       ..demoMode = settings.demoMode
+      ..demoModeRetentionHours = settings.demoModeRetentionHours
       ..baseDir = settings.baseDir
       ..projectDir = settings.projectDir
       ..genomeDir = settings.genomeDir

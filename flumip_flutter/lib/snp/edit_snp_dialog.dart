@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
 
 /// The result of an [EditSnpDialog].
 class SnpEdit {
@@ -48,7 +49,7 @@ class _EditSnpDialogState extends State<EditSnpDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Rename SNP set'),
-      content: SizedBox(
+      content: DialogBody(
         width: 460,
         child: Column(
           mainAxisSize: MainAxisSize.min,

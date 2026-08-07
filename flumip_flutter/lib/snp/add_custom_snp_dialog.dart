@@ -4,6 +4,8 @@ import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/snp/snp_validation.dart';
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/theme.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
 
 /// How the bytes are going to arrive.
 enum AddSnpMode {
@@ -165,7 +167,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Add a custom SNP set'),
-      content: SizedBox(
+      content: DialogBody(
         width: 560,
         child: SingleChildScrollView(
           child: Column(
@@ -253,12 +255,12 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
         width: double.infinity,
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.blue[50],
+          color: context.colours.secondaryContainer,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           children: [
-            const Icon(Icons.dns, size: 18, color: Colors.blue),
+            Icon(Icons.dns, size: 18, color: context.colours.onSecondaryContainer),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -296,14 +298,17 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
             onSelectionChanged: (s) => setState(() => _mode = s.first),
           ),
           if (!widget.uploadAvailable)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
               child: Text(
                 'Uploading is unavailable here: the app is being served from a '
                 'different origin than the server, so the browser will not send '
                 'your session with the upload. This is the same reason sign-in '
                 'does not work under `flutter run`.',
-                style: TextStyle(color: Colors.black54, fontSize: 12),
+                style: TextStyle(
+                  color: context.colours.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
             ),
         ],
@@ -335,11 +340,14 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'The server downloads the files itself, so this works for files far '
           'larger than a browser upload. It may take a while; the SNP set '
           'shows its progress in the list.',
-          style: TextStyle(color: Colors.black54, fontSize: 12),
+          style: TextStyle(
+            color: context.colours.onSurfaceVariant,
+            fontSize: 12,
+          ),
         ),
       ];
 
@@ -365,15 +373,18 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
               ? 'Without an index the server will build one with tabix after '
                   'the upload finishes.'
               : 'Both files will be sent, one after the other.',
-          style: const TextStyle(color: Colors.black54, fontSize: 12),
+          style: TextStyle(
+            color: context.colours.onSurfaceVariant,
+            fontSize: 12,
+          ),
         ),
         if (_vcfFile != null && _vcfFile!.size < 1000000)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
               'That file looks small for a VCF — did you pick the index by '
               'mistake?',
-              style: TextStyle(color: Colors.orange, fontSize: 12),
+              style: TextStyle(color: context.status.warning, fontSize: 12),
             ),
           ),
       ];
@@ -397,12 +408,16 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
       children: [
         Row(
           children: [
-            const Icon(Icons.insert_drive_file, size: 18, color: Colors.blue),
+            Icon(
+              Icons.insert_drive_file,
+              size: 18,
+              color: context.colours.primary,
+            ),
             const SizedBox(width: 8),
             Expanded(child: Text(file.name)),
             Text(
               formatBytes(file.size),
-              style: const TextStyle(color: Colors.black54),
+              style: TextStyle(color: context.colours.onSurfaceVariant),
             ),
             IconButton(
               icon: const Icon(Icons.close, size: 18),
@@ -414,7 +429,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
         if (error != null)
           Text(
             error,
-            style: const TextStyle(color: Colors.red, fontSize: 12),
+            style: TextStyle(color: context.colours.error, fontSize: 12),
           ),
       ],
     );

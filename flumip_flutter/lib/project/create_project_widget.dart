@@ -4,9 +4,14 @@ import 'package:flutter/services.dart';
 
 import '../main.dart';
 import '../error_text.dart';
+import '../ui/error_banner.dart';
+import '../ui/form_section.dart';
+import '../ui/layout.dart';
+import '../ui/responsive_row.dart';
 
 class CreateProjectWidget extends StatefulWidget {
-  final VoidCallback onProjectCreated;
+  /// Called with the project that was just created, so the list can open it.
+  final void Function(Project project) onProjectCreated;
   final VoidCallback onAbort;
 
   const CreateProjectWidget({
@@ -177,14 +182,14 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
       );
       final ProjectOptions optionsInDB = await client.options
           .insertProjectOptions(options);
-      await client.project.createProject(
+      final created = await client.project.createProject(
         _nameController.text,
         optionsInDB,
         _descriptionController.text,
       );
       _nameController.clear();
       _descriptionController.clear();
-      widget.onProjectCreated();
+      widget.onProjectCreated(created);
     } catch (e) {
       setState(() {
         _errorMessage = describeError(e);
@@ -194,359 +199,274 @@ class CreateProjectWidgetState extends State<CreateProjectWidget> {
 
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 1020;
-    return Flexible(
-      fit: FlexFit.tight,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            if (_errorMessage != null)
-              Container(
-                color: Colors.red[300],
-                padding: const EdgeInsets.all(8),
-                child: Text(_errorMessage!),
-              ),
-            SizedBox(height: 5),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Project Name (required)'),
-            ),
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: 'Project Description (optional)',
-              ),
-            ),
-            SizedBox(height: 15),
-            Row(
-              children: [
-                Text('Show Options'),
-                SizedBox(width: 10),
-                Switch(
-                  value: _showOptions,
-                  onChanged: (value) {
-                    setState(() {
-                      _showOptions = value;
-                    });
-                  },
-                ),
-              ],
-            ),
-            if (_showOptions) ...[
-              if (isScreenWide) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      Expanded(child: buildFirstOptionsColumn()),
-                      Expanded(child: buildSecondOptionsColumn()),
-                      Expanded(child: buildThirdOptionsColumn()),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    spacing: 10,
-                    children: [
-                      buildFirstOptionsColumn(),
-                      buildSecondOptionsColumn(),
-                      buildThirdOptionsColumn(),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-            SizedBox(height: 35),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: widget.onAbort,
-                  child: Text('Cancel'),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _createProject,
-                  child: Text('Create Project'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildFirstOptionsColumn() {
     return Column(
-      spacing: 5,
       children: [
-        TextField(
-          controller: _minCaptureSizeController,
-          decoration: InputDecoration(labelText: 'Min Capture Size [>120]'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _maxCaptureSizeController,
-          decoration: InputDecoration(labelText: 'Max Capture Size [<250]'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _armLengthsController,
-          decoration: InputDecoration(
-            labelText: 'Arm Lengths (optional) [16:24,16:25,16:26]',
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: ContentWidth(
+              maxWidth: ContentWidth.form,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 20,
+                children: [
+                  if (_errorMessage != null) ErrorBanner(_errorMessage!),
+                  _detailsSection(),
+                  _optionsToggle(context),
+                  if (_showOptions) ..._optionSections(),
+                ],
+              ),
+            ),
           ),
-          keyboardType: TextInputType.text,
-          inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         ),
-        TextField(
-          controller: _armLengthSumsController,
-          decoration: InputDecoration(labelText: 'Arm Length Sums'),
-          keyboardType: TextInputType.text,
-          inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
-        ),
-        TextField(
-          controller: _extMinLengthController,
-          decoration: InputDecoration(labelText: 'Ext Min Length'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _extMaxLengthController,
-          decoration: InputDecoration(labelText: 'Ext Max Length'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _ligMinLengthController,
-          decoration: InputDecoration(labelText: 'Lig Min Length'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _tagSizesController,
-          decoration: InputDecoration(labelText: 'Tag Sizes'),
-          keyboardType: TextInputType.text,
-          inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
-        ),
-        TextField(
-          controller: _maskedArmThresholdController,
-          decoration: InputDecoration(labelText: 'Masked Arm Threshold'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
-          ],
-        ),
+        _actions(context),
       ],
     );
   }
 
-  Widget buildSecondOptionsColumn() {
-    return Column(
-      spacing: 5,
-      children: [
-        TextField(
-          controller: _targetArmCopyController,
-          decoration: InputDecoration(labelText: 'Target Arm Copy'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _maxArmCopyProductController,
-          decoration: InputDecoration(labelText: 'Max Arm Copy Product'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        Row(
-          children: [
-            Text('Tandem Repeats Finder'),
-            SizedBox(width: 10),
-            Switch(
-              value: _trf,
-              onChanged: (value) {
-                setState(() {
-                  _trf = value;
-                });
-              },
+  /// Name and description.
+  ///
+  /// ⚠️ Neither field is full-bleed any more. They used to be direct children of
+  /// a `Column` with no spacing at all, so the two boxes touched — and after the
+  /// projects list was capped at 1400px they were 1400px wide for a project
+  /// called "test33".
+  FormSection _detailsSection() => FormSection(
+    title: 'Project',
+    children: [
+      ResponsiveRow(
+        minChildWidth: 260,
+        // The name is short and the description is not, so an even split
+        // would waste the room the description actually needs.
+        flex: const [2, 3],
+        children: [
+          TextField(
+            controller: _nameController,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              helperText: 'Required.',
             ),
-          ],
-        ),
-        TextField(
-          controller: _featureFlankController,
-          decoration: InputDecoration(labelText: 'Feature Flank'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _captureIncrementController,
-          decoration: InputDecoration(labelText: 'Capture Increment'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        Row(
-          children: [
-            Text('Logistic Heuristic'),
-            SizedBox(width: 10),
-            Switch(
-              value: _logisticHeuristic,
-              onChanged: (value) {
-                setState(() {
-                  _logisticHeuristic = value;
-                });
-              },
+          ),
+          TextField(
+            controller: _descriptionController,
+            // A description is prose, so it gets a box that grows rather
+            // than a one-line field that scrolls sideways.
+            minLines: 3,
+            maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+              helperText: 'Optional.',
+              alignLabelWithHint: true,
             ),
-          ],
-        ),
-        TextField(
-          controller: _maxMipOverlapController,
-          decoration: InputDecoration(labelText: 'Max Mip Overlap'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        TextField(
-          controller: _startingMipOverlapController,
-          decoration: InputDecoration(labelText: 'Starting Mip Overlap'),
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        ),
-        Row(
-          children: [
-            Text('Check Copy Number'),
-            SizedBox(width: 10),
-            Switch(
-              value: _checkCopyNumber,
-              onChanged: (value) {
-                setState(() {
-                  _checkCopyNumber = value;
-                });
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+          ),
+        ],
+      ),
+    ],
+  );
 
-  Widget buildThirdOptionsColumn() {
-    return Column(
-      spacing: 5,
+  Widget _optionsToggle(BuildContext context) => FormSection(
+    title: 'MIP design options',
+    description:
+        'Defaults come from the server and suit most panels. '
+        'Change them only if you know which knob you are turning.',
+    children: [
+      SwitchListTile(
+        value: _showOptions,
+        title: const Text('Show options'),
+        contentPadding: EdgeInsets.zero,
+        onChanged: (value) => setState(() => _showOptions = value),
+      ),
+    ],
+  );
+
+  /// The options, grouped by what they do rather than by which column they fell
+  /// into.
+  ///
+  /// ⚠️ The three columns this replaces were the source of the unevenness: they
+  /// were `spacing: 5` runs mixing `TextField`s with bare `Row(Text + Switch)`,
+  /// and a switch row is about 8px shorter than a field, so nothing lined up
+  /// across the columns. Switches are now `SwitchListTile`s in their own
+  /// section, away from the number fields.
+  List<Widget> _optionSections() => [
+    FormSection(
+      title: 'Capture and arms',
       children: [
-        Row(
+        ResponsiveRow(
+          minChildWidth: 220,
           children: [
-            Text('Seal Both Strands'),
-            SizedBox(width: 10),
-            Switch(
-              value: _sealBothStrands,
-              onChanged: (value) {
-                setState(() {
-                  _sealBothStrands = value;
-                });
-              },
+            _number(
+              _minCaptureSizeController,
+              'Min capture size',
+              helper: 'Above 120.',
+            ),
+            _number(
+              _maxCaptureSizeController,
+              'Max capture size',
+              helper: 'Below 250.',
             ),
           ],
         ),
-        Row(
+        ResponsiveRow(
+          minChildWidth: 220,
           children: [
-            Text('Half Seal Both Strands'),
-            SizedBox(width: 10),
-            Switch(
-              value: _halfSealBothStrands,
-              onChanged: (value) {
-                setState(() {
-                  _halfSealBothStrands = value;
-                });
-              },
+            _text(
+              _armLengthsController,
+              'Arm lengths',
+              helper: 'Optional, e.g. 16:24,16:25,16:26.',
             ),
+            _text(_armLengthSumsController, 'Arm length sums'),
           ],
         ),
-        Row(
+        ResponsiveRow(
+          minChildWidth: 220,
           children: [
-            Text('Double Tile Strand Unaware'),
-            SizedBox(width: 10),
-            Switch(
-              value: _doubleTileStrandUnaware,
-              onChanged: (value) {
-                setState(() {
-                  _doubleTileStrandUnaware = value;
-                });
-              },
-            ),
+            _number(_extMinLengthController, 'Ext min length'),
+            _number(_extMaxLengthController, 'Ext max length'),
+            _number(_ligMinLengthController, 'Lig min length'),
           ],
         ),
-        Row(
+        ResponsiveRow(
+          minChildWidth: 220,
           children: [
-            Text('Double Tile Strands Separately'),
-            SizedBox(width: 10),
-            Switch(
-              value: _doubleTileStrandsSeparately,
-              onChanged: (value) {
-                setState(() {
-                  _doubleTileStrandsSeparately = value;
-                });
-              },
-            ),
+            _text(_tagSizesController, 'Tag sizes'),
+            _decimal(_maskedArmThresholdController, 'Masked arm threshold'),
           ],
         ),
-        Row(
+        ResponsiveRow(
+          minChildWidth: 220,
           children: [
-            Text('Score Method: '),
-            DropdownButton<ScoreMethod>(
-              value: _scoreMethod,
-              onChanged: (value) {
-                setState(() {
-                  _scoreMethod = value!;
-                });
-              },
-              items: ScoreMethod.values
-                  .map(
-                    (method) => DropdownMenuItem(
-                      value: method,
-                      child: Text(method.toString().split('.').last),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ),
-        TextField(
-          controller: _logisticOptimalScoreController,
-          decoration: InputDecoration(labelText: 'Logistic Optimal Score'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
-          ],
-        ),
-        TextField(
-          controller: _svrOptimalScoreController,
-          decoration: InputDecoration(labelText: 'SVR Optimal Score'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
-          ],
-        ),
-        TextField(
-          controller: _logisticPriorityScoreController,
-          decoration: InputDecoration(labelText: 'Logistic Priority Score'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
-          ],
-        ),
-        TextField(
-          controller: _svrPriorityScoreController,
-          decoration: InputDecoration(labelText: 'SVR Priority Score'),
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
+            _number(_targetArmCopyController, 'Target arm copy'),
+            _number(_maxArmCopyProductController, 'Max arm copy product'),
           ],
         ),
       ],
-    );
-  }
+    ),
+    FormSection(
+      title: 'Tiling',
+      children: [
+        ResponsiveRow(
+          minChildWidth: 220,
+          children: [
+            _number(_featureFlankController, 'Feature flank'),
+            _number(_captureIncrementController, 'Capture increment'),
+          ],
+        ),
+        ResponsiveRow(
+          minChildWidth: 220,
+          children: [
+            _number(_maxMipOverlapController, 'Max MIP overlap'),
+            _number(_startingMipOverlapController, 'Starting MIP overlap'),
+          ],
+        ),
+        _switch('Tandem Repeats Finder', _trf, (v) => _trf = v),
+        _switch(
+          'Seal both strands',
+          _sealBothStrands,
+          (v) => _sealBothStrands = v,
+        ),
+        _switch(
+          'Half seal both strands',
+          _halfSealBothStrands,
+          (v) => _halfSealBothStrands = v,
+        ),
+        _switch(
+          'Double tile, strand unaware',
+          _doubleTileStrandUnaware,
+          (v) => _doubleTileStrandUnaware = v,
+        ),
+        _switch(
+          'Double tile, strands separately',
+          _doubleTileStrandsSeparately,
+          (v) => _doubleTileStrandsSeparately = v,
+        ),
+      ],
+    ),
+    FormSection(
+      title: 'Scoring',
+      children: [
+        DropdownButtonFormField<ScoreMethod>(
+          initialValue: _scoreMethod,
+          decoration: const InputDecoration(labelText: 'Score method'),
+          onChanged: (value) =>
+              setState(() => _scoreMethod = value ?? _scoreMethod),
+          items: ScoreMethod.values
+              .map((m) => DropdownMenuItem(value: m, child: Text(m.name)))
+              .toList(),
+        ),
+        ResponsiveRow(
+          minChildWidth: 220,
+          children: [
+            _decimal(_logisticOptimalScoreController, 'Logistic optimal score'),
+            _decimal(_svrOptimalScoreController, 'SVR optimal score'),
+          ],
+        ),
+        ResponsiveRow(
+          minChildWidth: 220,
+          children: [
+            _decimal(
+              _logisticPriorityScoreController,
+              'Logistic priority score',
+            ),
+            _decimal(_svrPriorityScoreController, 'SVR priority score'),
+          ],
+        ),
+        _switch(
+          'Logistic heuristic',
+          _logisticHeuristic,
+          (v) => _logisticHeuristic = v,
+        ),
+        _switch(
+          'Check copy number',
+          _checkCopyNumber,
+          (v) => _checkCopyNumber = v,
+        ),
+      ],
+    ),
+  ];
+
+  Widget _actions(BuildContext context) => FormSaveBar.custom(
+    maxWidth: ContentWidth.form,
+    children: [
+      TextButton(onPressed: widget.onAbort, child: const Text('Cancel')),
+      const SizedBox(width: 8),
+      FilledButton(
+        onPressed: _createProject,
+        child: const Text('Create project'),
+      ),
+    ],
+  );
+
+  TextField _text(TextEditingController c, String label, {String? helper}) =>
+      TextField(
+        controller: c,
+        decoration: InputDecoration(labelText: label, helperText: helper),
+        inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
+      );
+
+  TextField _number(TextEditingController c, String label, {String? helper}) =>
+      TextField(
+        controller: c,
+        decoration: InputDecoration(labelText: label, helperText: helper),
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      );
+
+  TextField _decimal(TextEditingController c, String label) => TextField(
+    controller: c,
+    decoration: InputDecoration(labelText: label),
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    inputFormatters: [
+      FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
+    ],
+  );
+
+  Widget _switch(String label, bool value, void Function(bool) assign) =>
+      SwitchListTile(
+        value: value,
+        title: Text(label),
+        contentPadding: EdgeInsets.zero,
+        onChanged: (v) => setState(() => assign(v)),
+      );
 }

@@ -545,124 +545,240 @@ class _ProjectOptionsImpl extends ProjectOptions {
 class ProjectOptionsUpdateTable extends _i1.UpdateTable<ProjectOptionsTable> {
   ProjectOptionsUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> minCaptureSize(int value) =>
-      _i1.ColumnValue(table.minCaptureSize, value);
+  _i1.ColumnValue<int, int> minCaptureSize(int value) => _i1.ColumnValue(
+    table.minCaptureSize,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> maxCaptureSize(int value) =>
-      _i1.ColumnValue(table.maxCaptureSize, value);
+  _i1.ColumnValue<int, int> maxCaptureSize(int value) => _i1.ColumnValue(
+    table.maxCaptureSize,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> armLengths(String? value) =>
-      _i1.ColumnValue(table.armLengths, value);
+  _i1.ColumnValue<String, String> armLengths(String? value) => _i1.ColumnValue(
+    table.armLengths,
+    value,
+  );
 
   _i1.ColumnValue<String, String> armLengthSums(String value) =>
-      _i1.ColumnValue(table.armLengthSums, value);
+      _i1.ColumnValue(
+        table.armLengthSums,
+        value,
+      );
 
-  _i1.ColumnValue<int, int> extMinLength(int value) =>
-      _i1.ColumnValue(table.extMinLength, value);
+  _i1.ColumnValue<int, int> extMinLength(int value) => _i1.ColumnValue(
+    table.extMinLength,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> extMaxLength(int value) =>
-      _i1.ColumnValue(table.extMaxLength, value);
+  _i1.ColumnValue<int, int> extMaxLength(int value) => _i1.ColumnValue(
+    table.extMaxLength,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> ligMinLength(int value) =>
-      _i1.ColumnValue(table.ligMinLength, value);
+  _i1.ColumnValue<int, int> ligMinLength(int value) => _i1.ColumnValue(
+    table.ligMinLength,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> tagSizes(String value) =>
-      _i1.ColumnValue(table.tagSizes, value);
+  _i1.ColumnValue<String, String> tagSizes(String value) => _i1.ColumnValue(
+    table.tagSizes,
+    value,
+  );
 
   _i1.ColumnValue<double, double> maskedArmThreshold(double value) =>
-      _i1.ColumnValue(table.maskedArmThreshold, value);
+      _i1.ColumnValue(
+        table.maskedArmThreshold,
+        value,
+      );
 
-  _i1.ColumnValue<int, int> targetArmCopy(int value) =>
-      _i1.ColumnValue(table.targetArmCopy, value);
+  _i1.ColumnValue<int, int> targetArmCopy(int value) => _i1.ColumnValue(
+    table.targetArmCopy,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> maxArmCopyProduct(int value) =>
-      _i1.ColumnValue(table.maxArmCopyProduct, value);
+  _i1.ColumnValue<int, int> maxArmCopyProduct(int value) => _i1.ColumnValue(
+    table.maxArmCopyProduct,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> trf(bool value) =>
-      _i1.ColumnValue(table.trf, value);
+  _i1.ColumnValue<bool, bool> trf(bool value) => _i1.ColumnValue(
+    table.trf,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> genomeDir(String? value) =>
-      _i1.ColumnValue(table.genomeDir, value);
+  _i1.ColumnValue<String, String> genomeDir(String? value) => _i1.ColumnValue(
+    table.genomeDir,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> featureFlank(int value) =>
-      _i1.ColumnValue(table.featureFlank, value);
+  _i1.ColumnValue<int, int> featureFlank(int value) => _i1.ColumnValue(
+    table.featureFlank,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> captureIncrement(int value) =>
-      _i1.ColumnValue(table.captureIncrement, value);
+  _i1.ColumnValue<int, int> captureIncrement(int value) => _i1.ColumnValue(
+    table.captureIncrement,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> logisticHeuristic(bool value) =>
-      _i1.ColumnValue(table.logisticHeuristic, value);
+  _i1.ColumnValue<bool, bool> logisticHeuristic(bool value) => _i1.ColumnValue(
+    table.logisticHeuristic,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> maxMipOverlap(int value) =>
-      _i1.ColumnValue(table.maxMipOverlap, value);
+  _i1.ColumnValue<int, int> maxMipOverlap(int value) => _i1.ColumnValue(
+    table.maxMipOverlap,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> startingMipOverlap(int value) =>
-      _i1.ColumnValue(table.startingMipOverlap, value);
+  _i1.ColumnValue<int, int> startingMipOverlap(int value) => _i1.ColumnValue(
+    table.startingMipOverlap,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> checkCopyNumber(bool value) =>
-      _i1.ColumnValue(table.checkCopyNumber, value);
+  _i1.ColumnValue<bool, bool> checkCopyNumber(bool value) => _i1.ColumnValue(
+    table.checkCopyNumber,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> sealBothStrands(bool value) =>
-      _i1.ColumnValue(table.sealBothStrands, value);
+  _i1.ColumnValue<bool, bool> sealBothStrands(bool value) => _i1.ColumnValue(
+    table.sealBothStrands,
+    value,
+  );
 
   _i1.ColumnValue<bool, bool> halfSealBothStrands(bool value) =>
-      _i1.ColumnValue(table.halfSealBothStrands, value);
+      _i1.ColumnValue(
+        table.halfSealBothStrands,
+        value,
+      );
 
   _i1.ColumnValue<bool, bool> doubleTileStrandUnaware(bool value) =>
-      _i1.ColumnValue(table.doubleTileStrandUnaware, value);
+      _i1.ColumnValue(
+        table.doubleTileStrandUnaware,
+        value,
+      );
 
   _i1.ColumnValue<bool, bool> doubleTileStrandsSeparately(bool value) =>
-      _i1.ColumnValue(table.doubleTileStrandsSeparately, value);
+      _i1.ColumnValue(
+        table.doubleTileStrandsSeparately,
+        value,
+      );
 
   _i1.ColumnValue<_i2.ScoreMethod, _i2.ScoreMethod> scoreMethod(
     _i2.ScoreMethod value,
-  ) => _i1.ColumnValue(table.scoreMethod, value);
+  ) => _i1.ColumnValue(
+    table.scoreMethod,
+    value,
+  );
 
   _i1.ColumnValue<double, double> logisticOptimalScore(double value) =>
-      _i1.ColumnValue(table.logisticOptimalScore, value);
+      _i1.ColumnValue(
+        table.logisticOptimalScore,
+        value,
+      );
 
   _i1.ColumnValue<double, double> svrOptimalScore(double value) =>
-      _i1.ColumnValue(table.svrOptimalScore, value);
+      _i1.ColumnValue(
+        table.svrOptimalScore,
+        value,
+      );
 
   _i1.ColumnValue<double, double> logisticPriorityScore(double value) =>
-      _i1.ColumnValue(table.logisticPriorityScore, value);
+      _i1.ColumnValue(
+        table.logisticPriorityScore,
+        value,
+      );
 
   _i1.ColumnValue<double, double> svrPriorityScore(double value) =>
-      _i1.ColumnValue(table.svrPriorityScore, value);
+      _i1.ColumnValue(
+        table.svrPriorityScore,
+        value,
+      );
 
-  _i1.ColumnValue<bool, bool> silentMode(bool value) =>
-      _i1.ColumnValue(table.silentMode, value);
+  _i1.ColumnValue<bool, bool> silentMode(bool value) => _i1.ColumnValue(
+    table.silentMode,
+    value,
+  );
 
-  _i1.ColumnValue<int, int> bwaThreads(int value) =>
-      _i1.ColumnValue(table.bwaThreads, value);
+  _i1.ColumnValue<int, int> bwaThreads(int value) => _i1.ColumnValue(
+    table.bwaThreads,
+    value,
+  );
 }
 
 class ProjectOptionsTable extends _i1.Table<int?> {
   ProjectOptionsTable({super.tableRelation})
     : super(tableName: 'project_options') {
     updateTable = ProjectOptionsUpdateTable(this);
-    minCaptureSize = _i1.ColumnInt('minCaptureSize', this, hasDefault: true);
-    maxCaptureSize = _i1.ColumnInt('maxCaptureSize', this, hasDefault: true);
-    armLengths = _i1.ColumnString('armLengths', this);
-    armLengthSums = _i1.ColumnString('armLengthSums', this, hasDefault: true);
-    extMinLength = _i1.ColumnInt('extMinLength', this, hasDefault: true);
-    extMaxLength = _i1.ColumnInt('extMaxLength', this, hasDefault: true);
-    ligMinLength = _i1.ColumnInt('ligMinLength', this, hasDefault: true);
-    tagSizes = _i1.ColumnString('tagSizes', this, hasDefault: true);
+    minCaptureSize = _i1.ColumnInt(
+      'minCaptureSize',
+      this,
+      hasDefault: true,
+    );
+    maxCaptureSize = _i1.ColumnInt(
+      'maxCaptureSize',
+      this,
+      hasDefault: true,
+    );
+    armLengths = _i1.ColumnString(
+      'armLengths',
+      this,
+    );
+    armLengthSums = _i1.ColumnString(
+      'armLengthSums',
+      this,
+      hasDefault: true,
+    );
+    extMinLength = _i1.ColumnInt(
+      'extMinLength',
+      this,
+      hasDefault: true,
+    );
+    extMaxLength = _i1.ColumnInt(
+      'extMaxLength',
+      this,
+      hasDefault: true,
+    );
+    ligMinLength = _i1.ColumnInt(
+      'ligMinLength',
+      this,
+      hasDefault: true,
+    );
+    tagSizes = _i1.ColumnString(
+      'tagSizes',
+      this,
+      hasDefault: true,
+    );
     maskedArmThreshold = _i1.ColumnDouble(
       'maskedArmThreshold',
       this,
       hasDefault: true,
     );
-    targetArmCopy = _i1.ColumnInt('targetArmCopy', this, hasDefault: true);
+    targetArmCopy = _i1.ColumnInt(
+      'targetArmCopy',
+      this,
+      hasDefault: true,
+    );
     maxArmCopyProduct = _i1.ColumnInt(
       'maxArmCopyProduct',
       this,
       hasDefault: true,
     );
-    trf = _i1.ColumnBool('trf', this, hasDefault: true);
-    genomeDir = _i1.ColumnString('genomeDir', this);
-    featureFlank = _i1.ColumnInt('featureFlank', this, hasDefault: true);
+    trf = _i1.ColumnBool(
+      'trf',
+      this,
+      hasDefault: true,
+    );
+    genomeDir = _i1.ColumnString(
+      'genomeDir',
+      this,
+    );
+    featureFlank = _i1.ColumnInt(
+      'featureFlank',
+      this,
+      hasDefault: true,
+    );
     captureIncrement = _i1.ColumnInt(
       'captureIncrement',
       this,
@@ -673,14 +789,26 @@ class ProjectOptionsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
-    maxMipOverlap = _i1.ColumnInt('maxMipOverlap', this, hasDefault: true);
+    maxMipOverlap = _i1.ColumnInt(
+      'maxMipOverlap',
+      this,
+      hasDefault: true,
+    );
     startingMipOverlap = _i1.ColumnInt(
       'startingMipOverlap',
       this,
       hasDefault: true,
     );
-    checkCopyNumber = _i1.ColumnBool('checkCopyNumber', this, hasDefault: true);
-    sealBothStrands = _i1.ColumnBool('sealBothStrands', this, hasDefault: true);
+    checkCopyNumber = _i1.ColumnBool(
+      'checkCopyNumber',
+      this,
+      hasDefault: true,
+    );
+    sealBothStrands = _i1.ColumnBool(
+      'sealBothStrands',
+      this,
+      hasDefault: true,
+    );
     halfSealBothStrands = _i1.ColumnBool(
       'halfSealBothStrands',
       this,
@@ -722,8 +850,16 @@ class ProjectOptionsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
-    silentMode = _i1.ColumnBool('silentMode', this, hasDefault: true);
-    bwaThreads = _i1.ColumnInt('bwaThreads', this, hasDefault: true);
+    silentMode = _i1.ColumnBool(
+      'silentMode',
+      this,
+      hasDefault: true,
+    );
+    bwaThreads = _i1.ColumnInt(
+      'bwaThreads',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final ProjectOptionsUpdateTable updateTable;
@@ -991,7 +1127,10 @@ class ProjectOptionsRepository {
     ProjectOptions row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<ProjectOptions>(row, transaction: transaction);
+    return session.db.insertRow<ProjectOptions>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Updates all [ProjectOptions]s in the list and returns the updated rows. If
@@ -1076,7 +1215,10 @@ class ProjectOptionsRepository {
     List<ProjectOptions> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<ProjectOptions>(rows, transaction: transaction);
+    return session.db.delete<ProjectOptions>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Deletes a single [ProjectOptions].
@@ -1085,7 +1227,10 @@ class ProjectOptionsRepository {
     ProjectOptions row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<ProjectOptions>(row, transaction: transaction);
+    return session.db.deleteRow<ProjectOptions>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Deletes all rows matching the [where] expression.

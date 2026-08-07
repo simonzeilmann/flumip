@@ -1,12 +1,20 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:web/web.dart' as web;
 import 'package:flutter/material.dart';
+import 'package:flumip_flutter/ui/dialog_body.dart';
+import 'package:flumip_flutter/ui/error_banner.dart';
+import 'package:flumip_flutter/ui/responsive_row.dart';
+import 'package:flumip_flutter/ui/status_pill.dart';
+import 'genome_picker_dialog.dart';
+import 'mipgen_progress.dart';
+import 'project_state.dart';
+import 'result_dialogs.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/api_config.dart';
+import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/main.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../error_text.dart';
 
@@ -38,6 +46,9 @@ class ProjectTile extends StatefulWidget {
   /// Called with the new owner's id, or null to release the project to unowned.
   final void Function(int? ownerId)? onOwnerChanged;
 
+  /// Opens without a click, for a project that has just been created.
+  final bool initiallyExpanded;
+
   ProjectTile({
     super.key,
     required this.project,
@@ -45,6 +56,7 @@ class ProjectTile extends StatefulWidget {
     this.notificationsAvailable = false,
     this.assignableOwners,
     this.onOwnerChanged,
+    this.initiallyExpanded = false,
   });
 
   @override
@@ -52,7 +64,7 @@ class ProjectTile extends StatefulWidget {
 }
 
 class _ProjectTileState extends State<ProjectTile> {
-  bool _isExpanded = false;
+  late bool _isExpanded = widget.initiallyExpanded;
   bool _deleteExcessFiles = false;
   late ProjectOptions projectOptions = ProjectOptions();
   late Genome genome = Genome(name: 'default');
@@ -72,14 +84,52 @@ class _ProjectTileState extends State<ProjectTile> {
   String? _errorMessage;
   Timer? _timer;
 
+  /// The run's progress file, re-read while the design is going.
+  MipgenProgress _progress = const MipgenProgress.empty();
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
-      if (_isExpanded) {
+    // A tile that opens itself still has to load what it is going to show.
+    if (_isExpanded) _reloadProject();
+    // ⚠️ No timer until the tile is opened. This was an unconditional
+    // `Timer.periodic(10s)` created for *every* tile in the list, so a hundred
+    // projects meant a hundred timers waking up to find the tile collapsed and
+    // do nothing.
+  }
+
+  /// Schedules the next refresh, or stops.
+  ///
+  /// Faster while a design is running, because that is the only time the project
+  /// changes on its own — and it is exactly when somebody is watching it.
+  void _rearm() {
+    _timer?.cancel();
+    _timer = null;
+    if (!_isExpanded) return;
+
+    final running = widget.project.active && widget.project.completedIn == null;
+    _timer = Timer(
+      running ? const Duration(seconds: 3) : const Duration(seconds: 15),
+      () {
+        if (!mounted) return;
         _reloadProject();
-      }
-    });
+      },
+    );
+  }
+
+  /// Reads the progress file, best-effort.
+  ///
+  /// Never surfaces its own failure: the run's state comes from the project row,
+  /// and an unreadable progress file is not worth an error banner over a design
+  /// that is going fine.
+  Future<void> _loadProgress() async {
+    try {
+      final lines = await client.file.showMipsProgress(widget.project.id!);
+      if (!mounted) return;
+      setState(() => _progress = MipgenProgress(lines: lines));
+    } catch (_) {
+      // Left as it was; the panel keeps showing the last line it had.
+    }
   }
 
   @override
@@ -97,6 +147,9 @@ class _ProjectTileState extends State<ProjectTile> {
     });
     if (_isExpanded) {
       await _reloadProject();
+    } else {
+      _timer?.cancel();
+      _timer = null;
     }
   }
 
@@ -114,6 +167,11 @@ class _ProjectTileState extends State<ProjectTile> {
       if (widget.project.snp != null) {
         snpUpdate = await client.genome.getSnp(widget.project.snp!);
       }
+      // ⚠️ Four awaits happened above. Deleting the project disposes this tile
+      // while they are still in flight, and `setState` after dispose throws —
+      // which Flutter paints as the red error screen over the whole tab. This is
+      // the guard that was missing.
+      if (!mounted) return;
       setState(() {
         widget.project = projectUpdate;
         projectOptions = options;
@@ -124,20 +182,39 @@ class _ProjectTileState extends State<ProjectTile> {
           snp = snpUpdate;
         }
       });
+
+      // Only while something is actually being written, so a finished project
+      // does not re-read its log forever.
+      if (projectUpdate.active && projectUpdate.completedIn == null) {
+        await _loadProgress();
+      }
+      _rearm();
     } catch (e) {
       // Stop the ten-second poll when the answer will not change. Without this,
       // a project that has stopped being ours mid-session — revoked session,
       // ownership reassigned — re-reports the same refusal every ten seconds for
-      // as long as the tile stays expanded.
-      if (isAccessDenied(e)) {
+      // as long as the tile stays expanded. A project that has been *deleted*
+      // is the same situation: it is not coming back, so stop asking rather than
+      // reporting the same failure six times a minute.
+      if (isAccessDenied(e) || _isGone(e)) {
         _timer?.cancel();
         _timer = null;
       }
+      if (!mounted) return;
+      // A deleted project needs no error at all — the row is on its way out.
+      if (_isGone(e)) return;
       setState(() {
         _errorMessage = 'Failed to reload project: ${describeError(e)}';
       });
+      _rearm();
     }
   }
+
+  /// Whether this error means the project no longer exists.
+  ///
+  /// The poll and the delete race by nature: a tick can be in flight when the
+  /// row is removed, and the answer comes back as "not found".
+  static bool _isGone(Object error) => error is FlumipFileNotFoundException;
 
   Future<void> _addGene(String gene) async {
     try {
@@ -225,168 +302,60 @@ class _ProjectTileState extends State<ProjectTile> {
 
   Future<void> _showMipsResult() async {
     try {
-      final result = await client.file.showMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("MIPs copied to clipboard")),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
+      final lines = await client.file.showMipsResult(widget.project.id!);
+      if (!mounted) return;
+      if (!resultHasData(lines)) {
+        _say('This run produced no MIPs.');
+        return;
       }
+      await showTextFileDialog(
+        context,
+        title: 'MIPs result',
+        lines: lines,
+        summary: ResultCounts.of(lines).summary,
+        emptyMessage: 'No MIPs result file found.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load MIPs result: ${describeError(e)}'),
-          ),
-        );
-      }
+      _say('Could not load the mips result: ${describeError(e)}');
     }
   }
 
   Future<void> _showSnpMipsResult() async {
     try {
-      final result = await client.file.showSnpMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('SNP MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No SNP MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
+      final lines = await client.file.showSnpMipsResult(widget.project.id!);
+      if (!mounted) return;
+      // ⚠️ Not just `lines.isEmpty`. The file is written with its header row
+      // even when the run produced no SNP-overlapping MIPs, so a "present but
+      // empty" result used to open a dialog containing one header line and
+      // nothing else, which reads as a bug rather than as an answer.
+      if (!resultHasData(lines)) {
+        _say('This run produced no SNP MIPs.');
+        return;
       }
+      await showTextFileDialog(
+        context,
+        title: 'SNP MIPs result',
+        lines: lines,
+        summary: ResultCounts.of(lines).summary,
+        emptyMessage: 'No SNP MIPs result file found.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to load SNP MIPs result: ${describeError(e)}',
-            ),
-          ),
-        );
-      }
+      _say('Could not load the SNP MIPs result: ${describeError(e)}');
     }
   }
 
   Future<void> _showProgress() async {
     try {
-      final result = await client.file.showMipsProgress(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Progress'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No progress file found.')]
-                      : result.map((line) => Text(line)).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
+      final lines = await client.file.showMipsProgress(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'Design log',
+        lines: lines,
+        emptyMessage: 'No progress file yet.',
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load progress: ${describeError(e)}'),
-          ),
-        );
-      }
+      _say('Could not load the design log: ${describeError(e)}');
     }
   }
 
@@ -469,141 +438,74 @@ class _ProjectTileState extends State<ProjectTile> {
     return map;
   }
 
+  /// Opens the project's region in the UCSC genome browser.
+  ///
+  /// ⚠️ **This used to be two modals deep.** The first dialog dumped the raw
+  /// contents of the track file — which nobody needs to read — and carried a
+  /// button that opened a *second* dialog listing the regions to choose from. So
+  /// the useful list sat underneath the useless one, and a project with a single
+  /// region still made you read a file to reach one link.
+  ///
+  /// Now: one region opens straight through, several show one picker, and the
+  /// track file itself is a separate action for whoever wants it.
   Future<void> _showUCSCTrack() async {
+    final List<String> track;
+    final String trackToken;
     try {
-      final result = await client.file.showUSCSTrack(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('UCSC Track'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No UCSC Track file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      // Fetched here rather than with the track itself so the
-                      // token is only ever minted when somebody actually opens
-                      // UCSC.
-                      final String trackToken;
-                      try {
-                        trackToken = await client.file.getUcscTrackToken(
-                          widget.project.id!,
-                        );
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Could not build the UCSC track link: '
-                                '${describeError(e)}',
-                              ),
-                            ),
-                          );
-                        }
-                        return;
-                      }
-                      // `context` here belongs to the dialog builder, not to the
-                      // State, so State.mounted says nothing about it — hence
-                      // context.mounted rather than the mounted check used
-                      // elsewhere in this file.
-                      if (!context.mounted) return;
-                      var ucscTrack = _generateUCSCTrackUrl(result, trackToken);
-                      if (ucscTrack.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("No UCSC Track found")),
-                        );
-                        return;
-                      }
-                      if (ucscTrack.length == 1) {
-                        web.window.open(ucscTrack.values.first, 'new tab');
-                      } else {
-                        if (mounted) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('Select UCSC Track'),
-                                content: SingleChildScrollView(
-                                  child: ListBody(
-                                    children: ucscTrack.entries
-                                        .map(
-                                          (entry) => TextButton(
-                                            onPressed: () {
-                                              web.window.open(
-                                                entry.value,
-                                                'new tab',
-                                              );
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text(entry.key),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      }
-                    },
-                    child: Text('Open in UCSC Track browser'),
-                  ),
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
+      track = await client.file.showUSCSTrack(widget.project.id!);
+      if (track.isEmpty) {
+        _say('This project has no UCSC track file.');
+        return;
       }
+      // Fetched only now, so the token is minted when somebody actually opens
+      // UCSC rather than whenever the results are looked at.
+      trackToken = await client.file.getUcscTrackToken(widget.project.id!);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to load SNP MIPs result: ${describeError(e)}',
-            ),
-          ),
-        );
-      }
+      _say('Could not build the UCSC track link: ${describeError(e)}');
+      return;
     }
+    if (!mounted) return;
+
+    final regions = _generateUCSCTrackUrl(track, trackToken);
+    if (regions.isEmpty) {
+      _say('The track file names no regions to show.');
+      return;
+    }
+
+    // One region is not a choice, so do not stage one.
+    if (regions.length == 1) {
+      web.window.open(regions.values.first, '_blank');
+      return;
+    }
+
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (_) => UcscTrackDialog(regions: regions),
+    );
+    if (chosen != null) web.window.open(chosen, '_blank');
+  }
+
+  /// Shows the track file itself, for when the URL is not the point.
+  Future<void> _showUCSCTrackFile() async {
+    try {
+      final track = await client.file.showUSCSTrack(widget.project.id!);
+      if (!mounted) return;
+      await showTextFileDialog(
+        context,
+        title: 'UCSC track file',
+        lines: track,
+        emptyMessage: 'This project has no UCSC track file.',
+      );
+    } catch (e) {
+      _say('Could not load the track file: ${describeError(e)}');
+    }
+  }
+
+  void _say(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showDeleteConfirmationDialog() {
@@ -684,7 +586,9 @@ class _ProjectTileState extends State<ProjectTile> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not set the SNP set: ${describeError(e)}')),
+        SnackBar(
+          content: Text('Could not set the SNP set: ${describeError(e)}'),
+        ),
       );
     }
   }
@@ -694,26 +598,12 @@ class _ProjectTileState extends State<ProjectTile> {
       await client.project.setEmailNotification(widget.project.id!, enabled);
       await _reloadProject();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage =
             'Failed to change email notification: ${describeError(e)}';
       });
     }
-  }
-
-  /// `2.40 GB`, `4.50 MB`, `912 bytes` — the same scale the server uses in the
-  /// notification emails, so a file is never described two different ways.
-  String _formatBytes(int bytes) {
-    if (bytes < 1000) return '$bytes bytes';
-    const units = ['kB', 'MB', 'GB', 'TB'];
-    var value = bytes / 1000;
-    var unit = 0;
-    while (value >= 1000 && unit < units.length - 1) {
-      value /= 1000;
-      unit++;
-    }
-    final decimals = value >= 100 ? 0 : (value >= 10 ? 1 : 2);
-    return '${value.toStringAsFixed(decimals)} ${units[unit]}';
   }
 
   /// Opens a download.
@@ -726,7 +616,8 @@ class _ProjectTileState extends State<ProjectTile> {
   /// It also goes to the **web** origin, not the API one — that is where the
   /// session cookie is valid, and a download carries no bearer header.
   void _download(String fileName) {
-    final url = '$siteUrl/download/${widget.project.id}/'
+    final url =
+        '$siteUrl/download/${widget.project.id}/'
         '${Uri.encodeComponent(fileName)}';
     web.window.open(url, '_blank');
   }
@@ -750,7 +641,7 @@ class _ProjectTileState extends State<ProjectTile> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Download files'),
-          content: SizedBox(
+          content: DialogBody(
             width: 460,
             child: files.isEmpty
                 ? const Text('This project has no files to download yet.')
@@ -762,7 +653,7 @@ class _ProjectTileState extends State<ProjectTile> {
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             title: Text(file.name),
-                            subtitle: Text(_formatBytes(file.sizeBytes)),
+                            subtitle: Text(formatBytes(file.sizeBytes)),
                             trailing: IconButton(
                               icon: const Icon(Icons.download),
                               tooltip: 'Download ${file.name}',
@@ -781,7 +672,7 @@ class _ProjectTileState extends State<ProjectTile> {
               TextButton.icon(
                 icon: const Icon(Icons.folder_zip),
                 label: Text(
-                  'Download all (${files.length} files, ${_formatBytes(total)})',
+                  'Download all (${files.length} files, ${formatBytes(total)})',
                 ),
                 onPressed: () => _download('all.zip'),
               ),
@@ -803,16 +694,11 @@ class _ProjectTileState extends State<ProjectTile> {
     return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
-  double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
-      (value * pow(10, fractionalDigits)).truncate() /
-      pow(10, fractionalDigits);
-
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 795;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: context.colours.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -825,17 +711,31 @@ class _ProjectTileState extends State<ProjectTile> {
               ),
               onPressed: _toggleExpand,
             ),
-            title: Text(widget.project.name),
-            subtitle: Text(widget.project.description),
+            // ⚠️ SelectableText, not Text. A project name is something people
+            // copy into a lab notebook or an email, and in a Flutter web build
+            // ordinary text cannot be selected at all.
+            title: SelectableText(
+              widget.project.name,
+              style: context.text.titleMedium,
+            ),
+            subtitle: widget.project.description.isEmpty
+                ? null
+                : SelectableText(
+                    widget.project.description,
+                    style: context.text.bodySmall,
+                    maxLines: 2,
+                  ),
             trailing: Wrap(
               spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
+                // What this project is doing, without having to open it.
+                _statePill(),
                 Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
-                Text(
-                  '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
-                ),
+                Text(formatBytes(widget.project.size)),
                 IconButton(
                   icon: Icon(Icons.delete),
+                  tooltip: 'Delete project',
                   onPressed: _showDeleteConfirmationDialog,
                 ),
               ],
@@ -846,31 +746,32 @@ class _ProjectTileState extends State<ProjectTile> {
             // layouts — ownership is a property of the project, not of any one
             // of them.
             if (widget.assignableOwners != null) buildOwnerRow(),
-            if (isScreenWide) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(child: buildGenomeSelectorColumn()),
-                    Expanded(child: buildProjectOptionsColumn()),
-                    Expanded(child: buildProjectActionColumn()),
-                  ],
-                ),
+            Padding(
+              // ⚠️ A bottom inset, not just horizontal. The columns used to run
+              // flush into the tile's own border, so the last row of the design
+              // options sat on the line.
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: ResponsiveRow(
+                // Was `MediaQuery.sizeOf(context).width >= 795`, i.e. about
+                // 265px a column. ResponsiveRow measures the tile rather than
+                // the window, which is what keeps this honest now that the list
+                // is capped: a wide monitor no longer implies a wide tile.
+                minChildWidth: 260,
+                spacing: 10,
+                stackSpacing: 25,
+                // ⚠️ One `SelectionArea` per column, nested inside the app-wide
+                // one. Without them a drag across the design options runs on
+                // into the results beside it, so copying the parameters gets you
+                // the parameters *and* whatever sat to their right. A nested
+                // SelectionArea claims its subtree, which scopes the drag to the
+                // column it started in.
+                children: [
+                  SelectionArea(child: buildGenomeSelectorColumn()),
+                  SelectionArea(child: buildProjectOptionsColumn()),
+                  SelectionArea(child: buildProjectActionColumn()),
+                ],
               ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  spacing: 25,
-                  children: [
-                    buildGenomeSelectorColumn(),
-                    buildProjectOptionsColumn(),
-                    buildProjectActionColumn(),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
         ],
       ),
@@ -920,187 +821,244 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  Column buildProjectActionColumn() {
+  /// What can be done with this project, and what it is doing right now.
+  ///
+  /// ⚠️ Was a centred stack of `ElevatedButton`s with `SizedBox(height: 5)`
+  /// between them and no statement of state at all — a running design showed a
+  /// single button called "Show Progress", so "is this still going?" was three
+  /// clicks away and stale the moment the modal drew.
+  Widget buildProjectActionColumn() {
+    final project = widget.project;
+    // One derivation, shared with the collapsed row's pill, so the two cannot
+    // disagree about what this project is doing.
+    final state = ProjectState.of(project);
+    final idle = !state.isRunning && !state.isFinished;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 16,
       children: [
-        if (widget.project.genes?.isNotEmpty == true &&
-            widget.project.genome != null &&
-            widget.project.bedFileCreated == false) ...[
-          ElevatedButton(
-            onPressed: _createBedFile,
-            child: Text('Create BED File'),
-          ),
-        ],
-        if (widget.project.bedFileCreated == false &&
-            (widget.project.genes == null ||
-                widget.project.genes?.isEmpty == true ||
-                widget.project.genome == null)) ...[
-          Tooltip(
-            message: "Select a genome and add genes to create a BED file.",
-            child: ElevatedButton(
-              onPressed: null,
-              child: Text('Create BED File'),
+        if (idle) _bedFileStep(),
+        if (project.bedFileCreated == true && idle) buildMipgenStartColumn(),
+        if (state.isRunning)
+          MipgenProgressPanel(progress: _progress, elapsed: _elapsed()),
+        if (state.succeeded) buildMipgenResultColumn(),
+        if (state == ProjectState.failed)
+          ErrorBanner('The design failed: ${project.error}'),
+      ],
+    );
+  }
+
+  /// Something worth reading about a run that nonetheless worked.
+  ///
+  /// ⚠️ Deliberately not an [ErrorBanner]. The MIPs are there and downloadable;
+  /// dressing a missing UCSC track as a failure sends people looking for results
+  /// they already have.
+  Widget _warningBanner(String message) {
+    final status = context.status;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: status.warningContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber, size: 18, color: status.onWarningContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SelectableText(
+              message,
+              style: context.text.bodySmall?.copyWith(
+                color: status.onWarningContainer,
+              ),
             ),
           ),
         ],
-        SizedBox(height: 5),
-        if (widget.project.bedFileCreated == true &&
-            widget.project.active == false &&
-            widget.project.completedIn == null)
-          buildMipgenStartColumn(),
-        SizedBox(height: 5),
-        if (widget.project.active == true && widget.project.completedIn == null)
-          buildMipgenProgressColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isEmpty)
-          buildMipgenResultColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isNotEmpty)
-          Text(
-            'Error: ${widget.project.error}',
-            style: TextStyle(color: Colors.red),
-          ),
-      ],
+      ),
     );
   }
 
-  Column buildGenomeSelectorColumn() {
+  /// The collapsed row's state indicator.
+  Widget _statePill() {
+    final state = ProjectState.of(widget.project);
+    final status = context.status;
+    final (colour, icon) = switch (state) {
+      ProjectState.draft => (context.colours.outline, Icons.edit_outlined),
+      ProjectState.needsBedFile => (status.warning, Icons.pending_outlined),
+      ProjectState.readyToRun => (status.info, Icons.play_circle_outline),
+      ProjectState.running => (status.info, Icons.autorenew),
+      ProjectState.complete => (status.success, Icons.check_circle),
+      // Complete, but flagged: amber rather than green, so the row says there is
+      // something to read without claiming the run failed.
+      ProjectState.completeWithWarning => (status.warning, Icons.check_circle),
+      ProjectState.failed => (context.colours.error, Icons.error_outline),
+    };
+    return StatusPill(label: state.label, icon: icon, colour: colour);
+  }
+
+  /// How long the current run has been going.
+  ///
+  /// `Project.started` is stamped when the run begins and is what `completedIn`
+  /// is measured against, so it is the right clock here too.
+  Duration? _elapsed() {
+    final started = widget.project.started;
+    if (started == null) return null;
+    final elapsed = DateTime.now().toUtc().difference(started.toUtc());
+    // Clock skew between server and browser would otherwise read "-3s".
+    return elapsed.isNegative ? Duration.zero : elapsed;
+  }
+
+  /// Step one: the target regions mipgen designs against.
+  Widget _bedFileStep() {
+    if (widget.project.bedFileCreated == true) {
+      return Row(
+        children: [
+          Icon(Icons.check_circle, size: 18, color: context.status.success),
+          const SizedBox(width: 8),
+          Text('BED file ready', style: context.text.bodyMedium),
+        ],
+      );
+    }
+
+    final ready =
+        widget.project.genes?.isNotEmpty == true &&
+        widget.project.genome != null;
+    return Tooltip(
+      message: ready
+          ? 'Builds the target regions mipgen will design against.'
+          : 'Choose a genome and add at least one gene first.',
+      child: FilledButton.tonal(
+        onPressed: ready ? _createBedFile : null,
+        child: const Text('Create BED file'),
+      ),
+    );
+  }
+
+  Widget buildGenomeSelectorColumn() {
+    final editable =
+        !widget.project.active && widget.project.completedIn == null;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
       children: [
         if (_errorMessage != null)
-          Text(_errorMessage!, style: TextStyle(color: Colors.red)),
-        if (widget.project.genome == null) buildGenomeSelector(),
-        if (widget.project.genome != null) ...[
-          Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (genome.name == 'default') ...[
-            Text('loading...'),
-          ] else ...[
-            Text(genome.name),
-          ],
-        ],
-        SizedBox(height: 10),
-        // ⚠️ The `genome.snp != null` gate is gone. That is the list of *scanned*
-        // ids, so a genome whose only SNP sets are custom offered no picker at
-        // all. The picker also no longer disappears once a choice is made — see
-        // buildSnpSelector.
-        if (widget.project.genome != null &&
-            !widget.project.active &&
-            widget.project.completedIn == null)
-          buildSnpSelector()
-        else if (widget.project.snp != null) ...[
-          Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
-          Text(snp?.name ?? 'loading...'),
-        ],
-        SizedBox(height: 10),
-        if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
-          buildGeneColumn(),
-        if (widget.project.bedFileCreated == false) buildAddGeneColumn(),
+          ErrorBanner(
+            _errorMessage!,
+            onDismiss: () => setState(() => _errorMessage = null),
+          ),
+        _inputRow(label: 'Genome', child: _genomeValue(editable)),
+        _inputRow(
+          label: 'SNP set',
+          child: widget.project.genome == null
+              ? Text(
+                  'Choose a genome first.',
+                  style: TextStyle(color: context.colours.onSurfaceVariant),
+                )
+              : editable
+              ? buildSnpSelector()
+              : Text(snp?.name ?? 'None'),
+        ),
+        _inputRow(label: 'Genes', child: buildGeneColumn()),
       ],
     );
   }
 
-  Column buildGenomeSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+  /// A label above its control, so the three inputs read as one form.
+  Widget _inputRow({required String label, required Widget child}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: context.text.labelLarge?.copyWith(
+          color: context.colours.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 6),
+      child,
+    ],
+  );
+
+  /// What genome is chosen, and the way to change it.
+  ///
+  /// ⚠️ The picker used to disappear the moment a genome was set, replaced by
+  /// plain text — so a genome chosen by mistake could not be corrected without
+  /// deleting the project.
+  Widget _genomeValue(bool editable) {
+    final chosen = widget.project.genome != null;
+    final loading = chosen && genome.name == 'default';
+
+    if (!editable) {
+      return Text(
+        loading
+            ? 'Loading…'
+            : chosen
+            ? genome.name
+            : 'None',
+      );
+    }
+
+    return Row(
       children: [
-        Text("Select Category:"),
-        FutureBuilder<List<String>>(
-          future: getGenomeCategories(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (snapshot.data!.isNotEmpty) {
-                return DropdownButton<String>(
-                  value: null,
-                  onChanged: (String? category) {
-                    if (category != null) {
-                      getGenomeByCategory(category).then((genomes) {
-                        if (context.mounted) {
-                          genomes.sort((a, b) => a.name.compareTo(b.name));
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Select Genome:'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    for (var selectedGenome in genomes)
-                                      if (selectedGenome.active) ...[
-                                        if (selectedGenome.indexed) ...[
-                                          ListTile(
-                                            title: Text(selectedGenome.name),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else if (selectedGenome.indexing) ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (indexing)",
-                                            ),
-                                            subtitle: Text(
-                                              "Genome is currently unavailable",
-                                            ),
-                                            onTap: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (not indexed)",
-                                            ),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
-                                      ],
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      });
-                    } else {
-                      Text("No genomes available");
-                    }
-                  },
-                  items: snapshot.data!
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ),
-                      )
-                      .toList(),
-                );
-              } else {
-                return Text("No categories available");
-              }
-            } else if (snapshot.hasError) {
-              return Text('Failed to load gene categories: ${snapshot.error}');
-            } else {
-              return CircularProgressIndicator();
-            }
-          },
+        Expanded(
+          child: Text(
+            loading
+                ? 'Loading…'
+                : chosen
+                ? genome.name
+                : 'None chosen',
+            style: chosen
+                ? null
+                : TextStyle(color: context.colours.onSurfaceVariant),
+          ),
+        ),
+        const SizedBox(width: 8),
+        OutlinedButton(
+          onPressed: _pickGenome,
+          child: Text(chosen ? 'Change' : 'Choose'),
         ),
       ],
     );
+  }
+
+  /// Opens the picker and applies the answer.
+  ///
+  /// One dialog. The old flow was a category `DropdownButton` whose `onChanged`
+  /// fetched genomes and *then* opened a dialog — two controls for one decision,
+  /// with the dropdown hard-coded to `null` so it never reflected the choice.
+  Future<void> _pickGenome() async {
+    List<String> categories;
+    try {
+      categories = await getGenomeCategories();
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _errorMessage = 'Could not load genomes: ${describeError(e)}',
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    final picked = await showDialog<Genome>(
+      context: context,
+      builder: (_) => GenomePickerDialog(
+        categories: categories,
+        loadGenomes: getGenomeByCategory,
+        initialCategory: widget.project.genome != null ? genome.category : null,
+        selectedGenomeId: widget.project.genome,
+      ),
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      genome = picked;
+      // The SNP list belongs to the old genome; drop it so the picker refetches.
+      _snpsForGenome = null;
+    });
+    await setGenome(picked.id!);
+    await _reloadProject();
   }
 
   /// The SNP picker.
@@ -1110,313 +1068,377 @@ class _ProjectTileState extends State<ProjectTile> {
   /// ones can fail to import or be deleted out from under a project, so being
   /// able to change or clear the choice is now the difference between fixing a
   /// project and abandoning it.
-  Column buildSnpSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text("Select SNP (optional):"),
-        FutureBuilder<List<Snp>>(
-          future: _snpsForGenome ??= getSnpForGenome(genome.id!),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Text('Failed to load SNP sets: ${snapshot.error}');
-            }
-            if (!snapshot.hasData) return CircularProgressIndicator();
+  Widget buildSnpSelector() {
+    // The label lives on the row above now, so this is just the control.
+    return FutureBuilder<List<Snp>>(
+      future: _snpsForGenome ??= getSnpForGenome(genome.id!),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Failed to load SNP sets: ${snapshot.error}');
+        }
+        if (!snapshot.hasData) return CircularProgressIndicator();
 
-            final snps = snapshot.data!;
-            if (snps.isEmpty) {
-              return Text(
-                'No SNP sets for this genome.',
-                style: TextStyle(color: Colors.black54),
-              );
-            }
+        final snps = snapshot.data!;
+        if (snps.isEmpty) {
+          return Text(
+            'No SNP sets for this genome.',
+            style: TextStyle(color: context.colours.onSurfaceVariant),
+          );
+        }
 
-            // ⚠️ A DropdownButton whose value matches no item throws. Now that an
-            // SNP can be deleted, or stop being visible to us, `project.snp` can
-            // point at something no longer in this list. Same guard, and same
-            // reason, as buildOwnerRow.
-            final selected = snps
-                .where((s) => s.id == widget.project.snp)
-                .firstOrNull;
-            final dangling = widget.project.snp != null && selected == null;
+        // ⚠️ A DropdownButton whose value matches no item throws. Now that an
+        // SNP can be deleted, or stop being visible to us, `project.snp` can
+        // point at something no longer in this list. Same guard, and same
+        // reason, as buildOwnerRow.
+        final selected = snps
+            .where((s) => s.id == widget.project.snp)
+            .firstOrNull;
+        final dangling = widget.project.snp != null && selected == null;
 
-            return Column(
-              children: [
-                DropdownButton<Snp?>(
-                  value: selected,
-                  onChanged: (Snp? chosen) {
-                    setSnp(chosen?.id);
-                  },
-                  items: [
-                    DropdownMenuItem<Snp?>(
-                      value: null,
-                      child: Text('No SNP'),
-                    ),
-                    ...snps.map(
-                      (s) => DropdownMenuItem<Snp?>(
-                        value: s,
-                        enabled: s.status == SnpImportStatus.ready,
-                        child: Text(
-                          s.status == SnpImportStatus.ready
-                              ? s.name
-                              : '${s.name} (${statusLabel(s.status)})',
-                          style: TextStyle(
-                            color: s.status == SnpImportStatus.ready
-                                ? null
-                                : Colors.black38,
-                          ),
-                        ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // A form field rather than a bare DropdownButton, so it carries
+            // the same outline and density as every other input.
+            DropdownButtonFormField<Snp?>(
+              initialValue: selected,
+              isExpanded: true,
+              decoration: const InputDecoration(helperText: 'Optional.'),
+              onChanged: (Snp? chosen) {
+                setSnp(chosen?.id);
+              },
+              items: [
+                DropdownMenuItem<Snp?>(value: null, child: Text('No SNP set')),
+                ...snps.map(
+                  (s) => DropdownMenuItem<Snp?>(
+                    value: s,
+                    enabled: s.status == SnpImportStatus.ready,
+                    child: Text(
+                      s.status == SnpImportStatus.ready
+                          ? s.name
+                          : '${s.name} (${statusLabel(s.status)})',
+                      style: TextStyle(
+                        color: s.status == SnpImportStatus.ready
+                            ? null
+                            : context.colours.onSurfaceVariant,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-                if (dangling)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'The SNP set this project was using is no longer '
-                      'available. Pick another, or none.',
-                      style: TextStyle(color: Colors.orange, fontSize: 12),
+              ],
+            ),
+            if (dangling)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'The SNP set this project was using is no longer '
+                  'available. Pick another, or none.',
+                  style: TextStyle(color: context.status.warning, fontSize: 12),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// The MIP design parameters this project was created with.
+  ///
+  /// ⚠️ Was 26 centred `Text('Label: value')` lines with `spacing: 3`, every
+  /// boolean spelled out twice as an `if/else` pair. Now a left-aligned
+  /// definition list, which is what it always was.
+  Widget buildProjectOptionsColumn() {
+    final o = projectOptions;
+    final rows = <(String, String)>[
+      ('Min capture size', '${o.minCaptureSize}'),
+      ('Max capture size', '${o.maxCaptureSize}'),
+      if (o.armLengths != null && o.armLengths!.isNotEmpty)
+        ('Arm lengths', o.armLengths!),
+      ('Arm length sums', o.armLengthSums),
+      ('Ext min length', '${o.extMinLength}'),
+      ('Ext max length', '${o.extMaxLength}'),
+      ('Lig min length', '${o.ligMinLength}'),
+      ('Tag sizes', o.tagSizes),
+      ('Masked arm threshold', '${o.maskedArmThreshold}'),
+      ('Target arm copy', '${o.targetArmCopy}'),
+      ('Max arm copy product', '${o.maxArmCopyProduct}'),
+      if (o.genomeDir != null) ('Genome dir', o.genomeDir!),
+      ('Feature flank', '${o.featureFlank}'),
+      ('Capture increment', '${o.captureIncrement}'),
+      ('Max MIP overlap', '${o.maxMipOverlap}'),
+      ('Starting MIP overlap', '${o.startingMipOverlap}'),
+      ('Tandem Repeats Finder', _onOff(o.trf)),
+      ('Logistic heuristic', _onOff(o.logisticHeuristic)),
+      ('Check copy number', _onOff(o.checkCopyNumber)),
+      ('Seal both strands', _onOff(o.sealBothStrands)),
+      ('Half seal both strands', _onOff(o.halfSealBothStrands)),
+      ('Double tile, strand unaware', _onOff(o.doubleTileStrandUnaware)),
+      (
+        'Double tile, strands separately',
+        _onOff(o.doubleTileStrandsSeparately),
+      ),
+      // `.name`, not the enum's toString, which would print `ScoreMethod.logistic`.
+      ('Score method', o.scoreMethod.name),
+      ('Logistic optimal score', '${o.logisticOptimalScore}'),
+      ('SVR optimal score', '${o.svrOptimalScore}'),
+      ('Logistic priority score', '${o.logisticPriorityScore}'),
+      ('SVR priority score', '${o.svrPriorityScore}'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Design options',
+          style: context.text.labelLarge?.copyWith(
+            color: context.colours.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
+        // ⚠️ 26 rows two pixels apart read as a wall. The line height does most
+        // of the work here — padding alone separates the rows without making an
+        // individual one easier to read across.
+        for (final (label, value) in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    label,
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.colours.onSurfaceVariant,
+                      height: 1.3,
                     ),
                   ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Column buildProjectOptionsColumn() {
-    return Column(
-      spacing: 3,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text('Project Options:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
-        Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths != null &&
-            projectOptions.armLengths!.isNotEmpty)
-          Text('Arm Lengths: ${projectOptions.armLengths}'),
-        Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
-        Text('Ext Min Length: ${projectOptions.extMinLength}'),
-        Text('Ext Max Length: ${projectOptions.extMaxLength}'),
-        Text('Lig Min Length: ${projectOptions.ligMinLength}'),
-        Text('Tag Sizes: ${projectOptions.tagSizes}'),
-        Text('Masked Arm Threshold: ${projectOptions.maskedArmThreshold}'),
-        Text('Target Arm Copy: ${projectOptions.targetArmCopy}'),
-        Text('Max Arm Copy Product: ${projectOptions.maxArmCopyProduct}'),
-        if (projectOptions.trf) Text('TRF: on') else Text('TRF: off'),
-        if (projectOptions.genomeDir != null)
-          Text('Genome Dir: ${projectOptions.genomeDir}'),
-        Text('Feature Flank: ${projectOptions.featureFlank}'),
-        Text('Capture Increment: ${projectOptions.captureIncrement}'),
-        if (projectOptions.logisticHeuristic)
-          Text('Logistic Heuristic: on')
-        else
-          Text('Logistic Heuristic: off'),
-        Text('Max Mip Overlap: ${projectOptions.maxMipOverlap}'),
-        Text('Starting Mip Overlap: ${projectOptions.startingMipOverlap}'),
-        if (projectOptions.checkCopyNumber)
-          Text('Check Copy Number: on')
-        else
-          Text('Check Copy Number: off'),
-        if (projectOptions.sealBothStrands)
-          Text('Seal Both Strands: on')
-        else
-          Text('Seal Both Strands: off'),
-        if (projectOptions.halfSealBothStrands)
-          Text('Half Seal Both Strands: on')
-        else
-          Text('Half Seal Both Strands: off'),
-        if (projectOptions.doubleTileStrandUnaware)
-          Text('Double Tile Strand Unaware: on')
-        else
-          Text('Double Tile Strand Unaware: off'),
-        if (projectOptions.doubleTileStrandsSeparately)
-          Text('Double Tile Strands Separately: on')
-        else
-          Text('Double Tile Strands Separately: off'),
-        Text('Score Method: ${projectOptions.scoreMethod}'),
-        Text('Logistic Optimal Score: ${projectOptions.logisticOptimalScore}'),
-        Text('SVR Optimal Score: ${projectOptions.svrOptimalScore}'),
-        Text(
-          'Logistic Priority Score: ${projectOptions.logisticPriorityScore}',
-        ),
-        Text('SVR Priority Score: ${projectOptions.svrPriorityScore}'),
-        SizedBox(height: 5),
-      ],
-    );
-  }
-
-  Column buildGeneColumn() {
-    return Column(
-      children: [
-        Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Column(
-          children: widget.project.genes!.map((gene) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(gene, style: TextStyle(fontStyle: FontStyle.italic)),
-                if (widget.project.bedFileCreated == false)
-                  IconButton(
-                    icon: Icon(Icons.remove_circle_outline),
-                    onPressed: () => _removeGene(gene),
-                  ),
-              ],
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Column buildAddGeneColumn() {
-    return Column(
-      children: [
-        SizedBox(height: 15),
-        Row(
-          spacing: 10,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _genesController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'add gene',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    value,
+                    style: context.text.bodySmall?.copyWith(height: 1.3),
                   ),
                 ),
-                keyboardType: TextInputType.text,
-                onSubmitted: (value) {
-                  _addGene(value);
-                  _genesController.clear();
-                },
-              ),
+              ],
             ),
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                _addGene(_genesController.text);
-                _genesController.clear();
-              },
-            ),
-          ],
-        ),
+          ),
       ],
     );
   }
 
-  Column buildMipgenStartColumn() {
-    // An unowned project has nobody to notify: the server resolves the address
-    // from Project.owner, and nothing sets an owner while single sign-on is off.
-    // Offering a live checkbox there would promise mail that never arrives, so
-    // it is shown disabled and says why rather than being hidden — the setting
-    // is real, the install just cannot act on it.
-    final hasOwner = widget.project.owner != null;
+  static String _onOff(bool value) => value ? 'on' : 'off';
+
+  /// The genes on the panel, as removable chips, with the add field beneath.
+  ///
+  /// ⚠️ Was a centred `Column` of `Row(Text + IconButton)` — one gene per line,
+  /// so a twenty-gene panel was a twenty-line list — plus a separate builder for
+  /// the add field that hand-rolled its own border, fill and padding and so
+  /// stopped matching every other field once the app had an
+  /// `InputDecorationTheme`.
+  Widget buildGeneColumn() {
+    final genes = widget.project.genes ?? const <String>[];
+    final editable = widget.project.bedFileCreated == false;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: _deleteExcessFiles,
-              onChanged: (bool? value) {
-                setState(() {
-                  _deleteExcessFiles = value ?? false;
-                });
-              },
-            ),
-            Text('Auto delete intermediate files'),
-          ],
-        ),
-        if (widget.notificationsAvailable)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+        if (genes.isEmpty)
+          Text(
+            'None yet.',
+            style: TextStyle(color: context.colours.onSurfaceVariant),
+          )
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
             children: [
-              Checkbox(
-                value: hasOwner && widget.project.emailNotification,
-                onChanged: hasOwner
-                    ? (bool? value) => setEmailNotification(value ?? false)
-                    : null,
+              for (final gene in genes)
+                editable
+                    ? InputChip(
+                        label: Text(gene),
+                        labelStyle: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                        ),
+                        onDeleted: () => _removeGene(gene),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                      )
+                    : Chip(
+                        label: Text(gene),
+                        labelStyle: const TextStyle(
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+            ],
+          ),
+        if (editable) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _genesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Add a gene',
+                    hintText: 'e.g. BRCA1',
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: _submitGene,
+                ),
               ),
-              Text(
-                hasOwner
-                    ? 'Email me when generation finishes'
-                    : 'Email when finished (no owner to notify)',
-                style: hasOwner
-                    ? null
-                    : TextStyle(color: Theme.of(context).disabledColor),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.add),
+                tooltip: 'Add gene',
+                onPressed: () => _submitGene(_genesController.text),
               ),
             ],
           ),
-        SizedBox(width: 10),
-        ElevatedButton(onPressed: _generateMips, child: Text('Generate MIPs')),
+        ],
       ],
     );
   }
 
-  Column buildMipgenProgressColumn() {
+  void _submitGene(String value) {
+    final gene = value.trim();
+    // Was unguarded, so pressing the button with an empty box sent an empty gene
+    // name to the server and produced a failure for no reason.
+    if (gene.isEmpty) return;
+    _addGene(gene);
+    _genesController.clear();
+  }
+
+  /// The switches that change how the run behaves, and the button that starts it.
+  Widget buildMipgenStartColumn() {
+    // An unowned project has nobody to notify: the server resolves the address
+    // from Project.owner, and nothing sets an owner while single sign-on is off.
+    // Offering a live switch there would promise mail that never arrives, so it
+    // is shown disabled and says why rather than being hidden — the setting is
+    // real, the install just cannot act on it.
+    final hasOwner = widget.project.owner != null;
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ElevatedButton(onPressed: _showProgress, child: Text('Show Progress')),
-        SizedBox(height: 10),
+        SwitchListTile(
+          value: _deleteExcessFiles,
+          title: const Text('Delete intermediate files'),
+          subtitle: const Text('Saves a lot of disk space.'),
+          contentPadding: EdgeInsets.zero,
+          onChanged: (value) => setState(() => _deleteExcessFiles = value),
+        ),
+        if (widget.notificationsAvailable)
+          SwitchListTile(
+            value: hasOwner && widget.project.emailNotification,
+            title: const Text('Email me when it finishes'),
+            subtitle: hasOwner
+                ? null
+                : const Text('This project has no owner to notify.'),
+            contentPadding: EdgeInsets.zero,
+            onChanged: hasOwner ? setEmailNotification : null,
+          ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _generateMips,
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Generate MIPs'),
+        ),
       ],
     );
   }
 
-  Column buildMipgenResultColumn() {
+  /// What came out of a finished run.
+  ///
+  /// The progress column that used to sit between this and the start column is
+  /// gone: while a run is going the tile now shows [MipgenProgressPanel] inline
+  /// instead of a button that opened the log in a modal.
+  Widget buildMipgenResultColumn() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
-        SizedBox(height: 10),
-        Text(
-          'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
+        Row(
+          children: [
+            Icon(Icons.check_circle, size: 18, color: context.status.success),
+            const SizedBox(width: 8),
+            Text('Design complete', style: context.text.labelLarge),
+          ],
         ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showMipsResult,
-          child: Text('Show MIPs Result'),
+        const SizedBox(height: 8),
+        if (widget.project.warning.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _warningBanner(widget.project.warning),
+        ],
+        const SizedBox(height: 8),
+        _resultFact('Took', _printDuration(widget.project.completedIn!)),
+        _resultFact('Output', formatBytes(widget.project.size)),
+        const SizedBox(height: 12),
+        // Wrap, not a column of full-width buttons: these are four peers, and at
+        // this pane's width they sit two-up rather than in a tall stack.
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: _showMipsResult,
+              child: const Text('MIPs result'),
+            ),
+            OutlinedButton(
+              onPressed: _showSnpMipsResult,
+              child: const Text('SNP MIPs result'),
+            ),
+            // Split button: the common case is one press, and the raw track
+            // file — which the old flow made you read first — is tucked behind
+            // the caret for whoever actually wants it.
+            OutlinedButton.icon(
+              onPressed: _showUCSCTrack,
+              icon: const Icon(Icons.open_in_new, size: 16),
+              label: const Text('UCSC'),
+            ),
+            MenuAnchor(
+              menuChildren: [
+                MenuItemButton(
+                  onPressed: _showUCSCTrackFile,
+                  child: const Text('View track file'),
+                ),
+                MenuItemButton(
+                  onPressed: _showProgress,
+                  child: const Text('View design log'),
+                ),
+              ],
+              builder: (context, controller, child) => IconButton(
+                icon: const Icon(Icons.more_horiz),
+                tooltip: 'More',
+                onPressed: () =>
+                    controller.isOpen ? controller.close() : controller.open(),
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: _showDownloads,
+              icon: const Icon(Icons.download, size: 18),
+              label: const Text('Download'),
+            ),
+          ],
         ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showSnpMipsResult,
-          child: Text('Show SNP MIPs Result'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showUCSCTrack,
-          child: Text('Show UCSC Track'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: _showDownloads,
-          icon: const Icon(Icons.download),
-          label: const Text('Download files'),
-        ),
-        SizedBox(height: 10),
       ],
     );
   }
+
+  Widget _resultFact(String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: context.text.bodySmall?.copyWith(
+              color: context.colours.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(flex: 3, child: Text(value, style: context.text.bodySmall)),
+      ],
+    ),
+  );
 }

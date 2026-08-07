@@ -2,6 +2,9 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flutter/material.dart';
 
+import '../ui/layout.dart';
+import '../ui/error_banner.dart';
+
 import '../main.dart';
 import 'create_project_widget.dart';
 import '../error_text.dart';
@@ -79,6 +82,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
       await client.project.setProjectOwner(projectID, ownerId);
       _fetchProjects();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = describeError(e);
       });
@@ -88,23 +92,40 @@ class _ProjectsTabState extends State<ProjectsTab> {
   void _fetchProjects() async {
     try {
       final projects = await client.project.getProjects();
+      if (!mounted) return;
       setState(() {
         _errorMessage = null;
         _projects = projects..sort((a, b) => b.created.compareTo(a.created));
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = describeError(e);
       });
     }
   }
 
+  /// Deletes a project, taking its row off the list straight away.
+  ///
+  /// ⚠️ Optimistic on purpose. The server deletes the project's directory before
+  /// it answers, which for a multi-gigabyte result is seconds — and the old code
+  /// waited for that before refetching, so the row you had just deleted sat
+  /// there looking untouched the whole time. It is put back if the server
+  /// refuses.
   void _deleteProject(int projectID) async {
+    final before = _projects;
+    setState(() {
+      _errorMessage = null;
+      _projects = _projects?.where((p) => p.id != projectID).toList();
+    });
+
     try {
       await client.project.deleteProject(projectID);
       _fetchProjects();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
+        _projects = before;
         _errorMessage = describeError(e);
       });
     }
@@ -116,7 +137,12 @@ class _ProjectsTabState extends State<ProjectsTab> {
     });
   }
 
-  void _onProjectCreated() {
+  /// The project to open on the next build, so a new one does not need a click
+  /// on the chevron before it can be set up.
+  int? _openProjectId;
+
+  void _onProjectCreated(Project created) {
+    setState(() => _openProjectId = created.id);
     _fetchProjects();
     _toggleCreateProject();
   }
@@ -127,47 +153,71 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    // The create form replaces the list rather than sitting above it, and it is
+    // given the full width so its own pinned action bar can span the window the
+    // way the settings one does. It caps its fields itself.
+    if (_showCreateProject) {
+      return CreateProjectWidget(
+        onProjectCreated: _onProjectCreated,
+        onAbort: _onAbort,
+      );
+    }
+
+    return ContentWidth(
       padding: const EdgeInsets.all(16),
       child: Column(
+        // ⚠️ ContentWidth gives a tight width, but a Column still centres its
+        // children on the cross axis by default — which would leave the error
+        // banner shrink-wrapped to its text in the middle of a 1400px band.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
         children: [
-          if (!_showCreateProject)
-            Center(
-              child: ElevatedButton(
-                onPressed: _toggleCreateProject,
-                child: const Text('Create Project'),
-              ),
+          Center(
+            child: FilledButton.icon(
+              onPressed: _toggleCreateProject,
+              icon: const Icon(Icons.add),
+              label: const Text('Create project'),
             ),
-          if (_showCreateProject)
-            CreateProjectWidget(
-              onProjectCreated: _onProjectCreated,
-              onAbort: _onAbort,
-            ),
+          ),
           if (_errorMessage != null)
-            Container(
-              color: Colors.red[300],
-              padding: const EdgeInsets.all(8),
-              child: Text(_errorMessage!),
+            ErrorBanner(
+              _errorMessage!,
+              onDismiss: () => setState(() => _errorMessage = null),
             ),
-          if (!_showCreateProject && _projects != null)
+          if (_projects != null)
             Expanded(
               child: ListView.builder(
                 itemCount: _projects!.length,
                 itemBuilder: (context, index) {
+                  final project = _projects![index];
                   return ProjectTile(
-                    project: _projects![index],
-                    onDelete: () => _deleteProject(_projects![index].id!),
+                    // ⚠️ Keyed on the project id, and this is load-bearing.
+                    // Without a key Flutter matches children by position, so
+                    // deleting one project hands its `State` — its expanded
+                    // flag, its ten-second poll, its loaded genome and SNP, and
+                    // the mutable `widget.project` it writes back into — to
+                    // whichever project shuffles up into that slot. That is the
+                    // "zombie" row: a tile showing one project's details under
+                    // another project's name.
+                    key: ValueKey(project.id),
+                    project: project,
+                    // A project created a moment ago opens straight away —
+                    // there is nothing in it yet, and setting it up is the only
+                    // reason it exists.
+                    initiallyExpanded: project.id == _openProjectId,
+                    onDelete: () => _deleteProject(project.id!),
                     notificationsAvailable: _notificationsAvailable,
                     assignableOwners: _assignableOwners,
                     onOwnerChanged: (ownerId) =>
-                        _setProjectOwner(_projects![index].id!, ownerId),
+                        _setProjectOwner(project.id!, ownerId),
                   );
                 },
               ),
             ),
+          // Centred explicitly: under `stretch` it would otherwise be handed
+          // the full band width and draw its spinner against the left edge.
           if (_projects == null && _errorMessage == null)
-            const CircularProgressIndicator(),
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

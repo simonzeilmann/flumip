@@ -2,6 +2,8 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
+import 'package:flumip_flutter/ui/status_pill.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -61,11 +63,6 @@ class SnpTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  snp.custom ? Icons.label_important : Icons.dns,
-                  color: snp.custom ? Colors.purple : Colors.blueGrey,
-                ),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     snp.name,
@@ -76,13 +73,13 @@ class SnpTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            Wrap(spacing: 6, runSpacing: 4, children: _chips()),
+            Wrap(spacing: 6, runSpacing: 4, children: _chips(context)),
             if (snp.description.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
                   snp.description,
-                  style: const TextStyle(color: Colors.black54),
+                  style: TextStyle(color: context.colours.onSurfaceVariant),
                 ),
               ),
             Padding(
@@ -90,52 +87,62 @@ class SnpTile extends StatelessWidget {
               child: Text(
                 '${formatBytes(snp.size)} · '
                 'added ${DateFormat('dd.MM.yyyy').format(snp.created)}',
-                style: const TextStyle(color: Colors.black54, fontSize: 12),
+                style: TextStyle(
+                  color: context.colours.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
             ),
             if (upload != null)
-              _uploadProgress(upload!)
+              _uploadProgress(context, upload!)
             else if (!isTerminal(snp.status))
-              _progress(),
+              _progress(context),
             if (upload == null && snp.status == SnpImportStatus.failed)
-              _failure(),
+              _failure(context),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _chips() => [
-        if (!snp.custom)
-          const _Chip(label: 'Global', colour: Colors.blueGrey)
-        else ...[
-          const _Chip(label: 'Custom', colour: Colors.purple),
-          if (isMine)
-            _Chip(
-              label: snp.private ? 'Private' : 'Shared',
-              icon: snp.private ? Icons.lock_outline : Icons.public,
-              colour: snp.private ? Colors.grey : Colors.teal,
-            )
-          else
-            const _Chip(
-              label: 'Shared by someone else',
-              icon: Icons.public,
-              colour: Colors.teal,
-            ),
-        ],
-        // ⚠️ On every SNP set, global ones included. The first version hid this
-        // on globals, on the theory that they are ready by construction and a
-        // "Ready" badge on each is noise — but that stopped being true the moment
-        // the reconcile pass could mark one `failed` for missing files or
-        // `indexing` while its index is rebuilt. Hiding the chip hid the failure.
-        _Chip(
-          label: statusLabel(snp.status),
-          icon: statusIcon(snp.status),
-          colour: statusColour(snp.status),
-        ),
-      ];
+  List<Widget> _chips(BuildContext context) {
+    final colours = context.colours;
+    final status = context.status;
+    return [
+      if (!snp.custom)
+        StatusPill(label: 'Global', colour: colours.outline)
+      else ...[
+        StatusPill(label: 'Custom', colour: colours.primary),
+        if (isMine)
+          StatusPill(
+            label: snp.private ? 'Private' : 'Shared',
+            icon: snp.private ? Icons.lock_outline : Icons.public,
+            colour: snp.private ? colours.outline : status.info,
+          )
+        else
+          // Was 'Shared by someone else', which wrapped onto two lines in a
+          // narrow tile and pushed the status chip down with it.
+          StatusPill(
+            label: 'Shared with you',
+            icon: Icons.public,
+            colour: status.info,
+            tooltip: 'Added by another user and shared with everyone',
+          ),
+      ],
+      // ⚠️ On every SNP set, global ones included. The first version hid this
+      // on globals, on the theory that they are ready by construction and a
+      // "Ready" badge on each is noise — but that stopped being true the moment
+      // the reconcile pass could mark one `failed` for missing files or
+      // `indexing` while its index is rebuilt. Hiding the chip hid the failure.
+      StatusPill(
+        label: statusLabel(snp.status),
+        icon: statusIcon(snp.status),
+        colour: statusColour(snp.status, status),
+      ),
+    ];
+  }
 
-  Widget _progress() {
+  Widget _progress(BuildContext context) {
     final fraction = progressFraction(snp.bytesDownloaded, snp.totalBytes);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -149,7 +156,10 @@ class SnpTile extends StatelessWidget {
                 ? '${formatBytes(snp.bytesDownloaded)} of '
                     '${formatBytes(snp.totalBytes)}'
                 : statusLabel(snp.status),
-            style: const TextStyle(color: Colors.black54, fontSize: 12),
+            style: TextStyle(
+                  color: context.colours.onSurfaceVariant,
+                  fontSize: 12,
+                ),
           ),
         ],
       ),
@@ -157,7 +167,7 @@ class SnpTile extends StatelessWidget {
   }
 
   /// The bar for a browser upload, driven by this tab rather than by the row.
-  Widget _uploadProgress(UploadJob job) => Padding(
+  Widget _uploadProgress(BuildContext context, UploadJob job) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,8 +181,8 @@ class SnpTile extends StatelessWidget {
                     child: Text(
                       'Uploading ${job.fileLabel} — '
                       '${formatBytes(job.sent)} of ${formatBytes(job.total)}',
-                      style: const TextStyle(
-                        color: Colors.black54,
+                      style: TextStyle(
+                        color: context.colours.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -191,13 +201,13 @@ class SnpTile extends StatelessWidget {
             ] else
               SelectableText(
                 job.error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: TextStyle(color: context.colours.error, fontSize: 12),
               ),
           ],
         ),
       );
 
-  Widget _failure() => Padding(
+  Widget _failure(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +217,7 @@ class SnpTile extends StatelessWidget {
             // truncating them would throw away the useful half.
             SelectableText(
               snp.statusMessage,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: TextStyle(color: context.colours.error, fontSize: 12),
             ),
             if (_mayEdit)
               TextButton.icon(
@@ -224,6 +234,7 @@ class SnpTile extends StatelessWidget {
       );
 
   Widget _menu(BuildContext context) {
+    final destructive = TextStyle(color: context.colours.error);
     return PopupMenuButton<SnpAction>(
       onSelected: onAction,
       itemBuilder: (context) => [
@@ -253,59 +264,19 @@ class SnpTile extends StatelessWidget {
             child: Text('Cancel — no files arrived'),
           ),
         if (_mayEdit)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: SnpAction.delete,
-            child: Text('Delete…', style: TextStyle(color: Colors.red)),
+            child: Text('Delete…', style: destructive),
           ),
         // Visually separated, because it is a different kind of act: it can
         // reach the server's reference data, and it cannot be undone.
-        if (isAdmin) const PopupMenuDivider(),
+        if (isAdmin && _mayEdit) const PopupMenuDivider(),
         if (isAdmin)
-          const PopupMenuItem(
+          PopupMenuItem(
             value: SnpAction.adminDelete,
-            child: Text(
-              'Delete as administrator…',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text('Delete as administrator…', style: destructive),
           ),
       ],
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.colour, this.icon});
-
-  final String label;
-  final Color colour;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colour.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colour.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: colour),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              color: colour,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

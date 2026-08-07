@@ -403,16 +403,40 @@ void main() {
       expect(fake.lastFor('python'), isNotNull);
     }, tags: ['unit']);
 
-    test('always finalizes even when finalization throws (hardening)',
-        () async {
+    test('a failed UCSC track is a warning, not a failed project', () async {
+      // ⚠️ This asserted the opposite until now: `project.error` contained
+      // "MIP generation failed". But `withProgress: true` means the MIPs were
+      // designed and are on disk — the only thing that went wrong is the track
+      // file generated *after* them. Reporting that as a failed run sends people
+      // looking for results they already have.
       final p = await prepare(withProgress: true);
       fake.runError = Exception('python blew up');
+
       await mipgenService.mipgenIsFinished(
           session, await ProjectService().getProject(session, p.id));
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.active, isFalse);
+      expect(project.pid, 0);
+      expect(project.error, isEmpty);
+      expect(project.warning, contains('UCSC track'));
+      expect(project.warning, contains('python blew up'));
+      // Still a completed run.
+      expect(project.completedIn, isNotNull);
+    }, tags: ['unit']);
+
+    test('a run that produced nothing is still a failure', () async {
+      // The distinction only holds if the genuine failure still reports as one.
+      final p = await prepare(withProgress: false);
+
+      await mipgenService.mipgenIsFinished(
+          session, await ProjectService().getProject(session, p.id));
+
       final project = await ProjectService().getProject(session, p.id);
       expect(project.active, isFalse);
       expect(project.pid, 0);
       expect(project.error, contains('MIP generation failed'));
+      expect(project.warning, isEmpty);
     }, tags: ['unit']);
   });
 }

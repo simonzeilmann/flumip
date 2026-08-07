@@ -11,6 +11,7 @@ import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
+import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,8 +33,7 @@ const String appVersion = String.fromEnvironment(
   defaultValue: 'debug',
 );
 
-var client = Client(apiUrl)
-  ..connectivityMonitor = FlutterConnectivityMonitor();
+var client = Client(apiUrl)..connectivityMonitor = FlutterConnectivityMonitor();
 
 /// Sign-in state for the whole app.
 ///
@@ -103,8 +103,9 @@ void main() async {
   // transfer and leaves a `pending` row with a partial file the server will sweep
   // a day later — recoverable, but not what anybody intended.
   snpUploads.addListener(() {
-    web.window.onbeforeunload =
-        snpUploads.anyLive ? _warnBeforeUnload.toJS : null;
+    web.window.onbeforeunload = snpUploads.anyLive
+        ? _warnBeforeUnload.toJS
+        : null;
   });
 
   runApp(const MyApp());
@@ -117,7 +118,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: siteTitle,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: buildAppTheme(),
       home: const _AuthGate(child: MyHomePage(title: 'Flumip')),
     );
   }
@@ -262,7 +263,13 @@ class MyHomePageState extends State<MyHomePage> {
             if (authController.state == AuthState.signedIn)
               _SignedInMenu(user: authController.user!),
           ],
+          // Scrollable + centred so the three tabs sit at their natural width
+          // in the middle. Stretched across a full-width app bar they end up
+          // hundreds of pixels apart, and the selected tab's highlight covers a
+          // third of the screen.
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
             tabs: [
               Tab(text: 'Projects', icon: Icon(Icons.folder)),
               Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns)),
@@ -270,8 +277,15 @@ class MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+        // ⚠️ `SelectionArea` wraps the whole app body, because in a Flutter web
+        // build ordinary `Text` cannot be selected at all — which for an app
+        // full of gene names, file paths and genome coordinates is the wrong
+        // default. Fields and buttons keep their own behaviour; this only makes
+        // static text selectable.
+        body: const SelectionArea(
+          child: TabBarView(
+            children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+          ),
         ),
         bottomNavigationBar: SizedBox(
           height: 52,

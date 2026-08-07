@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
@@ -67,15 +68,15 @@ class ProjectService {
     );
     var project = await Project.db.insertRow(session, projectRow);
 
-    // Schedule demo mode cleanup
-    await session.serverpod.futureCallWithDelay(
-      'demoModeCleanup',
-      project,
-      const Duration(days: 7),
-      identifier: project.folderName,
-    );
-
     var settings = await SettingsService().getSettings(session);
+
+    // Scheduled whether or not demo mode is on, because the flag is read again
+    // when the call fires — so switching demo mode on later still sweeps
+    // projects created before it.
+    await session.serverpod.futureCalls
+        .callWithDelay(demoRetention(settings), identifier: project.folderName)
+        .demoModeCleanup
+        .run(project);
     await Directory("${settings.projectDir}/${project.folderName}").create();
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
     return project;
@@ -94,24 +95,73 @@ class ProjectService {
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
       throw FlumipFileNotFoundException(message: 'Project not found');
-    } else {
-      await Project.db.deleteRow(session, project);
-      await ProjectOptions.db.deleteWhere(
-        session,
-        where: (t) => t.id.equals(project.options),
-      );
-
-      if (project.active && project.pid != null && project.pid! > 0) {
-        await processService.terminateProcess(session, project.pid!);
-      }
-      var settings = await SettingsService().getSettings(session);
-      await Directory(
-        "${settings.projectDir}/${project.folderName}",
-      ).delete(recursive: true);
-      // Cancel any scheduled future calls related to this project
-      await session.serverpod.cancelFutureCall(project.folderName!);
-      session.log("Project deleted with ID: $id", level: LogLevel.info);
     }
+
+    // Stop the run before the row goes, while the pid is still meaningful.
+    // Best-effort: a process that has already exited must not stop a deletion.
+    if (project.active && project.pid != null && project.pid! > 0) {
+      try {
+        await processService.terminateProcess(session, project.pid!);
+      } catch (e) {
+        session.log(
+          'Could not terminate process ${project.pid} for project $id; '
+          'deleting anyway.',
+          level: LogLevel.warning,
+          exception: e,
+        );
+      }
+    }
+
+    await Project.db.deleteRow(session, project);
+    await ProjectOptions.db.deleteWhere(
+      session,
+      where: (t) => t.id.equals(project.options),
+    );
+
+    // ⚠️ Everything past this point is cleanup, and **must not throw**. The row
+    // is already gone, so the project *is* deleted; a failure here that
+    // propagated would report a deletion that plainly happened as an error, and
+    // the client would leave the row on screen rather than refreshing it away.
+    //
+    // The concrete case: `Directory.delete` throws `PathNotFoundException` for a
+    // path that is not there, and a project can legitimately have no directory.
+    // `createProject` inserts the row *before* creating the folder, with a
+    // non-recursive `create()` — so if `projectDir` itself does not exist, the
+    // row is committed and the directory never appears. The same state follows
+    // from `projectDir` being repointed, or the folder being cleared out by
+    // hand. Any of those made deleting the project report a failure while
+    // having entirely succeeded.
+    final folderName = project.folderName;
+    if (folderName != null && folderName.isNotEmpty) {
+      final settings = await SettingsService().getSettings(session);
+      final directory = Directory('${settings.projectDir}/$folderName');
+      try {
+        // `recursive: true` still throws when the path is absent, so ask first.
+        if (await directory.exists()) {
+          await directory.delete(recursive: true);
+        }
+      } catch (e) {
+        // Leaks a directory, which is visible and recoverable. Refusing the
+        // deletion is neither.
+        session.log(
+          'Deleted project $id but could not remove ${directory.path}.',
+          level: LogLevel.warning,
+          exception: e,
+        );
+      }
+
+      try {
+        await session.serverpod.futureCalls.cancel(folderName);
+      } catch (e) {
+        session.log(
+          'Deleted project $id but could not cancel its future calls.',
+          level: LogLevel.warning,
+          exception: e,
+        );
+      }
+    }
+
+    session.log("Project deleted with ID: $id", level: LogLevel.info);
   }
 
   /// Adds a gene to a project.

@@ -39,12 +39,18 @@ abstract class FlumipFileNotFoundException
   FlumipFileNotFoundException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
-    return {'__className__': 'FlumipFileNotFoundException', 'message': message};
+    return {
+      '__className__': 'FlumipFileNotFoundException',
+      'message': message,
+    };
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
-    return {'__className__': 'FlumipFileNotFoundException', 'message': message};
+    return {
+      '__className__': 'FlumipFileNotFoundException',
+      'message': message,
+    };
   }
 
   @override

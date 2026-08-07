@@ -188,34 +188,67 @@ class _AuthFlowImpl extends AuthFlow {
 class AuthFlowUpdateTable extends _i1.UpdateTable<AuthFlowTable> {
   AuthFlowUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> state(String value) =>
-      _i1.ColumnValue(table.state, value);
+  _i1.ColumnValue<String, String> state(String value) => _i1.ColumnValue(
+    table.state,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> codeVerifier(String value) =>
-      _i1.ColumnValue(table.codeVerifier, value);
+  _i1.ColumnValue<String, String> codeVerifier(String value) => _i1.ColumnValue(
+    table.codeVerifier,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> nonce(String value) =>
-      _i1.ColumnValue(table.nonce, value);
+  _i1.ColumnValue<String, String> nonce(String value) => _i1.ColumnValue(
+    table.nonce,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> redirectUri(String value) =>
-      _i1.ColumnValue(table.redirectUri, value);
+  _i1.ColumnValue<String, String> redirectUri(String value) => _i1.ColumnValue(
+    table.redirectUri,
+    value,
+  );
 
   _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(table.created, value);
+      _i1.ColumnValue(
+        table.created,
+        value,
+      );
 
   _i1.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
-      _i1.ColumnValue(table.expires, value);
+      _i1.ColumnValue(
+        table.expires,
+        value,
+      );
 }
 
 class AuthFlowTable extends _i1.Table<int?> {
   AuthFlowTable({super.tableRelation}) : super(tableName: 'auth_flow') {
     updateTable = AuthFlowUpdateTable(this);
-    state = _i1.ColumnString('state', this);
-    codeVerifier = _i1.ColumnString('codeVerifier', this);
-    nonce = _i1.ColumnString('nonce', this);
-    redirectUri = _i1.ColumnString('redirectUri', this);
-    created = _i1.ColumnDateTime('created', this, hasDefault: true);
-    expires = _i1.ColumnDateTime('expires', this);
+    state = _i1.ColumnString(
+      'state',
+      this,
+    );
+    codeVerifier = _i1.ColumnString(
+      'codeVerifier',
+      this,
+    );
+    nonce = _i1.ColumnString(
+      'nonce',
+      this,
+    );
+    redirectUri = _i1.ColumnString(
+      'redirectUri',
+      this,
+    );
+    created = _i1.ColumnDateTime(
+      'created',
+      this,
+      hasDefault: true,
+    );
+    expires = _i1.ColumnDateTime(
+      'expires',
+      this,
+    );
   }
 
   late final AuthFlowUpdateTable updateTable;
@@ -411,7 +444,10 @@ class AuthFlowRepository {
     AuthFlow row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<AuthFlow>(row, transaction: transaction);
+    return session.db.insertRow<AuthFlow>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Updates all [AuthFlow]s in the list and returns the updated rows. If
@@ -496,7 +532,10 @@ class AuthFlowRepository {
     List<AuthFlow> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<AuthFlow>(rows, transaction: transaction);
+    return session.db.delete<AuthFlow>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Deletes a single [AuthFlow].
@@ -505,7 +544,10 @@ class AuthFlowRepository {
     AuthFlow row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<AuthFlow>(row, transaction: transaction);
+    return session.db.deleteRow<AuthFlow>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Deletes all rows matching the [where] expression.

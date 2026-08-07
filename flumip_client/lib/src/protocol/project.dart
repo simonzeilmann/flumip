@@ -33,6 +33,7 @@ abstract class Project implements _i1.SerializableModel {
     this.started,
     this.completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) : description = description ?? '',
        created = created ?? DateTime.now(),
@@ -41,6 +42,7 @@ abstract class Project implements _i1.SerializableModel {
        size = size ?? 0,
        emailNotification = emailNotification ?? false,
        error = error ?? '',
+       warning = warning ?? '',
        cleanup = cleanup ?? false;
 
   factory Project({
@@ -62,6 +64,7 @@ abstract class Project implements _i1.SerializableModel {
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) = _ProjectImpl;
 
@@ -107,6 +110,7 @@ abstract class Project implements _i1.SerializableModel {
               jsonSerialization['completedIn'],
             ),
       error: jsonSerialization['error'] as String?,
+      warning: jsonSerialization['warning'] as String?,
       cleanup: jsonSerialization['cleanup'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
@@ -173,6 +177,19 @@ abstract class Project implements _i1.SerializableModel {
 
   String error;
 
+  /// Something worth knowing about a run that nonetheless succeeded.
+  ///
+  /// ⚠️ Distinct from [error], and the distinction is the point. Finalizing a
+  /// finished run does several things after the MIPs are safely on disk — sizing
+  /// the output, timing it, generating the UCSC track — and any of those
+  /// throwing used to land in `error`, which marks the whole project failed. A
+  /// project whose MIPs designed perfectly well would report "MIP generation
+  /// failed" because a track file could not be written.
+  ///
+  /// `error` means there is no result. `warning` means there is a result and
+  /// something about it is worth reading.
+  String warning;
+
   bool cleanup;
 
   /// Returns a shallow copy of this [Project]
@@ -197,6 +214,7 @@ abstract class Project implements _i1.SerializableModel {
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   });
   @override
@@ -221,6 +239,7 @@ abstract class Project implements _i1.SerializableModel {
       if (started != null) 'started': started?.toJson(),
       if (completedIn != null) 'completedIn': completedIn?.toJson(),
       'error': error,
+      'warning': warning,
       'cleanup': cleanup,
     };
   }
@@ -253,6 +272,7 @@ class _ProjectImpl extends Project {
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) : super._(
          id: id,
@@ -273,6 +293,7 @@ class _ProjectImpl extends Project {
          started: started,
          completedIn: completedIn,
          error: error,
+         warning: warning,
          cleanup: cleanup,
        );
 
@@ -299,6 +320,7 @@ class _ProjectImpl extends Project {
     Object? started = _Undefined,
     Object? completedIn = _Undefined,
     String? error,
+    String? warning,
     bool? cleanup,
   }) {
     return Project(
@@ -322,6 +344,7 @@ class _ProjectImpl extends Project {
       started: started is DateTime? ? started : this.started,
       completedIn: completedIn is Duration? ? completedIn : this.completedIn,
       error: error ?? this.error,
+      warning: warning ?? this.warning,
       cleanup: cleanup ?? this.cleanup,
     );
   }

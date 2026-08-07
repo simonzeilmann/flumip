@@ -296,6 +296,14 @@ class MipgenService {
     );
     project.started = DateTime.now();
     project.active = true;
+    // ⚠️ Clear the last run's verdict. None of these were reset when a run
+    // started, so re-running a project that had failed left the old `error` in
+    // place — and the moment the new run finished successfully the project went
+    // straight back to reading "failed", with a message about something that had
+    // already been fixed.
+    project.error = '';
+    project.warning = '';
+    project.completedIn = null;
     var mipgenPID = await processService.getProcessPID(
       session,
       "mipgen",
@@ -322,6 +330,12 @@ class MipgenService {
   /// which is a screenful of noise, and the useful part is always at the end.
   /// Blank lines and its own progress chatter are dropped so the message is the
   /// error rather than the last `[mipgen] feature #N`.
+  /// One readable line out of an exception, for a message a person will read.
+  static String _short(Object error) {
+    final text = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.length > 200 ? '${text.substring(0, 200)}…' : text;
+  }
+
   Future<String> _lastWordsOf(Settings settings, Project project) async {
     try {
       final log = File(
@@ -415,7 +429,26 @@ class MipgenService {
         if (project.started != null) {
           project.completedIn = DateTime.now().difference(project.started!);
         }
-        await _generateUCSCTrack(session, project);
+
+        // ⚠️ Its own try, and that is the whole point. The MIPs are on disk by
+        // now — this is decoration on top of a run that succeeded. It used to
+        // sit inside the outer catch, so a UCSC track that could not be written
+        // set `project.error` and the interface reported "MIP generation
+        // failed" for a project whose MIPs had designed perfectly well.
+        try {
+          await _generateUCSCTrack(session, project);
+        } catch (e, stackTrace) {
+          session.log(
+            "Could not generate the UCSC track for project ID: ${project.id}",
+            level: LogLevel.warning,
+            exception: e,
+            stackTrace: stackTrace,
+          );
+          project.warning =
+              "The MIPs were designed, but the UCSC track could not be built: "
+              "${_short(e)}";
+        }
+
         session.log(
           "MIP generation finished for project ID: ${project.id}",
           level: LogLevel.info,

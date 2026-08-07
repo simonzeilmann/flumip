@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/generated/snp_import_status.dart';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:test/test.dart';
 
 import '../support/matchers.dart';
@@ -78,6 +81,53 @@ void main() {
           () => projectService.deleteProject(session, -1),
           throwsMessage('Project not found'));
     });
+
+    test(
+      'deletes a project whose directory was never created',
+      () async {
+        // ⚠️ The bug this exists to stop coming back. `Directory.delete` throws
+        // `PathNotFoundException` for a path that is not there, and the row is
+        // deleted *before* the cleanup runs — so the project was fully deleted
+        // and then reported as a failure, leaving the client showing a row that
+        // no longer existed.
+        //
+        // A project reaches this state when `createProject` committed the row
+        // but its non-recursive `Directory.create()` failed (no `projectDir`),
+        // when `projectDir` is repointed, or when the folder is cleared by hand.
+        final project = await projectService.createProject(
+            session, "never-ran", ProjectOptions(id: 1));
+
+        final settings = await SettingsService().getSettings(session);
+        final folder =
+            Directory('${settings.projectDir}/${project.folderName}');
+        if (await folder.exists()) await folder.delete(recursive: true);
+
+        await projectService.deleteProject(session, project.id!);
+
+        expect(await projectService.getProjects(session), isEmpty);
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'a project with files on disk takes them with it',
+      () async {
+        final project = await projectService.createProject(
+            session, "has-files", ProjectOptions(id: 1));
+
+        final settings = await SettingsService().getSettings(session);
+        final folder =
+            Directory('${settings.projectDir}/${project.folderName}');
+        await folder.create(recursive: true);
+        await File('${folder.path}/result.txt').writeAsString('mips');
+
+        await projectService.deleteProject(session, project.id!);
+
+        expect(await folder.exists(), isFalse);
+        expect(await projectService.getProjects(session), isEmpty);
+      },
+      tags: ['unit'],
+    );
   });
 
   withServerpod('Get Projects', (sessionBuilder, endpoints) {
