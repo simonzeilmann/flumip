@@ -49,10 +49,7 @@ void main() {
     test('points a local flutter run at the development backend', () {
       // `flutter run -d chrome` serves the app on its own port, so the page
       // port says nothing about where the API is.
-      expect(
-        apiUrlFor(Uri.parse('http://localhost:8083/')),
-        developmentApiUrl,
-      );
+      expect(apiUrlFor(Uri.parse('http://localhost:8083/')), developmentApiUrl);
       expect(
         apiUrlFor(Uri.parse('http://127.0.0.1:54321/')),
         developmentApiUrl,
@@ -99,8 +96,11 @@ void main() {
     });
 
     test('has no trailing slash, as callers append a path', () {
-      // Used as '$siteUrl/ucsc_track/<id>' in project_tile.dart.
-      expect(siteUrlFor(Uri.parse('http://localhost:9082/')), isNot(endsWith('/')));
+      // Used as '$siteUrl/ucsc_track/<token>' in project_result_actions.dart.
+      expect(
+        siteUrlFor(Uri.parse('http://localhost:9082/')),
+        isNot(endsWith('/')),
+      );
     });
   });
 
@@ -120,7 +120,6 @@ void main() {
       expect(resolveSiteUrl(), developmentSiteUrl);
     });
   });
-
 
   group('uploadsAreSameOrigin', () {
     test('an install is same-origin, so the cookie travels', () {
@@ -206,8 +205,10 @@ void main() {
           returnsNormally,
           reason: 'site URL "$bad"',
         );
-        expect(uploadsAreSameOrigin(Uri.parse('https://x.example/'), bad),
-            isFalse);
+        expect(
+          uploadsAreSameOrigin(Uri.parse('https://x.example/'), bad),
+          isFalse,
+        );
       }
     });
 
