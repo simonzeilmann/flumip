@@ -28,8 +28,8 @@ class SessionAuthKeyProvider implements RefresherClientAuthKeyProvider {
     required Future<SessionTokenResponse?> Function() fetchSession,
     this.refreshMargin = const Duration(minutes: 2),
     DateTime Function()? now,
-  })  : _fetchSession = fetchSession,
-        _now = now ?? DateTime.now;
+  }) : _fetchSession = fetchSession,
+       _now = now ?? DateTime.now;
 
   /// Fetches `/auth/session`. Injected so this is testable without a browser.
   final Future<SessionTokenResponse?> Function() _fetchSession;
@@ -66,10 +66,9 @@ class SessionAuthKeyProvider implements RefresherClientAuthKeyProvider {
   /// timers in the app can each trigger a refresh at once.
   static MutexRefresherClientAuthKeyProvider wrapped({
     required Future<SessionTokenResponse?> Function() fetchSession,
-  }) =>
-      MutexRefresherClientAuthKeyProvider(
-        SessionAuthKeyProvider(fetchSession: fetchSession),
-      );
+  }) => MutexRefresherClientAuthKeyProvider(
+    SessionAuthKeyProvider(fetchSession: fetchSession),
+  );
 
   /// The `Authorization` header value, or null when there is no token.
   ///

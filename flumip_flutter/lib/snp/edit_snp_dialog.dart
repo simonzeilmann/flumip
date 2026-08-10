@@ -28,8 +28,9 @@ class EditSnpDialog extends StatefulWidget {
 
 class _EditSnpDialogState extends State<EditSnpDialog> {
   late final _nameController = TextEditingController(text: widget.snp.name);
-  late final _descriptionController =
-      TextEditingController(text: widget.snp.description);
+  late final _descriptionController = TextEditingController(
+    text: widget.snp.description,
+  );
 
   @override
   void dispose() {
@@ -81,11 +82,11 @@ class _EditSnpDialogState extends State<EditSnpDialog> {
         ElevatedButton(
           onPressed: _canSave
               ? () => Navigator.of(context).pop(
-                    SnpEdit(
-                      name: _nameController.text.trim(),
-                      description: _descriptionController.text.trim(),
-                    ),
-                  )
+                  SnpEdit(
+                    name: _nameController.text.trim(),
+                    description: _descriptionController.text.trim(),
+                  ),
+                )
               : null,
           child: const Text('Save'),
         ),

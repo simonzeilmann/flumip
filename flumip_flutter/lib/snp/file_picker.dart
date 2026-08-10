@@ -41,9 +41,7 @@ Future<PickedFile?> pickFileFromBrowser({required String accept}) {
     if (files == null || files.length == 0) return finish(null);
     final file = files.item(0);
     if (file == null) return finish(null);
-    finish(
-      PickedFile(name: file.name, size: file.size, handle: file),
-    );
+    finish(PickedFile(name: file.name, size: file.size, handle: file));
   });
 
   // Fires when the dialog is dismissed. Without it the future never completes

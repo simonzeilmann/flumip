@@ -7,7 +7,9 @@ void main() {
   group('describeError', () {
     test('uses the message from an access refusal', () {
       expect(
-        describeError(ProjectAccessDeniedException(message: 'Not your project')),
+        describeError(
+          ProjectAccessDeniedException(message: 'Not your project'),
+        ),
         'Not your project',
       );
     });
@@ -24,7 +26,9 @@ void main() {
 
     test('unwraps the other typed server exceptions', () {
       expect(
-        describeError(FlumipFileNotFoundException(message: 'Project not found')),
+        describeError(
+          FlumipFileNotFoundException(message: 'Project not found'),
+        ),
         'Project not found',
       );
       expect(

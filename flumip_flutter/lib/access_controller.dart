@@ -20,8 +20,8 @@ class AccessController extends ChangeNotifier {
   AccessController({
     required Future<UserSettingsDto> Function() fetchAccess,
     Listenable? auth,
-  })  : _fetchAccess = fetchAccess,
-        _auth = auth {
+  }) : _fetchAccess = fetchAccess,
+       _auth = auth {
     // The tabs are all built before the bearer token exists — `TabBarView`
     // constructs every one of them at startup — so the first answer describes an
     // anonymous caller. Re-asking whenever sign-in state changes is what stops a

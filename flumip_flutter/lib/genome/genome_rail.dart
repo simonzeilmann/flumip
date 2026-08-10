@@ -84,9 +84,7 @@ class GenomeRail extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
       child: Row(
         children: [
-          Expanded(
-            child: Text('Genomes', style: context.text.titleMedium),
-          ),
+          Expanded(child: Text('Genomes', style: context.text.titleMedium)),
           // Both actions are library-wide maintenance rather than anything to do
           // with the selected genome, so they belong here rather than as buttons
           // over the whole tab. A menu also suits what they cost: collecting
@@ -122,8 +120,9 @@ class GenomeRail extends StatelessWidget {
         child: Text(
           'No genomes yet. Use "Scan for new genomes" once the files are in '
           'place.',
-          style: context.text.bodySmall
-              ?.copyWith(color: context.colours.onSurfaceVariant),
+          style: context.text.bodySmall?.copyWith(
+            color: context.colours.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -191,9 +190,9 @@ class _LoadingRow extends _Row {
 
   @override
   Widget build(BuildContext context, GenomeRail rail) => const Padding(
-        padding: EdgeInsets.fromLTRB(32, 8, 16, 8),
-        child: LinearProgressIndicator(minHeight: 2),
-      );
+    padding: EdgeInsets.fromLTRB(32, 8, 16, 8),
+    child: LinearProgressIndicator(minHeight: 2),
+  );
 }
 
 class _EmptyRow extends _Row {
@@ -201,13 +200,14 @@ class _EmptyRow extends _Row {
 
   @override
   Widget build(BuildContext context, GenomeRail rail) => Padding(
-        padding: const EdgeInsets.fromLTRB(32, 8, 16, 12),
-        child: Text(
-          'No genomes in this category.',
-          style: context.text.bodySmall
-              ?.copyWith(color: context.colours.onSurfaceVariant),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(32, 8, 16, 12),
+    child: Text(
+      'No genomes in this category.',
+      style: context.text.bodySmall?.copyWith(
+        color: context.colours.onSurfaceVariant,
+      ),
+    ),
+  );
 }
 
 class _GenomeRow extends _Row {
@@ -232,8 +232,9 @@ class _GenomeRow extends _Row {
       // now has room for it.
       subtitle: Text(
         formatBytes(genome.size),
-        style: context.text.bodySmall
-            ?.copyWith(color: context.colours.onSurfaceVariant),
+        style: context.text.bodySmall?.copyWith(
+          color: context.colours.onSurfaceVariant,
+        ),
       ),
       selected: selected,
       selectedTileColor: context.colours.secondaryContainer,

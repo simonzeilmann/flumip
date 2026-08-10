@@ -41,14 +41,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('keeps the chosen width when the window allows it',
-      (tester) async {
+  testWidgets('keeps the chosen width when the window allows it', (
+    tester,
+  ) async {
     await pumpDialogAt(tester, const Size(1400, 900), 560);
     expect(tester.getSize(find.byKey(bodyKey)).width, 560);
   });
 
-  testWidgets('gives up only as much as it must on a narrow window',
-      (tester) async {
+  testWidgets('gives up only as much as it must on a narrow window', (
+    tester,
+  ) async {
     // The bug this fixes: a 560px SizedBox in an AlertDialog on a 480px
     // viewport overflows its dialog and paints the yellow-and-black stripe.
     await pumpDialogAt(tester, const Size(480, 900), 560);
@@ -57,8 +59,9 @@ void main() {
     expect(tester.getSize(find.byKey(bodyKey)).width, lessThanOrEqualTo(480));
   });
 
-  testWidgets('the widest dialog in the app survives a narrow window',
-      (tester) async {
+  testWidgets('the widest dialog in the app survives a narrow window', (
+    tester,
+  ) async {
     for (final width in [460.0, 520.0, 560.0]) {
       await pumpDialogAt(tester, const Size(400, 800), width);
       expect(tester.takeException(), isNull, reason: 'at width $width');

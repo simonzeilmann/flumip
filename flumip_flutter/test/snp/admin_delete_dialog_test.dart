@@ -10,21 +10,16 @@ import 'package:flutter_test/flutter_test.dart';
 /// They are possible at all because the dialog takes its data as parameters and
 /// returns its answer, touching no global client — a constraint worth keeping for
 /// its own sake, of which this is the dividend.
-Snp snpFixture({
-  String name = 'dbSNP common',
-  bool custom = false,
-}) =>
-    Snp(
-      id: 42,
-      name: name,
-      vcfPath: '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz',
-      tbiPath:
-          '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz.tbi',
-      folder: '/opt/flumip/data/genomes/human/hg38/snp/common',
-      active: true,
-      custom: custom,
-      created: DateTime(2026, 1, 1),
-    );
+Snp snpFixture({String name = 'dbSNP common', bool custom = false}) => Snp(
+  id: 42,
+  name: name,
+  vcfPath: '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz',
+  tbiPath: '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz.tbi',
+  folder: '/opt/flumip/data/genomes/human/hg38/snp/common',
+  active: true,
+  custom: custom,
+  created: DateTime(2026, 1, 1),
+);
 
 Future<AdminDeleteConfirmation?> pumpDialog(
   WidgetTester tester, {
@@ -65,8 +60,9 @@ ElevatedButton deleteButton(WidgetTester tester) =>
     );
 
 void main() {
-  testWidgets('the delete button stays disabled until the name is typed',
-      (tester) async {
+  testWidgets('the delete button stays disabled until the name is typed', (
+    tester,
+  ) async {
     await pumpDialog(tester, snp: snpFixture());
 
     expect(deleteButton(tester).onPressed, isNull);
@@ -119,12 +115,15 @@ void main() {
 
   testWidgets('a global SNP says so, in as many words', (tester) async {
     await pumpDialog(tester, snp: snpFixture(custom: false));
-    expect(find.textContaining('part of the server\'s reference data'),
-        findsOneWidget);
+    expect(
+      find.textContaining('part of the server\'s reference data'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('projects still using it are named, and block the button',
-      (tester) async {
+  testWidgets('projects still using it are named, and block the button', (
+    tester,
+  ) async {
     await pumpDialog(
       tester,
       snp: snpFixture(),
@@ -190,8 +189,9 @@ void main() {
     expect(captured!.settingsPassword, isNull);
   });
 
-  testWidgets('a signed-in admin is never asked for a password',
-      (tester) async {
+  testWidgets('a signed-in admin is never asked for a password', (
+    tester,
+  ) async {
     await pumpDialog(tester, snp: snpFixture(), needsPassword: false);
     expect(find.widgetWithText(TextField, 'Settings password'), findsNothing);
   });
@@ -204,8 +204,11 @@ void main() {
       'dbSNP common',
     );
     await tester.pump();
-    expect(deleteButton(tester).onPressed, isNull,
-        reason: 'the name alone must not be enough without the password');
+    expect(
+      deleteButton(tester).onPressed,
+      isNull,
+      reason: 'the name alone must not be enough without the password',
+    );
 
     await tester.enterText(
       find.widgetWithText(TextField, 'Settings password'),

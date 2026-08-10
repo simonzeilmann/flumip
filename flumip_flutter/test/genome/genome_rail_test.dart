@@ -4,17 +4,20 @@ import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Genome genomeFixture({int id = 1, String name = 'hg38', int size = 3100000000}) =>
-    Genome(
-      id: id,
-      name: name,
-      description: '',
-      path: '/opt/flumip/data/genomes/human/$name',
-      size: size,
-      indexed: false,
-      indexing: false,
-      active: true,
-    );
+Genome genomeFixture({
+  int id = 1,
+  String name = 'hg38',
+  int size = 3100000000,
+}) => Genome(
+  id: id,
+  name: name,
+  description: '',
+  path: '/opt/flumip/data/genomes/human/$name',
+  size: size,
+  indexed: false,
+  indexing: false,
+  active: true,
+);
 
 Future<void> pumpRail(
   WidgetTester tester, {
@@ -75,10 +78,13 @@ void main() {
   testWidgets('tapping a closed category asks to open it', (tester) async {
     String? asked;
     var called = false;
-    await pumpRail(tester, onCategoryToggled: (c) {
-      asked = c;
-      called = true;
-    });
+    await pumpRail(
+      tester,
+      onCategoryToggled: (c) {
+        asked = c;
+        called = true;
+      },
+    );
 
     await tester.tap(find.text('Homo sapiens'));
     expect(called, isTrue);
@@ -124,8 +130,9 @@ void main() {
     expect(find.text('No genomes in this category.'), findsOneWidget);
   });
 
-  testWidgets('a loading category shows progress, not an empty message',
-      (tester) async {
+  testWidgets('a loading category shows progress, not an empty message', (
+    tester,
+  ) async {
     await pumpRail(
       tester,
       expandedCategory: 'Homo sapiens',

@@ -19,18 +19,17 @@ AuthAdminStatusDto statusFixture({
   String redirectUri = 'https://flumip.example.org/auth/callback',
   bool enabled = true,
   bool enforcing = true,
-}) =>
-    AuthAdminStatusDto(
-      enabled: enabled,
-      enforcing: enforcing,
-      secretConfigured: secretConfigured,
-      envOverrides: envOverrides,
-      redirectUri: redirectUri,
-      discoveryOk: discoveryOk,
-      discoveryError: discoveryError,
-      authorizationEndpoint: 'https://login.example.org/auth',
-      tokenEndpoint: 'https://login.example.org/token',
-    );
+}) => AuthAdminStatusDto(
+  enabled: enabled,
+  enforcing: enforcing,
+  secretConfigured: secretConfigured,
+  envOverrides: envOverrides,
+  redirectUri: redirectUri,
+  discoveryOk: discoveryOk,
+  discoveryError: discoveryError,
+  authorizationEndpoint: 'https://login.example.org/auth',
+  tokenEndpoint: 'https://login.example.org/token',
+);
 
 class SsoControllers {
   final issuer = TextEditingController();
@@ -78,7 +77,9 @@ Future<SsoControllers> pumpSso(
 }
 
 TextField fieldWithLabel(WidgetTester tester, String label) {
-  return tester.widgetList<TextField>(find.byType(TextField)).firstWhere(
+  return tester
+      .widgetList<TextField>(find.byType(TextField))
+      .firstWhere(
         (f) => f.decoration?.labelText == label,
         orElse: () => throw StateError('no field labelled "$label"'),
       );
@@ -109,8 +110,9 @@ void main() {
       expect(fieldWithLabel(tester, 'Client ID').readOnly, isFalse);
     });
 
-    testWidgets('nothing is read-only when nothing is overridden',
-        (tester) async {
+    testWidgets('nothing is read-only when nothing is overridden', (
+      tester,
+    ) async {
       await pumpSso(tester, status: statusFixture());
       expect(fieldWithLabel(tester, 'OIDC issuer').readOnly, isFalse);
       expect(fieldWithLabel(tester, 'Client secret').readOnly, isFalse);
@@ -119,8 +121,9 @@ void main() {
     testWidgets('an overridden client secret is locked too', (tester) async {
       await pumpSso(
         tester,
-        status:
-            statusFixture(envOverrides: const ['FLUMIP_OIDC_CLIENT_SECRET']),
+        status: statusFixture(
+          envOverrides: const ['FLUMIP_OIDC_CLIENT_SECRET'],
+        ),
       );
       final secret = fieldWithLabel(tester, 'Client secret');
       expect(secret.readOnly, isTrue);
@@ -130,8 +133,9 @@ void main() {
       );
     });
 
-    testWidgets('before the status arrives, nothing claims to be overridden',
-        (tester) async {
+    testWidgets('before the status arrives, nothing claims to be overridden', (
+      tester,
+    ) async {
       // ⚠️ status is null until the probe answers. If this widget were built as
       // const it would never rebuild once it did, and the markers would never
       // appear at all.
@@ -141,8 +145,9 @@ void main() {
   });
 
   group('the write-only client secret', () {
-    testWidgets('says when one is stored, without revealing it',
-        (tester) async {
+    testWidgets('says when one is stored, without revealing it', (
+      tester,
+    ) async {
       await pumpSso(tester, status: statusFixture(secretConfigured: true));
 
       final secret = fieldWithLabel(tester, 'Client secret');
@@ -159,8 +164,9 @@ void main() {
       expect(secret.decoration?.suffixIcon, isNull);
     });
 
-    testWidgets('starts empty, so an untouched save keeps the stored one',
-        (tester) async {
+    testWidgets('starts empty, so an untouched save keeps the stored one', (
+      tester,
+    ) async {
       final c = await pumpSso(
         tester,
         status: statusFixture(secretConfigured: true),
@@ -170,8 +176,9 @@ void main() {
   });
 
   group('the redirect URI', () {
-    testWidgets('is shown selectable, because it must match exactly',
-        (tester) async {
+    testWidgets('is shown selectable, because it must match exactly', (
+      tester,
+    ) async {
       await pumpSso(tester, status: statusFixture());
       expect(
         find.widgetWithText(
@@ -182,16 +189,16 @@ void main() {
       );
     });
 
-    testWidgets('is left out when the server has not computed one',
-        (tester) async {
+    testWidgets('is left out when the server has not computed one', (
+      tester,
+    ) async {
       await pumpSso(tester, status: statusFixture(redirectUri: ''));
       expect(find.textContaining('Redirect URI'), findsNothing);
     });
   });
 
   group('the connection test', () {
-    testWidgets('reports success with the endpoint it reached',
-        (tester) async {
+    testWidgets('reports success with the endpoint it reached', (tester) async {
       await pumpSso(tester, status: statusFixture(discoveryOk: true));
       expect(find.textContaining('Reached the provider'), findsOneWidget);
     });
@@ -220,8 +227,9 @@ void main() {
     });
   });
 
-  testWidgets('warns when sign-in is on but not being enforced',
-      (tester) async {
+  testWidgets('warns when sign-in is on but not being enforced', (
+    tester,
+  ) async {
     await pumpSso(
       tester,
       status: statusFixture(enabled: true, enforcing: false),
@@ -229,8 +237,9 @@ void main() {
     expect(find.textContaining('not being enforced yet'), findsOneWidget);
   });
 
-  testWidgets('says nothing about enforcement once it is enforcing',
-      (tester) async {
+  testWidgets('says nothing about enforcement once it is enforcing', (
+    tester,
+  ) async {
     await pumpSso(
       tester,
       status: statusFixture(enabled: true, enforcing: true),

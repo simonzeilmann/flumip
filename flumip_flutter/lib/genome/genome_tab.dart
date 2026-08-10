@@ -183,7 +183,10 @@ class _GenomeTabState extends State<GenomeTab> {
   /// Failures go to a snack bar rather than the pane's banner: an action the
   /// user just took reports where they are looking, whereas a banner explains
   /// the state of something on screen.
-  Future<void> _mutate(Future<void> Function() action, String whatFailed) async {
+  Future<void> _mutate(
+    Future<void> Function() action,
+    String whatFailed,
+  ) async {
     final id = selectedGenome?.id;
     if (id == null) return;
     _mutating = true;
@@ -220,8 +223,9 @@ class _GenomeTabState extends State<GenomeTab> {
 
   void _say(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showIndexDeleteDialog() {
@@ -303,10 +307,13 @@ class _GenomeTabState extends State<GenomeTab> {
             // IndexedStack: an offscreen SnpSection would go on polling.
             return genome == null
                 ? rail
-                : _detail(genome, onBack: () => setState(() {
+                : _detail(
+                    genome,
+                    onBack: () => setState(() {
                       selectedGenome = null;
                       _timer?.cancel();
-                    }));
+                    }),
+                  );
           }
 
           return Row(
@@ -325,22 +332,22 @@ class _GenomeTabState extends State<GenomeTab> {
   }
 
   Widget _detail(Genome genome, {VoidCallback? onBack}) => GenomeDetailPane(
-        genome: genome,
-        snpSection: SnpSection(genome: genome),
-        onDeleteIndex: _showIndexDeleteDialog,
-        onIndexGenome: _indexGenome,
-        onToggleGenomeActive: _toggleGenomeActive,
-        onBack: onBack,
-        error: _detailError,
-        onDismissError: () => setState(() => _detailError = null),
-      );
+    genome: genome,
+    snpSection: SnpSection(genome: genome),
+    onDeleteIndex: _showIndexDeleteDialog,
+    onIndexGenome: _indexGenome,
+    onToggleGenomeActive: _toggleGenomeActive,
+    onBack: onBack,
+    error: _detailError,
+    onDismissError: () => setState(() => _detailError = null),
+  );
 
   Widget _placeholder(BuildContext context) => Center(
-        child: Text(
-          'Select a genome.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      );
+    child: Text(
+      'Select a genome.',
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
 }

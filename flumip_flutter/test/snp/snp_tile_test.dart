@@ -14,23 +14,22 @@ Snp snpFixture({
   int size = 1500000000,
   int bytesDownloaded = 0,
   int totalBytes = 0,
-}) =>
-    Snp(
-      id: 42,
-      name: name,
-      vcfPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz',
-      tbiPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz.tbi',
-      folder: '/opt/flumip/data/custom_snp/user/42',
-      active: true,
-      custom: custom,
-      private: private,
-      status: status,
-      statusMessage: statusMessage,
-      size: size,
-      bytesDownloaded: bytesDownloaded,
-      totalBytes: totalBytes,
-      created: DateTime(2026, 1, 1),
-    );
+}) => Snp(
+  id: 42,
+  name: name,
+  vcfPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz',
+  tbiPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz.tbi',
+  folder: '/opt/flumip/data/custom_snp/user/42',
+  active: true,
+  custom: custom,
+  private: private,
+  status: status,
+  statusMessage: statusMessage,
+  size: size,
+  bytesDownloaded: bytesDownloaded,
+  totalBytes: totalBytes,
+  created: DateTime(2026, 1, 1),
+);
 
 Future<void> pumpTile(
   WidgetTester tester, {
@@ -62,8 +61,9 @@ Future<void> pumpTile(
 
 void main() {
   group('the overflow menu', () {
-    testWidgets('an admin on a global set gets one item and no stray divider',
-        (tester) async {
+    testWidgets('an admin on a global set gets one item and no stray divider', (
+      tester,
+    ) async {
       // ⚠️ The bug: the divider was gated on `isAdmin` alone, but for a global
       // set `_mayEdit` is false, so every item above it was skipped and the menu
       // rendered as a bare divider followed by a single item.
@@ -78,8 +78,9 @@ void main() {
       expect(find.text('Rename…'), findsNothing);
     });
 
-    testWidgets('an admin on a custom set gets both groups, separated',
-        (tester) async {
+    testWidgets('an admin on a custom set gets both groups, separated', (
+      tester,
+    ) async {
       await pumpTile(
         tester,
         snp: snpFixture(custom: true),
@@ -145,7 +146,9 @@ void main() {
       expect(find.text('Shared by someone else'), findsNothing);
     });
 
-    testWidgets('a status chip is present even on a global set', (tester) async {
+    testWidgets('a status chip is present even on a global set', (
+      tester,
+    ) async {
       // The reconcile pass can mark a global set failed; hiding the chip on
       // globals would hide that.
       await pumpTile(
@@ -178,8 +181,9 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
-    testWidgets('offers no retry to someone who may not edit it',
-        (tester) async {
+    testWidgets('offers no retry to someone who may not edit it', (
+      tester,
+    ) async {
       await pumpTile(
         tester,
         snp: snpFixture(custom: true, status: SnpImportStatus.failed),
@@ -189,8 +193,9 @@ void main() {
     });
   });
 
-  testWidgets('an upload in flight wins over the row byte counts',
-      (tester) async {
+  testWidgets('an upload in flight wins over the row byte counts', (
+    tester,
+  ) async {
     // ⚠️ The invariant documented on SnpTile.upload, load-bearing and until now
     // untested: the server cannot know how far a PUT has got until it lands, so
     // the row would read zero for the whole transfer.

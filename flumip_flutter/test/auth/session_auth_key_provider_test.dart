@@ -16,10 +16,7 @@ void main() {
         fetchSession: () async => tokenNamed('t1'),
       );
       expect(await provider.refreshAuthKey(), RefreshAuthKeyResult.success);
-      expect(
-        await provider.authHeaderValue,
-        wrapAsBearerAuthHeaderValue('t1'),
-      );
+      expect(await provider.authHeaderValue, wrapAsBearerAuthHeaderValue('t1'));
     });
 
     test('reports failedUnauthorized when the session is gone', () async {
@@ -44,10 +41,12 @@ void main() {
 
     test('skips while the token is still comfortably valid', () async {
       var calls = 0;
-      final provider = SessionAuthKeyProvider(fetchSession: () async {
-        calls++;
-        return tokenNamed('t1');
-      });
+      final provider = SessionAuthKeyProvider(
+        fetchSession: () async {
+          calls++;
+          return tokenNamed('t1');
+        },
+      );
       await provider.refreshAuthKey();
       expect(await provider.refreshAuthKey(), RefreshAuthKeyResult.skipped);
       expect(calls, 1);
@@ -71,20 +70,19 @@ void main() {
 
     test('force renews even when the token is fresh', () async {
       var calls = 0;
-      final provider = SessionAuthKeyProvider(fetchSession: () async {
-        calls++;
-        return tokenNamed('t$calls');
-      });
+      final provider = SessionAuthKeyProvider(
+        fetchSession: () async {
+          calls++;
+          return tokenNamed('t$calls');
+        },
+      );
       await provider.refreshAuthKey();
       expect(
         await provider.refreshAuthKey(force: true),
         RefreshAuthKeyResult.success,
       );
       expect(calls, 2);
-      expect(
-        await provider.authHeaderValue,
-        wrapAsBearerAuthHeaderValue('t2'),
-      );
+      expect(await provider.authHeaderValue, wrapAsBearerAuthHeaderValue('t2'));
     });
 
     test('a lost session clears the token', () async {
@@ -105,10 +103,12 @@ void main() {
       // The poll-storm guard. Without it the app's ten-second timers would hit
       // /auth/session once per tick per timer, forever, after a session expires.
       var calls = 0;
-      final provider = SessionAuthKeyProvider(fetchSession: () async {
-        calls++;
-        return null;
-      });
+      final provider = SessionAuthKeyProvider(
+        fetchSession: () async {
+          calls++;
+          return null;
+        },
+      );
 
       for (var i = 0; i < 10; i++) {
         expect(
@@ -119,35 +119,41 @@ void main() {
       expect(calls, 1);
     });
 
-    test('a forced refresh asks again, so a recovered session is noticed',
-        () async {
-      var signedIn = false;
-      var calls = 0;
-      final provider = SessionAuthKeyProvider(fetchSession: () async {
-        calls++;
-        return signedIn ? tokenNamed('t1') : null;
-      });
+    test(
+      'a forced refresh asks again, so a recovered session is noticed',
+      () async {
+        var signedIn = false;
+        var calls = 0;
+        final provider = SessionAuthKeyProvider(
+          fetchSession: () async {
+            calls++;
+            return signedIn ? tokenNamed('t1') : null;
+          },
+        );
 
-      await provider.refreshAuthKey();
-      await provider.refreshAuthKey();
-      expect(calls, 1, reason: 'the second call is memoised');
+        await provider.refreshAuthKey();
+        await provider.refreshAuthKey();
+        expect(calls, 1, reason: 'the second call is memoised');
 
-      signedIn = true;
-      expect(
-        await provider.refreshAuthKey(force: true),
-        RefreshAuthKeyResult.success,
-      );
-      expect(calls, 2);
-      // And normal refreshes work again afterwards.
-      expect(await provider.refreshAuthKey(), RefreshAuthKeyResult.skipped);
-    });
+        signedIn = true;
+        expect(
+          await provider.refreshAuthKey(force: true),
+          RefreshAuthKeyResult.success,
+        );
+        expect(calls, 2);
+        // And normal refreshes work again afterwards.
+        expect(await provider.refreshAuthKey(), RefreshAuthKeyResult.skipped);
+      },
+    );
 
     test('clear() forgets the token without a request', () async {
       var calls = 0;
-      final provider = SessionAuthKeyProvider(fetchSession: () async {
-        calls++;
-        return tokenNamed('t1');
-      });
+      final provider = SessionAuthKeyProvider(
+        fetchSession: () async {
+          calls++;
+          return tokenNamed('t1');
+        },
+      );
       await provider.refreshAuthKey();
       provider.clear();
       expect(await provider.authHeaderValue, isNull);
@@ -160,10 +166,12 @@ void main() {
       // This is what keeps the app's ten-second polling timers from turning an
       // expired session into a refresh storm.
       var calls = 0;
-      final provider = SessionAuthKeyProvider.wrapped(fetchSession: () async {
-        calls++;
-        return null;
-      });
+      final provider = SessionAuthKeyProvider.wrapped(
+        fetchSession: () async {
+          calls++;
+          return null;
+        },
+      );
 
       expect(
         await provider.refreshAuthKey(),
@@ -177,18 +185,18 @@ void main() {
           RefreshAuthKeyResult.failedUnauthorized,
         );
       }
-      expect(calls, callsAfterFirst,
-          reason: 'the decorator must not keep asking a dead session');
+      expect(
+        calls,
+        callsAfterFirst,
+        reason: 'the decorator must not keep asking a dead session',
+      );
     });
 
     test('a valid session yields a header through the decorator', () async {
       final provider = SessionAuthKeyProvider.wrapped(
         fetchSession: () async => tokenNamed('t1'),
       );
-      expect(
-        await provider.authHeaderValue,
-        wrapAsBearerAuthHeaderValue('t1'),
-      );
+      expect(await provider.authHeaderValue, wrapAsBearerAuthHeaderValue('t1'));
     });
   });
 

@@ -32,9 +32,9 @@ class AuthController extends ChangeNotifier {
     required Future<AuthConfigSnapshot> Function() fetchConfig,
     required Future<SessionTokenResponse?> Function() fetchSession,
     required void Function(String url) navigate,
-  })  : _fetchConfig = fetchConfig,
-        _fetchSession = fetchSession,
-        _navigate = navigate;
+  }) : _fetchConfig = fetchConfig,
+       _fetchSession = fetchSession,
+       _navigate = navigate;
 
   /// Builds the controller the running app uses.
   ///
@@ -49,18 +49,17 @@ class AuthController extends ChangeNotifier {
     required Client client,
     required String siteUrl,
     required void Function(String url) navigate,
-  }) =>
-      AuthController(
-        navigate: navigate,
-        fetchConfig: () async {
-          final config = await client.auth.config();
-          return AuthConfigSnapshot(
-            enabled: config.enabled,
-            buttonLabel: config.buttonLabel,
-          );
-        },
-        fetchSession: () => fetchSessionToken(siteUrl),
+  }) => AuthController(
+    navigate: navigate,
+    fetchConfig: () async {
+      final config = await client.auth.config();
+      return AuthConfigSnapshot(
+        enabled: config.enabled,
+        buttonLabel: config.buttonLabel,
       );
+    },
+    fetchSession: () => fetchSessionToken(siteUrl),
+  );
 
   final Future<AuthConfigSnapshot> Function() _fetchConfig;
   final Future<SessionTokenResponse?> Function() _fetchSession;

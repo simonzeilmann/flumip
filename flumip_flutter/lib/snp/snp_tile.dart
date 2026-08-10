@@ -154,12 +154,12 @@ class SnpTile extends StatelessWidget {
           Text(
             snp.totalBytes > 0
                 ? '${formatBytes(snp.bytesDownloaded)} of '
-                    '${formatBytes(snp.totalBytes)}'
+                      '${formatBytes(snp.totalBytes)}'
                 : statusLabel(snp.status),
             style: TextStyle(
-                  color: context.colours.onSurfaceVariant,
-                  fontSize: 12,
-                ),
+              color: context.colours.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -168,70 +168,70 @@ class SnpTile extends StatelessWidget {
 
   /// The bar for a browser upload, driven by this tab rather than by the row.
   Widget _uploadProgress(BuildContext context, UploadJob job) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (job.error == null) ...[
-              LinearProgressIndicator(value: job.fraction),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Uploading ${job.fileLabel} — '
-                      '${formatBytes(job.sent)} of ${formatBytes(job.total)}',
-                      style: TextStyle(
-                        color: context.colours.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
+    padding: const EdgeInsets.only(top: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (job.error == null) ...[
+          LinearProgressIndicator(value: job.fraction),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Uploading ${job.fileLabel} — '
+                  '${formatBytes(job.sent)} of ${formatBytes(job.total)}',
+                  style: TextStyle(
+                    color: context.colours.onSurfaceVariant,
+                    fontSize: 12,
                   ),
-                  if (onCancelUpload != null)
-                    TextButton(
-                      onPressed: onCancelUpload,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size(0, 28),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                ],
-              ),
-            ] else
-              SelectableText(
-                job.error!,
-                style: TextStyle(color: context.colours.error, fontSize: 12),
-              ),
-          ],
-        ),
-      );
-
-  Widget _failure(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Shown in full and selectable: the messages carry the command to
-            // fix the problem (`bgzip -c …`) or tabix's own diagnostic, and
-            // truncating them would throw away the useful half.
-            SelectableText(
-              snp.statusMessage,
-              style: TextStyle(color: context.colours.error, fontSize: 12),
-            ),
-            if (_mayEdit)
-              TextButton.icon(
-                onPressed: () => onAction(SnpAction.retry),
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Retry'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 32),
                 ),
               ),
-          ],
+              if (onCancelUpload != null)
+                TextButton(
+                  onPressed: onCancelUpload,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 28),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+            ],
+          ),
+        ] else
+          SelectableText(
+            job.error!,
+            style: TextStyle(color: context.colours.error, fontSize: 12),
+          ),
+      ],
+    ),
+  );
+
+  Widget _failure(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Shown in full and selectable: the messages carry the command to
+        // fix the problem (`bgzip -c …`) or tabix's own diagnostic, and
+        // truncating them would throw away the useful half.
+        SelectableText(
+          snp.statusMessage,
+          style: TextStyle(color: context.colours.error, fontSize: 12),
         ),
-      );
+        if (_mayEdit)
+          TextButton.icon(
+            onPressed: () => onAction(SnpAction.retry),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 32),
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _menu(BuildContext context) {
     final destructive = TextStyle(color: context.colours.error);
@@ -239,10 +239,7 @@ class SnpTile extends StatelessWidget {
       onSelected: onAction,
       itemBuilder: (context) => [
         if (_mayEdit)
-          const PopupMenuItem(
-            value: SnpAction.rename,
-            child: Text('Rename…'),
-          ),
+          const PopupMenuItem(value: SnpAction.rename, child: Text('Rename…')),
         if (_mayEdit)
           PopupMenuItem(
             value: snp.private ? SnpAction.share : SnpAction.unshare,
@@ -256,9 +253,7 @@ class SnpTile extends StatelessWidget {
         // A row whose files never turned up. Offered as its own action rather
         // than as a plain delete, because there is nothing here to lose and no
         // confirmation is warranted.
-        if (_mayEdit &&
-            upload == null &&
-            snp.status == SnpImportStatus.pending)
+        if (_mayEdit && upload == null && snp.status == SnpImportStatus.pending)
           const PopupMenuItem(
             value: SnpAction.cancelUpload,
             child: Text('Cancel — no files arrived'),

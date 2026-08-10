@@ -38,8 +38,8 @@ class SnpUploadController extends ChangeNotifier {
   SnpUploadController({
     required SnpTransport transport,
     required Future<void> Function(int snpId) finishUpload,
-  })  : _transport = transport,
-        _finish = finishUpload;
+  }) : _transport = transport,
+       _finish = finishUpload;
 
   final SnpTransport _transport;
   final Future<void> Function(int snpId) _finish;
@@ -53,8 +53,7 @@ class SnpUploadController extends ChangeNotifier {
   bool get isNotEmpty => _jobs.isNotEmpty;
 
   /// Whether anything is still moving, which is what the list's poll rate keys on.
-  bool get anyLive =>
-      _jobs.values.any((j) => j.error == null && !j.cancelled);
+  bool get anyLive => _jobs.values.any((j) => j.error == null && !j.cancelled);
 
   /// Sends [vcf], then [tbi] if given, then tells the server it is finished.
   ///
