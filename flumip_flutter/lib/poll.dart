@@ -17,8 +17,9 @@ library;
 /// [consecutiveFailures] backs the interval off so that a server that has gone
 /// away is not hammered, capped so it always recovers within a minute or so.
 Duration pollInterval({required bool anyLive, int consecutiveFailures = 0}) {
-  final base =
-      anyLive ? const Duration(seconds: 2) : const Duration(seconds: 20);
+  final base = anyLive
+      ? const Duration(seconds: 2)
+      : const Duration(seconds: 20);
   return base * (1 << consecutiveFailures.clamp(0, 3));
 }
 

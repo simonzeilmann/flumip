@@ -8,8 +8,7 @@ UserSettingsDto access({bool isAdmin = false, bool passwordAccepted = false}) =>
 
 void main() {
   test('starts out knowing nothing, and offers nothing', () {
-    final controller =
-        AccessController(fetchAccess: () async => access());
+    final controller = AccessController(fetchAccess: () async => access());
     expect(controller.loading, isTrue);
     expect(controller.isAdmin, isFalse);
     expect(controller.mayAdminister, isFalse);
@@ -25,8 +24,7 @@ void main() {
     expect(controller.passwordAccepted, isFalse);
   });
 
-  test('on an install with no sign-in, the password is the credential',
-      () async {
+  test('on an install with no sign-in, the password is the credential', () async {
     // ⚠️ The case `authController.user?.isAdmin` cannot see: nobody is signed in,
     // so that shortcut says "not an administrator" — yet this is exactly the
     // install where an administrative action is possible, using the settings

@@ -23,11 +23,11 @@ class SnpUploadException implements Exception {
 
   @override
   String toString() => switch (status) {
-        0 => 'The connection failed.',
-        403 => 'The server would not accept that file.',
-        413 => 'That file is larger than this server accepts.',
-        _ => 'The server answered $status.',
-      };
+    0 => 'The connection failed.',
+    403 => 'The server would not accept that file.',
+    413 => 'That file is larger than this server accepts.',
+    _ => 'The server answered $status.',
+  };
 }
 
 /// The user aborted the upload.

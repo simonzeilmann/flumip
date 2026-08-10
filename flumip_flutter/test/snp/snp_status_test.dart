@@ -29,14 +29,16 @@ void main() {
       expect(progressFraction(100, 100), 1.0);
     });
 
-    test('clamps, because an out-of-range value asserts in LinearProgressIndicator',
-        () {
-      // Not defensive tidying. A debug build *crashes the tab* on a value outside
-      // 0..1, so a server that miscounts — a redirect counted twice, a
-      // Content-Length that was a lie — would take the page down.
-      expect(progressFraction(150, 100), 1.0);
-      expect(progressFraction(-10, 100), 0.0);
-    });
+    test(
+      'clamps, because an out-of-range value asserts in LinearProgressIndicator',
+      () {
+        // Not defensive tidying. A debug build *crashes the tab* on a value outside
+        // 0..1, so a server that miscounts — a redirect counted twice, a
+        // Content-Length that was a lie — would take the page down.
+        expect(progressFraction(150, 100), 1.0);
+        expect(progressFraction(-10, 100), 0.0);
+      },
+    );
   });
 
   group('labels', () {

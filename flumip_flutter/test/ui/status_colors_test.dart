@@ -81,10 +81,14 @@ void main() {
   });
 
   test('on-colours are legible on their solid roles', () {
-    expect(contrast(palette.onSuccess, palette.success),
-        greaterThanOrEqualTo(4.5));
-    expect(contrast(palette.onWarning, palette.warning),
-        greaterThanOrEqualTo(4.5));
+    expect(
+      contrast(palette.onSuccess, palette.success),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      contrast(palette.onWarning, palette.warning),
+      greaterThanOrEqualTo(4.5),
+    );
   });
 
   test('the four states are told apart by hue, not just by brightness', () {

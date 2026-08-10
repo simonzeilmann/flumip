@@ -182,8 +182,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   labelText: 'Name',
-                  errorText:
-                      _nameController.text.isEmpty ? null : _nameError,
+                  errorText: _nameController.text.isEmpty ? null : _nameError,
                 ),
               ),
               const SizedBox(height: 12),
@@ -228,22 +227,22 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
         ElevatedButton(
           onPressed: _canAdd
               ? () => Navigator.of(context).pop(
-                    CustomSnpDraft(
-                      mode: _mode,
-                      name: _nameController.text.trim(),
-                      description: _descriptionController.text.trim(),
-                      genomeId: widget.genome.id!,
-                      shared: _shared,
-                      vcfUrl: _mode == AddSnpMode.url
-                          ? _vcfUrlController.text.trim()
-                          : '',
-                      tbiUrl: _mode == AddSnpMode.url
-                          ? _tbiUrlController.text.trim()
-                          : '',
-                      vcfFile: _mode == AddSnpMode.upload ? _vcfFile : null,
-                      tbiFile: _mode == AddSnpMode.upload ? _tbiFile : null,
-                    ),
-                  )
+                  CustomSnpDraft(
+                    mode: _mode,
+                    name: _nameController.text.trim(),
+                    description: _descriptionController.text.trim(),
+                    genomeId: widget.genome.id!,
+                    shared: _shared,
+                    vcfUrl: _mode == AddSnpMode.url
+                        ? _vcfUrlController.text.trim()
+                        : '',
+                    tbiUrl: _mode == AddSnpMode.url
+                        ? _tbiUrlController.text.trim()
+                        : '',
+                    vcfFile: _mode == AddSnpMode.upload ? _vcfFile : null,
+                    tbiFile: _mode == AddSnpMode.upload ? _tbiFile : null,
+                  ),
+                )
               : null,
           child: const Text('Add'),
         ),
@@ -252,142 +251,136 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
   }
 
   Widget _genomeRow() => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: context.colours.secondaryContainer,
-          borderRadius: BorderRadius.circular(6),
+    width: double.infinity,
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: context.colours.secondaryContainer,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      children: [
+        Icon(Icons.dns, size: 18, color: context.colours.onSecondaryContainer),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'For ${widget.genome.category} / ${widget.genome.name}',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(Icons.dns, size: 18, color: context.colours.onSecondaryContainer),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'For ${widget.genome.category} / ${widget.genome.name}',
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 
   Widget _modeSelector() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SegmentedButton<AddSnpMode>(
-            segments: [
-              const ButtonSegment(
-                value: AddSnpMode.url,
-                icon: Icon(Icons.link),
-                label: Text('Fetch from a URL'),
-              ),
-              ButtonSegment(
-                value: AddSnpMode.upload,
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Upload files'),
-                enabled: widget.uploadAvailable,
-                tooltip: widget.uploadAvailable
-                    ? null
-                    : 'Not available in this configuration — the app and the '
-                        'server are on different origins, so the upload cannot '
-                        'carry your session. Import from a URL instead.',
-              ),
-            ],
-            selected: {_mode},
-            onSelectionChanged: (s) => setState(() => _mode = s.first),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SegmentedButton<AddSnpMode>(
+        segments: [
+          const ButtonSegment(
+            value: AddSnpMode.url,
+            icon: Icon(Icons.link),
+            label: Text('Fetch from a URL'),
           ),
-          if (!widget.uploadAvailable)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'Uploading is unavailable here: the app is being served from a '
-                'different origin than the server, so the browser will not send '
-                'your session with the upload. This is the same reason sign-in '
-                'does not work under `flutter run`.',
-                style: TextStyle(
-                  color: context.colours.onSurfaceVariant,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+          ButtonSegment(
+            value: AddSnpMode.upload,
+            icon: const Icon(Icons.upload_file),
+            label: const Text('Upload files'),
+            enabled: widget.uploadAvailable,
+            tooltip: widget.uploadAvailable
+                ? null
+                : 'Not available in this configuration — the app and the '
+                      'server are on different origins, so the upload cannot '
+                      'carry your session. Import from a URL instead.',
+          ),
         ],
-      );
+        selected: {_mode},
+        onSelectionChanged: (s) => setState(() => _mode = s.first),
+      ),
+      if (!widget.uploadAvailable)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            'Uploading is unavailable here: the app is being served from a '
+            'different origin than the server, so the browser will not send '
+            'your session with the upload. This is the same reason sign-in '
+            'does not work under `flutter run`.',
+            style: TextStyle(
+              color: context.colours.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+        ),
+    ],
+  );
 
   List<Widget> _urlFields() => [
-        TextField(
-          controller: _vcfUrlController,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: InputDecoration(
-            labelText: 'Address of the .vcf.gz file',
-            hintText: 'https://ftp.ncbi.nlm.nih.gov/…/00-common_all.vcf.gz',
-            errorText:
-                _vcfUrlController.text.isEmpty ? null : _vcfUrlError,
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _tbiUrlController,
-          focusNode: _tbiFocus,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: InputDecoration(
-            labelText: 'Address of the .vcf.gz.tbi index (optional)',
-            helperText: 'Leave this out and the server will build the index '
-                'itself with tabix.',
-            errorText: _tbiUrlError,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'The server downloads the files itself, so this works for files far '
-          'larger than a browser upload. It may take a while; the SNP set '
-          'shows its progress in the list.',
-          style: TextStyle(
-            color: context.colours.onSurfaceVariant,
-            fontSize: 12,
-          ),
-        ),
-      ];
+    TextField(
+      controller: _vcfUrlController,
+      keyboardType: TextInputType.url,
+      autocorrect: false,
+      decoration: InputDecoration(
+        labelText: 'Address of the .vcf.gz file',
+        hintText: 'https://ftp.ncbi.nlm.nih.gov/…/00-common_all.vcf.gz',
+        errorText: _vcfUrlController.text.isEmpty ? null : _vcfUrlError,
+      ),
+    ),
+    const SizedBox(height: 12),
+    TextField(
+      controller: _tbiUrlController,
+      focusNode: _tbiFocus,
+      keyboardType: TextInputType.url,
+      autocorrect: false,
+      decoration: InputDecoration(
+        labelText: 'Address of the .vcf.gz.tbi index (optional)',
+        helperText:
+            'Leave this out and the server will build the index '
+            'itself with tabix.',
+        errorText: _tbiUrlError,
+      ),
+    ),
+    const SizedBox(height: 8),
+    Text(
+      'The server downloads the files itself, so this works for files far '
+      'larger than a browser upload. It may take a while; the SNP set '
+      'shows its progress in the list.',
+      style: TextStyle(color: context.colours.onSurfaceVariant, fontSize: 12),
+    ),
+  ];
 
   List<Widget> _uploadFields() => [
-        _filePicker(
-          label: 'Choose the .vcf.gz file',
-          file: _vcfFile,
-          error: _vcfFileError,
-          onChoose: _chooseVcf,
-          onClear: () => setState(() => _vcfFile = null),
+    _filePicker(
+      label: 'Choose the .vcf.gz file',
+      file: _vcfFile,
+      error: _vcfFileError,
+      onChoose: _chooseVcf,
+      onClear: () => setState(() => _vcfFile = null),
+    ),
+    const SizedBox(height: 12),
+    _filePicker(
+      label: 'Choose the .vcf.gz.tbi index (optional)',
+      file: _tbiFile,
+      error: _tbiFileError,
+      onChoose: _chooseTbi,
+      onClear: () => setState(() => _tbiFile = null),
+    ),
+    const SizedBox(height: 8),
+    Text(
+      _tbiFile == null
+          ? 'Without an index the server will build one with tabix after '
+                'the upload finishes.'
+          : 'Both files will be sent, one after the other.',
+      style: TextStyle(color: context.colours.onSurfaceVariant, fontSize: 12),
+    ),
+    if (_vcfFile != null && _vcfFile!.size < 1000000)
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          'That file looks small for a VCF — did you pick the index by '
+          'mistake?',
+          style: TextStyle(color: context.status.warning, fontSize: 12),
         ),
-        const SizedBox(height: 12),
-        _filePicker(
-          label: 'Choose the .vcf.gz.tbi index (optional)',
-          file: _tbiFile,
-          error: _tbiFileError,
-          onChoose: _chooseTbi,
-          onClear: () => setState(() => _tbiFile = null),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _tbiFile == null
-              ? 'Without an index the server will build one with tabix after '
-                  'the upload finishes.'
-              : 'Both files will be sent, one after the other.',
-          style: TextStyle(
-            color: context.colours.onSurfaceVariant,
-            fontSize: 12,
-          ),
-        ),
-        if (_vcfFile != null && _vcfFile!.size < 1000000)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'That file looks small for a VCF — did you pick the index by '
-              'mistake?',
-              style: TextStyle(color: context.status.warning, fontSize: 12),
-            ),
-          ),
-      ];
+      ),
+  ];
 
   Widget _filePicker({
     required String label,

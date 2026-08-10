@@ -252,7 +252,10 @@ void main() {
 
   group('SnpUploadException messages', () {
     test('each status gets something a person can act on', () {
-      expect(const SnpUploadException(0, '').toString(), contains('connection'));
+      expect(
+        const SnpUploadException(0, '').toString(),
+        contains('connection'),
+      );
       expect(const SnpUploadException(403, '').toString(), contains('not'));
       expect(const SnpUploadException(413, '').toString(), contains('larger'));
       expect(const SnpUploadException(500, '').toString(), contains('500'));
@@ -264,10 +267,12 @@ void main() {
       expect(UploadJob(total: 0, fileLabel: 'x').fraction, isNull);
     });
 
-    test('clamps, because an out-of-range value asserts in the progress bar',
-        () {
-      final job = UploadJob(total: 100, fileLabel: 'x')..sent = 150;
-      expect(job.fraction, 1.0);
-    });
+    test(
+      'clamps, because an out-of-range value asserts in the progress bar',
+      () {
+        final job = UploadJob(total: 100, fileLabel: 'x')..sent = 150;
+        expect(job.fraction, 1.0);
+      },
+    );
   });
 }

@@ -12,17 +12,23 @@ void main() {
     });
 
     test('backs off after failures', () {
-      expect(pollInterval(anyLive: true, consecutiveFailures: 1),
-          const Duration(seconds: 4));
-      expect(pollInterval(anyLive: true, consecutiveFailures: 2),
-          const Duration(seconds: 8));
+      expect(
+        pollInterval(anyLive: true, consecutiveFailures: 1),
+        const Duration(seconds: 4),
+      );
+      expect(
+        pollInterval(anyLive: true, consecutiveFailures: 2),
+        const Duration(seconds: 8),
+      );
     });
 
     test('the backoff is capped so it always recovers', () {
       // Without the cap, a server that was down for a while would take hours to
       // be noticed coming back.
-      expect(pollInterval(anyLive: true, consecutiveFailures: 99),
-          const Duration(seconds: 16));
+      expect(
+        pollInterval(anyLive: true, consecutiveFailures: 99),
+        const Duration(seconds: 16),
+      );
     });
   });
   group('genomePollInterval', () {

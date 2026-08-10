@@ -22,12 +22,12 @@ bool isTerminal(SnpImportStatus status) =>
 
 /// What to call a status in the interface.
 String statusLabel(SnpImportStatus status) => switch (status) {
-      SnpImportStatus.pending => 'Queued',
-      SnpImportStatus.downloading => 'Downloading',
-      SnpImportStatus.indexing => 'Indexing',
-      SnpImportStatus.ready => 'Ready',
-      SnpImportStatus.failed => 'Failed',
-    };
+  SnpImportStatus.pending => 'Queued',
+  SnpImportStatus.downloading => 'Downloading',
+  SnpImportStatus.indexing => 'Indexing',
+  SnpImportStatus.ready => 'Ready',
+  SnpImportStatus.failed => 'Failed',
+};
 
 /// The colour a status chip is drawn in.
 ///
@@ -57,12 +57,12 @@ const Color _errorRed = Color(0xFFBA1A1A);
 
 /// The icon beside the label.
 IconData statusIcon(SnpImportStatus status) => switch (status) {
-      SnpImportStatus.pending => Icons.schedule,
-      SnpImportStatus.downloading => Icons.cloud_download,
-      SnpImportStatus.indexing => Icons.build,
-      SnpImportStatus.ready => Icons.check_circle,
-      SnpImportStatus.failed => Icons.error_outline,
-    };
+  SnpImportStatus.pending => Icons.schedule,
+  SnpImportStatus.downloading => Icons.cloud_download,
+  SnpImportStatus.indexing => Icons.build,
+  SnpImportStatus.ready => Icons.check_circle,
+  SnpImportStatus.failed => Icons.error_outline,
+};
 
 /// How far along a download is, or null when the total is not known.
 ///
@@ -72,4 +72,3 @@ IconData statusIcon(SnpImportStatus status) => switch (status) {
 /// that was a lie — would take the whole tab down rather than draw a full bar.
 double? progressFraction(int done, int total) =>
     total <= 0 ? null : (done / total).clamp(0.0, 1.0);
-

@@ -5,7 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Future<void> pumpInWidth(
-      WidgetTester tester, double width, Widget child) async {
+    WidgetTester tester,
+    double width,
+    Widget child,
+  ) async {
     // The default test surface is 800x600, which would clamp any SizedBox wider
     // than that and quietly test the narrow branch instead of the wide one.
     tester.view.physicalSize = Size(width + 200, 900);
@@ -14,7 +17,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Center(child: SizedBox(width: width, child: child)),
+          body: Center(
+            child: SizedBox(width: width, child: child),
+          ),
         ),
       ),
     );
@@ -25,20 +30,23 @@ void main() {
   const c = Key('c');
 
   ResponsiveRow three({double minChildWidth = 300}) => ResponsiveRow(
-        minChildWidth: minChildWidth,
-        children: const [
-          SizedBox(key: a, height: 20),
-          SizedBox(key: b, height: 20),
-          SizedBox(key: c, height: 20),
-        ],
-      );
+    minChildWidth: minChildWidth,
+    children: const [
+      SizedBox(key: a, height: 20),
+      SizedBox(key: b, height: 20),
+      SizedBox(key: c, height: 20),
+    ],
+  );
 
   testWidgets('lays out side by side when every child fits', (tester) async {
     // 3 × 300 + 2 × 16 spacing = 932.
     await pumpInWidth(tester, 1000, three());
 
     expect(find.byType(Row), findsOneWidget);
-    expect(tester.getRect(find.byKey(a)).top, tester.getRect(find.byKey(b)).top);
+    expect(
+      tester.getRect(find.byKey(a)).top,
+      tester.getRect(find.byKey(b)).top,
+    );
   });
 
   testWidgets('stacks when they would be squeezed', (tester) async {
@@ -60,8 +68,9 @@ void main() {
     }
   });
 
-  testWidgets('flex gives a hostname the room a port does not need',
-      (tester) async {
+  testWidgets('flex gives a hostname the room a port does not need', (
+    tester,
+  ) async {
     await pumpInWidth(
       tester,
       900,

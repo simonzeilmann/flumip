@@ -8,8 +8,10 @@ void main() {
   group('validateVcfUrl', () {
     test('accepts a real dbSNP address', () {
       expect(
-        validateVcfUrl('https://ftp.ncbi.nlm.nih.gov/snp/organisms/'
-            'human_9606/VCF/00-common_all.vcf.gz'),
+        validateVcfUrl(
+          'https://ftp.ncbi.nlm.nih.gov/snp/organisms/'
+          'human_9606/VCF/00-common_all.vcf.gz',
+        ),
         isNull,
       );
     });

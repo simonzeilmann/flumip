@@ -125,7 +125,8 @@ class _SnpSectionState extends State<SnpSection> {
   void _rearm() {
     _timer?.cancel();
     if (!mounted) return;
-    final anyLive = (_snps ?? const <Snp>[]).any((s) => !isTerminal(s.status)) ||
+    final anyLive =
+        (_snps ?? const <Snp>[]).any((s) => !isTerminal(s.status)) ||
         snpUploads.anyLive;
     _timer = Timer(
       pollInterval(anyLive: anyLive, consecutiveFailures: _failures),
@@ -185,7 +186,8 @@ class _SnpSectionState extends State<SnpSection> {
       await _run(
         () => client.snp.importFromUrls(dto),
         failure: 'Could not start the import',
-        success: 'Downloading "${draft.name}" — watch its progress in the list.',
+        success:
+            'Downloading "${draft.name}" — watch its progress in the list.',
       );
       return;
     }
@@ -311,9 +313,9 @@ class _SnpSectionState extends State<SnpSection> {
 
   void _say(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -361,25 +363,26 @@ class _SnpSectionState extends State<SnpSection> {
             // Centred, to match the loading state it replaces. It used to be
             // left-aligned, so the pane visibly jumped when the load finished.
             [] => Center(
-                child: Text(
-                  'No SNP sets for this genome yet.',
-                  style: context.text.bodyMedium
-                      ?.copyWith(color: context.colours.onSurfaceVariant),
+              child: Text(
+                'No SNP sets for this genome yet.',
+                style: context.text.bodyMedium?.copyWith(
+                  color: context.colours.onSurfaceVariant,
                 ),
               ),
+            ),
             _ => ListView.separated(
-                padding: const EdgeInsets.fromLTRB(24, 4, 16, 16),
-                itemCount: snps.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 6),
-                itemBuilder: (context, i) => SnpTile(
-                  snp: snps[i],
-                  isMine: _mine.contains(snps[i].id),
-                  isAdmin: accessController.isAdmin,
-                  upload: snpUploads[snps[i].id],
-                  onCancelUpload: () => snpUploads.cancel(snps[i].id!),
-                  onAction: (a) => _handle(snps[i], a),
-                ),
+              padding: const EdgeInsets.fromLTRB(24, 4, 16, 16),
+              itemCount: snps.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
+              itemBuilder: (context, i) => SnpTile(
+                snp: snps[i],
+                isMine: _mine.contains(snps[i].id),
+                isAdmin: accessController.isAdmin,
+                upload: snpUploads[snps[i].id],
+                onCancelUpload: () => snpUploads.cancel(snps[i].id!),
+                onAction: (a) => _handle(snps[i], a),
               ),
+            ),
           },
         ),
       ],

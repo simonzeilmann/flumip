@@ -26,14 +26,12 @@ void main() {
         ),
       );
 
-      expect(
-        tester.getSize(find.byKey(childKey)).width,
-        ContentWidth.content,
-      );
+      expect(tester.getSize(find.byKey(childKey)).width, ContentWidth.content);
     });
 
-    testWidgets('uses the whole width when there is less than the cap',
-        (tester) async {
+    testWidgets('uses the whole width when there is less than the cap', (
+      tester,
+    ) async {
       await pumpAt(
         tester,
         1000,
@@ -61,14 +59,17 @@ void main() {
       expect(box.right, 3000 - (3000 - ContentWidth.content) / 2);
     });
 
-    testWidgets('the form cap is narrower than the content cap', (tester) async {
+    testWidgets('the form cap is narrower than the content cap', (
+      tester,
+    ) async {
       // A form is not a table: two field columns, not three data columns.
       expect(ContentWidth.form, lessThan(ContentWidth.content));
       expect(ContentWidth.content, lessThan(ContentWidth.wide));
     });
 
-    testWidgets('an Expanded child still resolves inside the cap',
-        (tester) async {
+    testWidgets('an Expanded child still resolves inside the cap', (
+      tester,
+    ) async {
       // `Center` loosens constraints, and the projects tab puts an
       // `Expanded > ListView` inside this. Loose is still bounded, so it
       // resolves — but it is worth holding the line, because the failure mode

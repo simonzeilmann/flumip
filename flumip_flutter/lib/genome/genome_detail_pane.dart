@@ -23,16 +23,16 @@ enum IndexState {
   }
 
   String get label => switch (this) {
-        IndexState.none => 'Not indexed',
-        IndexState.building => 'Indexing…',
-        IndexState.built => 'Indexed',
-      };
+    IndexState.none => 'Not indexed',
+    IndexState.building => 'Indexing…',
+    IndexState.built => 'Indexed',
+  };
 
   IconData get icon => switch (this) {
-        IndexState.none => Icons.remove_circle_outline,
-        IndexState.building => Icons.build,
-        IndexState.built => Icons.check_circle,
-      };
+    IndexState.none => Icons.remove_circle_outline,
+    IndexState.building => Icons.build,
+    IndexState.built => Icons.check_circle,
+  };
 }
 
 /// Everything about the selected genome, and its SNP sets.
@@ -164,8 +164,9 @@ class GenomeDetailPane extends StatelessWidget {
     ];
     return Text(
       parts.join(' · '),
-      style: context.text.bodySmall
-          ?.copyWith(color: context.colours.onSurfaceVariant),
+      style: context.text.bodySmall?.copyWith(
+        color: context.colours.onSurfaceVariant,
+      ),
     );
   }
 

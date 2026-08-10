@@ -15,18 +15,17 @@ Genome genomeFixture({
   int size = 3_100_000_000,
   String description = '',
   String? category = 'Homo sapiens',
-}) =>
-    Genome(
-      id: 12,
-      name: name,
-      description: description,
-      category: category,
-      path: '/opt/flumip/data/genomes/human/hg38',
-      size: size,
-      indexed: indexed,
-      indexing: indexing,
-      active: active,
-    );
+}) => Genome(
+  id: 12,
+  name: name,
+  description: description,
+  category: category,
+  path: '/opt/flumip/data/genomes/human/hg38',
+  size: size,
+  indexed: indexed,
+  indexing: indexing,
+  active: active,
+);
 
 Future<void> pumpPane(
   WidgetTester tester,
@@ -104,8 +103,9 @@ void main() {
       expect(find.text('Build index'), findsNothing);
     });
 
-    testWidgets('neither is offered while the index is building',
-        (tester) async {
+    testWidgets('neither is offered while the index is building', (
+      tester,
+    ) async {
       await pumpPane(tester, genomeFixture(indexing: true));
       expect(find.text('Build index'), findsNothing);
       expect(find.text('Delete index'), findsNothing);
@@ -138,7 +138,10 @@ void main() {
 
   testWidgets('category, size and id share one subdued line', (tester) async {
     await pumpPane(tester, genomeFixture());
-    expect(find.textContaining('Homo sapiens · 3.10 GB · ID 12'), findsOneWidget);
+    expect(
+      find.textContaining('Homo sapiens · 3.10 GB · ID 12'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a genome with no category still reads properly', (tester) async {

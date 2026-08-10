@@ -18,12 +18,12 @@ class SettingsRetryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: OutlinedButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Try again'),
-        ),
-      );
+    child: OutlinedButton.icon(
+      onPressed: onRetry,
+      icon: const Icon(Icons.refresh),
+      label: const Text('Try again'),
+    ),
+  );
 }
 
 /// The password box, for an install that is not enforcing sign-in.
@@ -110,8 +110,9 @@ class NoSettingsView extends StatelessWidget {
               'restricted to administrators. Nothing here is specific to your '
               'account yet.',
               textAlign: TextAlign.center,
-              style: context.text.bodyMedium
-                  ?.copyWith(color: context.colours.onSurfaceVariant),
+              style: context.text.bodyMedium?.copyWith(
+                color: context.colours.onSurfaceVariant,
+              ),
             ),
           ],
         ),

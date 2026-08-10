@@ -17,8 +17,10 @@ void main() {
   late List<String> navigations;
 
   AuthController controllerFor({
-    AuthConfigSnapshot config =
-        const AuthConfigSnapshot(enabled: false, buttonLabel: 'Sign in'),
+    AuthConfigSnapshot config = const AuthConfigSnapshot(
+      enabled: false,
+      buttonLabel: 'Sign in',
+    ),
     Object? configError,
     SessionTokenResponse? session,
     Object? sessionError,

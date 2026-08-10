@@ -185,12 +185,14 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 6),
-              _PathBlock(paths: [
-                if (snp.vcfPath.isNotEmpty) snp.vcfPath,
-                if (snp.tbiPath.isNotEmpty) snp.tbiPath,
-                if (snp.vcfPath.isEmpty && snp.tbiPath.isEmpty)
-                  snp.folder.isEmpty ? '(nothing on disk)' : snp.folder,
-              ]),
+              _PathBlock(
+                paths: [
+                  if (snp.vcfPath.isNotEmpty) snp.vcfPath,
+                  if (snp.tbiPath.isNotEmpty) snp.tbiPath,
+                  if (snp.vcfPath.isEmpty && snp.tbiPath.isEmpty)
+                    snp.folder.isEmpty ? '(nothing on disk)' : snp.folder,
+                ],
+              ),
               const SizedBox(height: 16),
               if (widget.usageFailed)
                 Text(
@@ -251,13 +253,13 @@ class _AdminDeleteSnpDialogState extends State<AdminDeleteSnpDialog> {
         ElevatedButton(
           onPressed: _canDelete
               ? () => Navigator.of(context).pop(
-                    AdminDeleteConfirmation(
-                      settingsPassword: widget.needsPassword
-                          ? _passwordController.text
-                          : null,
-                      force: _force,
-                    ),
-                  )
+                  AdminDeleteConfirmation(
+                    settingsPassword: widget.needsPassword
+                        ? _passwordController.text
+                        : null,
+                    force: _force,
+                  ),
+                )
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: context.colours.error,
