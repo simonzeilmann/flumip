@@ -35,4 +35,33 @@ void main() {
     // of the list.
     expect(formatBytes(5000000000000000), '5000 TB');
   });
+
+  group('formatDuration', () {
+    test('pads minutes and seconds so a column lines up', () {
+      expect(formatDuration(const Duration(seconds: 3)), '00:00:03');
+      expect(
+        formatDuration(const Duration(minutes: 2, seconds: 3)),
+        '00:02:03',
+      );
+    });
+
+    test('a realistic design run', () {
+      expect(
+        formatDuration(const Duration(hours: 1, minutes: 2, seconds: 3)),
+        '01:02:03',
+      );
+    });
+
+    test('hours accumulate rather than wrapping at a day', () {
+      // A big panel can design for longer than a day, and '01:00:00' for a
+      // twenty-five hour run would be a lie rather than a rounding.
+      expect(formatDuration(const Duration(hours: 25)), '25:00:00');
+    });
+
+    test('a negative duration is signed once, not twice', () {
+      // Clock skew is the only way to get one; it used to render as '--1:00:00'
+      // because the hours were negated as well as prefixed.
+      expect(formatDuration(const Duration(hours: -1)), '-01:00:00');
+    });
+  });
 }
