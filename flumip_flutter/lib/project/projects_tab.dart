@@ -1,153 +1,64 @@
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flutter/material.dart';
 
-import '../ui/layout.dart';
+import '../services.dart';
 import '../ui/error_banner.dart';
-
-import '../main.dart';
+import '../ui/layout.dart';
 import 'create_project_widget.dart';
-import '../error_text.dart';
+import 'project_tile.dart';
+import 'projects_controller.dart';
 
+/// The projects list.
+///
+/// Everything that fetches or changes anything lives in [ProjectsController],
+/// which takes its I/O as parameters — so this file is layout, and the tab can be
+/// pumped in a test by handing it a controller built from fakes.
 class ProjectsTab extends StatefulWidget {
-  const ProjectsTab({super.key});
+  const ProjectsTab({super.key, this.controller});
+
+  /// The controller to use, or null to take the app-wide one.
+  ///
+  /// ⚠️ A test passes its own; nothing else should. The default is resolved in
+  /// [State.initState] rather than here, because `services.dart`'s controller is
+  /// `late` and reading it in a `const` constructor's default would run before
+  /// `main()` has installed it.
+  final ProjectsController? controller;
 
   @override
   State<ProjectsTab> createState() => _ProjectsTabState();
 }
 
 class _ProjectsTabState extends State<ProjectsTab> {
-  List<Project>? _projects;
-  String? _errorMessage;
-  bool _showCreateProject = false;
-  bool _notificationsAvailable = false;
-  List<FlumipUserDto>? _assignableOwners;
+  late final ProjectsController _controller =
+      widget.controller ?? projectsController;
 
-  /// Whether the signed-in user may reassign ownership.
-  ///
-  /// Null while signed out, which is every request on a no-auth install — and
-  /// there the server refuses reassignment outright, so the controls stay hidden
-  /// exactly where they would not work.
-  bool get _isAdmin => authController.user?.isAdmin ?? false;
+  bool _showCreateProject = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchProjects();
-    _fetchNotificationsAvailable();
-    _fetchAssignableOwners();
+    _controller.addListener(_onChanged);
+    _controller.load();
   }
 
-  /// Asks once whether an administrator has mail switched on, so the per-project
-  /// notification checkbox can be hidden when it could not do anything.
-  ///
-  /// Asked here rather than in each tile so one answer serves the whole list.
-  /// Staying false on failure is the safe direction: it costs a control, never a
-  /// notification, because whether mail is actually sent is decided on the
-  /// server's send path regardless of what this returned.
-  void _fetchNotificationsAvailable() async {
-    try {
-      final available = await client.project.notificationsAvailable();
-      if (!mounted) return;
-      setState(() {
-        _notificationsAvailable = available;
-      });
-    } catch (_) {
-      // Deliberately not surfaced: the projects themselves loaded fine, and an
-      // error banner about a checkbox would be noise.
-    }
+  @override
+  void dispose() {
+    _controller.removeListener(_onChanged);
+    // ⚠️ Never disposed here. The app-wide controller outlives this tab —
+    // `TabBarView` can rebuild it — and a test owns the one it passed in.
+    super.dispose();
   }
 
-  /// Loads the users a project can be handed to, for administrators only.
-  ///
-  /// Skipped entirely for everyone else rather than called and discarded: the
-  /// endpoint refuses non-admins, so calling it would log a refusal on every
-  /// ordinary page load. Fetched once for the whole list, like the mail flag.
-  void _fetchAssignableOwners() async {
-    if (!_isAdmin) return;
-    try {
-      final owners = await client.project.assignableOwners();
-      if (!mounted) return;
-      setState(() {
-        _assignableOwners = owners;
-      });
-    } catch (_) {
-      // Leaves the picker out; the projects themselves are unaffected.
-    }
-  }
-
-  /// Hands [projectID] to [ownerId], or to nobody when null.
-  Future<void> _setProjectOwner(int projectID, int? ownerId) async {
-    try {
-      await client.project.setProjectOwner(projectID, ownerId);
-      _fetchProjects();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = describeError(e);
-      });
-    }
-  }
-
-  void _fetchProjects() async {
-    try {
-      final projects = await client.project.getProjects();
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = null;
-        _projects = projects..sort((a, b) => b.created.compareTo(a.created));
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = describeError(e);
-      });
-    }
-  }
-
-  /// Deletes a project, taking its row off the list straight away.
-  ///
-  /// ⚠️ Optimistic on purpose. The server deletes the project's directory before
-  /// it answers, which for a multi-gigabyte result is seconds — and the old code
-  /// waited for that before refetching, so the row you had just deleted sat
-  /// there looking untouched the whole time. It is put back if the server
-  /// refuses.
-  void _deleteProject(int projectID) async {
-    final before = _projects;
-    setState(() {
-      _errorMessage = null;
-      _projects = _projects?.where((p) => p.id != projectID).toList();
-    });
-
-    try {
-      await client.project.deleteProject(projectID);
-      _fetchProjects();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _projects = before;
-        _errorMessage = describeError(e);
-      });
-    }
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
 
   void _toggleCreateProject() {
-    setState(() {
-      _showCreateProject = !_showCreateProject;
-    });
+    setState(() => _showCreateProject = !_showCreateProject);
   }
-
-  /// The project to open on the next build, so a new one does not need a click
-  /// on the chevron before it can be set up.
-  int? _openProjectId;
 
   void _onProjectCreated(Project created) {
-    setState(() => _openProjectId = created.id);
-    _fetchProjects();
-    _toggleCreateProject();
-  }
-
-  void _onAbort() {
+    _controller.projectCreated(created);
     _toggleCreateProject();
   }
 
@@ -159,9 +70,12 @@ class _ProjectsTabState extends State<ProjectsTab> {
     if (_showCreateProject) {
       return CreateProjectWidget(
         onProjectCreated: _onProjectCreated,
-        onAbort: _onAbort,
+        onAbort: _toggleCreateProject,
       );
     }
+
+    final projects = _controller.projects;
+    final error = _controller.errorMessage;
 
     return ContentWidth(
       padding: const EdgeInsets.all(16),
@@ -179,44 +93,51 @@ class _ProjectsTabState extends State<ProjectsTab> {
               label: const Text('Create project'),
             ),
           ),
-          if (_errorMessage != null)
+          if (error != null)
             ErrorBanner(
-              _errorMessage!,
-              onDismiss: () => setState(() => _errorMessage = null),
+              error,
+              // ⚠️ Dismissible only when there is a list behind it. `ErrorBanner`
+              // says it in its own doc — "one that explains why a screen is
+              // empty has to stay, or the screen is just empty" — and here the
+              // consequence is worse than empty: `loading` is "no projects and
+              // no error", so dismissing the *only* thing on a failed first load
+              // put the tab back into a spinner that never stops, with nothing
+              // left to say why.
+              onDismiss: projects == null ? null : _controller.dismissError,
             ),
-          if (_projects != null)
+          if (projects != null)
             Expanded(
               child: ListView.builder(
-                itemCount: _projects!.length,
+                itemCount: projects.length,
                 itemBuilder: (context, index) {
-                  final project = _projects![index];
+                  final project = projects[index];
                   return ProjectTile(
                     // ⚠️ Keyed on the project id, and this is load-bearing.
                     // Without a key Flutter matches children by position, so
                     // deleting one project hands its `State` — its expanded
-                    // flag, its ten-second poll, its loaded genome and SNP, and
-                    // the mutable `widget.project` it writes back into — to
-                    // whichever project shuffles up into that slot. That is the
-                    // "zombie" row: a tile showing one project's details under
-                    // another project's name.
+                    // flag, its poll, its loaded genome and SNP, and the mutable
+                    // `widget.project` it writes back into — to whichever
+                    // project shuffles up into that slot. That is the "zombie"
+                    // row: a tile showing one project's details under another
+                    // project's name.
                     key: ValueKey(project.id),
                     project: project,
-                    // A project created a moment ago opens straight away —
-                    // there is nothing in it yet, and setting it up is the only
-                    // reason it exists.
-                    initiallyExpanded: project.id == _openProjectId,
-                    onDelete: () => _deleteProject(project.id!),
-                    notificationsAvailable: _notificationsAvailable,
-                    assignableOwners: _assignableOwners,
+                    // A project created a moment ago opens straight away — there
+                    // is nothing in it yet, and setting it up is the only reason
+                    // it exists.
+                    initiallyExpanded: project.id == _controller.openProjectId,
+                    onDelete: () => _controller.delete(project.id!),
+                    notificationsAvailable: _controller.notificationsAvailable,
+                    assignableOwners: _controller.assignableOwners,
                     onOwnerChanged: (ownerId) =>
-                        _setProjectOwner(project.id!, ownerId),
+                        _controller.setOwner(project.id!, ownerId),
                   );
                 },
               ),
             ),
-          // Centred explicitly: under `stretch` it would otherwise be handed
-          // the full band width and draw its spinner against the left edge.
-          if (_projects == null && _errorMessage == null)
+          // Centred explicitly: under `stretch` it would otherwise be handed the
+          // full band width and draw its spinner against the left edge.
+          if (_controller.loading)
             const Center(child: CircularProgressIndicator()),
         ],
       ),
