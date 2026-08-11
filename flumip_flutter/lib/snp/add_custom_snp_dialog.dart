@@ -1,6 +1,5 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/format.dart';
-import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/snp/snp_validation.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +63,7 @@ class AddCustomSnpDialog extends StatefulWidget {
     super.key,
     required this.genome,
     this.uploadAvailable = false,
-    this.pickFile = pickFileFromBrowser,
+    required this.pickFile,
   });
 
   /// Opens a file dialog. Injected so this widget can be pumped in a test.

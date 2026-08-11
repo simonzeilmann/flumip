@@ -1,70 +1,43 @@
 import 'dart:async';
 import 'dart:js_interop';
 
-import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/access_controller.dart';
-import 'package:flumip_flutter/api_config.dart';
 import 'package:flumip_flutter/auth/auth_controller.dart';
 import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
-import 'package:flumip_flutter/project/projects_tab.dart';
-import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
-import 'package:flumip_flutter/snp/snp_upload_controller.dart';
+import 'package:flumip_flutter/project/projects_tab.dart';
+import 'package:flumip_flutter/services.dart';
+import 'package:flumip_flutter/snp/file_picker.dart';
+import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:serverpod_flutter/serverpod_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:web/web.dart' as web;
 
+/// ⚠️ **The browser-only end of the app, and the only file that may be.**
+///
+/// `dart:js_interop` and `package:web` exist when compiling to JavaScript or
+/// Wasm and nowhere else, so importing this file from a VM test is a
+/// *compile-time* error — not a runtime one, and not something a fake or a
+/// guard can work around:
+///
+///     lib/main.dart:2:8: Error: Dart library 'dart:js_interop' is not
+///     available on this platform.
+///
+/// Everything the rest of the app needs from here therefore lives in
+/// `services.dart`, which stays free of both. This file is the entry point plus
+/// the three lines of wiring that genuinely need a window.
+///
+/// ⚠️ **Nothing under `lib/` may import `main.dart`.** Seven files used to —
+/// every tab among them — which is why no tab could be tested.
 const String siteTitle = String.fromEnvironment(
   'SITE_TITLE',
   defaultValue: 'Flumip Development',
 );
 
-final String apiUrl = resolveApiUrl();
-
-/// Origin the app was served from, which is also the web server's — so it is
-/// where the `/auth/*` routes and the session cookie live. See `api_config.dart`.
-final String siteUrl = resolveSiteUrl();
-
 const String appVersion = String.fromEnvironment(
   'APP_VERSION',
   defaultValue: 'debug',
-);
-
-var client = Client(apiUrl)..connectivityMonitor = FlutterConnectivityMonitor();
-
-/// Sign-in state for the whole app.
-///
-/// Sign-in and sign-out are full-page navigations rather than popups: the session
-/// cookie has to be set in the browsing context the app itself runs in, and the
-/// redirect chain finishes by loading the app again.
-final authController = AuthController.forApp(
-  client: client,
-  siteUrl: siteUrl,
-  navigate: (url) => web.window.location.href = url,
-);
-
-/// What this caller may do, asked of the server rather than inferred.
-///
-/// A single owner for the question, because there were already two answers to it
-/// in this app and this is the one that decides whether a destructive button
-/// appears. It re-asks whenever sign-in state changes, because `TabBarView`
-/// builds every tab before the bearer token exists.
-final accessController = AccessController(
-  fetchAccess: () => client.settings.userSettings(),
-  auth: authController,
-);
-
-/// Browser uploads of custom SNP files.
-///
-/// ⚠️ Top-level rather than owned by a widget, because an upload takes minutes and
-/// has to survive the dialog closing, the tab changing, and `TabBarView`
-/// rebuilding. None of those should cancel a transfer somebody started.
-final snpUploads = SnpUploadController(
-  transport: WebSnpTransport(siteUrl: siteUrl),
-  finishUpload: (snpId) => client.snp.finishUpload(snpId),
 );
 
 /// Asks the browser to confirm before the page goes away.
@@ -76,14 +49,17 @@ String _warnBeforeUnload(web.BeforeUnloadEvent event) {
   return 'An upload is still in progress.';
 }
 
-/// Whether this build can upload at all.
-///
-/// False during a `flutter run`, where the app and the web server are different
-/// origins — the same reason sign-in does not work there. See `api_config.dart`.
-final bool uploadsAvailable = resolveUploadsAvailable();
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Everything that needs a browser, handed to the rest of the app as plain
+  // callbacks. This is the whole of what `services.dart` cannot do for itself.
+  installServices(
+    navigate: (url) => web.window.location.href = url,
+    openUrl: (url) => web.window.open(url, '_blank'),
+    filePicker: pickFileFromBrowser,
+    snpTransport: WebSnpTransport(siteUrl: siteUrl),
+  );
 
   // Asks the server whether it wants a sign-in, and picks up an existing session
   // if there is one. On a default install this answers "no" and the app runs
@@ -100,8 +76,10 @@ void main() async {
   unawaited(accessController.reload());
 
   // ⚠️ Warn before leaving with an upload in flight. Closing the tab aborts the
-  // transfer and leaves a `pending` row with a partial file the server will sweep
-  // a day later — recoverable, but not what anybody intended.
+  // transfer and leaves a `pending` row behind: the partial file in `.incoming/`
+  // is swept after a day, and the row itself is failed by the next reconcile
+  // pass once nothing has been written to it for half an hour. Recoverable
+  // either way, but the set has to be uploaded again, so it is worth asking.
   snpUploads.addListener(() {
     web.window.onbeforeunload = snpUploads.anyLive
         ? _warnBeforeUnload.toJS

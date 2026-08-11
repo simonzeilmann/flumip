@@ -7,27 +7,23 @@
 /// lets `project_tile.dart` be about a project's lifecycle rather than about
 /// eight variations on "read a file and put it in a box".
 ///
-/// ⚠️ Unlike the rest of the split, this file is **not** testable: it reaches the
-/// top-level `client`, which comes from `main.dart`, which builds a Serverpod
-/// client and touches `web.window` at import time. That is precisely why the pure
-/// parts — `ucsc_track.dart`, `mipgen_progress.dart`, `result_dialogs.dart` —
-/// were pulled out from under it first.
+/// ⚠️ This file opens new browser tabs, which is why it went through
+/// `web.window.open` and could not be compiled for a VM test. It goes through
+/// `openExternalUrl` now — installed by `main()`, and the same injection the
+/// sign-in navigation already used — so the only thing left standing between it
+/// and a test is the `client` singleton.
 library;
 
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
-import 'package:web/web.dart' as web;
 
-import '../api_config.dart';
 import '../error_text.dart';
 import '../format.dart';
-import '../main.dart';
+import '../services.dart';
 import '../ui/dialog_body.dart';
 import 'mipgen_progress.dart';
 import 'result_dialogs.dart';
 import 'ucsc_track.dart';
-
-final String siteUrl = resolveSiteUrl();
 
 /// A one-line report, for a failure that does not deserve a banner.
 ///
@@ -152,7 +148,7 @@ Future<void> openUcscTrack(
 
   // One region is not a choice, so do not stage one.
   if (regions.length == 1) {
-    web.window.open(regions.values.first, '_blank');
+    openExternalUrl(regions.values.first);
     return;
   }
 
@@ -160,7 +156,7 @@ Future<void> openUcscTrack(
     context: context,
     builder: (_) => UcscTrackDialog(regions: regions),
   );
-  if (chosen != null) web.window.open(chosen, '_blank');
+  if (chosen != null) openExternalUrl(chosen);
 }
 
 /// Shows the track file itself, for when the URL is not the point.
@@ -193,9 +189,8 @@ Future<void> showUcscTrackFileDialog(
 /// It also goes to the **web** origin, not the API one — that is where the
 /// session cookie is valid, and a download carries no bearer header.
 void downloadProjectFile(int projectId, String fileName) {
-  web.window.open(
+  openExternalUrl(
     '$siteUrl/download/$projectId/${Uri.encodeComponent(fileName)}',
-    '_blank',
   );
 }
 

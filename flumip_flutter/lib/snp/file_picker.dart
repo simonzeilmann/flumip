@@ -53,13 +53,3 @@ Future<PickedFile?> pickFileFromBrowser({required String accept}) {
   input.click();
   return done.future;
 }
-
-/// What to offer in the dialog for a bgzip-compressed VCF.
-///
-/// `accept` is a hint and never a guarantee — the name is validated in Dart, and
-/// again by the server. `.gz` is listed as the Safari fallback, which does not
-/// honour a two-part suffix.
-const vcfAccept = '.vcf.gz,.gz,application/gzip';
-
-/// What to offer for a tabix index.
-const tbiAccept = '.tbi,.vcf.gz.tbi';

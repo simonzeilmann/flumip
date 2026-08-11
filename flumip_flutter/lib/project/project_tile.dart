@@ -1,16 +1,14 @@
 import 'dart:async';
 
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/format.dart';
-import 'package:flumip_flutter/main.dart';
-import 'package:flumip_flutter/ui/responsive_row.dart';
-import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../error_text.dart';
+import '../format.dart';
+import '../services.dart';
+import '../ui/responsive_row.dart';
+import '../ui/theme.dart';
 import 'genome_picker_dialog.dart';
-import 'mipgen_progress.dart';
 import 'owner_picker.dart';
 import 'project_inputs.dart';
 import 'project_options_view.dart';
@@ -18,15 +16,15 @@ import 'project_result_actions.dart';
 import 'project_run_panel.dart';
 import 'project_state.dart';
 import 'project_state_pill.dart';
+import 'project_tile_controller.dart';
 
 /// One project in the list: a row that says what it is doing, and — when opened —
 /// its inputs, its design parameters and its results.
 ///
-/// ⚠️ This file is deliberately about *lifecycle*: loading a project, polling it
-/// while a design runs, and calling the endpoints that change it. Everything it
-/// draws lives in a sibling file that takes data and callbacks and touches no
-/// client, because this one imports `main.dart` and therefore cannot be reached
-/// from a test at all. The split is what makes the pieces testable:
+/// Loading, polling and every endpoint call live in [ProjectTileController].
+/// What is left here is layout, two dialogs and the snack bars — the parts that
+/// need a `BuildContext`. Everything it draws is a sibling widget that takes data
+/// and callbacks:
 ///
 ///  * `project_inputs.dart` — genome, SNP set, genes
 ///  * `project_options_view.dart` — the design parameters
@@ -34,9 +32,24 @@ import 'project_state_pill.dart';
 ///  * `project_state_pill.dart` — the collapsed row's badge
 ///  * `project_result_actions.dart` — opening result files and downloads
 ///  * `ucsc_track.dart` — building the UCSC links
-//ignore: must_be_immutable
 class ProjectTile extends StatefulWidget {
-  Project project;
+  const ProjectTile({
+    super.key,
+    required this.project,
+    required this.onDelete,
+    this.notificationsAvailable = false,
+    this.assignableOwners,
+    this.onOwnerChanged,
+    this.initiallyExpanded = false,
+    this.controller,
+  });
+
+  /// ⚠️ `final` now, and the class is `const`-constructible again. It used to be
+  /// a mutable field the tile wrote its own reload results back into, which is
+  /// what the `must_be_immutable` suppression was hiding. The controller holds
+  /// the project it is showing; this is only the list's copy.
+  final Project project;
+
   final VoidCallback onDelete;
 
   /// Whether an administrator has mail switched on for this install.
@@ -55,174 +68,55 @@ class ProjectTile extends StatefulWidget {
   /// Opens without a click, for a project that has just been created.
   final bool initiallyExpanded;
 
-  ProjectTile({
-    super.key,
-    required this.project,
-    required this.onDelete,
-    this.notificationsAvailable = false,
-    this.assignableOwners,
-    this.onOwnerChanged,
-    this.initiallyExpanded = false,
-  });
+  /// The controller to use, or null to build one from the app-wide client.
+  ///
+  /// ⚠️ Owned by this widget when it builds its own: it holds a poll for one
+  /// project, and there is one of these per row.
+  final ProjectTileController? controller;
 
   @override
   State<ProjectTile> createState() => _ProjectTileState();
 }
 
 class _ProjectTileState extends State<ProjectTile> {
-  late bool _isExpanded = widget.initiallyExpanded;
-  bool _deleteExcessFiles = false;
-  ProjectOptions projectOptions = ProjectOptions();
-
-  /// The project's genome, or null while it is still being fetched.
-  ///
-  /// ⚠️ Was a `Genome(name: 'default')` sentinel, which read as a loaded genome
-  /// with no id — so the SNP query below did `genome.id!` on it and threw during
-  /// the frame between opening a tile and its genome arriving. A thrown build is
-  /// the red error screen over the whole tab.
-  Genome? genome;
-
-  /// The project's chosen SNP set, or null while it is still being fetched.
-  Snp? snp;
-
-  /// Cached so the `FutureBuilder` below does not fire a fresh query on every
-  /// rebuild — and this tile rebuilds every few seconds while a design runs.
-  Future<List<Snp>>? _snpsForGenome;
-
-  String? _errorMessage;
-  Timer? _timer;
-
-  /// The run's progress file, re-read while the design is going.
-  MipgenProgress _progress = const MipgenProgress.empty();
+  late final bool _ownsController = widget.controller == null;
+  late final ProjectTileController _controller =
+      widget.controller ??
+      createProjectTileController(
+        widget.project,
+        expanded: widget.initiallyExpanded,
+      );
+  StreamSubscription<String>? _messages;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_onChanged);
+    _messages = _controller.messages.listen(_say);
     // A tile that opens itself still has to load what it is going to show.
-    if (_isExpanded) _reloadProject();
-    // ⚠️ No timer until the tile is opened. This was an unconditional
-    // `Timer.periodic(10s)` created for *every* tile in the list, so a hundred
-    // projects meant a hundred timers waking up to find the tile collapsed and
-    // do nothing.
+    _controller.openIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(ProjectTile old) {
+    super.didUpdateWidget(old);
+    // The tab refetched the list; take its newer copy.
+    if (!identical(old.project, widget.project)) {
+      _controller.adopt(widget.project);
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _messages?.cancel();
+    _controller.removeListener(_onChanged);
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
-  /// Schedules the next refresh, or stops.
-  ///
-  /// Faster while a design is running, because that is the only time the project
-  /// changes on its own — and it is exactly when somebody is watching it.
-  void _rearm() {
-    _timer?.cancel();
-    _timer = null;
-    if (!_isExpanded) return;
-
-    final running = ProjectState.of(widget.project).isRunning;
-    _timer = Timer(
-      running ? const Duration(seconds: 3) : const Duration(seconds: 15),
-      () {
-        if (!mounted) return;
-        _reloadProject();
-      },
-    );
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
-
-  /// Reads the progress file, best-effort.
-  ///
-  /// Never surfaces its own failure: the run's state comes from the project row,
-  /// and an unreadable progress file is not worth an error banner over a design
-  /// that is going fine.
-  Future<void> _loadProgress() async {
-    try {
-      final lines = await client.file.showMipsProgress(widget.project.id!);
-      if (!mounted) return;
-      setState(() => _progress = MipgenProgress(lines: lines));
-    } catch (_) {
-      // Left as it was; the panel keeps showing the last line it had.
-    }
-  }
-
-  void _toggleExpand() async {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      genome = null;
-      snp = null;
-      _snpsForGenome = null;
-    });
-    if (_isExpanded) {
-      await _reloadProject();
-    } else {
-      _timer?.cancel();
-      _timer = null;
-    }
-  }
-
-  Future<void> _reloadProject() async {
-    try {
-      var projectUpdate = await client.project.getProject(widget.project.id!);
-      final options = await client.options.getProjectOptions(
-        widget.project.options,
-      );
-      Genome? genomeUpdate;
-      if (widget.project.genome != null) {
-        genomeUpdate = await client.genome.getGenome(widget.project.genome!);
-      }
-      Snp? snpUpdate;
-      if (widget.project.snp != null) {
-        snpUpdate = await client.genome.getSnp(widget.project.snp!);
-      }
-      // ⚠️ Four awaits happened above. Deleting the project disposes this tile
-      // while they are still in flight, and `setState` after dispose throws —
-      // which Flutter paints as the red error screen over the whole tab. This is
-      // the guard that was missing.
-      if (!mounted) return;
-      setState(() {
-        widget.project = projectUpdate;
-        projectOptions = options;
-        if (genomeUpdate != null) {
-          genome = genomeUpdate;
-        }
-        if (snpUpdate != null) {
-          snp = snpUpdate;
-        }
-      });
-
-      // Only while something is actually being written, so a finished project
-      // does not re-read its log forever.
-      if (ProjectState.of(projectUpdate).isRunning) {
-        await _loadProgress();
-      }
-      _rearm();
-    } catch (e) {
-      // Stop the poll when the answer will not change. Without this, a project
-      // that has stopped being ours mid-session — revoked session, ownership
-      // reassigned — re-reports the same refusal for as long as the tile stays
-      // expanded. A project that has been *deleted* is the same situation: it is
-      // not coming back, so stop asking rather than reporting the same failure
-      // six times a minute.
-      if (isAccessDenied(e) || _isGone(e)) {
-        _timer?.cancel();
-        _timer = null;
-      }
-      if (!mounted) return;
-      // A deleted project needs no error at all — the row is on its way out.
-      if (_isGone(e)) return;
-      setState(() {
-        _errorMessage = 'Failed to reload project: ${describeError(e)}';
-      });
-      _rearm();
-    }
-  }
-
-  /// Whether this error means the project no longer exists.
-  ///
-  /// The poll and the delete race by nature: a tick can be in flight when the row
-  /// is removed, and the answer comes back as "not found".
-  static bool _isGone(Object error) => error is FlumipFileNotFoundException;
 
   void _say(String message) {
     if (!mounted) return;
@@ -230,69 +124,6 @@ class _ProjectTileState extends State<ProjectTile> {
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
-
-  // --- The endpoints this tile calls -----------------------------------------
-
-  Future<void> _addGene(String gene) async {
-    try {
-      await client.project.addGeneToProject(widget.project.id!, gene);
-      await _reloadProject();
-    } catch (e) {
-      _say('Failed to add gene: ${describeError(e)}');
-    }
-  }
-
-  Future<void> _removeGene(String gene) async {
-    try {
-      await client.project.removeGeneFromProject(widget.project.id!, gene);
-      await _reloadProject();
-    } catch (e) {
-      _say('Failed to remove gene: ${describeError(e)}');
-    }
-  }
-
-  Future<void> _createBedFile() async {
-    try {
-      await client.mipgen.createBedFile(widget.project.id!);
-      await _reloadProject();
-      _say('BED file created successfully');
-    } on BedCreationException catch (e) {
-      _say(e.message);
-    } catch (e) {
-      _say('Failed to create BED file: ${describeError(e)}');
-    }
-  }
-
-  Future<void> _generateMips() async {
-    try {
-      await client.mipgen.generateMips(widget.project.id!, _deleteExcessFiles);
-      _reloadProject();
-      _say('MIPs generation started successfully');
-    } on FlumipFileNotFoundException catch (e) {
-      _say(e.message);
-    } on ArgumentException catch (e) {
-      _say(e.message);
-    } catch (e) {
-      _say('Failed to generate MIPs: ${describeError(e)}');
-    }
-  }
-
-  Future<List<String>> _genomeCategories() async {
-    final categories = await client.genome.getCategories();
-    categories.sort();
-    return categories;
-  }
-
-  Future<List<Genome>> _genomesInCategory(String category) =>
-      client.genome.getGenomeByCategory(category);
-
-  /// The SNP sets this caller may use with [genomeId].
-  ///
-  /// Goes through `client.snp`, not `client.genome`: only that one filters by
-  /// visibility, and having the picker and the genome tab disagree about what
-  /// exists would be worse than either being wrong on its own.
-  Future<List<Snp>> _snpsFor(int genomeId) =>
-      client.snp.listSnpsForGenome(genomeId);
 
   /// Opens the genome picker and applies the answer.
   ///
@@ -302,12 +133,9 @@ class _ProjectTileState extends State<ProjectTile> {
   Future<void> _pickGenome() async {
     final List<String> categories;
     try {
-      categories = await _genomeCategories();
+      categories = await _controller.genomeCategories();
     } catch (e) {
-      if (!mounted) return;
-      setState(
-        () => _errorMessage = 'Could not load genomes: ${describeError(e)}',
-      );
+      _controller.reportGenomeLoadFailure(e);
       return;
     }
     if (!mounted) return;
@@ -316,52 +144,13 @@ class _ProjectTileState extends State<ProjectTile> {
       context: context,
       builder: (_) => GenomePickerDialog(
         categories: categories,
-        loadGenomes: _genomesInCategory,
-        initialCategory: genome?.category,
-        selectedGenomeId: widget.project.genome,
+        loadGenomes: _controller.genomesInCategory,
+        initialCategory: _controller.genome?.category,
+        selectedGenomeId: _controller.project.genome,
       ),
     );
-    if (picked == null || !mounted) return;
-
-    setState(() {
-      genome = picked;
-      // The SNP list belongs to the old genome; drop it so the picker refetches.
-      _snpsForGenome = null;
-    });
-
-    try {
-      await client.project.setGeneById(widget.project.id!, picked.id!);
-    } catch (e) {
-      if (!mounted) return;
-      setState(
-        () => _errorMessage = 'Failed to set genome: ${describeError(e)}',
-      );
-      return;
-    }
-    await _reloadProject();
-  }
-
-  /// Sets the project's SNP set, or clears it when [snpId] is null.
-  Future<void> _setSnp(int? snpId) async {
-    try {
-      await client.project.setSnpById(widget.project.id!, snpId);
-      await _reloadProject();
-    } catch (e) {
-      _say('Could not set the SNP set: ${describeError(e)}');
-    }
-  }
-
-  Future<void> _setEmailNotification(bool enabled) async {
-    try {
-      await client.project.setEmailNotification(widget.project.id!, enabled);
-      await _reloadProject();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage =
-            'Failed to change email notification: ${describeError(e)}';
-      });
-    }
+    if (picked == null) return;
+    await _controller.chooseGenome(picked);
   }
 
   void _confirmDelete() {
@@ -387,21 +176,9 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
-  /// The SNP sets to offer, or null when they cannot be asked for yet.
-  ///
-  /// ⚠️ Only once the genome has actually loaded, and only while the project can
-  /// still be edited — a finished project's SNP set is a fact about the run, not
-  /// a choice, so listing the alternatives would be a query for nothing.
-  Future<List<Snp>>? get _snpChoices {
-    final genomeId = genome?.id;
-    if (genomeId == null) return null;
-    if (!ProjectInputsColumn.isEditable(widget.project)) return null;
-    return _snpsForGenome ??= _snpsFor(genomeId);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final project = widget.project;
+    final project = _controller.project;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: context.colours.outlineVariant),
@@ -413,9 +190,11 @@ class _ProjectTileState extends State<ProjectTile> {
           ListTile(
             leading: IconButton(
               icon: Icon(
-                _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                _controller.expanded
+                    ? Icons.arrow_drop_up
+                    : Icons.arrow_drop_down,
               ),
-              onPressed: _toggleExpand,
+              onPressed: _controller.toggleExpanded,
             ),
             // ⚠️ SelectableText, not Text. A project name is something people
             // copy into a lab notebook or an email, and in a Flutter web build
@@ -447,7 +226,7 @@ class _ProjectTileState extends State<ProjectTile> {
               ],
             ),
           ),
-          if (_isExpanded) ...[
+          if (_controller.expanded) ...[
             // Full width, above the three columns, so it appears once in both
             // layouts — ownership is a property of the project, not of any one
             // of them.
@@ -479,7 +258,7 @@ class _ProjectTileState extends State<ProjectTile> {
                 children: [
                   SelectionArea(child: _inputs()),
                   SelectionArea(
-                    child: ProjectOptionsView(options: projectOptions),
+                    child: ProjectOptionsView(options: _controller.options),
                   ),
                   SelectionArea(child: _runPanel()),
                 ],
@@ -492,30 +271,29 @@ class _ProjectTileState extends State<ProjectTile> {
   }
 
   Widget _inputs() => ProjectInputsColumn(
-    project: widget.project,
-    genome: genome,
-    snp: snp,
-    snpsForGenome: _snpChoices,
-    errorMessage: _errorMessage,
-    onDismissError: () => setState(() => _errorMessage = null),
+    project: _controller.project,
+    genome: _controller.genome,
+    snp: _controller.snp,
+    snpsForGenome: _controller.snpChoices,
+    errorMessage: _controller.errorMessage,
+    onDismissError: _controller.dismissError,
     onPickGenome: _pickGenome,
-    onSnpChanged: _setSnp,
-    onAddGene: _addGene,
-    onRemoveGene: _removeGene,
+    onSnpChanged: _controller.setSnp,
+    onAddGene: _controller.addGene,
+    onRemoveGene: _controller.removeGene,
   );
 
   Widget _runPanel() {
-    final project = widget.project;
+    final project = _controller.project;
     return ProjectRunPanel(
       project: project,
-      progress: _progress,
+      progress: _controller.progress,
       notificationsAvailable: widget.notificationsAvailable,
-      deleteExcessFiles: _deleteExcessFiles,
-      onDeleteExcessFilesChanged: (value) =>
-          setState(() => _deleteExcessFiles = value),
-      onEmailNotificationChanged: _setEmailNotification,
-      onCreateBedFile: _createBedFile,
-      onGenerateMips: _generateMips,
+      deleteExcessFiles: _controller.deleteExcessFiles,
+      onDeleteExcessFilesChanged: _controller.setDeleteExcessFiles,
+      onEmailNotificationChanged: _controller.setEmailNotification,
+      onCreateBedFile: _controller.createBedFile,
+      onGenerateMips: _controller.generateMips,
       onShowMipsResult: () => showMipsResultDialog(context, project.id!),
       onShowSnpMipsResult: () => showSnpMipsResultDialog(context, project.id!),
       onShowUcscTrack: () => openUcscTrack(
@@ -523,7 +301,7 @@ class _ProjectTileState extends State<ProjectTile> {
         projectId: project.id!,
         // Unknown, or not yet loaded, means hg38 — which is what the app
         // installs by default and what `ucscTrackUrls` falls back to.
-        genomeName: genome?.name ?? '',
+        genomeName: _controller.genome?.name ?? '',
       ),
       onShowUcscTrackFile: () => showUcscTrackFileDialog(context, project.id!),
       onShowDesignLog: () => showDesignLogDialog(context, project.id!),

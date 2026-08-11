@@ -1,137 +1,84 @@
 import 'dart:async';
 
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/error_text.dart';
-import 'package:flumip_flutter/main.dart';
-import 'package:flumip_flutter/snp/add_custom_snp_dialog.dart';
-import 'package:flumip_flutter/snp/delete_snp_dialogs.dart';
-import 'package:flumip_flutter/snp/edit_snp_dialog.dart';
-import 'package:flumip_flutter/snp/snp_status.dart';
-import 'package:flumip_flutter/snp/snp_tile.dart';
 import 'package:flutter/material.dart';
 
+import '../services.dart';
 import '../ui/error_banner.dart';
 import '../ui/theme.dart';
+import 'add_custom_snp_dialog.dart';
+import 'delete_snp_dialogs.dart';
+import 'edit_snp_dialog.dart';
+import 'snp_section_controller.dart';
+import 'snp_tile.dart';
 
 /// The SNP sets available for one genome, with whatever a user may do to them.
 ///
 /// Replaces the read-only listing that used to live inside `GenomeDetailsCard`.
 /// Two things about that are worth not repeating: it called `fetchSnps()` from
 /// inside `build`, so a query went out on every rebuild — and the genome tab
-/// rebuilds every five seconds — and it was hidden entirely behind
+/// rebuilt every five seconds — and it was hidden entirely behind
 /// `genome.snp != null`, which is the *scanned* id list, so a genome whose only
 /// SNP sets were custom would have shown nothing and offered no way to add one.
+///
+/// Fetching and changing live in [SnpSectionController]. What stays here is the
+/// part that needs a `BuildContext`: four dialogs, and the snack bars.
 class SnpSection extends StatefulWidget {
-  const SnpSection({super.key, required this.genome});
+  const SnpSection({super.key, required this.genome, this.controller});
 
   final Genome genome;
+
+  /// The controller to use, or null to build one from the app-wide client.
+  ///
+  /// ⚠️ Owned by this widget when it builds its own, exactly like `GenomeTab`:
+  /// it holds a poll for the sets on screen, and one shared instance would go on
+  /// polling a genome nobody is looking at. A controller passed in belongs to the
+  /// caller and is not disposed here.
+  final SnpSectionController? controller;
 
   @override
   State<SnpSection> createState() => _SnpSectionState();
 }
 
 class _SnpSectionState extends State<SnpSection> {
-  List<Snp>? _snps;
-
-  /// The ids this caller added.
-  ///
-  /// ⚠️ Derived from `listMySnps` rather than compared against the session,
-  /// because the session carries no user id — `SessionTokenResponse` has email,
-  /// display name and the admin flag, and nothing to match `Snp.owner` against.
-  Set<int> _mine = {};
-
-  String? _errorMessage;
-  Timer? _timer;
-  int _failures = 0;
+  late final bool _ownsController = widget.controller == null;
+  late final SnpSectionController _controller =
+      widget.controller ?? createSnpSectionController(widget.genome.id!);
+  StreamSubscription<String>? _messages;
 
   @override
   void initState() {
     super.initState();
-    _load();
-    authController.addListener(_onAuthChanged);
-    accessController.addListener(_onAccessChanged);
-    // An upload's progress is only known in this browser — the server cannot see
-    // how far a PUT has got until it lands — so the bar is driven from here.
-    snpUploads.addListener(_onUploadsChanged);
+    _controller.addListener(_onChanged);
+    _messages = _controller.messages.listen(_say);
+    _controller.load();
   }
 
   @override
   void didUpdateWidget(SnpSection old) {
     super.didUpdateWidget(old);
     if (old.genome.id != widget.genome.id) {
-      setState(() => _snps = null);
-      _load();
+      _controller.showGenome(widget.genome.id!);
     }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    authController.removeListener(_onAuthChanged);
-    accessController.removeListener(_onAccessChanged);
-    snpUploads.removeListener(_onUploadsChanged);
+    _messages?.cancel();
+    _controller.removeListener(_onChanged);
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
-  void _onUploadsChanged() {
+  void _onChanged() {
     if (mounted) setState(() {});
   }
 
-  /// The whole list depends on who is asking, so a change of identity has to
-  /// throw the answer away rather than keep showing the previous caller's.
-  void _onAuthChanged() {
+  void _say(String message) {
     if (!mounted) return;
-    setState(() {
-      _snps = null;
-      _mine = {};
-    });
-    _load();
-  }
-
-  /// Admin-ness gates which menu items exist, so a late answer must redraw.
-  void _onAccessChanged() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _load() async {
-    try {
-      final snps = await client.snp.listSnpsForGenome(widget.genome.id!);
-      final mine = await client.snp.listMySnps();
-      if (!mounted) return;
-      setState(() {
-        _snps = snps;
-        _mine = mine.map((s) => s.id!).nonNulls.toSet();
-        _errorMessage = null;
-        _failures = 0;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      // Copied from project_tile: a revoked session would otherwise re-report
-      // the same refusal every couple of seconds, for as long as the tab is open.
-      if (isAccessDenied(e)) {
-        _timer?.cancel();
-        _timer = null;
-        setState(() => _snps = const []);
-        return;
-      }
-      setState(() {
-        _failures++;
-        _errorMessage = 'Could not load SNP sets: ${describeError(e)}';
-      });
-    }
-    _rearm();
-  }
-
-  void _rearm() {
-    _timer?.cancel();
-    if (!mounted) return;
-    final anyLive =
-        (_snps ?? const <Snp>[]).any((s) => !isTerminal(s.status)) ||
-        snpUploads.anyLive;
-    _timer = Timer(
-      pollInterval(anyLive: anyLive, consecutiveFailures: _failures),
-      _load,
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _handle(Snp snp, SnpAction action) async {
@@ -139,20 +86,13 @@ class _SnpSectionState extends State<SnpSection> {
       case SnpAction.rename:
         await _rename(snp);
       case SnpAction.share:
-        await _setShared(snp, true);
+        await _controller.setShared(snp, true);
       case SnpAction.unshare:
-        await _setShared(snp, false);
+        await _controller.setShared(snp, false);
       case SnpAction.retry:
-        await _run(
-          () => client.snp.retryImport(snp.id!),
-          failure: 'Could not retry the import',
-        );
+        await _controller.retry(snp);
       case SnpAction.cancelUpload:
-        await _run(
-          () => client.snp.cancelUpload(snp.id!),
-          failure: 'Could not cancel',
-          success: 'Removed "${snp.name}".',
-        );
+        await _controller.cancelUpload(snp);
       case SnpAction.delete:
         await _delete(snp);
       case SnpAction.adminDelete:
@@ -165,6 +105,7 @@ class _SnpSectionState extends State<SnpSection> {
       context: context,
       builder: (_) => AddCustomSnpDialog(
         genome: widget.genome,
+        pickFile: pickFile,
         // False during a `flutter run`, where the app and the web server are
         // different origins and the session cookie cannot travel with a PUT.
         uploadAvailable: uploadsAvailable,
@@ -172,7 +113,7 @@ class _SnpSectionState extends State<SnpSection> {
     );
     if (draft == null) return;
 
-    final dto = CustomSnpRequestDto(
+    final request = CustomSnpRequestDto(
       name: draft.name,
       description: draft.description,
       genomeId: draft.genomeId,
@@ -183,29 +124,12 @@ class _SnpSectionState extends State<SnpSection> {
     );
 
     if (draft.mode == AddSnpMode.url) {
-      await _run(
-        () => client.snp.importFromUrls(dto),
-        failure: 'Could not start the import',
-        success:
-            'Downloading "${draft.name}" — watch its progress in the list.',
-      );
+      await _controller.importFromUrls(request, draft.name);
       return;
     }
 
-    // ⚠️ Create the row, then hand the transfer to the long-lived controller and
-    // return. The upload must not be owned by anything that can be closed: it
-    // takes minutes, and this widget is rebuilt every time the genome selection
-    // changes.
-    Snp created;
-    try {
-      created = await client.snp.createUpload(dto);
-    } catch (e) {
-      _say('Could not start the upload: ${describeError(e)}');
-      return;
-    }
-    await _load();
-    snpUploads.start(
-      snpId: created.id!,
+    await _controller.startUpload(
+      request,
       vcf: draft.vcfFile!,
       tbi: draft.tbiFile,
     );
@@ -217,29 +141,11 @@ class _SnpSectionState extends State<SnpSection> {
       builder: (_) => EditSnpDialog(snp: snp),
     );
     if (edit == null) return;
-    await _run(
-      () => client.snp.renameSnp(snp.id!, edit.name, edit.description),
-      failure: 'Could not rename the SNP set',
-    );
-  }
-
-  Future<void> _setShared(Snp snp, bool shared) async {
-    // Optimistic, *with a rollback*. The genome tab's existing active toggle sets
-    // state first and never reverts on failure, which leaves the interface
-    // asserting something the server refused.
-    setState(() => snp.private = !shared);
-    try {
-      await client.snp.setShared(snp.id!, shared);
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => snp.private = shared);
-      _say('Could not change sharing: ${describeError(e)}');
-    }
+    await _controller.rename(snp, edit.name, edit.description);
   }
 
   Future<void> _delete(Snp snp) async {
-    final usage = await _usage(snp);
+    final usage = await _controller.usage(snp);
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -250,15 +156,11 @@ class _SnpSectionState extends State<SnpSection> {
       ),
     );
     if (confirmed != true) return;
-    await _run(
-      () => client.snp.deleteCustomSnp(snp.id!),
-      failure: 'Could not delete the SNP set',
-      success: 'Deleted "${snp.name}" and its files.',
-    );
+    await _controller.delete(snp);
   }
 
   Future<void> _adminDelete(Snp snp) async {
-    final usage = await _usage(snp);
+    final usage = await _controller.usage(snp);
     if (!mounted) return;
     final confirmation = await showDialog<AdminDeleteConfirmation>(
       context: context,
@@ -268,59 +170,22 @@ class _SnpSectionState extends State<SnpSection> {
         usageFailed: usage == null,
         // A signed-in administrator needs no password and must not be shown a
         // box asking for one; on a no-auth install it is the only credential.
-        needsPassword: !accessController.isAdmin,
+        needsPassword: !_controller.isAdmin,
       ),
     );
     if (confirmation == null) return;
-    await _run(
-      () => client.snp.deleteSnpAsAdmin(
-        snp.id!,
-        confirmation.settingsPassword,
-        force: confirmation.force,
-      ),
-      failure: 'Could not delete the SNP set',
-      success: 'Deleted "${snp.name}" and its files.',
+    await _controller.deleteAsAdmin(
+      snp,
+      confirmation.settingsPassword,
+      force: confirmation.force,
     );
-  }
-
-  /// The projects using this SNP, or null when the lookup itself failed.
-  ///
-  /// Read *before* the dialog opens so the confirmation can name them, rather
-  /// than spinning inside it. Null and empty are kept apart: the dialog must be
-  /// able to say "could not check" instead of implying "nothing is using it".
-  Future<List<SnpUsageDto>?> _usage(Snp snp) async {
-    try {
-      return await client.snp.snpUsage(snp.id!);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _run(
-    Future<void> Function() action, {
-    required String failure,
-    String? success,
-  }) async {
-    try {
-      await action();
-      await _load();
-      if (success != null) _say(success);
-    } catch (e) {
-      if (!mounted) return;
-      _say('$failure: ${describeError(e)}');
-    }
-  }
-
-  void _say(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final snps = _snps;
+    final snps = _controller.snps;
+    final error = _controller.errorMessage;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -349,13 +214,10 @@ class _SnpSectionState extends State<SnpSection> {
             ],
           ),
         ),
-        if (_errorMessage != null)
+        if (error != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 16, 8),
-            child: ErrorBanner(
-              _errorMessage!,
-              onDismiss: () => setState(() => _errorMessage = null),
-            ),
+            child: ErrorBanner(error, onDismiss: _controller.dismissError),
           ),
         Expanded(
           child: switch (snps) {
@@ -375,11 +237,16 @@ class _SnpSectionState extends State<SnpSection> {
               itemCount: snps.length,
               separatorBuilder: (_, _) => const SizedBox(height: 6),
               itemBuilder: (context, i) => SnpTile(
+                // Keyed on the set's id. `SnpTile` is stateless, so nothing can
+                // be handed to the wrong row the way it could in the projects
+                // list — but a key still lets Flutter move an element rather
+                // than rebuild every row below a deletion.
+                key: ValueKey(snps[i].id),
                 snp: snps[i],
-                isMine: _mine.contains(snps[i].id),
-                isAdmin: accessController.isAdmin,
-                upload: snpUploads[snps[i].id],
-                onCancelUpload: () => snpUploads.cancel(snps[i].id!),
+                isMine: _controller.isMine(snps[i]),
+                isAdmin: _controller.isAdmin,
+                upload: _controller.uploads[snps[i].id],
+                onCancelUpload: () => _controller.uploads.cancel(snps[i].id!),
                 onAction: (a) => _handle(snps[i], a),
               ),
             ),
