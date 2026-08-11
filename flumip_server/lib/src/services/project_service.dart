@@ -414,9 +414,7 @@ class ProjectService {
         "Refused SNP $snpId for project $id: status is ${snp.status.name}",
         level: LogLevel.error,
       );
-      throw ArgumentException(
-        message: 'That SNP set is not ready to use yet.',
-      );
+      throw ArgumentException(message: 'That SNP set is not ready to use yet.');
     }
 
     project.snp = snpId;
@@ -460,10 +458,7 @@ class ProjectService {
   /// Only ever reached through an admin-gated endpoint — this is the one place
   /// the user list becomes visible to a client at all.
   Future<List<FlumipUser>> assignableOwners(Session session) {
-    return FlumipUser.db.find(
-      session,
-      orderBy: (t) => t.id,
-    );
+    return FlumipUser.db.find(session, orderBy: (t) => t.id);
   }
 
   /// Turns "email me when MIP generation finishes" on or off for a project.

@@ -17,18 +17,19 @@ void main() {
     String url, {
     List<InternetAddress>? resolved,
     List<String> allowedHosts = const [],
-  }) =>
-      snpSourceUrlRejection(
-        Uri.parse(url),
-        resolved: resolved ?? public,
-        allowedHosts: allowedHosts,
-      );
+  }) => snpSourceUrlRejection(
+    Uri.parse(url),
+    resolved: resolved ?? public,
+    allowedHosts: allowedHosts,
+  );
 
   group('the happy path', () {
     test('a real dbSNP URL is accepted', () {
       expect(
-        reject('https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/'
-            '00-common_all.vcf.gz'),
+        reject(
+          'https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/'
+          '00-common_all.vcf.gz',
+        ),
         isNull,
       );
     });
@@ -253,16 +254,17 @@ void main() {
 
     test('an exact host matches', () {
       expect(
-        reject('https://ftp.ncbi.nlm.nih.gov/x.vcf.gz',
-            allowedHosts: allowed),
+        reject('https://ftp.ncbi.nlm.nih.gov/x.vcf.gz', allowedHosts: allowed),
         isNull,
       );
     });
 
     test('a subdomain matches', () {
       expect(
-        reject('https://sub.ftp.ncbi.nlm.nih.gov/x.vcf.gz',
-            allowedHosts: allowed),
+        reject(
+          'https://sub.ftp.ncbi.nlm.nih.gov/x.vcf.gz',
+          allowedHosts: allowed,
+        ),
         isNull,
       );
     });
@@ -278,35 +280,42 @@ void main() {
       // ⚠️ A plain endsWith would accept this. The attacker controls
       // attacker.com and can name a subdomain anything they like.
       expect(
-        reject('https://ftp.ncbi.nlm.nih.gov.attacker.com/x.vcf.gz',
-            allowedHosts: allowed),
+        reject(
+          'https://ftp.ncbi.nlm.nih.gov.attacker.com/x.vcf.gz',
+          allowedHosts: allowed,
+        ),
         isNotNull,
       );
       expect(
-        reject('https://evilftp.ncbi.nlm.nih.gov/x.vcf.gz',
-            allowedHosts: const ['ftp.ncbi.nlm.nih.gov']),
+        reject(
+          'https://evilftp.ncbi.nlm.nih.gov/x.vcf.gz',
+          allowedHosts: const ['ftp.ncbi.nlm.nih.gov'],
+        ),
         isNotNull,
       );
     });
 
     test('matching ignores case', () {
       expect(
-        reject('https://FTP.NCBI.NLM.NIH.GOV/x.vcf.gz',
-            allowedHosts: allowed),
+        reject('https://FTP.NCBI.NLM.NIH.GOV/x.vcf.gz', allowedHosts: allowed),
         isNull,
       );
     });
 
     test('an empty list means any host that passes the other checks', () {
-      expect(reject('https://example.org/x.vcf.gz', allowedHosts: const []),
-          isNull);
+      expect(
+        reject('https://example.org/x.vcf.gz', allowedHosts: const []),
+        isNull,
+      );
     });
 
     test('blank entries are ignored rather than matching everything', () {
       // A trailing comma in the settings field produces one of these.
       expect(
-        reject('https://example.org/x.vcf.gz',
-            allowedHosts: const ['', '  ', 'ftp.ncbi.nlm.nih.gov']),
+        reject(
+          'https://example.org/x.vcf.gz',
+          allowedHosts: const ['', '  ', 'ftp.ncbi.nlm.nih.gov'],
+        ),
         isNotNull,
       );
     });

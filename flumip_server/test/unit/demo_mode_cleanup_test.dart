@@ -48,8 +48,9 @@ void main() {
     /// waiting a week.
     Future<Project> makeExpiredProject(String name) async {
       final project = await makeProject(name);
-      project.created =
-          DateTime.now().toUtc().subtract(const Duration(days: 400));
+      project.created = DateTime.now().toUtc().subtract(
+        const Duration(days: 400),
+      );
       await Project.db.updateRow(session, project);
       return project;
     }
@@ -125,8 +126,9 @@ void main() {
       await _setDemoMode(session, true, retentionHours: 1);
       final project = await makeProject('old-enough');
       // Backdate past the one-hour window rather than waiting an hour.
-      project.created =
-          DateTime.now().toUtc().subtract(const Duration(hours: 3));
+      project.created = DateTime.now().toUtc().subtract(
+        const Duration(hours: 3),
+      );
       await Project.db.updateRow(session, project);
 
       await cleanup.run(session, project);

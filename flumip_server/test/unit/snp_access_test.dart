@@ -28,8 +28,11 @@ void main() {
     bool enforcing = true,
     Principal principal = Principal.anonymous,
     int? snpOwner,
-  }) =>
-      snpIsWritable(enforcing: enforcing, principal: principal, owner: snpOwner);
+  }) => snpIsWritable(
+    enforcing: enforcing,
+    principal: principal,
+    owner: snpOwner,
+  );
 
   group('snpIsAccessible: shared and global SNPs', () {
     test('a non-private SNP is visible to everyone, signed in or not', () {

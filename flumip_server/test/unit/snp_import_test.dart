@@ -90,54 +90,66 @@ void main() {
         );
       }, tags: ['unit']);
 
-      test('a VCF with no index URL is handed to tabix with a fixed argv',
-          () async {
-        final snp = await pendingImport();
-        fake.stubRun('tabix', exitCode: 0);
+      test(
+        'a VCF with no index URL is handed to tabix with a fixed argv',
+        () async {
+          final snp = await pendingImport();
+          fake.stubRun('tabix', exitCode: 0);
 
-        await NoScheduleSnpService().runImport(session, snp.id!);
+          await NoScheduleSnpService().runImport(session, snp.id!);
 
-        final call = fake.runCalls.firstWhere((c) => c.executable == 'tabix');
-        expect(call.arguments.first, '-p');
-        expect(call.arguments[1], 'vcf');
-        expect(call.arguments[2], endsWith('/panel.vcf.gz'));
-        expect(
-          call.runInShell,
-          isFalse,
-          reason: 'no shell is interposed for this one, unlike bwa and mipgen',
-        );
-      }, tags: ['unit']);
+          final call = fake.runCalls.firstWhere((c) => c.executable == 'tabix');
+          expect(call.arguments.first, '-p');
+          expect(call.arguments[1], 'vcf');
+          expect(call.arguments[2], endsWith('/panel.vcf.gz'));
+          expect(
+            call.runInShell,
+            isFalse,
+            reason:
+                'no shell is interposed for this one, unlike bwa and mipgen',
+          );
+        },
+        tags: ['unit'],
+      );
 
-      test('tabix claiming success without writing an index is a failure',
-          () async {
-        // The fake runner writes no files, which is exactly the case worth
-        // pinning: a zero exit code is not evidence the index exists, and
-        // trusting it would mark an unusable SNP set ready.
-        final snp = await pendingImport();
-        fake.stubRun('tabix', exitCode: 0);
+      test(
+        'tabix claiming success without writing an index is a failure',
+        () async {
+          // The fake runner writes no files, which is exactly the case worth
+          // pinning: a zero exit code is not evidence the index exists, and
+          // trusting it would mark an unusable SNP set ready.
+          final snp = await pendingImport();
+          fake.stubRun('tabix', exitCode: 0);
 
-        await NoScheduleSnpService().runImport(session, snp.id!);
+          await NoScheduleSnpService().runImport(session, snp.id!);
 
-        final done = await reload(snp);
-        expect(done.status, SnpImportStatus.failed);
-        expect(done.statusMessage, contains('wrote no index'));
-      }, tags: ['unit']);
+          final done = await reload(snp);
+          expect(done.status, SnpImportStatus.failed);
+          expect(done.statusMessage, contains('wrote no index'));
+        },
+        tags: ['unit'],
+      );
 
-      test('the partial file is renamed into place, not left in .incoming',
-          () async {
-        final snp = await pendingImport(
-          tbiUrl: 'https://example.org/panel.vcf.gz.tbi',
-        );
+      test(
+        'the partial file is renamed into place, not left in .incoming',
+        () async {
+          final snp = await pendingImport(
+            tbiUrl: 'https://example.org/panel.vcf.gz.tbi',
+          );
 
-        await NoScheduleSnpService().runImport(session, snp.id!);
+          await NoScheduleSnpService().runImport(session, snp.id!);
 
-        expect(File('${snp.folder}/panel.vcf.gz').existsSync(), isTrue);
-        expect(
-          Directory('${snp.folder}/${SnpService.incomingDirName}').existsSync(),
-          isFalse,
-          reason: 'the staging directory is cleaned up in a finally',
-        );
-      }, tags: ['unit']);
+          expect(File('${snp.folder}/panel.vcf.gz').existsSync(), isTrue);
+          expect(
+            Directory(
+              '${snp.folder}/${SnpService.incomingDirName}',
+            ).existsSync(),
+            isFalse,
+            reason: 'the staging directory is cleaned up in a finally',
+          );
+        },
+        tags: ['unit'],
+      );
     });
 
     group('progress', () {
@@ -177,39 +189,47 @@ void main() {
     });
 
     group('failure', () {
-      test('a refused download fails the row with the downloader\'s words',
-          () async {
-        final snp = await pendingImport();
-        downloader.stub(
-          'https://example.org/panel.vcf.gz',
-          error: SnpDownloadException('That address answered 404 (not found).'),
-        );
+      test(
+        'a refused download fails the row with the downloader\'s words',
+        () async {
+          final snp = await pendingImport();
+          downloader.stub(
+            'https://example.org/panel.vcf.gz',
+            error: SnpDownloadException(
+              'That address answered 404 (not found).',
+            ),
+          );
 
-        await NoScheduleSnpService().runImport(session, snp.id!);
+          await NoScheduleSnpService().runImport(session, snp.id!);
 
-        final done = await reload(snp);
-        expect(done.status, SnpImportStatus.failed);
-        expect(done.statusMessage, contains('404'));
-      }, tags: ['unit']);
+          final done = await reload(snp);
+          expect(done.status, SnpImportStatus.failed);
+          expect(done.statusMessage, contains('404'));
+        },
+        tags: ['unit'],
+      );
 
-      test('an unexpected error does not leak its detail into the status',
-          () async {
-        // ⚠️ A remote error page can contain anything at all, and this string is
-        // rendered in the app. Only SnpDownloadException carries text meant for
-        // a person.
-        final snp = await pendingImport();
-        downloader.stub(
-          'https://example.org/panel.vcf.gz',
-          error: StateError('SocketException: connection reset by 10.0.0.5'),
-        );
+      test(
+        'an unexpected error does not leak its detail into the status',
+        () async {
+          // ⚠️ A remote error page can contain anything at all, and this string is
+          // rendered in the app. Only SnpDownloadException carries text meant for
+          // a person.
+          final snp = await pendingImport();
+          downloader.stub(
+            'https://example.org/panel.vcf.gz',
+            error: StateError('SocketException: connection reset by 10.0.0.5'),
+          );
 
-        await NoScheduleSnpService().runImport(session, snp.id!);
+          await NoScheduleSnpService().runImport(session, snp.id!);
 
-        final done = await reload(snp);
-        expect(done.status, SnpImportStatus.failed);
-        expect(done.statusMessage, 'The import failed unexpectedly.');
-        expect(done.statusMessage, isNot(contains('10.0.0.5')));
-      }, tags: ['unit']);
+          final done = await reload(snp);
+          expect(done.status, SnpImportStatus.failed);
+          expect(done.statusMessage, 'The import failed unexpectedly.');
+          expect(done.statusMessage, isNot(contains('10.0.0.5')));
+        },
+        tags: ['unit'],
+      );
 
       test('a failed download leaves nothing in .incoming', () async {
         final snp = await pendingImport();
@@ -273,10 +293,10 @@ void main() {
         );
         await NoScheduleSnpService().runImport(session, snp.id!);
 
-        expect(
-          downloader.invocations.first.allowedHosts,
-          ['ftp.ncbi.nlm.nih.gov', 'example.org'],
-        );
+        expect(downloader.invocations.first.allowedHosts, [
+          'ftp.ncbi.nlm.nih.gov',
+          'example.org',
+        ]);
       }, tags: ['unit']);
 
       test('the byte cap is passed through to the downloader', () async {
@@ -317,10 +337,10 @@ void main() {
 
     group('parseAllowedHosts', () {
       test('splits, trims and drops blanks', () {
-        expect(
-          SnpService.parseAllowedHosts(' a.org , b.org ,, '),
-          ['a.org', 'b.org'],
-        );
+        expect(SnpService.parseAllowedHosts(' a.org , b.org ,, '), [
+          'a.org',
+          'b.org',
+        ]);
         expect(SnpService.parseAllowedHosts(''), isEmpty);
         expect(SnpService.parseAllowedHosts('   '), isEmpty);
       });
@@ -371,9 +391,11 @@ void main() {
       // An unsorted VCF is the second commonest failure, and tabix says so
       // itself — its words are more use than anything paraphrased.
       final snp = await unindexed();
-      fake.stubRun('tabix',
-          exitCode: 1,
-          stderr: '[E::hts_idx_push] Unsorted positions on chr1\nmore noise');
+      fake.stubRun(
+        'tabix',
+        exitCode: 1,
+        stderr: '[E::hts_idx_push] Unsorted positions on chr1\nmore noise',
+      );
 
       await SnpService().buildTabixIndex(session, snp);
 
@@ -389,8 +411,10 @@ void main() {
 
       await SnpService().buildTabixIndex(session, snp);
 
-      expect((await Snp.db.findById(session, snp.id!))!.status,
-          SnpImportStatus.failed);
+      expect(
+        (await Snp.db.findById(session, snp.id!))!.status,
+        SnpImportStatus.failed,
+      );
       expect(fake.runCalls.where((c) => c.executable == 'tabix'), isEmpty);
     }, tags: ['unit']);
 
@@ -415,12 +439,11 @@ void main() {
       final snp = await unindexed();
       fake.runError = StateError('tabix is not installed');
 
-      await expectLater(
-        SnpService().buildTabixIndex(session, snp),
-        completes,
+      await expectLater(SnpService().buildTabixIndex(session, snp), completes);
+      expect(
+        (await Snp.db.findById(session, snp.id!))!.status,
+        SnpImportStatus.failed,
       );
-      expect((await Snp.db.findById(session, snp.id!))!.status,
-          SnpImportStatus.failed);
     }, tags: ['unit']);
   });
 }

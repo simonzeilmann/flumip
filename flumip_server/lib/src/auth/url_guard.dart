@@ -140,7 +140,9 @@ bool _isGlobalUnicast(InternetAddress address) {
   // sixteen-byte hat. Unwrap it and apply the v4 rules, or `::ffff:127.0.0.1`
   // walks straight through every v6 check below.
   final isV4Mapped =
-      bytes.take(10).every((b) => b == 0) && bytes[10] == 0xff && bytes[11] == 0xff;
+      bytes.take(10).every((b) => b == 0) &&
+      bytes[10] == 0xff &&
+      bytes[11] == 0xff;
   if (isV4Mapped) {
     return _ipv4IsGlobal(bytes.sublist(12));
   }

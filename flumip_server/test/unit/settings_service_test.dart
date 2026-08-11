@@ -13,7 +13,7 @@ void main() {
 
     test(
       'calling `get settings` should return the standard settings',
-          () async {
+      () async {
         final settings = await settingsService.getSettings(session);
         expect(settings.baseDir, "/opt/flumip");
       },
@@ -21,7 +21,7 @@ void main() {
     );
     test(
       'calling `updateSettings` should return the updated settings',
-          () async {
+      () async {
         final settings = await settingsService.getSettings(session);
         settings.mipgenExecutable = "/new/path/to/mipgen";
         await settingsService.updateSettings(session, settings);
@@ -36,21 +36,27 @@ void main() {
     var session = sessionBuilder.build();
     final settingsService = SettingsService();
 
-    test('getSettingsExternal returns settings for the correct password',
-        () async {
-      // Ensure the default row (settingsPassword == "changeme") exists.
-      await settingsService.getSettings(session);
-      final settings =
-          await settingsService.getSettingsExternal(session, 'changeme');
-      expect(settings.baseDir, '/opt/flumip');
-    }, tags: ['unit']);
+    test(
+      'getSettingsExternal returns settings for the correct password',
+      () async {
+        // Ensure the default row (settingsPassword == "changeme") exists.
+        await settingsService.getSettings(session);
+        final settings = await settingsService.getSettingsExternal(
+          session,
+          'changeme',
+        );
+        expect(settings.baseDir, '/opt/flumip');
+      },
+      tags: ['unit'],
+    );
 
     test('getSettingsExternal throws for an invalid password', () async {
       await settingsService.getSettings(session);
       expect(
         () => settingsService.getSettingsExternal(session, 'wrong'),
-        throwsA(predicate(
-            (e) => e is Exception && '$e'.contains('Invalid password'))),
+        throwsA(
+          predicate((e) => e is Exception && '$e'.contains('Invalid password')),
+        ),
       );
     }, tags: ['unit']);
 
@@ -84,43 +90,49 @@ void main() {
       expect(all.length, 1);
     }, tags: ['unit']);
 
-    test('updateSettings merges onto the stored row rather than replacing it',
-        () async {
-      final stored = await settingsService.getSettings(session);
+    test(
+      'updateSettings merges onto the stored row rather than replacing it',
+      () async {
+        final stored = await settingsService.getSettings(session);
 
-      // Simulates what the Flutter settings tab sends: a fresh object built
-      // from the form controllers, carrying the stored row's id.
-      final fromClient = Settings()
-        ..id = stored.id
-        ..smtpServer = 'smtp.example.org';
-      await settingsService.updateSettings(session, fromClient);
+        // Simulates what the Flutter settings tab sends: a fresh object built
+        // from the form controllers, carrying the stored row's id.
+        final fromClient = Settings()
+          ..id = stored.id
+          ..smtpServer = 'smtp.example.org';
+        await settingsService.updateSettings(session, fromClient);
 
-      final reread = await settingsService.getSettings(session);
-      expect(reread.id, stored.id);
-      expect(reread.smtpServer, 'smtp.example.org');
-    }, tags: ['unit']);
+        final reread = await settingsService.getSettings(session);
+        expect(reread.id, stored.id);
+        expect(reread.smtpServer, 'smtp.example.org');
+      },
+      tags: ['unit'],
+    );
 
-    test('updateSettings never blanks the server-only OIDC client secret',
-        () async {
-      // Written the way SettingsEndpoint.setOidcClientSecret writes it: on the
-      // stored row directly, never through the client-editable merge list.
-      final stored = await settingsService.getSettings(session);
-      stored.oidcClientSecret = 'top-secret';
-      await Settings.db.updateRow(session, stored);
+    test(
+      'updateSettings never blanks the server-only OIDC client secret',
+      () async {
+        // Written the way SettingsEndpoint.setOidcClientSecret writes it: on the
+        // stored row directly, never through the client-editable merge list.
+        final stored = await settingsService.getSettings(session);
+        stored.oidcClientSecret = 'top-secret';
+        await Settings.db.updateRow(session, stored);
 
-      // What the client sends: oidcClientSecret is serverOnly, so it is absent
-      // from the wire format and deserializes as null. Saving anything else
-      // must not erase it.
-      final fromClient = Settings()
-        ..id = stored.id
-        ..smtpServer = 'smtp.example.org'
-        ..oidcIssuer = 'https://idp.example.org';
-      expect(fromClient.oidcClientSecret, isNull);
-      await settingsService.updateSettings(session, fromClient);
+        // What the client sends: oidcClientSecret is serverOnly, so it is absent
+        // from the wire format and deserializes as null. Saving anything else
+        // must not erase it.
+        final fromClient = Settings()
+          ..id = stored.id
+          ..smtpServer = 'smtp.example.org'
+          ..oidcIssuer = 'https://idp.example.org';
+        expect(fromClient.oidcClientSecret, isNull);
+        await settingsService.updateSettings(session, fromClient);
 
-      final reread = await settingsService.getSettings(session);
-      expect(reread.oidcClientSecret, 'top-secret');
-      expect(reread.oidcIssuer, 'https://idp.example.org');
-    }, tags: ['unit']);
+        final reread = await settingsService.getSettings(session);
+        expect(reread.oidcClientSecret, 'top-secret');
+        expect(reread.oidcIssuer, 'https://idp.example.org');
+      },
+      tags: ['unit'],
+    );
   });
 }

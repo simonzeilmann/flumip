@@ -18,46 +18,44 @@ void main() {
     String publicUrl = '',
     String scopes = 'openid email profile',
     String buttonLabel = 'Sign in with SSO',
-  }) =>
-      Settings(
-        loginRequired: loginRequired,
-        oidcIssuer: issuer,
-        oidcClientId: clientId,
-        oidcClientSecret: clientSecret,
-        oidcAdminEmails: adminEmails,
-        oidcAllowedEmailDomains: allowedDomains,
-        oidcScopes: scopes,
-        oidcButtonLabel: buttonLabel,
-        authPublicUrl: publicUrl,
-      );
+  }) => Settings(
+    loginRequired: loginRequired,
+    oidcIssuer: issuer,
+    oidcClientId: clientId,
+    oidcClientSecret: clientSecret,
+    oidcAdminEmails: adminEmails,
+    oidcAllowedEmailDomains: allowedDomains,
+    oidcScopes: scopes,
+    oidcButtonLabel: buttonLabel,
+    authPublicUrl: publicUrl,
+  );
 
   ServerpodConfig configWithWebServer({
     required String scheme,
     required String host,
     required int port,
-  }) =>
-      ServerpodConfig(
-        apiServer: ServerConfig(
-          port: 8080,
-          publicHost: host,
-          publicPort: 8080,
-          publicScheme: scheme,
-        ),
-        webServer: ServerConfig(
-          port: port,
-          publicHost: host,
-          publicPort: port,
-          publicScheme: scheme,
-        ),
-      );
+  }) => ServerpodConfig(
+    apiServer: ServerConfig(
+      port: 8080,
+      publicHost: host,
+      publicPort: 8080,
+      publicScheme: scheme,
+    ),
+    webServer: ServerConfig(
+      port: port,
+      publicHost: host,
+      publicPort: port,
+      publicScheme: scheme,
+    ),
+  );
 
   /// A configuration complete enough that only the enabling flag is in question.
   Settings complete({bool loginRequired = true}) => storedSettings(
-        loginRequired: loginRequired,
-        issuer: 'https://idp.example.org',
-        clientId: 'flumip',
-        clientSecret: 's3cret',
-      );
+    loginRequired: loginRequired,
+    issuer: 'https://idp.example.org',
+    clientId: 'flumip',
+    clientSecret: 's3cret',
+  );
 
   group('defaults', () {
     test('no settings and no environment means authentication is off', () {
@@ -69,10 +67,7 @@ void main() {
     });
 
     test('a default settings row means authentication is off', () {
-      final config = AuthConfig.resolve(
-        settings: Settings(),
-        env: const {},
-      );
+      final config = AuthConfig.resolve(settings: Settings(), env: const {});
       expect(config.loginRequired, isFalse);
       expect(config.isEnforcing(hasDiscovery: true), isFalse);
     });
@@ -362,9 +357,9 @@ void main() {
 
   group('isEmailAllowed', () {
     AuthConfig withDomains(String domains) => AuthConfig.resolve(
-          settings: storedSettings(allowedDomains: domains),
-          env: const {},
-        );
+      settings: storedSettings(allowedDomains: domains),
+      env: const {},
+    );
 
     test('an empty allowlist admits everyone', () {
       final config = withDomains('');
@@ -373,7 +368,10 @@ void main() {
     });
 
     test('an exact domain match is admitted', () {
-      expect(withDomains('uni.example').isEmailAllowed('a@uni.example'), isTrue);
+      expect(
+        withDomains('uni.example').isEmailAllowed('a@uni.example'),
+        isTrue,
+      );
     });
 
     test('a subdomain of an allowed domain is admitted', () {
@@ -414,8 +412,10 @@ void main() {
     });
 
     test('domains may be written with or without a leading @', () {
-      expect(withDomains('@uni.example').isEmailAllowed('a@uni.example'),
-          isTrue);
+      expect(
+        withDomains('@uni.example').isEmailAllowed('a@uni.example'),
+        isTrue,
+      );
     });
 
     test('several domains may be given, comma or space separated', () {

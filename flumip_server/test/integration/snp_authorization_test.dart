@@ -44,7 +44,10 @@ void main() {
   }
 
   withServerpod('Custom SNP authorization', (sessionBuilder, endpoints) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
 
     setUp(() => http.reset());
@@ -72,37 +75,44 @@ void main() {
     }
 
     group('seeing a private SNP', () {
-      test('the owner sees it, another user does not, an admin does', () async {
-        await enforceSso(session);
-        final genome = await seedGenome(session, name: 'hg38');
-        final alice = await signIn('alice@uni.example');
-        final bob = await signIn('bob@uni.example');
-        final root = await signIn('root@uni.example', isAdmin: true);
-        await seedSnp(
-          session,
-          name: 'alice panel',
-          genome: genome.id,
-          owner: alice.user.id,
-          custom: true,
-          private: true,
-        );
+      test(
+        'the owner sees it, another user does not, an admin does',
+        () async {
+          await enforceSso(session);
+          final genome = await seedGenome(session, name: 'hg38');
+          final alice = await signIn('alice@uni.example');
+          final bob = await signIn('bob@uni.example');
+          final root = await signIn('root@uni.example', isAdmin: true);
+          await seedSnp(
+            session,
+            name: 'alice panel',
+            genome: genome.id,
+            owner: alice.user.id,
+            custom: true,
+            private: true,
+          );
 
-        expect(
-          (await endpoints.snp
-                  .listSnpsForGenome(alice.builder, genome.id!))
-              .map((s) => s.name),
-          ['alice panel'],
-        );
-        expect(
-          await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!),
-          isEmpty,
-        );
-        expect(
-          (await endpoints.snp.listSnpsForGenome(root.builder, genome.id!))
-              .map((s) => s.name),
-          ['alice panel'],
-        );
-      }, tags: ['integration']);
+          expect(
+            (await endpoints.snp.listSnpsForGenome(
+              alice.builder,
+              genome.id!,
+            )).map((s) => s.name),
+            ['alice panel'],
+          );
+          expect(
+            await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!),
+            isEmpty,
+          );
+          expect(
+            (await endpoints.snp.listSnpsForGenome(
+              root.builder,
+              genome.id!,
+            )).map((s) => s.name),
+            ['alice panel'],
+          );
+        },
+        tags: ['integration'],
+      );
 
       test('sharing makes it visible to everybody', () async {
         await enforceSso(session);
@@ -121,8 +131,10 @@ void main() {
         await endpoints.snp.setShared(alice.builder, snp.id!, true);
 
         expect(
-          (await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!))
-              .map((s) => s.name),
+          (await endpoints.snp.listSnpsForGenome(
+            bob.builder,
+            genome.id!,
+          )).map((s) => s.name),
           ['alice panel'],
         );
       }, tags: ['integration']);
@@ -134,38 +146,44 @@ void main() {
         await seedSnp(session, name: 'dbsnp', genome: genome.id);
 
         expect(
-          (await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!))
-              .map((s) => s.name),
+          (await endpoints.snp.listSnpsForGenome(
+            bob.builder,
+            genome.id!,
+          )).map((s) => s.name),
           ['dbsnp'],
         );
       }, tags: ['integration']);
 
-      test('somebody else\'s half-finished import stays hidden', () async {
-        // A shared SNP that is still importing is nobody's business but its
-        // owner's until it works.
-        await enforceSso(session);
-        final genome = await seedGenome(session, name: 'hg38');
-        final alice = await signIn('alice@uni.example');
-        final bob = await signIn('bob@uni.example');
-        await seedSnp(
-          session,
-          name: 'downloading',
-          genome: genome.id,
-          owner: alice.user.id,
-          custom: true,
-          private: false,
-          status: SnpImportStatus.downloading,
-        );
+      test(
+        'somebody else\'s half-finished import stays hidden',
+        () async {
+          // A shared SNP that is still importing is nobody's business but its
+          // owner's until it works.
+          await enforceSso(session);
+          final genome = await seedGenome(session, name: 'hg38');
+          final alice = await signIn('alice@uni.example');
+          final bob = await signIn('bob@uni.example');
+          await seedSnp(
+            session,
+            name: 'downloading',
+            genome: genome.id,
+            owner: alice.user.id,
+            custom: true,
+            private: false,
+            status: SnpImportStatus.downloading,
+          );
 
-        expect(
-          await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!),
-          isEmpty,
-        );
-        expect(
-          await endpoints.snp.listSnpsForGenome(alice.builder, genome.id!),
-          hasLength(1),
-        );
-      }, tags: ['integration']);
+          expect(
+            await endpoints.snp.listSnpsForGenome(bob.builder, genome.id!),
+            isEmpty,
+          );
+          expect(
+            await endpoints.snp.listSnpsForGenome(alice.builder, genome.id!),
+            hasLength(1),
+          );
+        },
+        tags: ['integration'],
+      );
     });
 
     group('listMySnps', () {
@@ -173,13 +191,14 @@ void main() {
         await enforceSso(session);
         final alice = await signIn('alice@uni.example');
         final bob = await signIn('bob@uni.example');
-        await seedSnp(session,
-            name: 'mine-failed',
-            owner: alice.user.id,
-            custom: true,
-            status: SnpImportStatus.failed);
-        await seedSnp(session,
-            name: 'bobs', owner: bob.user.id, custom: true);
+        await seedSnp(
+          session,
+          name: 'mine-failed',
+          owner: alice.user.id,
+          custom: true,
+          status: SnpImportStatus.failed,
+        );
+        await seedSnp(session, name: 'bobs', owner: bob.user.id, custom: true);
         await seedSnp(session, name: 'global');
 
         expect(
@@ -192,8 +211,12 @@ void main() {
         await enforceSso(session);
         final alice = await signIn('alice@uni.example');
         final root = await signIn('root@uni.example', isAdmin: true);
-        await seedSnp(session,
-            name: 'alices', owner: alice.user.id, custom: true);
+        await seedSnp(
+          session,
+          name: 'alices',
+          owner: alice.user.id,
+          custom: true,
+        );
         await seedSnp(session, name: 'dbsnp');
 
         expect(
@@ -204,65 +227,87 @@ void main() {
     });
 
     group('changing and deleting', () {
-      test('another user cannot rename or unshare a shared SNP', () async {
-        // Ownership survives sharing: visible to everybody, writable by one.
-        await enforceSso(session);
-        final alice = await signIn('alice@uni.example');
-        final bob = await signIn('bob@uni.example');
-        final snp = await seedSnp(session,
+      test(
+        'another user cannot rename or unshare a shared SNP',
+        () async {
+          // Ownership survives sharing: visible to everybody, writable by one.
+          await enforceSso(session);
+          final alice = await signIn('alice@uni.example');
+          final bob = await signIn('bob@uni.example');
+          final snp = await seedSnp(
+            session,
             name: 'shared panel',
             owner: alice.user.id,
             custom: true,
-            private: false);
+            private: false,
+          );
 
-        await expectLater(
-          endpoints.snp.renameSnp(bob.builder, snp.id!, 'hijacked', ''),
-          throwsA(isA<ProjectAccessDeniedException>()),
-        );
-        await expectLater(
-          endpoints.snp.setShared(bob.builder, snp.id!, false),
-          throwsA(isA<ProjectAccessDeniedException>()),
-        );
-      }, tags: ['integration']);
+          await expectLater(
+            endpoints.snp.renameSnp(bob.builder, snp.id!, 'hijacked', ''),
+            throwsA(isA<ProjectAccessDeniedException>()),
+          );
+          await expectLater(
+            endpoints.snp.setShared(bob.builder, snp.id!, false),
+            throwsA(isA<ProjectAccessDeniedException>()),
+          );
+        },
+        tags: ['integration'],
+      );
 
-      test('another user cannot delete it, the owner and an admin can',
-          () async {
-        await enforceSso(session);
-        final alice = await signIn('alice@uni.example');
-        final bob = await signIn('bob@uni.example');
-        final root = await signIn('root@uni.example', isAdmin: true);
+      test(
+        'another user cannot delete it, the owner and an admin can',
+        () async {
+          await enforceSso(session);
+          final alice = await signIn('alice@uni.example');
+          final bob = await signIn('bob@uni.example');
+          final root = await signIn('root@uni.example', isAdmin: true);
 
-        final theirs = await seedSnp(session,
-            name: 'a', owner: alice.user.id, custom: true, folder: '');
-        await expectLater(
-          endpoints.snp.deleteCustomSnp(bob.builder, theirs.id!),
-          throwsA(isA<ProjectAccessDeniedException>()),
-        );
+          final theirs = await seedSnp(
+            session,
+            name: 'a',
+            owner: alice.user.id,
+            custom: true,
+            folder: '',
+          );
+          await expectLater(
+            endpoints.snp.deleteCustomSnp(bob.builder, theirs.id!),
+            throwsA(isA<ProjectAccessDeniedException>()),
+          );
 
-        await endpoints.snp.deleteCustomSnp(alice.builder, theirs.id!);
-        expect(await Snp.db.findById(session, theirs.id!), isNull);
+          await endpoints.snp.deleteCustomSnp(alice.builder, theirs.id!);
+          expect(await Snp.db.findById(session, theirs.id!), isNull);
 
-        final another = await seedSnp(session,
-            name: 'b', owner: alice.user.id, custom: true, folder: '');
-        await endpoints.snp.deleteCustomSnp(root.builder, another.id!);
-        expect(await Snp.db.findById(session, another.id!), isNull);
-      }, tags: ['integration']);
+          final another = await seedSnp(
+            session,
+            name: 'b',
+            owner: alice.user.id,
+            custom: true,
+            folder: '',
+          );
+          await endpoints.snp.deleteCustomSnp(root.builder, another.id!);
+          expect(await Snp.db.findById(session, another.id!), isNull);
+        },
+        tags: ['integration'],
+      );
 
-      test('nobody can reach a global SNP through the ordinary delete',
-          () async {
-        // The separation that keeps a user's delete button away from the shared
-        // genome tree. Even an admin has to use the other endpoint, which is
-        // what makes the type-the-name confirmation unavoidable.
-        await enforceSso(session);
-        final root = await signIn('root@uni.example', isAdmin: true);
-        final global = await seedSnp(session, name: 'dbsnp');
+      test(
+        'nobody can reach a global SNP through the ordinary delete',
+        () async {
+          // The separation that keeps a user's delete button away from the shared
+          // genome tree. Even an admin has to use the other endpoint, which is
+          // what makes the type-the-name confirmation unavoidable.
+          await enforceSso(session);
+          final root = await signIn('root@uni.example', isAdmin: true);
+          final global = await seedSnp(session, name: 'dbsnp');
 
-        await expectLater(
-          endpoints.snp.deleteCustomSnp(root.builder, global.id!),
-          throwsA(isA<ProjectAccessDeniedException>()),
-        );
-        expect(await Snp.db.findById(session, global.id!), isNotNull);
-      }, tags: ['integration']);
+          await expectLater(
+            endpoints.snp.deleteCustomSnp(root.builder, global.id!),
+            throwsA(isA<ProjectAccessDeniedException>()),
+          );
+          expect(await Snp.db.findById(session, global.id!), isNotNull);
+        },
+        tags: ['integration'],
+      );
     });
 
     group('deleteSnpAsAdmin', () {
@@ -272,13 +317,23 @@ void main() {
         final global = await seedSnp(session, name: 'dbsnp', folder: '');
 
         await expectLater(
-          endpoints.snp.deleteSnpAsAdmin(bob.builder, global.id!, null, force: false),
+          endpoints.snp.deleteSnpAsAdmin(
+            bob.builder,
+            global.id!,
+            null,
+            force: false,
+          ),
           throwsA(isA<ArgumentException>()),
         );
         // ⚠️ The settings password stops being accepted once sign-in is
         // enforced, so knowing it is not a way around the admin list.
         await expectLater(
-          endpoints.snp.deleteSnpAsAdmin(bob.builder, global.id!, 'changeme', force: false),
+          endpoints.snp.deleteSnpAsAdmin(
+            bob.builder,
+            global.id!,
+            'changeme',
+            force: false,
+          ),
           throwsA(isA<ArgumentException>()),
         );
         expect(await Snp.db.findById(session, global.id!), isNotNull);
@@ -289,43 +344,68 @@ void main() {
         final root = await signIn('root@uni.example', isAdmin: true);
         final global = await seedSnp(session, name: 'dbsnp', folder: '');
 
-        await endpoints.snp.deleteSnpAsAdmin(root.builder, global.id!, null, force: false);
+        await endpoints.snp.deleteSnpAsAdmin(
+          root.builder,
+          global.id!,
+          null,
+          force: false,
+        );
 
         expect(await Snp.db.findById(session, global.id!), isNull);
       }, tags: ['integration']);
 
-      test('it refuses while projects still use the SNP, and names them',
-          () async {
-        await enforceSso(session);
-        final root = await signIn('root@uni.example', isAdmin: true);
-        final snp = await seedSnp(session, name: 'dbsnp', folder: '');
-        final options = await seedOptions(session);
-        await seedProject(session,
-            name: 'Cardio panel', options: options.id!, snp: snp.id);
+      test(
+        'it refuses while projects still use the SNP, and names them',
+        () async {
+          await enforceSso(session);
+          final root = await signIn('root@uni.example', isAdmin: true);
+          final snp = await seedSnp(session, name: 'dbsnp', folder: '');
+          final options = await seedOptions(session);
+          await seedProject(
+            session,
+            name: 'Cardio panel',
+            options: options.id!,
+            snp: snp.id,
+          );
 
-        await expectLater(
-          endpoints.snp.deleteSnpAsAdmin(root.builder, snp.id!, null, force: false),
-          throwsA(
-            isA<ArgumentException>().having(
-              (e) => e.message,
-              'message',
-              contains('Cardio panel'),
+          await expectLater(
+            endpoints.snp.deleteSnpAsAdmin(
+              root.builder,
+              snp.id!,
+              null,
+              force: false,
             ),
-          ),
-        );
-        expect(await Snp.db.findById(session, snp.id!), isNotNull);
-      }, tags: ['integration']);
+            throwsA(
+              isA<ArgumentException>().having(
+                (e) => e.message,
+                'message',
+                contains('Cardio panel'),
+              ),
+            ),
+          );
+          expect(await Snp.db.findById(session, snp.id!), isNotNull);
+        },
+        tags: ['integration'],
+      );
 
       test('force deletes it anyway and releases the projects', () async {
         await enforceSso(session);
         final root = await signIn('root@uni.example', isAdmin: true);
         final snp = await seedSnp(session, name: 'dbsnp', folder: '');
         final options = await seedOptions(session);
-        final project = await seedProject(session,
-            name: 'Cardio panel', options: options.id!, snp: snp.id);
+        final project = await seedProject(
+          session,
+          name: 'Cardio panel',
+          options: options.id!,
+          snp: snp.id,
+        );
 
-        await endpoints.snp
-            .deleteSnpAsAdmin(root.builder, snp.id!, null, force: true);
+        await endpoints.snp.deleteSnpAsAdmin(
+          root.builder,
+          snp.id!,
+          null,
+          force: true,
+        );
 
         expect(await Snp.db.findById(session, snp.id!), isNull);
         expect((await Project.db.findById(session, project.id!))!.snp, isNull);
@@ -340,7 +420,10 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
 
     setUp(() async {
@@ -351,39 +434,64 @@ void main() {
 
     test('every SNP is listed, private or not', () async {
       final genome = await seedGenome(session, name: 'hg38');
-      await seedSnp(session,
-          name: 'private one', genome: genome.id, custom: true, private: true);
+      await seedSnp(
+        session,
+        name: 'private one',
+        genome: genome.id,
+        custom: true,
+        private: true,
+      );
       await seedSnp(session, name: 'global', genome: genome.id);
 
       expect(
-        (await endpoints.snp.listSnpsForGenome(sessionBuilder, genome.id!))
-            .map((s) => s.name),
+        (await endpoints.snp.listSnpsForGenome(
+          sessionBuilder,
+          genome.id!,
+        )).map((s) => s.name),
         containsAll(['private one', 'global']),
       );
     }, tags: ['integration']);
 
     test('a custom SNP can be deleted without an identity', () async {
-      final snp = await seedSnp(session, name: 'mine', custom: true, folder: '');
+      final snp = await seedSnp(
+        session,
+        name: 'mine',
+        custom: true,
+        folder: '',
+      );
       await endpoints.snp.deleteCustomSnp(sessionBuilder, snp.id!);
       expect(await Snp.db.findById(session, snp.id!), isNull);
     }, tags: ['integration']);
 
-    test('the settings password is the admin credential for a global', () async {
-      // ⚠️ Why this uses SettingsService.requireAdmin and not
-      // authz.requireAdmin: the latter deliberately throws while sign-in is off,
-      // which would leave a no-auth install with no way to remove a broken global
-      // SNP at all.
-      final global = await seedSnp(session, name: 'dbsnp', folder: '');
+    test(
+      'the settings password is the admin credential for a global',
+      () async {
+        // ⚠️ Why this uses SettingsService.requireAdmin and not
+        // authz.requireAdmin: the latter deliberately throws while sign-in is off,
+        // which would leave a no-auth install with no way to remove a broken global
+        // SNP at all.
+        final global = await seedSnp(session, name: 'dbsnp', folder: '');
 
-      await expectLater(
-        endpoints.snp.deleteSnpAsAdmin(sessionBuilder, global.id!, 'wrong', force: false),
-        throwsA(isA<ArgumentException>()),
-      );
-      expect(await Snp.db.findById(session, global.id!), isNotNull);
+        await expectLater(
+          endpoints.snp.deleteSnpAsAdmin(
+            sessionBuilder,
+            global.id!,
+            'wrong',
+            force: false,
+          ),
+          throwsA(isA<ArgumentException>()),
+        );
+        expect(await Snp.db.findById(session, global.id!), isNotNull);
 
-      await endpoints.snp
-          .deleteSnpAsAdmin(sessionBuilder, global.id!, 'changeme', force: false);
-      expect(await Snp.db.findById(session, global.id!), isNull);
-    }, tags: ['integration']);
+        await endpoints.snp.deleteSnpAsAdmin(
+          sessionBuilder,
+          global.id!,
+          'changeme',
+          force: false,
+        );
+        expect(await Snp.db.findById(session, global.id!), isNull);
+      },
+      tags: ['integration'],
+    );
   });
 }

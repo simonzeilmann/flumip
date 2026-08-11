@@ -143,12 +143,16 @@ class SystemProcessRunner implements ProcessRunner {
       if (!c.isCompleted) c.complete();
     }
 
-    process.stdout.transform(utf8.decoder).listen(
+    process.stdout
+        .transform(utf8.decoder)
+        .listen(
           out.write,
           onDone: () => complete(outClosed),
           onError: (_) => complete(outClosed),
         );
-    process.stderr.transform(utf8.decoder).listen(
+    process.stderr
+        .transform(utf8.decoder)
+        .listen(
           err.write,
           onDone: () => complete(errClosed),
           onError: (_) => complete(errClosed),
@@ -168,8 +172,10 @@ class SystemProcessRunner implements ProcessRunner {
 
     // Let anything already in flight land, but never wait on it indefinitely —
     // see above. On a normal exit both close at once and this costs nothing.
-    await Future.wait([outClosed.future, errClosed.future])
-        .timeout(streamCloseGrace, onTimeout: () => const []);
+    await Future.wait([
+      outClosed.future,
+      errClosed.future,
+    ]).timeout(streamCloseGrace, onTimeout: () => const []);
 
     if (timedOut) {
       throw ProcessTimeoutException(executable, timeout!, err.toString());

@@ -53,7 +53,11 @@ void main() {
       );
       int? genomeId;
       if (withGenome) {
-        final genome = await seedGenome(session, name: 'hg38', refPath: refPath);
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          refPath: refPath,
+        );
         genomeId = genome.id;
       }
       final project = await seedProject(
@@ -68,16 +72,23 @@ void main() {
       return (id: project.id!, dir: dir, refPath: refPath ?? '');
     }
 
-    test('createBedFile writes a bed file from the exon-script output',
-        () async {
-      final p = await prepare(genes: ['BRCA1']);
-      fake.stubRun('exon-script', exitCode: 0, stdout: 'chr17\t1\t2\tBRCA1\n' * 100);
-      await mipgenService.createBedFile(session, p.id);
-      expect(File('${p.dir}/genes.bed').existsSync(), isTrue);
-      // The exon script is invoked with [geneFile, refPath].
-      final call = fake.lastFor('exon-script')!;
-      expect(call.arguments, ['${p.dir}/genes.txt', p.refPath]);
-    }, tags: ['unit']);
+    test(
+      'createBedFile writes a bed file from the exon-script output',
+      () async {
+        final p = await prepare(genes: ['BRCA1']);
+        fake.stubRun(
+          'exon-script',
+          exitCode: 0,
+          stdout: 'chr17\t1\t2\tBRCA1\n' * 100,
+        );
+        await mipgenService.createBedFile(session, p.id);
+        expect(File('${p.dir}/genes.bed').existsSync(), isTrue);
+        // The exon script is invoked with [geneFile, refPath].
+        final call = fake.lastFor('exon-script')!;
+        expect(call.arguments, ['${p.dir}/genes.txt', p.refPath]);
+      },
+      tags: ['unit'],
+    );
 
     test('createBedFile throws when the project has no genome', () async {
       final p = await prepare(withGenome: false, genes: ['BRCA1']);
@@ -87,13 +98,17 @@ void main() {
       );
     }, tags: ['unit']);
 
-    test('createBedFile throws when the genome has no reference path', () async {
-      final p = await prepare(refPath: null, genes: ['BRCA1']);
-      expect(
-        () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('No reference path found in genome'),
-      );
-    }, tags: ['unit']);
+    test(
+      'createBedFile throws when the genome has no reference path',
+      () async {
+        final p = await prepare(refPath: null, genes: ['BRCA1']);
+        expect(
+          () => mipgenService.createBedFile(session, p.id),
+          throwsMessage('No reference path found in genome'),
+        );
+      },
+      tags: ['unit'],
+    );
 
     test('createBedFile throws when the project has no genes', () async {
       final p = await prepare();
@@ -125,8 +140,11 @@ void main() {
         mipgenExecutable: 'mipgen-exe',
       );
       final options = await seedOptions(session);
-      final genome =
-          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
       final project = await seedProject(
         session,
         name: 'demo',
@@ -135,12 +153,17 @@ void main() {
         genome: genome.id,
       );
       Directory('${base.path}/proj').createSync(recursive: true);
-      fake.stubRun('pgrep',
-          exitCode: 0, stdout: '777 mipgen -project_name demo\n');
+      fake.stubRun(
+        'pgrep',
+        exitCode: 0,
+        stdout: '777 mipgen -project_name demo\n',
+      );
 
       await NoScheduleMipgenService().generateMips(session, project.id!, false);
 
-      final started = fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
+      final started = fake.startCalls.firstWhere(
+        (c) => c.executable == 'mipgen-exe',
+      );
       expect(started.arguments, contains('-project_name'));
       expect(started.arguments, contains('demo'));
       final reloaded = await ProjectService().getProject(session, project.id!);
@@ -154,11 +177,15 @@ void main() {
       final base = createTempDir('genmips');
       await overrideSettingsDirs(session, projectDir: base.path);
       final options = await seedOptions(session);
-      final project = await seedProject(session,
-          options: options.id!, folderName: 'proj');
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        folderName: 'proj',
+      );
       Directory('${base.path}/proj').createSync(recursive: true);
       expect(
-        () => NoScheduleMipgenService().generateMips(session, project.id!, false),
+        () =>
+            NoScheduleMipgenService().generateMips(session, project.id!, false),
         throwsMessage('No genome found in project'),
       );
     }, tags: ['unit']);
@@ -173,24 +200,36 @@ void main() {
         projectDir: base.path,
         mipgenExecutable: 'mipgen-exe',
       );
-      final options =
-          await ProjectOptions.db.insertRow(session, ProjectOptions());
-      final genome =
-          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
-      final project = await seedProject(session,
-          name: 'demo',
-          options: options.id!,
-          folderName: 'proj',
-          genome: genome.id);
+      final options = await ProjectOptions.db.insertRow(
+        session,
+        ProjectOptions(),
+      );
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+      );
       Directory('${base.path}/proj').createSync(recursive: true);
-      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen -project_name demo\n');
+      fake.stubRun(
+        'pgrep',
+        exitCode: 0,
+        stdout: '777 mipgen -project_name demo\n',
+      );
 
       await expectLater(
         NoScheduleMipgenService().generateMips(session, project.id!, false),
         completes,
       );
-      final started =
-          fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
+      final started = fake.startCalls.firstWhere(
+        (c) => c.executable == 'mipgen-exe',
+      );
       expect(started.arguments, isNot(contains('-arm_lengths')));
     }, tags: ['unit']);
 
@@ -199,11 +238,16 @@ void main() {
       await overrideSettingsDirs(session, projectDir: base.path);
       final options = await seedOptions(session);
       final genome = await seedGenome(session, name: 'hg38'); // no fastaPath
-      final project = await seedProject(session,
-          options: options.id!, folderName: 'proj', genome: genome.id);
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+      );
       Directory('${base.path}/proj').createSync(recursive: true);
       expect(
-        () => NoScheduleMipgenService().generateMips(session, project.id!, false),
+        () =>
+            NoScheduleMipgenService().generateMips(session, project.id!, false),
         throwsMessage('No fasta path found in genome'),
       );
     }, tags: ['unit']);
@@ -216,100 +260,147 @@ void main() {
         mipgenExecutable: 'mipgen-exe',
       );
       final options = await seedOptions(session);
-      final genome =
-          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
-      final snp = await seedSnp(session,
-          name: 'dbsnp',
-          genome: genome.id,
-          vcfPath: '/data/snp/dbsnp.vcf.gz',
-          tbiPath: '/data/snp/dbsnp.vcf.gz.tbi');
-      final project = await seedProject(session,
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      final snp = await seedSnp(
+        session,
+        name: 'dbsnp',
+        genome: genome.id,
+        vcfPath: '/data/snp/dbsnp.vcf.gz',
+        tbiPath: '/data/snp/dbsnp.vcf.gz.tbi',
+      );
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+        snp: snp.id,
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
+      fake.stubRun(
+        'pgrep',
+        exitCode: 0,
+        stdout: '777 mipgen -project_name demo\n',
+      );
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final started = fake.startCalls.firstWhere(
+        (c) => c.executable == 'mipgen-exe',
+      );
+      expect(
+        started.arguments,
+        containsAllInOrder(['-snp_file', '/data/snp/dbsnp.vcf.gz']),
+      );
+    }, tags: ['unit']);
+
+    test(
+      'generateMips directs mipgen\'s output into the project directory',
+      () async {
+        // ⚠️ Without this, mipgen's own explanation of a failure goes into a pipe
+        // nobody reads, and every failure reaches the user as the bare string
+        // "MIP generation failed".
+        final base = createTempDir('genmips');
+        await overrideSettingsDirs(
+          session,
+          projectDir: base.path,
+          mipgenExecutable: 'mipgen-exe',
+        );
+        final options = await seedOptions(session);
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          fastaPath: '/data/hg38.fa',
+        );
+        final project = await seedProject(
+          session,
           name: 'demo',
           options: options.id!,
           folderName: 'proj',
           genome: genome.id,
-          snp: snp.id);
-      Directory('${base.path}/proj').createSync(recursive: true);
-      fake.stubRun('pgrep',
-          exitCode: 0, stdout: '777 mipgen -project_name demo\n');
+        );
+        Directory('${base.path}/proj').createSync(recursive: true);
+        fake.stubRun(
+          'pgrep',
+          exitCode: 0,
+          stdout: '777 mipgen -project_name demo\n',
+        );
 
-      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+        await NoScheduleMipgenService().generateMips(
+          session,
+          project.id!,
+          false,
+        );
 
-      final started =
-          fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
-      expect(started.arguments, containsAllInOrder(
-          ['-snp_file', '/data/snp/dbsnp.vcf.gz']));
-    }, tags: ['unit']);
+        final started = fake.startCalls.firstWhere(
+          (c) => c.executable == 'mipgen-exe',
+        );
+        expect(started.outputPath, '${base.path}/proj/$mipgenLogName');
+      },
+      tags: ['unit'],
+    );
 
-    test('generateMips directs mipgen\'s output into the project directory',
-        () async {
-      // ⚠️ Without this, mipgen's own explanation of a failure goes into a pipe
-      // nobody reads, and every failure reaches the user as the bare string
-      // "MIP generation failed".
-      final base = createTempDir('genmips');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        mipgenExecutable: 'mipgen-exe',
-      );
-      final options = await seedOptions(session);
-      final genome =
-          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
-      final project = await seedProject(session,
-          name: 'demo',
-          options: options.id!,
-          folderName: 'proj',
-          genome: genome.id);
-      Directory('${base.path}/proj').createSync(recursive: true);
-      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen -project_name demo\n');
-
-      await NoScheduleMipgenService().generateMips(session, project.id!, false);
-
-      final started =
-          fake.startCalls.firstWhere((c) => c.executable == 'mipgen-exe');
-      expect(started.outputPath, '${base.path}/proj/$mipgenLogName');
-    }, tags: ['unit']);
-
-    test('generateMips refuses to run when the chosen SNP is not ready',
-        () async {
-      // ⚠️ A behaviour change, and the point of it. The old code simply left
-      // `-snp_file` off the command line when the paths were empty, so the run
-      // went ahead and produced a perfectly plausible set of MIPs designed
-      // without the masking the user asked for — with nothing in the result to
-      // say so. Now that an SNP can fail to import or be deleted out from under
-      // a project, that is reachable in normal use.
-      final base = createTempDir('genmips');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        mipgenExecutable: 'mipgen-exe',
-      );
-      final options = await seedOptions(session);
-      final genome =
-          await seedGenome(session, name: 'hg38', fastaPath: '/data/hg38.fa');
-      final snp = await seedSnp(session,
+    test(
+      'generateMips refuses to run when the chosen SNP is not ready',
+      () async {
+        // ⚠️ A behaviour change, and the point of it. The old code simply left
+        // `-snp_file` off the command line when the paths were empty, so the run
+        // went ahead and produced a perfectly plausible set of MIPs designed
+        // without the masking the user asked for — with nothing in the result to
+        // say so. Now that an SNP can fail to import or be deleted out from under
+        // a project, that is reachable in normal use.
+        final base = createTempDir('genmips');
+        await overrideSettingsDirs(
+          session,
+          projectDir: base.path,
+          mipgenExecutable: 'mipgen-exe',
+        );
+        final options = await seedOptions(session);
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          fastaPath: '/data/hg38.fa',
+        );
+        final snp = await seedSnp(
+          session,
           name: 'broken panel',
           genome: genome.id,
           custom: true,
           status: SnpImportStatus.failed,
           vcfPath: '',
-          tbiPath: '');
-      final project = await seedProject(session,
+          tbiPath: '',
+        );
+        final project = await seedProject(
+          session,
           name: 'demo',
           options: options.id!,
           folderName: 'proj',
           genome: genome.id,
-          snp: snp.id);
-      Directory('${base.path}/proj').createSync(recursive: true);
+          snp: snp.id,
+        );
+        Directory('${base.path}/proj').createSync(recursive: true);
 
-      await expectLater(
-        NoScheduleMipgenService().generateMips(session, project.id!, false),
-        throwsA(isA<ArgumentException>().having(
-          (e) => e.message, 'message', contains('broken panel'))),
-      );
-      expect(fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
-          isEmpty);
-    }, tags: ['unit']);
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsA(
+            isA<ArgumentException>().having(
+              (e) => e.message,
+              'message',
+              contains('broken panel'),
+            ),
+          ),
+        );
+        expect(
+          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+          isEmpty,
+        );
+      },
+      tags: ['unit'],
+    );
   });
 
   withServerpod('MipgenService.mipgenIsFinished', (sessionBuilder, endpoints) {
@@ -344,7 +435,9 @@ void main() {
     test('records failure and finalizes when progress is empty', () async {
       final p = await prepare(withProgress: false);
       await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
       final project = await ProjectService().getProject(session, p.id);
       // With no log to read, it says so and points at the file to look for,
       // rather than repeating a bare "failed".
@@ -367,7 +460,9 @@ void main() {
       );
 
       await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
 
       final project = await ProjectService().getProject(session, p.id);
       expect(project.error, contains('no index found'));
@@ -376,24 +471,30 @@ void main() {
       expect(project.error, isNot(contains('feature #')));
     }, tags: ['unit']);
 
-    test('a very long complaint is truncated rather than stored whole',
-        () async {
-      final p = await prepare(withProgress: false);
-      File('${p.dir}/$mipgenLogName')
-          .writeAsStringSync('x' * 5000);
+    test(
+      'a very long complaint is truncated rather than stored whole',
+      () async {
+        final p = await prepare(withProgress: false);
+        File('${p.dir}/$mipgenLogName').writeAsStringSync('x' * 5000);
 
-      await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        await mipgenService.mipgenIsFinished(
+          session,
+          await ProjectService().getProject(session, p.id),
+        );
 
-      final project = await ProjectService().getProject(session, p.id);
-      expect(project.error.length, lessThan(500));
-    }, tags: ['unit']);
+        final project = await ProjectService().getProject(session, p.id);
+        expect(project.error.length, lessThan(500));
+      },
+      tags: ['unit'],
+    );
 
     test('finalizes successfully and generates the UCSC track', () async {
       final p = await prepare(withProgress: true);
       fake.stubRun('python', exitCode: 0);
       await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
       final project = await ProjectService().getProject(session, p.id);
       expect(project.error, '');
       expect(project.active, isFalse);
@@ -413,7 +514,9 @@ void main() {
       fake.runError = Exception('python blew up');
 
       await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
 
       final project = await ProjectService().getProject(session, p.id);
       expect(project.active, isFalse);
@@ -430,7 +533,9 @@ void main() {
       final p = await prepare(withProgress: false);
 
       await mipgenService.mipgenIsFinished(
-          session, await ProjectService().getProject(session, p.id));
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
 
       final project = await ProjectService().getProject(session, p.id);
       expect(project.active, isFalse);

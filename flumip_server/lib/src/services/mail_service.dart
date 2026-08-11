@@ -25,8 +25,7 @@ class MailService {
     final mailSender = sl<MailSender>();
 
     if (to.isEmpty) {
-      session.log('No recipient supplied for test mail',
-          level: LogLevel.error);
+      session.log('No recipient supplied for test mail', level: LogLevel.error);
       throw ArgumentException(message: 'No recipient supplied');
     }
 
@@ -100,7 +99,12 @@ class MailService {
       return;
     }
 
-    final details = await _detailsFor(session, project, settings, failed: failed);
+    final details = await _detailsFor(
+      session,
+      project,
+      settings,
+      failed: failed,
+    );
 
     try {
       await mailSender.send(

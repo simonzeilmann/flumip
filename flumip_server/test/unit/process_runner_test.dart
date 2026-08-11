@@ -16,10 +16,10 @@ void main() {
 
   group('run', () {
     test('returns stdout, stderr and the exit code', () async {
-      final result = await runner.run(
-        'sh',
-        ['-c', 'echo out; echo err >&2; exit 3'],
-      );
+      final result = await runner.run('sh', [
+        '-c',
+        'echo out; echo err >&2; exit 3',
+      ]);
       expect(result.exitCode, 3);
       expect(result.stdout.toString().trim(), 'out');
       expect(result.stderr.toString().trim(), 'err');
@@ -31,11 +31,10 @@ void main() {
       // going to give up.
       final stopwatch = Stopwatch()..start();
       await expectLater(
-        runner.run(
-          'sh',
-          ['-c', 'sleep 30'],
-          timeout: const Duration(milliseconds: 300),
-        ),
+        runner.run('sh', [
+          '-c',
+          'sleep 30',
+        ], timeout: const Duration(milliseconds: 300)),
         throwsA(isA<ProcessTimeoutException>()),
       );
       stopwatch.stop();
@@ -46,29 +45,30 @@ void main() {
       );
     }, tags: ['unit']);
 
-    test('a timeout carries whatever the program had complained about',
-        () async {
-      // A hang is far easier to diagnose when you can see how far it got.
-      try {
-        await runner.run(
-          'sh',
-          ['-c', 'echo "opening the reference" >&2; sleep 30'],
-          timeout: const Duration(milliseconds: 400),
-        );
-        fail('expected a timeout');
-      } on ProcessTimeoutException catch (e) {
-        expect(e.executable, 'sh');
-        expect(e.toString(), contains('opening the reference'));
-        expect(e.toString(), contains('did not finish'));
-      }
-    }, tags: ['unit']);
+    test(
+      'a timeout carries whatever the program had complained about',
+      () async {
+        // A hang is far easier to diagnose when you can see how far it got.
+        try {
+          await runner.run('sh', [
+            '-c',
+            'echo "opening the reference" >&2; sleep 30',
+          ], timeout: const Duration(milliseconds: 400));
+          fail('expected a timeout');
+        } on ProcessTimeoutException catch (e) {
+          expect(e.executable, 'sh');
+          expect(e.toString(), contains('opening the reference'));
+          expect(e.toString(), contains('did not finish'));
+        }
+      },
+      tags: ['unit'],
+    );
 
     test('a program that finishes inside its deadline is unaffected', () async {
-      final result = await runner.run(
-        'sh',
-        ['-c', 'echo quick'],
-        timeout: const Duration(seconds: 30),
-      );
+      final result = await runner.run('sh', [
+        '-c',
+        'echo quick',
+      ], timeout: const Duration(seconds: 30));
       expect(result.exitCode, 0);
       expect(result.stdout.toString().trim(), 'quick');
     }, tags: ['unit']);
@@ -89,11 +89,10 @@ void main() {
       // An undrained pipe stalls the child once it has written more than the
       // buffer holds, which is about 64 kB — so this hangs forever if either
       // stream is left uncollected.
-      final result = await runner.run(
-        'sh',
-        ['-c', 'for i in \$(seq 1 5000); do echo "line \$i of output"; done'],
-        timeout: const Duration(seconds: 30),
-      );
+      final result = await runner.run('sh', [
+        '-c',
+        'for i in \$(seq 1 5000); do echo "line \$i of output"; done',
+      ], timeout: const Duration(seconds: 30));
       expect(result.exitCode, 0);
       expect(result.stdout.toString().length, greaterThan(64 * 1024));
     }, tags: ['unit']);
@@ -101,11 +100,10 @@ void main() {
     test('a working directory is honoured', () async {
       final dir = createTempDir('flumip_pr');
       File('${dir.path}/marker.txt').writeAsStringSync('x');
-      final result = await runner.run(
-        'sh',
-        ['-c', 'ls'],
-        workingDirectory: dir.path,
-      );
+      final result = await runner.run('sh', [
+        '-c',
+        'ls',
+      ], workingDirectory: dir.path);
       expect(result.stdout.toString(), contains('marker.txt'));
     }, tags: ['unit']);
   });
@@ -115,11 +113,10 @@ void main() {
       final dir = createTempDir('flumip_pr');
       final log = '${dir.path}/tool.log';
 
-      await runner.start(
-        'sh',
-        ['-c', 'echo first; echo "second, on stderr" >&2'],
-        outputPath: log,
-      );
+      await runner.start('sh', [
+        '-c',
+        'echo first; echo "second, on stderr" >&2',
+      ], outputPath: log);
 
       // The child is fire-and-forget, so wait for it to have written.
       for (var i = 0; i < 50; i++) {

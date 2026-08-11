@@ -52,16 +52,18 @@ class FakeMailSender implements MailSender {
     required String body,
     String? html,
   }) async {
-    sent.add(SentMail(
-      to: to,
-      subject: subject,
-      body: body,
-      html: html,
-      host: settings.smtpServer,
-      port: settings.smtpPort,
-      from: settings.smtpFrom,
-      startTLS: settings.startTLS,
-    ));
+    sent.add(
+      SentMail(
+        to: to,
+        subject: subject,
+        body: body,
+        html: html,
+        host: settings.smtpServer,
+        port: settings.smtpPort,
+        from: settings.smtpFrom,
+        startTLS: settings.startTLS,
+      ),
+    );
     if (error != null) throw error!;
   }
 }

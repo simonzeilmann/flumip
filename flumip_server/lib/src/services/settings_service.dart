@@ -38,7 +38,10 @@ class SettingsService {
     return settings.first;
   }
 
-  Future<Settings> getSettingsExternal(Session session, String? password) async {
+  Future<Settings> getSettingsExternal(
+    Session session,
+    String? password,
+  ) async {
     var settings = await getSettings(session);
     if (!_isAdmin(session, settings, password)) {
       throw ArgumentException(message: 'Invalid password');
@@ -80,7 +83,9 @@ class SettingsService {
   /// enforcing", which keeps the password working — the safe direction, since
   /// the alternative is a server nobody can configure.
   bool _isAdmin(Session session, Settings settings, String? password) {
-    if (session.authenticated?.scopes.contains(adminScope) ?? false) return true;
+    if (session.authenticated?.scopes.contains(adminScope) ?? false) {
+      return true;
+    }
 
     var enforcing = false;
     if (sl.isRegistered<AuthRuntime>()) {
@@ -126,7 +131,10 @@ class SettingsService {
         "deleting the duplicates",
         level: LogLevel.warning,
       );
-      await Settings.db.deleteWhere(session, where: (t) => t.id.notEquals(keep));
+      await Settings.db.deleteWhere(
+        session,
+        where: (t) => t.id.notEquals(keep),
+      );
     }
   }
 

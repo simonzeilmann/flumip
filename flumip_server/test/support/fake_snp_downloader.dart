@@ -32,7 +32,7 @@ class DownloadInvocation {
 class FakeSnpDownloader implements SnpDownloader {
   final List<DownloadInvocation> invocations = [];
   final Map<String, ({int bytes, Object? error, List<(int, int?)> progress})>
-      _stubs = {};
+  _stubs = {};
 
   /// Bytes written by a call with no stub. Zero means "write nothing".
   int defaultBytes = 64;
@@ -68,12 +68,14 @@ class FakeSnpDownloader implements SnpDownloader {
     required List<String> allowedHosts,
     required FutureOr<void> Function(int received, int? total) onProgress,
   }) async {
-    invocations.add(DownloadInvocation(
-      url: url,
-      target: target,
-      maxBytes: maxBytes,
-      allowedHosts: allowedHosts,
-    ));
+    invocations.add(
+      DownloadInvocation(
+        url: url,
+        target: target,
+        maxBytes: maxBytes,
+        allowedHosts: allowedHosts,
+      ),
+    );
 
     final stub = _stubs[url.toString()];
     final failure = stub?.error ?? error;
