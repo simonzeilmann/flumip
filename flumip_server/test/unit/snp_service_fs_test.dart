@@ -16,8 +16,7 @@ final fake = FakeProcessRunner();
 /// Writes a directory that looks like a finished SNP set.
 void writeSnpDir(String dir, {String stem = 'panel', bool withTbi = true}) {
   Directory(dir).createSync(recursive: true);
-  File('$dir/$stem.vcf.gz')
-      .writeAsBytesSync(completeBgzf(filler: 48));
+  File('$dir/$stem.vcf.gz').writeAsBytesSync(completeBgzf(filler: 48));
   if (withTbi) File('$dir/$stem.vcf.gz.tbi').writeAsStringSync('i' * 8);
 }
 
@@ -74,7 +73,10 @@ void main() {
         await service.collectCustomSnps(session);
         await service.collectCustomSnps(session);
 
-        expect(await Snp.db.find(session, where: (t) => t.id > 0), hasLength(1));
+        expect(
+          await Snp.db.find(session, where: (t) => t.id > 0),
+          hasLength(1),
+        );
       }, tags: ['unit']);
 
       test('skips a directory whose genome name matches nothing', () async {
@@ -167,8 +169,10 @@ void main() {
         final dir = '$root/common/hg38/mypanel';
         writeSnpDir(dir, stem: 'v1');
         await service.collectCustomSnps(session);
-        final before =
-            (await Snp.db.find(session, where: (t) => t.id > 0)).single;
+        final before = (await Snp.db.find(
+          session,
+          where: (t) => t.id > 0,
+        )).single;
 
         Directory(dir).deleteSync(recursive: true);
         Directory(dir).createSync(recursive: true);
@@ -176,8 +180,10 @@ void main() {
         File('$dir/v2.vcf.gz.tbi').writeAsStringSync('i' * 8);
         await service.collectCustomSnps(session);
 
-        final after =
-            (await Snp.db.find(session, where: (t) => t.id > 0)).single;
+        final after = (await Snp.db.find(
+          session,
+          where: (t) => t.id > 0,
+        )).single;
         expect(after.id, before.id, reason: 'the same row, refreshed');
         expect(after.vcfPath, '$dir/v2.vcf.gz');
         expect(after.size, greaterThan(before.size));
@@ -201,28 +207,33 @@ void main() {
         expect(call.runInShell, isFalse);
       }, tags: ['unit']);
 
-      test('a plain gzip VCF is refused in words, without asking tabix',
-          () async {
-        // The commonest mistake, and tabix's own message for it is not something
-        // a biologist should have to decode.
-        final root = await useTempCustomDir();
-        await seedGenome(session, name: 'hg38');
-        final dir = '$root/common/hg38/plaingzip';
-        Directory(dir).createSync(recursive: true);
-        // FEXTRA cleared: gzip, but not BGZF.
-        File('$dir/panel.vcf.gz')
-            .writeAsBytesSync(plainGzip());
-        File('$dir/panel.vcf.gz.tbi').writeAsStringSync('i');
-        await service.collectCustomSnps(session);
+      test(
+        'a plain gzip VCF is refused in words, without asking tabix',
+        () async {
+          // The commonest mistake, and tabix's own message for it is not something
+          // a biologist should have to decode.
+          final root = await useTempCustomDir();
+          await seedGenome(session, name: 'hg38');
+          final dir = '$root/common/hg38/plaingzip';
+          Directory(dir).createSync(recursive: true);
+          // FEXTRA cleared: gzip, but not BGZF.
+          File('$dir/panel.vcf.gz').writeAsBytesSync(plainGzip());
+          File('$dir/panel.vcf.gz.tbi').writeAsStringSync('i');
+          await service.collectCustomSnps(session);
 
-        File('$dir/panel.vcf.gz.tbi').deleteSync();
-        await service.collectCustomSnps(session);
+          File('$dir/panel.vcf.gz.tbi').deleteSync();
+          await service.collectCustomSnps(session);
 
-        final snp = (await Snp.db.find(session, where: (t) => t.id > 0)).single;
-        expect(snp.status, SnpImportStatus.failed);
-        expect(snp.statusMessage, contains('bgzip'));
-        expect(fake.runCalls.where((c) => c.executable == 'tabix'), isEmpty);
-      }, tags: ['unit']);
+          final snp = (await Snp.db.find(
+            session,
+            where: (t) => t.id > 0,
+          )).single;
+          expect(snp.status, SnpImportStatus.failed);
+          expect(snp.statusMessage, contains('bgzip'));
+          expect(fake.runCalls.where((c) => c.executable == 'tabix'), isEmpty);
+        },
+        tags: ['unit'],
+      );
 
       test('recovers from failed once the index is put back', () async {
         // ⚠️ The regression this file exists for. `failed` was originally a state
@@ -253,32 +264,42 @@ void main() {
         expect(snp.tbiPath, '$dir/panel.vcf.gz.tbi');
       }, tags: ['unit']);
 
-      test('leaves a running tabix job alone, but fails it once stale',
-          () async {
-        final root = await useTempCustomDir();
-        final dir = '$root/user/1';
-        Directory(dir).createSync(recursive: true);
-        File('$dir/panel.vcf.gz').writeAsStringSync('x' * 64);
-        final live = await seedSnp(session,
+      test(
+        'leaves a running tabix job alone, but fails it once stale',
+        () async {
+          final root = await useTempCustomDir();
+          final dir = '$root/user/1';
+          Directory(dir).createSync(recursive: true);
+          File('$dir/panel.vcf.gz').writeAsStringSync('x' * 64);
+          final live = await seedSnp(
+            session,
             custom: true,
             folder: dir,
             vcfPath: '$dir/panel.vcf.gz',
             tbiPath: '',
             status: SnpImportStatus.indexing,
-            statusUpdated: DateTime.now().toUtc());
+            statusUpdated: DateTime.now().toUtc(),
+          );
 
-        await service.collectCustomSnps(session);
-        expect((await Snp.db.findById(session, live.id!))!.status,
-            SnpImportStatus.indexing);
+          await service.collectCustomSnps(session);
+          expect(
+            (await Snp.db.findById(session, live.id!))!.status,
+            SnpImportStatus.indexing,
+          );
 
-        live.statusUpdated =
-            DateTime.now().toUtc().subtract(SnpService.stuckImportAfter * 2);
-        await Snp.db.updateRow(session, live);
-        await service.collectCustomSnps(session);
+          live.statusUpdated = DateTime.now().toUtc().subtract(
+            SnpService.stuckImportAfter * 2,
+          );
+          await Snp.db.updateRow(session, live);
+          await service.collectCustomSnps(session);
 
-        expect((await Snp.db.findById(session, live.id!))!.status,
-            SnpImportStatus.failed);
-      }, tags: ['unit']);
+          expect(
+            (await Snp.db.findById(session, live.id!))!.status,
+            SnpImportStatus.failed,
+          );
+        },
+        tags: ['unit'],
+      );
 
       test('leaves a row alone when its whole filesystem is missing', () async {
         // ⚠️ An unmounted NFS share must not flip every global SNP to failed,
@@ -307,8 +328,8 @@ void main() {
           custom: true,
           status: SnpImportStatus.downloading,
           statusUpdated: DateTime.now().toUtc().subtract(
-                SnpService.stuckImportAfter * 2,
-              ),
+            SnpService.stuckImportAfter * 2,
+          ),
         );
 
         await service.collectCustomSnps(session);
@@ -395,6 +416,124 @@ void main() {
         expect(fresh.existsSync(), isTrue);
       }, tags: ['unit']);
     });
+
+    group('an upload nobody ever finished', () {
+      /// A slot as `createUpload` leaves it: a row, a directory, no files.
+      Future<Snp> pendingSlot(
+        String root, {
+        required Duration age,
+        String? sourceVcfUrl,
+      }) async {
+        final snp = await seedSnp(
+          session,
+          custom: true,
+          status: SnpImportStatus.pending,
+          statusMessage: 'Waiting for the files',
+          statusUpdated: DateTime.now().toUtc().subtract(age),
+          vcfPath: '',
+          tbiPath: '',
+          folder: '$root/user/1/slot',
+          sourceVcfUrl: sourceVcfUrl,
+        );
+        Directory(snp.folder).createSync(recursive: true);
+        return snp;
+      }
+
+      Future<Snp> reload(Snp snp) async =>
+          (await Snp.db.findById(session, snp.id!))!;
+
+      test('a slot just created is left alone', () async {
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(root, age: const Duration(minutes: 1));
+
+        await service.collectCustomSnps(session);
+
+        expect((await reload(snp)).status, SnpImportStatus.pending);
+      }, tags: ['unit']);
+
+      test('⚠️ a slot whose upload is still running is left alone', () async {
+        // The test that stops this fix being worse than the bug. A browser
+        // upload is one long PUT that never touches the row, so the row looks
+        // motionless for the whole transfer — an hour, on a 1.5 GB set over a
+        // slow link. Only the growing `.part` file says otherwise.
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(root, age: const Duration(hours: 2));
+
+        final incoming = Directory('${snp.folder}/.incoming')
+          ..createSync(recursive: true);
+        File('${incoming.path}/panel.vcf.gz.part')
+          ..writeAsStringSync('bytes so far')
+          ..setLastModifiedSync(DateTime.now());
+
+        await service.collectCustomSnps(session);
+
+        expect(
+          (await reload(snp)).status,
+          SnpImportStatus.pending,
+          reason: 'bytes arrived a moment ago; the upload is alive',
+        );
+      }, tags: ['unit']);
+
+      test('a slot with nothing arriving is failed, and says why', () async {
+        // The reported bug: closing the tab mid-transfer left a row reading
+        // "Queued" that nothing would ever settle.
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(root, age: const Duration(hours: 2));
+
+        await service.collectCustomSnps(session);
+
+        final settled = await reload(snp);
+        expect(settled.status, SnpImportStatus.failed);
+        expect(settled.statusMessage, contains('No files arrived'));
+        expect(settled.statusMessage, contains('browser tab'));
+      }, tags: ['unit']);
+
+      test('a stale .part is not mistaken for a live upload', () async {
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(root, age: const Duration(hours: 2));
+
+        final incoming = Directory('${snp.folder}/.incoming')
+          ..createSync(recursive: true);
+        File('${incoming.path}/panel.vcf.gz.part')
+          ..writeAsStringSync('half a file')
+          ..setLastModifiedSync(
+            DateTime.now().subtract(const Duration(hours: 2)),
+          );
+
+        await service.collectCustomSnps(session);
+
+        expect((await reload(snp)).status, SnpImportStatus.failed);
+      }, tags: ['unit']);
+
+      test('a stale URL import is told it can be retried instead', () async {
+        // Same dead end, different cause and different way out: this one has an
+        // address to fetch from, so Retry is a real offer.
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(
+          root,
+          age: const Duration(hours: 2),
+          sourceVcfUrl: 'https://example.org/panel.vcf.gz',
+        );
+
+        await service.collectCustomSnps(session);
+
+        final settled = await reload(snp);
+        expect(settled.status, SnpImportStatus.failed);
+        expect(settled.statusMessage, contains('Retry'));
+        expect(settled.statusMessage, isNot(contains('No files arrived')));
+      }, tags: ['unit']);
+
+      test('⚠️ the row is failed, never deleted', () async {
+        // Failing is reversible and visible; deleting somebody's row on a timer
+        // is not. The tile offers a one-click delete once it says failed.
+        final root = await useTempCustomDir();
+        final snp = await pendingSlot(root, age: const Duration(hours: 2));
+
+        await service.collectCustomSnps(session);
+
+        expect(await Snp.db.findById(session, snp.id!), isNotNull);
+      }, tags: ['unit']);
+    });
   });
 
   withServerpod('SnpService.deleteSnp', (sessionBuilder, endpoints) {
@@ -441,8 +580,11 @@ void main() {
       await service.collectCustomSnps(session);
       final snp = (await Snp.db.find(session, where: (t) => t.id > 0)).single;
       final options = await seedOptions(session);
-      final project =
-          await seedProject(session, options: options.id!, snp: snp.id);
+      final project = await seedProject(
+        session,
+        options: options.id!,
+        snp: snp.id,
+      );
 
       await service.deleteSnp(session, snp);
 
@@ -453,8 +595,12 @@ void main() {
     test('snpUsage names the projects pointing at an SNP', () async {
       final snp = await seedSnp(session, custom: true);
       final options = await seedOptions(session);
-      await seedProject(session,
-          name: 'Cardio panel', options: options.id!, snp: snp.id);
+      await seedProject(
+        session,
+        name: 'Cardio panel',
+        options: options.id!,
+        snp: snp.id,
+      );
       await seedProject(session, name: 'Unrelated', options: options.id!);
 
       final usage = await service.snpUsage(session, snp.id!);

@@ -177,6 +177,12 @@ class SnpUploadRoute extends Route {
           'a declared $declared.',
           level: LogLevel.warning,
         );
+        await snpService.failInterruptedUpload(
+          session,
+          snp.id!,
+          'The upload arrived incomplete — $written of $declared bytes. '
+          'Upload the set again.',
+        );
         return Response.badRequest(
           body: Body.fromString(
             'The upload arrived incomplete ($written of $declared bytes). '
@@ -219,6 +225,18 @@ class SnpUploadRoute extends Route {
         level: LogLevel.error,
         exception: e,
         stackTrace: stackTrace,
+      );
+      // ⚠️ Settle the row here too, not just the file. This is the moment the
+      // server learns the transfer is dead — closing the browser tab lands
+      // exactly here — and leaving the row at `pending` is what made an
+      // interrupted upload sit reading "Queued" until somebody noticed the
+      // overflow menu. The reconcile sweep is the backstop for the case this
+      // never runs at all, such as the server restarting mid-transfer.
+      await snpService.failInterruptedUpload(
+        session,
+        snp.id!,
+        'The upload did not finish — the connection dropped, most likely '
+        'because the browser tab closed. Upload the set again.',
       );
       return Response.forbidden(
         body: Body.fromString('The upload did not complete.'),

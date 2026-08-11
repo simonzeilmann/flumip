@@ -42,26 +42,34 @@ void main() {
     }
 
     group('accepted names', () {
-      test('a .vcf.gz stages under .incoming and targets the directory',
-          () async {
-        final snp = await pending();
+      test(
+        'a .vcf.gz stages under .incoming and targets the directory',
+        () async {
+          final snp = await pending();
 
-        final paths =
-            await service.resolveUploadTarget(session, snp, 'panel.vcf.gz');
+          final paths = await service.resolveUploadTarget(
+            session,
+            snp,
+            'panel.vcf.gz',
+          );
 
-        expect(paths, isNotNull);
-        expect(
-          paths!.partial.path,
-          '${snp.folder}/${SnpService.incomingDirName}/panel.vcf.gz.part',
-        );
-        expect(paths.target.path, '${snp.folder}/panel.vcf.gz');
-        // ⚠️ .incoming is a *directory*, so nothing that lists an SNP folder for
-        // files can mistake a half-written .part for a finished VCF.
-        expect(
-          Directory('${snp.folder}/${SnpService.incomingDirName}').existsSync(),
-          isTrue,
-        );
-      }, tags: ['unit']);
+          expect(paths, isNotNull);
+          expect(
+            paths!.partial.path,
+            '${snp.folder}/${SnpService.incomingDirName}/panel.vcf.gz.part',
+          );
+          expect(paths.target.path, '${snp.folder}/panel.vcf.gz');
+          // ⚠️ .incoming is a *directory*, so nothing that lists an SNP folder for
+          // files can mistake a half-written .part for a finished VCF.
+          expect(
+            Directory(
+              '${snp.folder}/${SnpService.incomingDirName}',
+            ).existsSync(),
+            isTrue,
+          );
+        },
+        tags: ['unit'],
+      );
 
       test('an index is accepted too', () async {
         final snp = await pending();
@@ -99,10 +107,7 @@ void main() {
       ]) {
         test('refuses "$name"', () async {
           final snp = await pending();
-          expect(
-            await service.resolveUploadTarget(session, snp, name),
-            isNull,
-          );
+          expect(await service.resolveUploadTarget(session, snp, name), isNull);
         }, tags: ['unit']);
       }
     });
@@ -164,6 +169,66 @@ void main() {
         );
       }, tags: ['unit']);
     });
+
+    group('an upload that dies mid-transfer', () {
+      // ⚠️ The reported bug: closing the browser tab left a row reading
+      // "Queued" for good. The route already discarded the half-written `.part`
+      // on a dropped socket — it just never told the row, and the only thing
+      // that would eventually settle it was a reconcile pass half an hour later.
+      test('settles the row rather than leaving it queued', () async {
+        final snp = await pending();
+
+        await service.failInterruptedUpload(
+          session,
+          snp.id!,
+          'The upload did not finish — the connection dropped.',
+        );
+
+        final settled = (await Snp.db.findById(session, snp.id!))!;
+        expect(settled.status, SnpImportStatus.failed);
+        expect(settled.statusMessage, contains('did not finish'));
+      }, tags: ['unit']);
+
+      test('a row that already failed can be settled again', () async {
+        // The two files are uploaded one after another, so a set can lose the
+        // second PUT after the first already marked it failed.
+        final snp = await pending(status: SnpImportStatus.failed);
+
+        await service.failInterruptedUpload(
+          session,
+          snp.id!,
+          'Second failure.',
+        );
+
+        expect(
+          (await Snp.db.findById(session, snp.id!))!.statusMessage,
+          'Second failure.',
+        );
+      }, tags: ['unit']);
+
+      test('⚠️ never touches a set that has since become ready', () async {
+        // The route holds its `snp` for the length of the transfer, which can be
+        // many minutes on a multi-gigabyte set. A late failure from an
+        // abandoned request must not mark a settled set broken.
+        final snp = await pending(status: SnpImportStatus.ready);
+
+        await service.failInterruptedUpload(session, snp.id!, 'Too late.');
+
+        final after = (await Snp.db.findById(session, snp.id!))!;
+        expect(after.status, SnpImportStatus.ready);
+        expect(after.statusMessage, isNot('Too late.'));
+      }, tags: ['unit']);
+
+      test('a row deleted underneath it is not an error', () async {
+        final snp = await pending();
+        await Snp.db.deleteRow(session, snp);
+
+        await expectLater(
+          service.failInterruptedUpload(session, snp.id!, 'Gone.'),
+          completes,
+        );
+      }, tags: ['unit']);
+    });
   });
 
   withServerpod('SnpService.settleUpload', (sessionBuilder, endpoints) {
@@ -190,8 +255,9 @@ void main() {
       );
       final dir = await service.createUserDirectory(session, snp.id!);
       if (withVcf) {
-        File('${dir.path}/panel.vcf.gz')
-            .writeAsBytesSync(vcfBytes ?? completeBgzf());
+        File(
+          '${dir.path}/panel.vcf.gz',
+        ).writeAsBytesSync(vcfBytes ?? completeBgzf());
       }
       if (withTbi) {
         File('${dir.path}/panel.vcf.gz.tbi').writeAsStringSync('index');
@@ -281,48 +347,56 @@ void main() {
     setUp(fake.reset);
     final session = sessionBuilder.build();
 
-    test('createUpload makes a pending row with its own directory', () async {
-      final root = createTempDir('flumip_create');
-      await overrideSettingsDirs(session, customSnpDir: root.path);
-      final genome = await seedGenome(session, name: 'hg38');
+    test(
+      'createUpload makes a pending row with its own directory',
+      () async {
+        final root = createTempDir('flumip_create');
+        await overrideSettingsDirs(session, customSnpDir: root.path);
+        final genome = await seedGenome(session, name: 'hg38');
 
-      final snp = await endpoints.snp.createUpload(
-        sessionBuilder,
-        CustomSnpRequestDto(
-          name: 'my panel',
-          genomeId: genome.id!,
-          private: true,
-        ),
-      );
-
-      expect(snp.status, SnpImportStatus.pending);
-      expect(snp.custom, isTrue);
-      expect(snp.genome, genome.id);
-      // The path is derived from the row id, so nothing a user typed can reach it.
-      expect(snp.folder, '${root.path}/user/${snp.id}');
-      expect(Directory(snp.folder).existsSync(), isTrue);
-    }, tags: ['integration']);
-
-    test('createUpload refuses an empty name and an unknown genome', () async {
-      final root = createTempDir('flumip_create');
-      await overrideSettingsDirs(session, customSnpDir: root.path);
-      final genome = await seedGenome(session, name: 'hg38');
-
-      await expectLater(
-        endpoints.snp.createUpload(
+        final snp = await endpoints.snp.createUpload(
           sessionBuilder,
-          CustomSnpRequestDto(name: ' ', genomeId: genome.id!, private: true),
-        ),
-        throwsA(isA<ArgumentException>()),
-      );
-      await expectLater(
-        endpoints.snp.createUpload(
-          sessionBuilder,
-          CustomSnpRequestDto(name: 'x', genomeId: -1, private: true),
-        ),
-        throwsA(isA<FlumipFileNotFoundException>()),
-      );
-    }, tags: ['integration']);
+          CustomSnpRequestDto(
+            name: 'my panel',
+            genomeId: genome.id!,
+            private: true,
+          ),
+        );
+
+        expect(snp.status, SnpImportStatus.pending);
+        expect(snp.custom, isTrue);
+        expect(snp.genome, genome.id);
+        // The path is derived from the row id, so nothing a user typed can reach it.
+        expect(snp.folder, '${root.path}/user/${snp.id}');
+        expect(Directory(snp.folder).existsSync(), isTrue);
+      },
+      tags: ['integration'],
+    );
+
+    test(
+      'createUpload refuses an empty name and an unknown genome',
+      () async {
+        final root = createTempDir('flumip_create');
+        await overrideSettingsDirs(session, customSnpDir: root.path);
+        final genome = await seedGenome(session, name: 'hg38');
+
+        await expectLater(
+          endpoints.snp.createUpload(
+            sessionBuilder,
+            CustomSnpRequestDto(name: ' ', genomeId: genome.id!, private: true),
+          ),
+          throwsA(isA<ArgumentException>()),
+        );
+        await expectLater(
+          endpoints.snp.createUpload(
+            sessionBuilder,
+            CustomSnpRequestDto(name: 'x', genomeId: -1, private: true),
+          ),
+          throwsA(isA<FlumipFileNotFoundException>()),
+        );
+      },
+      tags: ['integration'],
+    );
 
     test('the whole flow: create, place files, finish', () async {
       final root = createTempDir('flumip_flow');
@@ -341,27 +415,33 @@ void main() {
       File('${created.folder}/panel.vcf.gz').writeAsBytesSync(completeBgzf());
       File('${created.folder}/panel.vcf.gz.tbi').writeAsStringSync('index');
 
-      final finished =
-          await endpoints.snp.finishUpload(sessionBuilder, created.id!);
+      final finished = await endpoints.snp.finishUpload(
+        sessionBuilder,
+        created.id!,
+      );
 
       expect(finished.status, SnpImportStatus.ready);
       expect(finished.tbiPath, '${created.folder}/panel.vcf.gz.tbi');
     }, tags: ['integration']);
 
-    test('cancelUpload removes a pending row and its directory', () async {
-      final root = createTempDir('flumip_cancel');
-      await overrideSettingsDirs(session, customSnpDir: root.path);
-      final genome = await seedGenome(session, name: 'hg38');
-      final created = await endpoints.snp.createUpload(
-        sessionBuilder,
-        CustomSnpRequestDto(name: 'x', genomeId: genome.id!, private: true),
-      );
+    test(
+      'cancelUpload removes a pending row and its directory',
+      () async {
+        final root = createTempDir('flumip_cancel');
+        await overrideSettingsDirs(session, customSnpDir: root.path);
+        final genome = await seedGenome(session, name: 'hg38');
+        final created = await endpoints.snp.createUpload(
+          sessionBuilder,
+          CustomSnpRequestDto(name: 'x', genomeId: genome.id!, private: true),
+        );
 
-      await endpoints.snp.cancelUpload(sessionBuilder, created.id!);
+        await endpoints.snp.cancelUpload(sessionBuilder, created.id!);
 
-      expect(await Snp.db.findById(session, created.id!), isNull);
-      expect(Directory(created.folder).existsSync(), isFalse);
-    }, tags: ['integration']);
+        expect(await Snp.db.findById(session, created.id!), isNull);
+        expect(Directory(created.folder).existsSync(), isFalse);
+      },
+      tags: ['integration'],
+    );
 
     test('cancelUpload refuses an SNP that is already ready', () async {
       // It must not double as a delete without confirmation.
