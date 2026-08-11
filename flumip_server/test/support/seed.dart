@@ -49,11 +49,13 @@ Future<Snp> seedSnp(
   String statusMessage = '',
   DateTime? statusUpdated,
   int size = 0,
+  String? sourceVcfUrl,
 }) {
   return Snp.db.insertRow(
     session,
     Snp(
       name: name,
+      sourceVcfUrl: sourceVcfUrl,
       vcfPath: vcfPath,
       tbiPath: tbiPath,
       folder: folder,
