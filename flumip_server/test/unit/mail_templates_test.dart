@@ -12,17 +12,16 @@ void main() {
     String? snpName = 'common',
     int geneCount = 3,
     String? siteUrl,
-  }) =>
-      ProjectMailDetails(
-        projectName: name,
-        failed: false,
-        completedIn: completedIn,
-        sizeBytes: sizeBytes,
-        genomeName: genomeName,
-        snpName: snpName,
-        geneCount: geneCount,
-        siteUrl: siteUrl,
-      );
+  }) => ProjectMailDetails(
+    projectName: name,
+    failed: false,
+    completedIn: completedIn,
+    sizeBytes: sizeBytes,
+    genomeName: genomeName,
+    snpName: snpName,
+    geneCount: geneCount,
+    siteUrl: siteUrl,
+  );
 
   ProjectMailDetails failure({String error = 'bwa exited with code 1'}) =>
       ProjectMailDetails(
@@ -50,8 +49,10 @@ void main() {
   group('formatDuration', () {
     test('is readable rather than Duration.toString()', () {
       // Which would be 0:04:09.000000, microseconds and all.
-      expect(formatDuration(const Duration(minutes: 4, seconds: 9)),
-          '4 min 09 s');
+      expect(
+        formatDuration(const Duration(minutes: 4, seconds: 9)),
+        '4 min 09 s',
+      );
       expect(formatDuration(const Duration(seconds: 9)), '9 s');
       expect(
         formatDuration(const Duration(hours: 1, minutes: 4, seconds: 9)),
@@ -94,8 +95,10 @@ void main() {
     });
 
     test('copes with a failure that recorded no reason', () {
-      expect(buildTextBody(failure(error: '')),
-          contains('No error message was recorded'));
+      expect(
+        buildTextBody(failure(error: '')),
+        contains('No error message was recorded'),
+      );
     });
 
     test('singularises one gene', () {
@@ -185,7 +188,9 @@ void main() {
     test('loads nothing external', () {
       // No images, fonts or stylesheets: the mail renders offline and cannot
       // report whether it was opened.
-      final html = buildHtmlBody(success(siteUrl: 'https://flumip.uni.example'));
+      final html = buildHtmlBody(
+        success(siteUrl: 'https://flumip.uni.example'),
+      );
       expect(html, isNot(contains('<img')));
       expect(html, isNot(contains('<link')));
       expect(html, isNot(contains('src=')));
@@ -207,7 +212,10 @@ void main() {
           error: '<script>alert(1)</script>',
         ),
       );
-      expect(html, contains('&lt;b&gt;panel&lt;/b&gt; &amp; &quot;quoted&quot;'));
+      expect(
+        html,
+        contains('&lt;b&gt;panel&lt;/b&gt; &amp; &quot;quoted&quot;'),
+      );
       expect(html, contains('&lt;script&gt;'));
       expect(html, isNot(contains('<script>')));
     });

@@ -153,12 +153,12 @@ String buildHtmlBody(ProjectMailDetails d) {
   final errorBlock = d.failed
       ? '''
       <div style="margin:20px 0 0;padding:12px 16px;background:#fce8e6;'''
-          '''border-left:4px solid $accent;border-radius:4px;">
+            '''border-left:4px solid $accent;border-radius:4px;">
         <div style="color:$accent;font-size:13px;font-weight:600;'''
-          '''text-transform:uppercase;letter-spacing:.4px;">Error</div>
+            '''text-transform:uppercase;letter-spacing:.4px;">Error</div>
         <div style="margin-top:6px;color:#202124;font-size:14px;'''
-          '''font-family:ui-monospace,SFMono-Regular,Menlo,monospace;'''
-          '''word-break:break-word;">${_escape(d.error.isEmpty ? 'No error message was recorded.' : d.error)}</div>
+            '''font-family:ui-monospace,SFMono-Regular,Menlo,monospace;'''
+            '''word-break:break-word;">${_escape(d.error.isEmpty ? 'No error message was recorded.' : d.error)}</div>
       </div>
       <p style="margin:16px 0 0;color:#5f6368;font-size:14px;line-height:1.5;">
         The project is still there, with its settings intact — open it in FLUMIP
@@ -169,7 +169,8 @@ String buildHtmlBody(ProjectMailDetails d) {
   return _document(
     accent: accent,
     banner: d.failed ? 'Generation failed' : 'Generation finished',
-    content: '''
+    content:
+        '''
               <p style="margin:0 0 20px;color:#202124;font-size:15px;line-height:1.5;">
                 MIP generation for <strong>${_escape(d.projectName)}</strong>
                 ${d.failed ? 'did not complete.' : 'finished successfully.'}
@@ -209,10 +210,10 @@ class TestMailDetails {
 }
 
 List<(String, String)> _testFacts(TestMailDetails d) => [
-      ('SMTP server', '${d.smtpServer}:${d.smtpPort}'),
-      ('From', d.from),
-      ('STARTTLS', d.startTLS ? 'on' : 'off'),
-    ];
+  ('SMTP server', '${d.smtpServer}:${d.smtpPort}'),
+  ('From', d.from),
+  ('STARTTLS', d.startTLS ? 'on' : 'off'),
+];
 
 String buildTestSubject() => 'FLUMIP test email';
 
@@ -248,9 +249,10 @@ String buildTestTextBody(TestMailDetails d) {
 }
 
 String buildTestHtmlBody(TestMailDetails d) => _document(
-      accent: colourNeutral,
-      banner: 'Test email',
-      content: '''
+  accent: colourNeutral,
+  banner: 'Test email',
+  content:
+      '''
               <p style="margin:0 0 20px;color:#202124;font-size:15px;line-height:1.5;">
                 This is a test email from FLUMIP. If you received it, the SMTP
                 configuration works.
@@ -260,8 +262,8 @@ String buildTestHtmlBody(TestMailDetails d) => _document(
                 Project notifications are sent with this same layout.
               </p>
               ${_buttonHtml(d.siteUrl, colourNeutral)}''',
-      footer: testFooter,
-    );
+  footer: testFooter,
+);
 
 // ---------------------------------------------------------------------------
 // Shared rendering.
@@ -273,18 +275,21 @@ const colourSuccess = '#1e6b3a';
 const colourFailure = '#b3261e';
 const colourNeutral = '#1a4f8a';
 
-const projectFooter = 'This is an automated message from FLUMIP. You are '
+const projectFooter =
+    'This is an automated message from FLUMIP. You are '
     'receiving it because you own this project and asked to be notified when '
     'it finishes.';
 
-const testFooter = 'This message was sent because an administrator used '
+const testFooter =
+    'This message was sent because an administrator used '
     '"Send test email" in the FLUMIP settings.';
 
 /// A label/value table, escaped.
 String _rowsHtml(List<(String, String)> facts) {
   final rows = facts
       .map(
-        (f) => '''
+        (f) =>
+            '''
         <tr>
           <td style="padding:6px 16px 6px 0;color:#5f6368;font-size:14px;'''
             '''white-space:nowrap;vertical-align:top;">${_escape(f.$1)}</td>
@@ -302,9 +307,9 @@ String _buttonHtml(String? siteUrl, String accent) => siteUrl == null
     : '''
       <p style="margin:24px 0 0;">
         <a href="${_escape(siteUrl)}" style="display:inline-block;'''
-        '''padding:10px 20px;background:$accent;color:#ffffff;'''
-        '''text-decoration:none;border-radius:4px;font-size:14px;'''
-        '''font-weight:500;">Open FLUMIP</a>
+          '''padding:10px 20px;background:$accent;color:#ffffff;'''
+          '''text-decoration:none;border-radius:4px;font-size:14px;'''
+          '''font-weight:500;">Open FLUMIP</a>
       </p>''';
 
 /// The outer shell every message shares.

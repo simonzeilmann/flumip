@@ -26,33 +26,33 @@ void main() {
       await overrideSettingsDirs(session, projectDir: base.path);
     });
 
-    test(
-      'calling `createProject` should return the project',
-      () async {
-        final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
-        expect(result.name, "test123");
-      },
-      tags: ['unit'],
-    );
+    test('calling `createProject` should return the project', () async {
+      final result = await projectService.createProject(
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
+      expect(result.name, "test123");
+    }, tags: ['unit']);
     test(
       'calling `createProject` with description should return the project including the description',
       () async {
         final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1), "description");
+          session,
+          "test123",
+          ProjectOptions(id: 1),
+          "description",
+        );
         expect(result.description, "description");
       },
       tags: ['unit'],
     );
-    test(
-      'empty project name should throw an exception',
-      () async {
-        expect(
-            () => projectService.createProject(session, "", ProjectOptions(id: 1)),
-            throwsMessage('Project name cannot be empty'));
-      },
-      tags: ['unit'],
-    );
+    test('empty project name should throw an exception', () async {
+      expect(
+        () => projectService.createProject(session, "", ProjectOptions(id: 1)),
+        throwsMessage('Project name cannot be empty'),
+      );
+    }, tags: ['unit']);
   });
 
   withServerpod('Project Deletion', (sessionBuilder, endpoints) {
@@ -68,7 +68,10 @@ void main() {
       'calling `deleteProject` should give an empty list of projects',
       () async {
         final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
+          session,
+          "test123",
+          ProjectOptions(id: 1),
+        );
         expect(result.name, "test123");
         await projectService.deleteProject(session, result.id!);
         final projects = await projectService.getProjects(session);
@@ -78,56 +81,53 @@ void main() {
     );
     test('non existent project id should throw an exception', () async {
       expect(
-          () => projectService.deleteProject(session, -1),
-          throwsMessage('Project not found'));
+        () => projectService.deleteProject(session, -1),
+        throwsMessage('Project not found'),
+      );
     });
 
-    test(
-      'deletes a project whose directory was never created',
-      () async {
-        // ⚠️ The bug this exists to stop coming back. `Directory.delete` throws
-        // `PathNotFoundException` for a path that is not there, and the row is
-        // deleted *before* the cleanup runs — so the project was fully deleted
-        // and then reported as a failure, leaving the client showing a row that
-        // no longer existed.
-        //
-        // A project reaches this state when `createProject` committed the row
-        // but its non-recursive `Directory.create()` failed (no `projectDir`),
-        // when `projectDir` is repointed, or when the folder is cleared by hand.
-        final project = await projectService.createProject(
-            session, "never-ran", ProjectOptions(id: 1));
+    test('deletes a project whose directory was never created', () async {
+      // ⚠️ The bug this exists to stop coming back. `Directory.delete` throws
+      // `PathNotFoundException` for a path that is not there, and the row is
+      // deleted *before* the cleanup runs — so the project was fully deleted
+      // and then reported as a failure, leaving the client showing a row that
+      // no longer existed.
+      //
+      // A project reaches this state when `createProject` committed the row
+      // but its non-recursive `Directory.create()` failed (no `projectDir`),
+      // when `projectDir` is repointed, or when the folder is cleared by hand.
+      final project = await projectService.createProject(
+        session,
+        "never-ran",
+        ProjectOptions(id: 1),
+      );
 
-        final settings = await SettingsService().getSettings(session);
-        final folder =
-            Directory('${settings.projectDir}/${project.folderName}');
-        if (await folder.exists()) await folder.delete(recursive: true);
+      final settings = await SettingsService().getSettings(session);
+      final folder = Directory('${settings.projectDir}/${project.folderName}');
+      if (await folder.exists()) await folder.delete(recursive: true);
 
-        await projectService.deleteProject(session, project.id!);
+      await projectService.deleteProject(session, project.id!);
 
-        expect(await projectService.getProjects(session), isEmpty);
-      },
-      tags: ['unit'],
-    );
+      expect(await projectService.getProjects(session), isEmpty);
+    }, tags: ['unit']);
 
-    test(
-      'a project with files on disk takes them with it',
-      () async {
-        final project = await projectService.createProject(
-            session, "has-files", ProjectOptions(id: 1));
+    test('a project with files on disk takes them with it', () async {
+      final project = await projectService.createProject(
+        session,
+        "has-files",
+        ProjectOptions(id: 1),
+      );
 
-        final settings = await SettingsService().getSettings(session);
-        final folder =
-            Directory('${settings.projectDir}/${project.folderName}');
-        await folder.create(recursive: true);
-        await File('${folder.path}/result.txt').writeAsString('mips');
+      final settings = await SettingsService().getSettings(session);
+      final folder = Directory('${settings.projectDir}/${project.folderName}');
+      await folder.create(recursive: true);
+      await File('${folder.path}/result.txt').writeAsString('mips');
 
-        await projectService.deleteProject(session, project.id!);
+      await projectService.deleteProject(session, project.id!);
 
-        expect(await folder.exists(), isFalse);
-        expect(await projectService.getProjects(session), isEmpty);
-      },
-      tags: ['unit'],
-    );
+      expect(await folder.exists(), isFalse);
+      expect(await projectService.getProjects(session), isEmpty);
+    }, tags: ['unit']);
   });
 
   withServerpod('Get Projects', (sessionBuilder, endpoints) {
@@ -141,32 +141,34 @@ void main() {
 
     test('calling get Project should return the requested project', () async {
       final result = await projectService.createProject(
-          session, "test123", ProjectOptions(id: 1));
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
       expect(result.name, "test123");
       final project = await projectService.getProject(session, result.id!);
       expect(project.name, "test123");
     });
 
-    test(
-        'calling get Project with non existent project id'
+    test('calling get Project with non existent project id'
         'should throw an exception', () async {
       expect(
-          () => projectService.getProject(session, -1),
-          throwsMessage('Project not found'));
+        () => projectService.getProject(session, -1),
+        throwsMessage('Project not found'),
+      );
     });
 
-    test(
-      'calling `getProjects` should return a list of projects',
-      () async {
-        final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
-        expect(result.name, "test123");
-        final projects = await projectService.getProjects(session);
-        expect(projects.length, 1);
-        expect(projects[0].name, "test123");
-      },
-      tags: ['unit'],
-    );
+    test('calling `getProjects` should return a list of projects', () async {
+      final result = await projectService.createProject(
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
+      expect(result.name, "test123");
+      final projects = await projectService.getProjects(session);
+      expect(projects.length, 1);
+      expect(projects[0].name, "test123");
+    }, tags: ['unit']);
     test('calling `getProjects` should return an empty list', () async {
       final projects = await projectService.getProjects(session);
       expect(projects.length, 0);
@@ -182,57 +184,53 @@ void main() {
       await overrideSettingsDirs(session, projectDir: base.path);
     });
 
-    test(
-      'calling `addGenesToProject` should add genes'
-      'to the project database entry',
-      () async {
-        List<String> genes = ["BART1", "SN1PZ1"];
+    test('calling `addGenesToProject` should add genes'
+        'to the project database entry', () async {
+      List<String> genes = ["BART1", "SN1PZ1"];
 
-        final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
-        expect(result.name, "test123");
-        await projectService.addGenesToProject(session, result.id!, genes);
-        final project = await projectService.getProject(session, result.id!);
-        expect(project.genes, genes);
-      },
-      tags: ['unit'],
-    );
+      final result = await projectService.createProject(
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
+      expect(result.name, "test123");
+      await projectService.addGenesToProject(session, result.id!, genes);
+      final project = await projectService.getProject(session, result.id!);
+      expect(project.genes, genes);
+    }, tags: ['unit']);
 
-    test(
-      'calling `addGenesToProject` should add a genes'
-      'to the project database entry',
-      () async {
-        List<String> genes = ["BART1"];
+    test('calling `addGenesToProject` should add a genes'
+        'to the project database entry', () async {
+      List<String> genes = ["BART1"];
 
-        final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
-        expect(result.name, "test123");
-        await projectService.addGeneToProject(session, result.id!, "BART1");
-        final project = await projectService.getProject(session, result.id!);
-        expect(project.genes, genes);
-      },
-      tags: ['unit'],
-    );
+      final result = await projectService.createProject(
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
+      expect(result.name, "test123");
+      await projectService.addGeneToProject(session, result.id!, "BART1");
+      final project = await projectService.getProject(session, result.id!);
+      expect(project.genes, genes);
+    }, tags: ['unit']);
 
-    test(
-      'calling `removeGeneFromProject` should remove a gene'
-      'from the project database entry',
-      () async {
-        List<String> genes = ["BART1"];
+    test('calling `removeGeneFromProject` should remove a gene'
+        'from the project database entry', () async {
+      List<String> genes = ["BART1"];
 
-        final result = await projectService.createProject(
-            session, "test123", ProjectOptions(id: 1));
-        expect(result.name, "test123");
-        await projectService.addGeneToProject(session, result.id!, "BART1");
-        final project = await projectService.getProject(session, result.id!);
-        expect(project.genes, genes);
-        await projectService.removeGeneFromProject(
-            session, result.id!, "BART1");
-        final project2 = await projectService.getProject(session, result.id!);
-        expect(project2.genes?.isEmpty, true);
-      },
-      tags: ['unit'],
-    );
+      final result = await projectService.createProject(
+        session,
+        "test123",
+        ProjectOptions(id: 1),
+      );
+      expect(result.name, "test123");
+      await projectService.addGeneToProject(session, result.id!, "BART1");
+      final project = await projectService.getProject(session, result.id!);
+      expect(project.genes, genes);
+      await projectService.removeGeneFromProject(session, result.id!, "BART1");
+      final project2 = await projectService.getProject(session, result.id!);
+      expect(project2.genes?.isEmpty, true);
+    }, tags: ['unit']);
   });
 
   withServerpod('Genome / SNP assignment', (sessionBuilder, endpoints) {
@@ -291,9 +289,12 @@ void main() {
       // records which build it belongs to.
       final hg38 = await seedGenome(session, name: 'hg38');
       final hs1 = await seedGenome(session, name: 'hs1');
-      final project =
-          await seedProject(session, options: 1, genome: hg38.id);
-      final wrongBuild = await seedSnp(session, name: 'hs1 snps', genome: hs1.id);
+      final project = await seedProject(session, options: 1, genome: hg38.id);
+      final wrongBuild = await seedSnp(
+        session,
+        name: 'hs1 snps',
+        genome: hs1.id,
+      );
       expect(
         () => projectService.setSnpById(session, project.id!, wrongBuild.id!),
         throwsMessage('different genome build'),
@@ -303,11 +304,13 @@ void main() {
     test('setSnpById refuses an SNP whose bytes have not arrived', () async {
       final genome = await seedGenome(session, name: 'hg38');
       final project = await seedProject(session, options: 1, genome: genome.id);
-      final pending = await seedSnp(session,
-          name: 'downloading',
-          genome: genome.id,
-          custom: true,
-          status: SnpImportStatus.downloading);
+      final pending = await seedSnp(
+        session,
+        name: 'downloading',
+        genome: genome.id,
+        custom: true,
+        status: SnpImportStatus.downloading,
+      );
       expect(
         () => projectService.setSnpById(session, project.id!, pending.id!),
         throwsMessage('not ready to use'),
@@ -317,13 +320,19 @@ void main() {
     test('setSnpById with null clears the selection', () async {
       final genome = await seedGenome(session, name: 'hg38');
       final snp = await seedSnp(session, name: 'common', genome: genome.id);
-      final project = await seedProject(session,
-          options: 1, genome: genome.id, snp: snp.id);
+      final project = await seedProject(
+        session,
+        options: 1,
+        genome: genome.id,
+        snp: snp.id,
+      );
 
       await projectService.setSnpById(session, project.id!, null);
 
-      expect((await projectService.getProject(session, project.id!)).snp,
-          isNull);
+      expect(
+        (await projectService.getProject(session, project.id!)).snp,
+        isNull,
+      );
     }, tags: ['unit']);
 
     test('updateProject persists field changes', () async {
@@ -344,8 +353,11 @@ void main() {
       await projectService.addGeneToProject(session, project.id!, 'BRCA1');
       expect(
         () => projectService.addGeneToProject(session, project.id!, 'BRCA1'),
-        throwsA(predicate(
-            (e) => e is Exception && '$e'.contains('Gene already exists'))),
+        throwsA(
+          predicate(
+            (e) => e is Exception && '$e'.contains('Gene already exists'),
+          ),
+        ),
       );
     }, tags: ['unit']);
 
@@ -375,8 +387,10 @@ void main() {
     test('addGenesToProject rejects invalid characters', () async {
       final project = await seedProject(session, options: 1);
       expect(
-        () => projectService
-            .addGenesToProject(session, project.id!, ['OK', 'bad gene']),
+        () => projectService.addGenesToProject(session, project.id!, [
+          'OK',
+          'bad gene',
+        ]),
         throwsMessage('Gene name contains invalid characters'),
       );
     }, tags: ['unit']);
@@ -392,8 +406,11 @@ void main() {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.removeGeneFromProject(session, project.id!, 'X'),
-        throwsA(predicate(
-            (e) => e is Exception && '$e'.contains('does not have any genes'))),
+        throwsA(
+          predicate(
+            (e) => e is Exception && '$e'.contains('does not have any genes'),
+          ),
+        ),
       );
     }, tags: ['unit']);
   });
@@ -517,8 +534,10 @@ void main() {
 
     test('assignableOwners lists every user, oldest first', () async {
       final first = await seedSignedInUser(session, email: 'first@uni.example');
-      final second =
-          await seedSignedInUser(session, email: 'second@uni.example');
+      final second = await seedSignedInUser(
+        session,
+        email: 'second@uni.example',
+      );
 
       final owners = await projectService.assignableOwners(session);
 
@@ -535,19 +554,25 @@ void main() {
     }, tags: ['unit']);
   });
 
-  withServerpod('ProjectEndpoint.notificationsAvailable',
-      (sessionBuilder, endpoints) {
+  withServerpod('ProjectEndpoint.notificationsAvailable', (
+    sessionBuilder,
+    endpoints,
+  ) {
     setup();
     var session = sessionBuilder.build();
 
     test('reports whether the admin has mail switched on', () async {
       await overrideMailSettings(session, mailActive: false);
-      expect(await endpoints.project.notificationsAvailable(sessionBuilder),
-          isFalse);
+      expect(
+        await endpoints.project.notificationsAvailable(sessionBuilder),
+        isFalse,
+      );
 
       await overrideMailSettings(session, mailActive: true);
-      expect(await endpoints.project.notificationsAvailable(sessionBuilder),
-          isTrue);
+      expect(
+        await endpoints.project.notificationsAvailable(sessionBuilder),
+        isTrue,
+      );
     }, tags: ['integration']);
   });
 }

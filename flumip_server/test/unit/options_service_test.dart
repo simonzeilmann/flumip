@@ -9,7 +9,6 @@ import '../support/matchers.dart';
 import '../integration/test_tools/serverpod_test_tools.dart';
 
 void main() {
-
   withServerpod('Create', (sessionBuilder, endpoints) {
     setup();
     var session = sessionBuilder.build();
@@ -17,7 +16,7 @@ void main() {
 
     test(
       'calling `create options` should return the an options object',
-          () async {
+      () async {
         final options = await optionsService.createProjectOptions(session);
         expect(options.silentMode, false);
       },
@@ -31,10 +30,12 @@ void main() {
 
     test(
       'calling `insert options` should return the inserted options object',
-          () async {
-        final options = ProjectOptions()
-          ..silentMode = true;
-        final retOptions = await optionsService.insertProjectOptions(session, options);
+      () async {
+        final options = ProjectOptions()..silentMode = true;
+        final retOptions = await optionsService.insertProjectOptions(
+          session,
+          options,
+        );
         expect(retOptions.silentMode, true);
       },
       tags: ['unit'],
@@ -47,13 +48,18 @@ void main() {
 
     test(
       'calling `delete options` should not return the deleted options object',
-          () async {
-        final options = ProjectOptions()
-          ..silentMode = true;
-        final retOptions = await optionsService.insertProjectOptions(session, options);
+      () async {
+        final options = ProjectOptions()..silentMode = true;
+        final retOptions = await optionsService.insertProjectOptions(
+          session,
+          options,
+        );
         expect(retOptions.silentMode, true);
         await optionsService.deleteProjectOptions(session, retOptions.id!);
-        expect(() => optionsService.getProjectOptions(session, retOptions.id!), throwsA(isA<FileNotFoundException>()));
+        expect(
+          () => optionsService.getProjectOptions(session, retOptions.id!),
+          throwsA(isA<FileNotFoundException>()),
+        );
       },
       tags: ['unit'],
     );
@@ -65,14 +71,23 @@ void main() {
 
     test(
       'calling `update options` should return the updated options object',
-          () async {
-        final options = ProjectOptions()
-          ..silentMode = true;
-        final retOptions = await optionsService.insertProjectOptions(session, options);
+      () async {
+        final options = ProjectOptions()..silentMode = true;
+        final retOptions = await optionsService.insertProjectOptions(
+          session,
+          options,
+        );
         expect(retOptions.silentMode, true);
         retOptions.silentMode = false;
-        await optionsService.updateProjectOptions(session, retOptions.id!, retOptions);
-        final updatedOptions = await optionsService.getProjectOptions(session, retOptions.id!);
+        await optionsService.updateProjectOptions(
+          session,
+          retOptions.id!,
+          retOptions,
+        );
+        final updatedOptions = await optionsService.getProjectOptions(
+          session,
+          retOptions.id!,
+        );
         expect(updatedOptions.silentMode, false);
       },
       tags: ['unit'],
@@ -83,18 +98,19 @@ void main() {
     var session = sessionBuilder.build();
     final optionsService = OptionsService();
 
-    test(
-      'calling `get options` should return the options object',
-          () async {
-        final options = ProjectOptions()
-          ..silentMode = true;
-        final retOptions = await optionsService.insertProjectOptions(session, options);
-        expect(retOptions.silentMode, true);
-        final fetchedOptions = await optionsService.getProjectOptions(session, retOptions.id!);
-        expect(fetchedOptions.silentMode, true);
-      },
-      tags: ['unit'],
-    );
+    test('calling `get options` should return the options object', () async {
+      final options = ProjectOptions()..silentMode = true;
+      final retOptions = await optionsService.insertProjectOptions(
+        session,
+        options,
+      );
+      expect(retOptions.silentMode, true);
+      final fetchedOptions = await optionsService.getProjectOptions(
+        session,
+        retOptions.id!,
+      );
+      expect(fetchedOptions.silentMode, true);
+    }, tags: ['unit']);
   });
 
   withServerpod('Not found', (sessionBuilder, endpoints) {
@@ -110,7 +126,8 @@ void main() {
 
     test('updateProjectOptions throws for a missing id', () async {
       expect(
-        () => optionsService.updateProjectOptions(session, -1, ProjectOptions()),
+        () =>
+            optionsService.updateProjectOptions(session, -1, ProjectOptions()),
         throwsMessage('Project options not found'),
       );
     }, tags: ['unit']);

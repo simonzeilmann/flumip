@@ -59,13 +59,17 @@ void main() {
       expect(reloaded.description, 'updated');
     }, tags: ['unit']);
 
-    test('updateGenome throws FileNotFoundException for a missing id', () async {
-      final ghost = Genome(id: 9999, name: 'ghost');
-      expect(
-        () => genomeService.updateGenome(session, 9999, ghost),
-        throwsMessage('Genome not found'),
-      );
-    }, tags: ['unit']);
+    test(
+      'updateGenome throws FileNotFoundException for a missing id',
+      () async {
+        final ghost = Genome(id: 9999, name: 'ghost');
+        expect(
+          () => genomeService.updateGenome(session, 9999, ghost),
+          throwsMessage('Genome not found'),
+        );
+      },
+      tags: ['unit'],
+    );
   });
 
   withServerpod('GenomeService snps', (sessionBuilder, endpoints) {
@@ -92,32 +96,48 @@ void main() {
       );
     }, tags: ['unit']);
 
-    test('getAllSnpForGenome returns the SNPs pointing at the genome', () async {
-      final genome = await seedGenome(session, name: 'hg38');
-      await seedSnp(session, name: 'common', genome: genome.id);
-      await seedSnp(session, name: 'private', genome: genome.id);
-      final snps = await genomeService.getAllSnpForGenome(session, genome.id!);
-      expect(snps.map((s) => s.name), containsAll(['common', 'private']));
-    }, tags: ['unit']);
+    test(
+      'getAllSnpForGenome returns the SNPs pointing at the genome',
+      () async {
+        final genome = await seedGenome(session, name: 'hg38');
+        await seedSnp(session, name: 'common', genome: genome.id);
+        await seedSnp(session, name: 'private', genome: genome.id);
+        final snps = await genomeService.getAllSnpForGenome(
+          session,
+          genome.id!,
+        );
+        expect(snps.map((s) => s.name), containsAll(['common', 'private']));
+      },
+      tags: ['unit'],
+    );
 
-    test('getAllSnpForGenome ignores SNPs belonging to another genome', () async {
-      final hg38 = await seedGenome(session, name: 'hg38');
-      final hs1 = await seedGenome(session, name: 'hs1');
-      await seedSnp(session, name: 'for-hg38', genome: hg38.id);
-      await seedSnp(session, name: 'for-hs1', genome: hs1.id);
-      final snps = await genomeService.getAllSnpForGenome(session, hg38.id!);
-      expect(snps.map((s) => s.name), ['for-hg38']);
-    }, tags: ['unit']);
+    test(
+      'getAllSnpForGenome ignores SNPs belonging to another genome',
+      () async {
+        final hg38 = await seedGenome(session, name: 'hg38');
+        final hs1 = await seedGenome(session, name: 'hs1');
+        await seedSnp(session, name: 'for-hg38', genome: hg38.id);
+        await seedSnp(session, name: 'for-hs1', genome: hs1.id);
+        final snps = await genomeService.getAllSnpForGenome(session, hg38.id!);
+        expect(snps.map((s) => s.name), ['for-hg38']);
+      },
+      tags: ['unit'],
+    );
 
-    test('getAllSnpForGenome returns an empty list for a genome with none',
-        () async {
-      // Used to be a `genome.snp!` that threw. The endpoint is reachable
-      // directly, so a genome that never had an SNP crashed rather than
-      // answering "none".
-      final genome = await seedGenome(session, name: 'hg38');
-      expect(await genomeService.getAllSnpForGenome(session, genome.id!),
-          isEmpty);
-    }, tags: ['unit']);
+    test(
+      'getAllSnpForGenome returns an empty list for a genome with none',
+      () async {
+        // Used to be a `genome.snp!` that threw. The endpoint is reachable
+        // directly, so a genome that never had an SNP crashed rather than
+        // answering "none".
+        final genome = await seedGenome(session, name: 'hg38');
+        expect(
+          await genomeService.getAllSnpForGenome(session, genome.id!),
+          isEmpty,
+        );
+      },
+      tags: ['unit'],
+    );
 
     test('getAllSnpForGenome throws for a missing genome', () async {
       expect(

@@ -24,7 +24,10 @@ void main() {
   final http = FakeHttpJsonClient();
 
   withServerpod('Settings access', (sessionBuilder, endpoints) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
     final settingsService = SettingsService();
 
@@ -67,8 +70,10 @@ void main() {
         // The only way in on an install with no identities, so this must not
         // regress — it is how a default deployment is configured at all.
         await settingsService.getSettings(session);
-        final settings =
-            await settingsService.getSettingsExternal(session, 'changeme');
+        final settings = await settingsService.getSettingsExternal(
+          session,
+          'changeme',
+        );
         expect(settings.baseDir, '/opt/flumip');
       }, tags: ['unit']);
 
@@ -80,11 +85,15 @@ void main() {
         );
       }, tags: ['unit']);
 
-      test('userSettings offers the password and claims no admin', () async {
-        final access = await endpoints.settings.userSettings(sessionBuilder);
-        expect(access.isAdmin, isFalse);
-        expect(access.passwordAccepted, isTrue);
-      }, tags: ['integration']);
+      test(
+        'userSettings offers the password and claims no admin',
+        () async {
+          final access = await endpoints.settings.userSettings(sessionBuilder);
+          expect(access.isAdmin, isFalse);
+          expect(access.passwordAccepted, isTrue);
+        },
+        tags: ['integration'],
+      );
     });
 
     group('once sign-in is enforced', () {
@@ -98,34 +107,46 @@ void main() {
         );
       }, tags: ['unit']);
 
-      test('a signed-in non-admin cannot use the password either', () async {
-        await enforceSso();
-        await expectLater(
-          endpoints.settings.getSettings(
-            signedIn('alice@uni.example'),
-            'changeme',
-          ),
-          throwsA(isA<ArgumentException>()),
-        );
-      }, tags: ['integration']);
+      test(
+        'a signed-in non-admin cannot use the password either',
+        () async {
+          await enforceSso();
+          await expectLater(
+            endpoints.settings.getSettings(
+              signedIn('alice@uni.example'),
+              'changeme',
+            ),
+            throwsA(isA<ArgumentException>()),
+          );
+        },
+        tags: ['integration'],
+      );
 
-      test('an admin gets the settings with no password at all', () async {
-        await enforceSso();
-        final settings = await endpoints.settings.getSettings(
-          signedIn('boss@uni.example', isAdmin: true),
-          null,
-        );
-        expect(settings.baseDir, '/opt/flumip');
-      }, tags: ['integration']);
+      test(
+        'an admin gets the settings with no password at all',
+        () async {
+          await enforceSso();
+          final settings = await endpoints.settings.getSettings(
+            signedIn('boss@uni.example', isAdmin: true),
+            null,
+          );
+          expect(settings.baseDir, '/opt/flumip');
+        },
+        tags: ['integration'],
+      );
 
-      test('userSettings tells an admin not to ask for a password', () async {
-        await enforceSso();
-        final access = await endpoints.settings.userSettings(
-          signedIn('boss@uni.example', isAdmin: true),
-        );
-        expect(access.isAdmin, isTrue);
-        expect(access.passwordAccepted, isFalse);
-      }, tags: ['integration']);
+      test(
+        'userSettings tells an admin not to ask for a password',
+        () async {
+          await enforceSso();
+          final access = await endpoints.settings.userSettings(
+            signedIn('boss@uni.example', isAdmin: true),
+          );
+          expect(access.isAdmin, isTrue);
+          expect(access.passwordAccepted, isFalse);
+        },
+        tags: ['integration'],
+      );
 
       test('userSettings offers a non-admin nothing', () async {
         // Which is what makes the tab render the "no settings available" view
@@ -140,99 +161,118 @@ void main() {
     });
 
     group('switching sign-in off', () {
-      test('ends every session, including the admin who switched it', () async {
-        await enforceSso();
-        final alice = await seedSignedInUser(session, email: 'a@uni.example');
-        final boss = await seedSignedInUser(
-          session,
-          email: 'boss@uni.example',
-          isAdmin: true,
-        );
-        expect(await AuthSession.db.find(session), hasLength(2));
+      test(
+        'ends every session, including the admin who switched it',
+        () async {
+          await enforceSso();
+          final alice = await seedSignedInUser(session, email: 'a@uni.example');
+          final boss = await seedSignedInUser(
+            session,
+            email: 'boss@uni.example',
+            isAdmin: true,
+          );
+          expect(await AuthSession.db.find(session), hasLength(2));
 
-        final settings = await settingsService.getSettings(session);
-        settings.loginRequired = false;
-        await endpoints.settings.updateSettings(
-          signedIn('boss@uni.example', isAdmin: true),
-          null,
-          settings,
-        );
+          final settings = await settingsService.getSettings(session);
+          settings.loginRequired = false;
+          await endpoints.settings.updateSettings(
+            signedIn('boss@uni.example', isAdmin: true),
+            null,
+            settings,
+          );
 
-        // Both, not just the ordinary user: there is nothing left to be signed
-        // in to, so the administrator goes too.
-        expect(await AuthSession.db.find(session), isEmpty);
-        expect(
-          await AuthApiToken.db.find(session),
-          isEmpty,
-          reason: 'the cascade takes the bearers with the sessions',
-        );
-        // Referenced so the seeding is not mistaken for dead setup.
-        expect(alice.user.id, isNotNull);
-        expect(boss.user.id, isNotNull);
-      }, tags: ['integration']);
+          // Both, not just the ordinary user: there is nothing left to be signed
+          // in to, so the administrator goes too.
+          expect(await AuthSession.db.find(session), isEmpty);
+          expect(
+            await AuthApiToken.db.find(session),
+            isEmpty,
+            reason: 'the cascade takes the bearers with the sessions',
+          );
+          // Referenced so the seeding is not mistaken for dead setup.
+          expect(alice.user.id, isNotNull);
+          expect(boss.user.id, isNotNull);
+        },
+        tags: ['integration'],
+      );
 
-      test('a saved change that leaves sign-in on keeps sessions', () async {
-        // Only the transition ends sessions. Saving any other setting while
-        // sign-in stays on must not sign the whole institute out.
-        await enforceSso();
-        await seedSignedInUser(session, email: 'a@uni.example');
+      test(
+        'a saved change that leaves sign-in on keeps sessions',
+        () async {
+          // Only the transition ends sessions. Saving any other setting while
+          // sign-in stays on must not sign the whole institute out.
+          await enforceSso();
+          await seedSignedInUser(session, email: 'a@uni.example');
 
-        final settings = await settingsService.getSettings(session);
-        settings.smtpServer = 'smtp.example.org';
-        await endpoints.settings.updateSettings(
-          signedIn('boss@uni.example', isAdmin: true),
-          null,
-          settings,
-        );
+          final settings = await settingsService.getSettings(session);
+          settings.smtpServer = 'smtp.example.org';
+          await endpoints.settings.updateSettings(
+            signedIn('boss@uni.example', isAdmin: true),
+            null,
+            settings,
+          );
 
-        expect(await AuthSession.db.find(session), hasLength(1));
-      }, tags: ['integration']);
+          expect(await AuthSession.db.find(session), hasLength(1));
+        },
+        tags: ['integration'],
+      );
 
-      test('the revoked bearer is refused on the very next call', () async {
-        // The regression test that matters. Deleting the rows is not enough:
-        // the bearer lookup is a read-through localPrio cache, so a row deleted
-        // underneath it keeps answering until the entry ages out. This warms the
-        // cache first, exactly as a real request would have.
-        await enforceSso();
-        final alice = await seedSignedInUser(session, email: 'a@uni.example');
-        const token = 'a-bearer-for-alice';
-        await AuthApiToken.db.insertRow(
-          session,
-          AuthApiToken(
-            authSessionId: alice.authSession.id!,
-            tokenHash: AuthTokens.sha256Hex(token),
-            email: 'a@uni.example',
-            expires: DateTime.now().toUtc().add(const Duration(hours: 1)),
-          ),
-        );
+      test(
+        'the revoked bearer is refused on the very next call',
+        () async {
+          // The regression test that matters. Deleting the rows is not enough:
+          // the bearer lookup is a read-through localPrio cache, so a row deleted
+          // underneath it keeps answering until the entry ages out. This warms the
+          // cache first, exactly as a real request would have.
+          await enforceSso();
+          final alice = await seedSignedInUser(session, email: 'a@uni.example');
+          const token = 'a-bearer-for-alice';
+          await AuthApiToken.db.insertRow(
+            session,
+            AuthApiToken(
+              authSessionId: alice.authSession.id!,
+              tokenHash: AuthTokens.sha256Hex(token),
+              email: 'a@uni.example',
+              expires: DateTime.now().toUtc().add(const Duration(hours: 1)),
+            ),
+          );
 
-        expect(
-          await sl<AuthService>().resolveApiToken(session, token),
-          isNotNull,
-          reason: 'the cache is now warm, which is the point',
-        );
+          expect(
+            await sl<AuthService>().resolveApiToken(session, token),
+            isNotNull,
+            reason: 'the cache is now warm, which is the point',
+          );
 
-        final settings = await settingsService.getSettings(session);
-        settings.loginRequired = false;
-        await endpoints.settings.updateSettings(
-          signedIn('boss@uni.example', isAdmin: true),
-          null,
-          settings,
-        );
+          final settings = await settingsService.getSettings(session);
+          settings.loginRequired = false;
+          await endpoints.settings.updateSettings(
+            signedIn('boss@uni.example', isAdmin: true),
+            null,
+            settings,
+          );
 
-        expect(await sl<AuthService>().resolveApiToken(session, token), isNull);
-      }, tags: ['integration']);
+          expect(
+            await sl<AuthService>().resolveApiToken(session, token),
+            isNull,
+          );
+        },
+        tags: ['integration'],
+      );
     });
 
-    test('an admin session works even before the runtime is consulted', () async {
-      // _isAdmin checks the scope first and returns before looking at the
-      // runtime at all, so an admin is unaffected by anything to do with
-      // enforcement or a half-initialised process.
-      final settings = await endpoints.settings.getSettings(
-        signedIn('boss@uni.example', isAdmin: true),
-        null,
-      );
-      expect(settings.baseDir, '/opt/flumip');
-    }, tags: ['integration']);
+    test(
+      'an admin session works even before the runtime is consulted',
+      () async {
+        // _isAdmin checks the scope first and returns before looking at the
+        // runtime at all, so an admin is unaffected by anything to do with
+        // enforcement or a half-initialised process.
+        final settings = await endpoints.settings.getSettings(
+          signedIn('boss@uni.example', isAdmin: true),
+          null,
+        );
+        expect(settings.baseDir, '/opt/flumip');
+      },
+      tags: ['integration'],
+    );
   });
 }

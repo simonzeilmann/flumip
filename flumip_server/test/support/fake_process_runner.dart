@@ -50,7 +50,8 @@ class FakeProcessRunner implements ProcessRunner {
   /// Needed where one executable must answer differently per call — walking a
   /// process tree asks `pgrep -P <pid>` once per node and expects a different
   /// answer each time, which a per-executable stub cannot express.
-  ProcessResult? Function(String executable, List<String> arguments)? runHandler;
+  ProcessResult? Function(String executable, List<String> arguments)?
+  runHandler;
 
   Object? runError;
   Object? startError;
@@ -60,7 +61,7 @@ class FakeProcessRunner implements ProcessRunner {
   String? startOutput;
 
   FakeProcessRunner({ProcessResult? defaultRunResult})
-      : defaultRunResult = defaultRunResult ?? ProcessResult(0, 0, '', '');
+    : defaultRunResult = defaultRunResult ?? ProcessResult(0, 0, '', '');
 
   /// Clears all recorded invocations, stubs, and error overrides. Call from a
   /// test `setUp` when the same fake instance is shared across a group.
@@ -108,14 +109,16 @@ class FakeProcessRunner implements ProcessRunner {
     bool runInShell = false,
     Duration? timeout,
   }) async {
-    invocations.add(ProcessInvocation(
-      executable: executable,
-      arguments: arguments,
-      workingDirectory: workingDirectory,
-      runInShell: runInShell,
-      started: false,
-      timeout: timeout,
-    ));
+    invocations.add(
+      ProcessInvocation(
+        executable: executable,
+        arguments: arguments,
+        workingDirectory: workingDirectory,
+        runInShell: runInShell,
+        started: false,
+        timeout: timeout,
+      ),
+    );
     if (runError != null) throw runError!;
     final handled = runHandler?.call(executable, arguments);
     return handled ?? _runStubs[executable] ?? defaultRunResult;
@@ -129,14 +132,16 @@ class FakeProcessRunner implements ProcessRunner {
     bool runInShell = false,
     String? outputPath,
   }) async {
-    invocations.add(ProcessInvocation(
-      executable: executable,
-      arguments: arguments,
-      workingDirectory: workingDirectory,
-      runInShell: runInShell,
-      started: true,
-      outputPath: outputPath,
-    ));
+    invocations.add(
+      ProcessInvocation(
+        executable: executable,
+        arguments: arguments,
+        workingDirectory: workingDirectory,
+        runInShell: runInShell,
+        started: true,
+        outputPath: outputPath,
+      ),
+    );
     if (startError != null) throw startError!;
     // Stand in for the child writing something, so tests that assert on the log
     // have a file to read.

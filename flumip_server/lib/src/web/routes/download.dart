@@ -7,7 +7,8 @@ import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
 import 'package:flumip_server/src/services/file_service.dart';
-import 'package:flumip_server/src/web/routes/auth_routes.dart' show authCookieName;
+import 'package:flumip_server/src/web/routes/auth_routes.dart'
+    show authCookieName;
 import 'package:serverpod/serverpod.dart';
 
 /// Serves a project's result files.
@@ -77,9 +78,7 @@ class DownloadRoute extends Route {
       body: Body.fromString('File not available'),
     );
 
-    final projectId = int.tryParse(
-      request.pathParameters.get(_projectParam),
-    );
+    final projectId = int.tryParse(request.pathParameters.get(_projectParam));
     final fileName = Uri.decodeComponent(
       request.pathParameters.get(_fileParam),
     );
@@ -164,9 +163,9 @@ class DownloadRoute extends Route {
     );
     return Response.ok(
       body: Body.fromDataStream(
-        file.openRead().map((chunk) => chunk is Uint8List
-            ? chunk
-            : Uint8List.fromList(chunk)),
+        file.openRead().map(
+          (chunk) => chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
+        ),
         contentLength: await file.length(),
         // Everything here is a result file to be saved, not rendered. Serving
         // them as octet-stream also means a project file called something.html
@@ -194,9 +193,8 @@ class DownloadRoute extends Route {
     // Deleted once the last byte has gone out. Tied to the stream rather than
     // scheduled, so a client that disconnects halfway still cleans up.
     final stream = zip.openRead().map(
-          (chunk) =>
-              chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
-        );
+      (chunk) => chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
+    );
     return Response.ok(
       body: Body.fromDataStream(
         stream.transform(
@@ -226,7 +224,8 @@ class DownloadRoute extends Route {
   /// RFC 5987 `filename*` carrying the real one. A project called `Müller panel`
   /// otherwise arrives as mojibake or breaks the header.
   Headers _attachmentHeaders(String fileName) {
-    final ascii = fileName.replaceAll(RegExp(r'[^\x20-\x7E]'), '_')
+    final ascii = fileName
+        .replaceAll(RegExp(r'[^\x20-\x7E]'), '_')
         .replaceAll('"', '');
     final encoded = Uri.encodeComponent(fileName);
     return Headers.build((h) {

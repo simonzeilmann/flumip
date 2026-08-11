@@ -49,8 +49,7 @@ class ProcessService {
       );
       throw ArgumentError('Project id does not exist');
     }
-    var process =
-        await sl<ProcessRunner>().run(
+    var process = await sl<ProcessRunner>().run(
       "ps",
       ["-p", project.pid.toString()],
       // A liveness check that has not answered in ten seconds is not going
@@ -110,8 +109,10 @@ class ProcessService {
       );
       throw ArgumentError('Gene id does not exist');
     }
-    var process = await sl<ProcessRunner>()
-        .run("ps", ["-p", genome.indexPID.toString()]);
+    var process = await sl<ProcessRunner>().run("ps", [
+      "-p",
+      genome.indexPID.toString(),
+    ]);
     if (process.exitCode > 1) {
       session.log(
         "Error running process check for gene ID: ${genomeModel.id}",
@@ -158,12 +159,10 @@ class ProcessService {
     );
     int processPID = 0;
 
-    var process =
-        await sl<ProcessRunner>().run(
-      "pgrep",
-      ["--list-full", processName],
-      timeout: quickToolTimeout,
-    );
+    var process = await sl<ProcessRunner>().run("pgrep", [
+      "--list-full",
+      processName,
+    ], timeout: quickToolTimeout);
     if (process.exitCode == 1) {
       session.log("Process is not running", level: LogLevel.info);
       return processPID;
@@ -212,11 +211,10 @@ class ProcessService {
     final tree = await _descendants(session, pid);
     // Leaves first, parent last.
     for (final target in [...tree.reversed, pid]) {
-      final result = await sl<ProcessRunner>().run(
-        "kill",
-        ["-9", target.toString()],
-        timeout: quickToolTimeout,
-      );
+      final result = await sl<ProcessRunner>().run("kill", [
+        "-9",
+        target.toString(),
+      ], timeout: quickToolTimeout);
       // Exit code 1 is "no such process", which is the ordinary outcome for a
       // child that finished between the walk and the kill.
       if (result.exitCode > 1) {
@@ -249,11 +247,10 @@ class ProcessService {
       final next = <int>[];
       for (final parent in frontier) {
         if (found.length >= _maxTreeSize) break;
-        final result = await sl<ProcessRunner>().run(
-          "pgrep",
-          ["-P", parent.toString()],
-          timeout: quickToolTimeout,
-        );
+        final result = await sl<ProcessRunner>().run("pgrep", [
+          "-P",
+          parent.toString(),
+        ], timeout: quickToolTimeout);
         // 1 means "no children", which is the common case and not an error.
         if (result.exitCode != 0) continue;
         for (final line in const LineSplitter().convert(result.stdout)) {

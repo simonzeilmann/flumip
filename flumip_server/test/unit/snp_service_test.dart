@@ -16,10 +16,7 @@ void main() {
     });
 
     test('its tabix index', () {
-      expect(
-        SnpService.snpUploadFileKind('panel.vcf.gz.tbi'),
-        SnpFileKind.tbi,
-      );
+      expect(SnpService.snpUploadFileKind('panel.vcf.gz.tbi'), SnpFileKind.tbi);
     });
 
     test('dots, dashes and underscores inside the stem', () {
@@ -100,10 +97,7 @@ void main() {
     });
 
     test('refuses an absurdly long name', () {
-      expect(
-        SnpService.snpUploadFileKind('${'a' * 200}.vcf.gz'),
-        isNull,
-      );
+      expect(SnpService.snpUploadFileKind('${'a' * 200}.vcf.gz'), isNull);
     });
 
     test('refuses an empty stem', () {
@@ -114,13 +108,13 @@ void main() {
   group('looksLikeBgzf', () {
     /// A real BGZF header: gzip magic, FEXTRA set, and a `BC` subfield.
     Uint8List bgzf() => Uint8List.fromList([
-          0x1f, 0x8b, 0x08, 0x04, // magic, deflate, FEXTRA
-          0, 0, 0, 0, // mtime
-          0, 0xff, // xfl, os
-          6, 0, // xlen
-          0x42, 0x43, // "BC"
-          2, 0, // subfield length
-        ]);
+      0x1f, 0x8b, 0x08, 0x04, // magic, deflate, FEXTRA
+      0, 0, 0, 0, // mtime
+      0, 0xff, // xfl, os
+      6, 0, // xlen
+      0x42, 0x43, // "BC"
+      2, 0, // subfield length
+    ]);
 
     test('accepts a BGZF header', () {
       expect(SnpService.looksLikeBgzf(bgzf()), isTrue);

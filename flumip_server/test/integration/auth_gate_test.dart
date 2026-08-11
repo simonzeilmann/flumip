@@ -32,13 +32,21 @@ void main() {
     }
     http.stubProvider(issuer: issuer);
     await sl<AuthRuntime>().refresh(session);
-    expect(sl<AuthRuntime>().isEnforcing, isTrue,
-        reason: 'the test setup itself must actually close the gate');
+    expect(
+      sl<AuthRuntime>().isEnforcing,
+      isTrue,
+      reason: 'the test setup itself must actually close the gate',
+    );
   }
 
-  withServerpod('Running without authentication (the default)',
-      (sessionBuilder, endpoints) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+  withServerpod('Running without authentication (the default)', (
+    sessionBuilder,
+    endpoints,
+  ) {
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
 
     setUp(() async {
@@ -55,14 +63,21 @@ void main() {
     // that FLUMIP runs with no authentication at all, and that must keep working
     // exactly as it did before any of this existed.
     test('every gated endpoint answers an unauthenticated caller', () async {
-      await expectLater(endpoints.project.getProjects(sessionBuilder), completes);
       await expectLater(
-          endpoints.genome.getAllGenomes(sessionBuilder), completes);
+        endpoints.project.getProjects(sessionBuilder),
+        completes,
+      );
+      await expectLater(
+        endpoints.genome.getAllGenomes(sessionBuilder),
+        completes,
+      );
     });
 
     test('the settings endpoint still takes the password', () async {
-      final settings =
-          await endpoints.settings.getSettings(sessionBuilder, 'changeme');
+      final settings = await endpoints.settings.getSettings(
+        sessionBuilder,
+        'changeme',
+      );
       expect(settings.baseDir, '/opt/flumip');
     });
 
@@ -76,9 +91,14 @@ void main() {
     });
   });
 
-  withServerpod('Running with authentication enforced',
-      (sessionBuilder, endpoints) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+  withServerpod('Running with authentication enforced', (
+    sessionBuilder,
+    endpoints,
+  ) {
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
 
     final signedIn = sessionBuilder.copyWith(
@@ -129,8 +149,10 @@ void main() {
 
     test('an admin session unlocks settings without the password', () async {
       await enforceSso(session);
-      final settings =
-          await endpoints.settings.getSettings(signedInAdmin, null);
+      final settings = await endpoints.settings.getSettings(
+        signedInAdmin,
+        null,
+      );
       expect(settings.loginRequired, isTrue);
     });
 
@@ -142,14 +164,16 @@ void main() {
       );
     });
 
-    test('a wrong password is refused even while signed in as a non-admin',
-        () async {
-      await enforceSso(session);
-      await expectLater(
-        endpoints.settings.getSettings(signedIn, 'wrong'),
-        throwsA(isA<ArgumentException>()),
-      );
-    });
+    test(
+      'a wrong password is refused even while signed in as a non-admin',
+      () async {
+        await enforceSso(session);
+        await expectLater(
+          endpoints.settings.getSettings(signedIn, 'wrong'),
+          throwsA(isA<ArgumentException>()),
+        );
+      },
+    );
 
     test('the auth config endpoint stays reachable unauthenticated', () async {
       // The app has to be able to ask "do I need to sign in?" before it holds
@@ -169,7 +193,10 @@ void main() {
   });
 
   withServerpod('Turning authentication back off', (sessionBuilder, endpoints) {
-    setup(httpClient: http, authRuntime: AuthRuntime(environment: const {}));
+    setup(
+      httpClient: http,
+      authRuntime: AuthRuntime(environment: const {}),
+    );
     final session = sessionBuilder.build();
 
     // Every settings call below goes through an admin session rather than the
@@ -194,11 +221,12 @@ void main() {
         throwsA(isA<ServerpodUnauthenticatedException>()),
       );
 
-      final settings =
-          await endpoints.settings.getSettings(signedInAdmin, null);
+      final settings = await endpoints.settings.getSettings(
+        signedInAdmin,
+        null,
+      );
       settings.loginRequired = false;
-      await endpoints.settings
-          .updateSettings(signedInAdmin, null, settings);
+      await endpoints.settings.updateSettings(signedInAdmin, null, settings);
 
       // No waiting for the 30-second refresh tick: updateSettings re-resolves.
       expect(sl<AuthRuntime>().isEnforcing, isFalse);
@@ -210,8 +238,10 @@ void main() {
 
     test('the client secret survives an unrelated settings save', () async {
       await enforceSso(session);
-      final settings =
-          await endpoints.settings.getSettings(signedInAdmin, null);
+      final settings = await endpoints.settings.getSettings(
+        signedInAdmin,
+        null,
+      );
 
       // The secret is never sent to the browser. Asserted on the wire format
       // rather than on the object, because these test endpoints call the server
@@ -221,8 +251,7 @@ void main() {
       expect(settings.toJsonForProtocol(), isNot(contains('oidcClientSecret')));
 
       settings.smtpServer = 'smtp.example.org';
-      await endpoints.settings
-          .updateSettings(signedInAdmin, null, settings);
+      await endpoints.settings.updateSettings(signedInAdmin, null, settings);
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, 's3cret');
@@ -232,8 +261,11 @@ void main() {
 
     test('setOidcClientSecret writes without reading back', () async {
       await enforceSso(session);
-      await endpoints.settings
-          .setOidcClientSecret(signedInAdmin, null, 'a-new-secret');
+      await endpoints.settings.setOidcClientSecret(
+        signedInAdmin,
+        null,
+        'a-new-secret',
+      );
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, 'a-new-secret');
@@ -241,8 +273,7 @@ void main() {
 
     test('an empty secret clears it', () async {
       await enforceSso(session);
-      await endpoints.settings
-          .setOidcClientSecret(signedInAdmin, null, '  ');
+      await endpoints.settings.setOidcClientSecret(signedInAdmin, null, '  ');
 
       final stored = await Settings.db.findFirstRow(session);
       expect(stored!.oidcClientSecret, isNull);
@@ -250,21 +281,25 @@ void main() {
       expect(sl<AuthRuntime>().isEnforcing, isFalse);
     });
 
-    test('getAuthAdminStatus reports the redirect URI and probe result',
-        () async {
-      await enforceSso(session);
-      final status = await endpoints.settings
-          .getAuthAdminStatus(signedInAdmin, null);
+    test(
+      'getAuthAdminStatus reports the redirect URI and probe result',
+      () async {
+        await enforceSso(session);
+        final status = await endpoints.settings.getAuthAdminStatus(
+          signedInAdmin,
+          null,
+        );
 
-      expect(status.enabled, isTrue);
-      expect(status.enforcing, isTrue);
-      expect(status.secretConfigured, isTrue);
-      expect(status.redirectUri, 'https://flumip.example/auth/callback');
-      expect(status.discoveryOk, isTrue);
-      expect(status.discoveryError, isNull);
-      expect(status.authorizationEndpoint, '$issuer/authorize');
-      expect(status.envOverrides, isEmpty);
-    });
+        expect(status.enabled, isTrue);
+        expect(status.enforcing, isTrue);
+        expect(status.secretConfigured, isTrue);
+        expect(status.redirectUri, 'https://flumip.example/auth/callback');
+        expect(status.discoveryOk, isTrue);
+        expect(status.discoveryError, isNull);
+        expect(status.authorizationEndpoint, '$issuer/authorize');
+        expect(status.envOverrides, isEmpty);
+      },
+    );
 
     test('getAuthAdminStatus surfaces a discovery failure readably', () async {
       await enforceSso(session);
@@ -272,8 +307,10 @@ void main() {
       // Drop the cached document so the probe has to go out again.
       await sl<AuthRuntime>().refresh(session);
 
-      final status = await endpoints.settings
-          .getAuthAdminStatus(signedInAdmin, null);
+      final status = await endpoints.settings.getAuthAdminStatus(
+        signedInAdmin,
+        null,
+      );
       expect(status.discoveryError, contains('Connection refused'));
     });
 

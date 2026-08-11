@@ -38,7 +38,11 @@ void main() {
     Future<({int id, String dir})> prepareProject() async {
       final base = createTempDir('filesvc');
       await overrideSettingsDirs(session, projectDir: base.path);
-      final project = await seedProject(session, options: 1, folderName: 'proj');
+      final project = await seedProject(
+        session,
+        options: 1,
+        folderName: 'proj',
+      );
       final dir = '${base.path}/proj';
       Directory(dir).createSync(recursive: true);
       return (id: project.id!, dir: dir);
@@ -93,17 +97,24 @@ void main() {
       expect(lines, ['BRCA1', 'TP53']);
     }, tags: ['unit']);
 
-    test('createGeneFile throws when the project directory is missing',
-        () async {
-      final base = createTempDir('nodir');
-      await overrideSettingsDirs(session, projectDir: base.path);
-      // Seed the project row but do NOT create its directory.
-      final project = await seedProject(session, options: 1, folderName: 'gone');
-      expect(
-        () => fileService.createGeneFile(session, project.id!, ['BRCA1']),
-        throwsMessage('Project directory does not exist'),
-      );
-    }, tags: ['unit']);
+    test(
+      'createGeneFile throws when the project directory is missing',
+      () async {
+        final base = createTempDir('nodir');
+        await overrideSettingsDirs(session, projectDir: base.path);
+        // Seed the project row but do NOT create its directory.
+        final project = await seedProject(
+          session,
+          options: 1,
+          folderName: 'gone',
+        );
+        expect(
+          () => fileService.createGeneFile(session, project.id!, ['BRCA1']),
+          throwsMessage('Project directory does not exist'),
+        );
+      },
+      tags: ['unit'],
+    );
 
     // --- checkBedFileExists -------------------------------------------------
     test('checkBedFileExists is false when the bed file is absent', () async {
@@ -111,19 +122,25 @@ void main() {
       expect(await fileService.checkBedFileExists(session, p.id), isFalse);
     }, tags: ['unit']);
 
-    test('checkBedFileExists is false when the bed file is <= 1024 bytes',
-        () async {
-      final p = await prepareProject();
-      File('${p.dir}/genes.bed').writeAsStringSync('small');
-      expect(await fileService.checkBedFileExists(session, p.id), isFalse);
-    }, tags: ['unit']);
+    test(
+      'checkBedFileExists is false when the bed file is <= 1024 bytes',
+      () async {
+        final p = await prepareProject();
+        File('${p.dir}/genes.bed').writeAsStringSync('small');
+        expect(await fileService.checkBedFileExists(session, p.id), isFalse);
+      },
+      tags: ['unit'],
+    );
 
-    test('checkBedFileExists is true when the bed file is > 1024 bytes',
-        () async {
-      final p = await prepareProject();
-      File('${p.dir}/genes.bed').writeAsStringSync('x' * 2000);
-      expect(await fileService.checkBedFileExists(session, p.id), isTrue);
-    }, tags: ['unit']);
+    test(
+      'checkBedFileExists is true when the bed file is > 1024 bytes',
+      () async {
+        final p = await prepareProject();
+        File('${p.dir}/genes.bed').writeAsStringSync('x' * 2000);
+        expect(await fileService.checkBedFileExists(session, p.id), isTrue);
+      },
+      tags: ['unit'],
+    );
 
     // --- deleteGeneFile -----------------------------------------------------
     test('deleteGeneFile removes genes.txt', () async {
@@ -151,16 +168,23 @@ void main() {
       expect(keep.existsSync(), isTrue);
     }, tags: ['unit']);
 
-    test('deleteByproducts throws when the project directory is missing',
-        () async {
-      final base = createTempDir('nobp');
-      await overrideSettingsDirs(session, projectDir: base.path);
-      final project = await seedProject(session, options: 1, folderName: 'gone');
-      expect(
-        () => fileService.deleteByproducts(session, project.id!),
-        throwsA(isA<FileNotFoundException>()),
-      );
-    }, tags: ['unit']);
+    test(
+      'deleteByproducts throws when the project directory is missing',
+      () async {
+        final base = createTempDir('nobp');
+        await overrideSettingsDirs(session, projectDir: base.path);
+        final project = await seedProject(
+          session,
+          options: 1,
+          folderName: 'gone',
+        );
+        expect(
+          () => fileService.deleteByproducts(session, project.id!),
+          throwsA(isA<FileNotFoundException>()),
+        );
+      },
+      tags: ['unit'],
+    );
 
     // --- show* readers ------------------------------------------------------
     test('showMipsProgress returns the progress file lines', () async {
@@ -169,22 +193,28 @@ void main() {
       expect(await fileService.showMipsProgress(session, p.id), ['10%', '20%']);
     }, tags: ['unit']);
 
-    test('showMipsProgress returns empty when no progress file exists',
-        () async {
-      final p = await prepareProject();
-      expect(await fileService.showMipsProgress(session, p.id), isEmpty);
-    }, tags: ['unit']);
+    test(
+      'showMipsProgress returns empty when no progress file exists',
+      () async {
+        final p = await prepareProject();
+        expect(await fileService.showMipsProgress(session, p.id), isEmpty);
+      },
+      tags: ['unit'],
+    );
 
-    test('showMipsResult / showSnpMipsResult / showUSCSTrack read their files',
-        () async {
-      final p = await prepareProject();
-      File('${p.dir}/a.picked_mips.txt').writeAsStringSync('mip1\n');
-      File('${p.dir}/a.snp_mips.txt').writeAsStringSync('snp1\n');
-      File('${p.dir}/a.ucsc_track.bed').writeAsStringSync('track1\n');
-      expect(await fileService.showMipsResult(session, p.id), ['mip1']);
-      expect(await fileService.showSnpMipsResult(session, p.id), ['snp1']);
-      expect(await fileService.showUSCSTrack(session, p.id), ['track1']);
-    }, tags: ['unit']);
+    test(
+      'showMipsResult / showSnpMipsResult / showUSCSTrack read their files',
+      () async {
+        final p = await prepareProject();
+        File('${p.dir}/a.picked_mips.txt').writeAsStringSync('mip1\n');
+        File('${p.dir}/a.snp_mips.txt').writeAsStringSync('snp1\n');
+        File('${p.dir}/a.ucsc_track.bed').writeAsStringSync('track1\n');
+        expect(await fileService.showMipsResult(session, p.id), ['mip1']);
+        expect(await fileService.showSnpMipsResult(session, p.id), ['snp1']);
+        expect(await fileService.showUSCSTrack(session, p.id), ['track1']);
+      },
+      tags: ['unit'],
+    );
 
     test('showMipsProgress throws for a missing project', () async {
       expect(
@@ -212,11 +242,16 @@ void main() {
         // Not an error: there is simply nothing to download yet.
         final base = createTempDir('nofiles');
         await overrideSettingsDirs(session, projectDir: base.path);
-        final project =
-            await seedProject(session, options: 1, folderName: 'never-ran');
+        final project = await seedProject(
+          session,
+          options: 1,
+          folderName: 'never-ran',
+        );
 
-        expect(await fileService.listProjectFiles(session, project.id!),
-            isEmpty);
+        expect(
+          await fileService.listProjectFiles(session, project.id!),
+          isEmpty,
+        );
       }, tags: ['unit']);
     });
 
@@ -241,7 +276,11 @@ void main() {
         final p = await prepareProject();
         final outside = File('${Directory(p.dir).parent.path}/secret.txt')
           ..writeAsStringSync('nope');
-        expect(outside.existsSync(), isTrue, reason: 'the target really exists');
+        expect(
+          outside.existsSync(),
+          isTrue,
+          reason: 'the target really exists',
+        );
 
         for (final name in [
           '../secret.txt',
@@ -294,8 +333,10 @@ void main() {
         addTearDown(() => zip!.existsSync() ? zip.deleteSync() : null);
 
         final archive = ZipDecoder().decodeBytes(await zip!.readAsBytes());
-        expect(archive.files.map((f) => f.name).toList()..sort(),
-            ['a.txt', 'b.txt']);
+        expect(archive.files.map((f) => f.name).toList()..sort(), [
+          'a.txt',
+          'b.txt',
+        ]);
         final alpha = archive.files.firstWhere((f) => f.name == 'a.txt');
         expect(utf8.decode(alpha.content as List<int>), 'alpha');
       }, tags: ['unit']);

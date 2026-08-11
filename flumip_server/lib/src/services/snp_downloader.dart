@@ -114,16 +114,18 @@ class HttpSnpDownloader implements SnpDownloader {
       var received = 0;
       var lastReport = DateTime.now();
 
-      await for (final chunk
-          in response.timeout(idleTimeout, onTimeout: (sink) {
-        sink.addError(
-          SnpDownloadException(
-            'The connection went quiet for '
-            '${idleTimeout.inMinutes} minutes and was given up on.',
-          ),
-        );
-        sink.close();
-      })) {
+      await for (final chunk in response.timeout(
+        idleTimeout,
+        onTimeout: (sink) {
+          sink.addError(
+            SnpDownloadException(
+              'The connection went quiet for '
+              '${idleTimeout.inMinutes} minutes and was given up on.',
+            ),
+          );
+          sink.close();
+        },
+      )) {
         received += chunk.length;
         // A server that lied about Content-Length, or sent none at all, is
         // caught here instead: the cap holds either way.
@@ -234,9 +236,9 @@ class HttpSnpDownloader implements SnpDownloader {
       '${(bytes / 1000000000).toStringAsFixed(2)} GB';
 
   static String _reason(int status) => switch (status) {
-        401 || 403 => '(access denied)',
-        404 => '(not found)',
-        >= 500 => '(server error)',
-        _ => '',
-      };
+    401 || 403 => '(access denied)',
+    404 => '(not found)',
+    >= 500 => '(server error)',
+    _ => '',
+  };
 }

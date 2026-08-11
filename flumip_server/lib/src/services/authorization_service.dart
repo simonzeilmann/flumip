@@ -260,7 +260,8 @@ class AuthorizationService {
         level: LogLevel.warning,
       );
       throw ProjectAccessDeniedException(
-        message: 'This action needs an administrator, and single sign-on is off',
+        message:
+            'This action needs an administrator, and single sign-on is off',
       );
     }
 

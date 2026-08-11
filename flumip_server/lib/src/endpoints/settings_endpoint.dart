@@ -67,13 +67,14 @@ class SettingsEndpoint extends Endpoint {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
       return settingsService.getSettingsExternal(session, password);
-    }
-    on ArgumentException {
+    } on ArgumentException {
       rethrow;
-    }
-    catch (e) {
-      session.log("Error retrieving settings",
-          level: LogLevel.error, exception: e);
+    } catch (e) {
+      session.log(
+        "Error retrieving settings",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -104,14 +105,16 @@ class SettingsEndpoint extends Endpoint {
       // Read before writing, so the transition can be detected rather than
       // inferred from the incoming object — which may not be what actually gets
       // stored, since updateSettings merges an explicit field list.
-      final wasRequiringLogin =
-          (await settingsService.getSettings(session)).loginRequired;
+      final wasRequiringLogin = (await settingsService.getSettings(
+        session,
+      )).loginRequired;
 
       await settingsService.updateSettings(session, settings);
       await sl<AuthRuntime>().broadcastConfigChange(session);
 
-      final nowRequiringLogin =
-          (await settingsService.getSettings(session)).loginRequired;
+      final nowRequiringLogin = (await settingsService.getSettings(
+        session,
+      )).loginRequired;
       if (wasRequiringLogin && !nowRequiringLogin) {
         // Switching sign-in off ends every session, the caller's included.
         // Otherwise the tokens issued while it was on stay valid for their full
@@ -128,8 +131,11 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log("Error updating settings",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error updating settings",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -159,8 +165,11 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log("Error setting the OIDC client secret",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting the OIDC client secret",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -189,8 +198,11 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log("Error setting the SMTP password",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error setting the SMTP password",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -199,10 +211,7 @@ class SettingsEndpoint extends Endpoint {
   ///
   /// Lets the settings tab say "a password is stored, type here to replace it"
   /// rather than showing an empty box that looks like nothing is configured.
-  Future<bool> smtpPasswordConfigured(
-    Session session,
-    String? password,
-  ) async {
+  Future<bool> smtpPasswordConfigured(Session session, String? password) async {
     await settingsService.requireAdmin(session, password);
     final settings = await settingsService.getSettings(session);
     return settings.smtpPassword?.isNotEmpty ?? false;
@@ -271,8 +280,11 @@ class SettingsEndpoint extends Endpoint {
     } on ArgumentException {
       rethrow;
     } catch (e) {
-      session.log("Error sending test mail",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error sending test mail",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

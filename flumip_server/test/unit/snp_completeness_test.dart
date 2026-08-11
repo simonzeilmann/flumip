@@ -23,9 +23,9 @@ final fake = FakeProcessRunner();
 
 /// A minimal valid BGZF file: a header, no records, and the EOF block.
 List<int> completeBgzf() => [
-      // One empty BGZF member, which is exactly the EOF marker's shape.
-      ...SnpService.bgzfEofMarker,
-    ];
+  // One empty BGZF member, which is exactly the EOF marker's shape.
+  ...SnpService.bgzfEofMarker,
+];
 
 void main() {
   group('hasBgzfEofMarker', () {
@@ -47,10 +47,7 @@ void main() {
     });
 
     test('rejects ordinary compressed data', () {
-      expect(
-        SnpService.hasBgzfEofMarker(List.filled(28, 0x78)),
-        isFalse,
-      );
+      expect(SnpService.hasBgzfEofMarker(List.filled(28, 0x78)), isFalse);
     });
   });
 
@@ -65,18 +62,16 @@ void main() {
     }
 
     test('a complete bgzip file is accepted', () async {
-      expect(await service.vcfProblem(write('x.vcf.gz', completeBgzf())),
-          isNull);
+      expect(
+        await service.vcfProblem(write('x.vcf.gz', completeBgzf())),
+        isNull,
+      );
     }, tags: ['unit']);
 
     test('a file missing only its EOF marker is refused', () async {
       // The whole point: nothing else catches this.
-      final truncated = [
-        ...completeBgzf(),
-        ...List.filled(200, 0x78),
-      ];
-      final problem =
-          await service.vcfProblem(write('x.vcf.gz', truncated));
+      final truncated = [...completeBgzf(), ...List.filled(200, 0x78)];
+      final problem = await service.vcfProblem(write('x.vcf.gz', truncated));
       expect(problem, isNotNull);
       expect(problem, contains('incomplete'));
       expect(problem, contains('did not finish'));
@@ -89,14 +84,18 @@ void main() {
     }, tags: ['unit']);
 
     test('a file too short to hold a marker is refused', () async {
-      expect(await service.vcfProblem(write('x.vcf.gz', [0x1f, 0x8b])),
-          isNotNull);
+      expect(
+        await service.vcfProblem(write('x.vcf.gz', [0x1f, 0x8b])),
+        isNotNull,
+      );
     }, tags: ['unit']);
 
     test('a missing file is refused rather than throwing', () async {
       final dir = createTempDir('flumip_vcf');
-      expect(await service.vcfProblem(File('${dir.path}/absent.vcf.gz')),
-          isNotNull);
+      expect(
+        await service.vcfProblem(File('${dir.path}/absent.vcf.gz')),
+        isNotNull,
+      );
     }, tags: ['unit']);
   });
 
@@ -134,40 +133,49 @@ void main() {
 
     final truncated = [...completeBgzf(), ...List.filled(200, 0x78)];
 
-    test('an uploaded truncated VCF is refused even when an index came with it',
-        () async {
-      // ⚠️ The exact hole. With an index present tabix never runs, so this was
-      // the one path where absolutely nothing looked at the bytes — two files
-      // being present was the entire test.
-      final snp = await uploaded(truncated, withTbi: true);
+    test(
+      'an uploaded truncated VCF is refused even when an index came with it',
+      () async {
+        // ⚠️ The exact hole. With an index present tabix never runs, so this was
+        // the one path where absolutely nothing looked at the bytes — two files
+        // being present was the entire test.
+        final snp = await uploaded(truncated, withTbi: true);
 
-      await service.settleUpload(session, snp);
+        await service.settleUpload(session, snp);
 
-      final done = (await Snp.db.findById(session, snp.id!))!;
-      expect(done.status, SnpImportStatus.failed);
-      expect(done.statusMessage, contains('incomplete'));
-    }, tags: ['unit']);
+        final done = (await Snp.db.findById(session, snp.id!))!;
+        expect(done.status, SnpImportStatus.failed);
+        expect(done.statusMessage, contains('incomplete'));
+      },
+      tags: ['unit'],
+    );
 
-    test('an uploaded truncated VCF is refused before tabix is asked', () async {
-      final snp = await uploaded(truncated);
+    test(
+      'an uploaded truncated VCF is refused before tabix is asked',
+      () async {
+        final snp = await uploaded(truncated);
 
-      await service.settleUpload(session, snp);
+        await service.settleUpload(session, snp);
 
-      final done = (await Snp.db.findById(session, snp.id!))!;
-      expect(done.status, SnpImportStatus.failed);
-      expect(done.statusMessage, contains('incomplete'));
-      expect(
-        fake.runCalls.where((c) => c.executable == 'tabix'),
-        isEmpty,
-        reason: 'tabix would have indexed it happily and exited 0',
-      );
-    }, tags: ['unit']);
+        final done = (await Snp.db.findById(session, snp.id!))!;
+        expect(done.status, SnpImportStatus.failed);
+        expect(done.statusMessage, contains('incomplete'));
+        expect(
+          fake.runCalls.where((c) => c.executable == 'tabix'),
+          isEmpty,
+          reason: 'tabix would have indexed it happily and exited 0',
+        );
+      },
+      tags: ['unit'],
+    );
 
     test('a complete uploaded VCF with its index is accepted', () async {
       final snp = await uploaded(completeBgzf(), withTbi: true);
       await service.settleUpload(session, snp);
-      expect((await Snp.db.findById(session, snp.id!))!.status,
-          SnpImportStatus.ready);
+      expect(
+        (await Snp.db.findById(session, snp.id!))!.status,
+        SnpImportStatus.ready,
+      );
     }, tags: ['unit']);
 
     test('buildTabixIndex refuses a truncated VCF', () async {
