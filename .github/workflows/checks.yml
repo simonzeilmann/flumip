@@ -46,6 +46,31 @@ jobs:
         with:
           channel: 'stable'
 
+      # Before `pub get`, because formatting is syntactic and needs no packages —
+      # so a reflow-only failure comes back in seconds rather than after a
+      # dependency resolve.
+      #
+      # ⚠️ Generated code is excluded, and has to be. `serverpod generate` does
+      # not emit `dart format` output, so formatting `lib/src/generated` or the
+      # generated test tools would be undone by the next generate and turn this
+      # check red on a commit nobody wrote. `flumip_client` is generated in its
+      # entirety and is therefore not checked at all.
+      #
+      # ⚠️ The formatter comes from whatever `stable` resolves to on the day. A
+      # Dart release that changes formatting will fail this on untouched code;
+      # the fix is to run the two commands below and commit the result, which is
+      # exactly what this check exists to keep small.
+      - name: Check formatting
+        run: |
+          cd flumip_flutter
+          dart format --output=none --set-exit-if-changed lib test
+          cd ../flumip_server
+          dart format --output=none --set-exit-if-changed $(
+            find lib bin test -name '*.dart' \
+              -not -path 'lib/src/generated/*' \
+              -not -path 'test/integration/test_tools/*'
+          )
+
       - name: Get dependencies
         run: |
           cd flumip_server && flutter pub get
