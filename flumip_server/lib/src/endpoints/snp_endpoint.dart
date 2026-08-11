@@ -64,15 +64,19 @@ class SnpEndpoint extends FlumipEndpoint {
   Future<List<Snp>> listMySnps(Session session) async {
     session.log('Listing the caller\'s custom SNPs', level: LogLevel.info);
     try {
+      // Ordered for the same reason as `getAllSnpForGenome`: an unordered find
+      // returns Postgres heap order, which moves whenever a row is updated.
       final custom = await Snp.db.find(
         session,
         where: (t) => t.custom.equals(true),
+        orderBy: (t) => t.id,
       );
       if (!authz.isEnforcing) return custom;
 
       final who = await authz.principal(session);
       if (who.isAdmin) return custom;
-      return custom.where((s) => s.owner != null && s.owner == who.userId)
+      return custom
+          .where((s) => s.owner != null && s.owner == who.userId)
           .toList();
     } catch (e) {
       session.log(
@@ -95,12 +99,11 @@ class SnpEndpoint extends FlumipEndpoint {
   /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
   /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
   /// ```
-  Future<Snp> createUpload(
-    Session session,
-    CustomSnpRequestDto request,
-  ) async {
-    session.log('Creating an upload slot for a custom SNP',
-        level: LogLevel.info);
+  Future<Snp> createUpload(Session session, CustomSnpRequestDto request) async {
+    session.log(
+      'Creating an upload slot for a custom SNP',
+      level: LogLevel.info,
+    );
     try {
       final name = request.name.trim();
       if (name.isEmpty) {
@@ -275,9 +278,7 @@ class SnpEndpoint extends FlumipEndpoint {
       final snp = await _writableCustom(session, snpId);
       if (snp.status == SnpImportStatus.downloading ||
           snp.status == SnpImportStatus.indexing) {
-        throw ArgumentException(
-          message: 'That import is already running.',
-        );
+        throw ArgumentException(message: 'That import is already running.');
       }
 
       // Re-validate: the allowlist may have been tightened, or the host may now
@@ -294,10 +295,10 @@ class SnpEndpoint extends FlumipEndpoint {
           message: 'There is nothing to retry — upload the files again.',
         );
       }
-      await _validateSourceUrls(
-        session,
-        [vcfUrl, if (snp.sourceTbiUrl?.isNotEmpty ?? false) snp.sourceTbiUrl!],
-      );
+      await _validateSourceUrls(session, [
+        vcfUrl,
+        if (snp.sourceTbiUrl?.isNotEmpty ?? false) snp.sourceTbiUrl!,
+      ]);
 
       snp
         ..status = SnpImportStatus.pending
@@ -327,11 +328,12 @@ class SnpEndpoint extends FlumipEndpoint {
     Session session,
     List<String> urls,
   ) async {
-    final cleaned = urls.map((u) => u.trim()).where((u) => u.isNotEmpty).toList();
+    final cleaned = urls
+        .map((u) => u.trim())
+        .where((u) => u.isNotEmpty)
+        .toList();
     if (cleaned.isEmpty) {
-      throw ArgumentException(
-        message: 'Give the address of a .vcf.gz file.',
-      );
+      throw ArgumentException(message: 'Give the address of a .vcf.gz file.');
     }
     if (cleaned.length > 2) {
       throw ArgumentException(
@@ -354,8 +356,9 @@ class SnpEndpoint extends FlumipEndpoint {
     }
 
     final settings = await sl<SettingsService>().getSettings(session);
-    final allowedHosts =
-        SnpService.parseAllowedHosts(settings.snpSourceAllowedHosts);
+    final allowedHosts = SnpService.parseAllowedHosts(
+      settings.snpSourceAllowedHosts,
+    );
 
     for (final url in [vcfUrl, ?tbiUrl]) {
       final parsed = Uri.tryParse(url);
