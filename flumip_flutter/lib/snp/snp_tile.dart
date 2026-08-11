@@ -207,6 +207,24 @@ class SnpTile extends StatelessWidget {
     ),
   );
 
+  /// Whether the set has files behind it.
+  ///
+  /// ⚠️ The server's `_fail` clears `vcfPath` on the way to `failed`, so this is
+  /// **always false for a failed set** — including one whose only problem was a
+  /// tabix run. That is what makes it the right question to ask before offering
+  /// to rename or share: neither means anything for a set with nothing in it.
+  bool get _hasData => snp.vcfPath.isNotEmpty;
+
+  /// Whether "Retry" would do anything.
+  ///
+  /// ⚠️ Only a URL import can be retried. `retryImport` also has a branch that
+  /// rebuilds a lost index from the `.vcf.gz` already on disk — but it is gated
+  /// on `vcfPath` being set, and `_fail` has just cleared it, so that branch is
+  /// unreachable for a row that actually reads `failed`. An upload slot has
+  /// nothing either way, and the endpoint answers "There is nothing to retry —
+  /// upload the files again." Offering the button there is offering a dead end.
+  bool get _canRetry => snp.sourceVcfUrl?.isNotEmpty ?? false;
+
   Widget _failure(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: 8),
     child: Column(
@@ -219,7 +237,7 @@ class SnpTile extends StatelessWidget {
           snp.statusMessage,
           style: TextStyle(color: context.colours.error, fontSize: 12),
         ),
-        if (_mayEdit)
+        if (_mayEdit && _canRetry)
           TextButton.icon(
             onPressed: () => onAction(SnpAction.retry),
             icon: const Icon(Icons.refresh, size: 16),
@@ -238,14 +256,18 @@ class SnpTile extends StatelessWidget {
     return PopupMenuButton<SnpAction>(
       onSelected: onAction,
       itemBuilder: (context) => [
-        if (_mayEdit)
+        // ⚠️ Naming and sharing need something to name and share. A set whose
+        // upload never arrived has an empty directory behind it, and offering
+        // "Share with everyone" there offers to share nothing — the menu should
+        // say what is actually left to do, which is delete it.
+        if (_mayEdit && _hasData)
           const PopupMenuItem(value: SnpAction.rename, child: Text('Rename…')),
-        if (_mayEdit)
+        if (_mayEdit && _hasData)
           PopupMenuItem(
             value: snp.private ? SnpAction.share : SnpAction.unshare,
             child: Text(snp.private ? 'Share with everyone' : 'Make private'),
           ),
-        if (_mayEdit && snp.status == SnpImportStatus.failed)
+        if (_mayEdit && _canRetry && snp.status == SnpImportStatus.failed)
           const PopupMenuItem(
             value: SnpAction.retry,
             child: Text('Retry import'),
