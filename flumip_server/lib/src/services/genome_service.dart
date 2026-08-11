@@ -524,7 +524,16 @@ class GenomeService {
       session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
       throw FlumipFileNotFoundException(message: 'Genome not found');
     }
-    return Snp.db.find(session, where: (t) => t.genome.equals(genomeId));
+    // ⚠️ Ordered, and this is a bug fix rather than tidiness. Without an
+    // `orderBy` Postgres returns heap order, and an UPDATE rewrites the row at
+    // the end of the heap — so flipping an SNP's sharing, or a download bumping
+    // `bytesDownloaded`, moved that row to the bottom of the list under the
+    // user's cursor. By id, so the order is the one they were added in.
+    return Snp.db.find(
+      session,
+      where: (t) => t.genome.equals(genomeId),
+      orderBy: (t) => t.id,
+    );
   }
 
   /// Checks if a genome exists by its path.
