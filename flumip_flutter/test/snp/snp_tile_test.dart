@@ -14,10 +14,13 @@ Snp snpFixture({
   int size = 1500000000,
   int bytesDownloaded = 0,
   int totalBytes = 0,
+  String vcfPath = '/opt/flumip/data/custom_snp/user/42/set.vcf.gz',
+  String? sourceVcfUrl,
 }) => Snp(
   id: 42,
   name: name,
-  vcfPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz',
+  vcfPath: vcfPath,
+  sourceVcfUrl: sourceVcfUrl,
   tbiPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz.tbi',
   folder: '/opt/flumip/data/custom_snp/user/42',
   active: true,
@@ -167,6 +170,12 @@ void main() {
           custom: true,
           status: SnpImportStatus.failed,
           statusMessage: 'This is a plain gzip file. tabix needs bgzip.',
+          // ⚠️ A URL import, so Retry is a real offer. It used to be an upload,
+          // which asserted a Retry button that could only ever answer "There is
+          // nothing to retry" — and a `vcfPath` that the server clears on its
+          // way to `failed`, so the row was not one the server can produce.
+          vcfPath: '',
+          sourceVcfUrl: 'https://example.org/panel.vcf.gz',
         ),
         isMine: true,
       );
@@ -214,5 +223,135 @@ void main() {
 
     expect(find.textContaining('500 MB of 1.00 GB'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
+  });
+
+  group('⚠️ Retry is only offered when there is something to retry', () {
+    // The abandoned-upload sweep turns a slot nobody filled into a *failed* row,
+    // and a failed row grew a Retry button. For an upload slot there is nothing
+    // to retry with — no source URL, no bytes on disk — so the endpoint answers
+    // "There is nothing to retry — upload the files again." A button whose only
+    // outcome is that message is a dead end.
+    testWidgets('an abandoned upload slot offers none', (tester) async {
+      await pumpTile(
+        tester,
+        snp: snpFixture(
+          custom: true,
+          status: SnpImportStatus.failed,
+          statusMessage: 'No files arrived. The upload was interrupted.',
+          vcfPath: '',
+        ),
+        isMine: true,
+      );
+
+      expect(find.text('Retry'), findsNothing);
+
+      await tester.tap(find.byType(PopupMenuButton<SnpAction>));
+      await tester.pumpAndSettle();
+      expect(find.text('Retry import'), findsNothing);
+      expect(find.text('Delete…'), findsOneWidget);
+    });
+
+    testWidgets('a failed URL import offers it', (tester) async {
+      await pumpTile(
+        tester,
+        snp: snpFixture(
+          custom: true,
+          status: SnpImportStatus.failed,
+          statusMessage: 'Interrupted — the download never started.',
+          vcfPath: '',
+          sourceVcfUrl: 'https://example.org/panel.vcf.gz',
+        ),
+        isMine: true,
+      );
+
+      expect(find.text('Retry'), findsOneWidget);
+    });
+  });
+
+  group('⚠️ a set with nothing in it can only be deleted', () {
+    // Reported from a real interrupted upload: the menu still offered "Rename…"
+    // and "Share with everyone" for a set whose directory is empty. Sharing
+    // nothing is not a thing anybody wants to do, and it reads as though the
+    // set is fine.
+    Future<void> openMenu(WidgetTester tester) async {
+      await tester.tap(find.byType(PopupMenuButton<SnpAction>));
+      // ⚠️ `pump`, not `pumpAndSettle`. A queued row carries an indeterminate
+      // progress bar, and nothing settles while one is on screen — the same
+      // trap as the design-progress panel.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('a failed upload offers delete alone', (tester) async {
+      await pumpTile(
+        tester,
+        snp: snpFixture(
+          custom: true,
+          status: SnpImportStatus.failed,
+          statusMessage: 'The upload did not finish.',
+          vcfPath: '',
+        ),
+        isMine: true,
+      );
+      await openMenu(tester);
+
+      expect(find.text('Delete…'), findsOneWidget);
+      expect(find.text('Rename…'), findsNothing);
+      expect(find.text('Share with everyone'), findsNothing);
+      expect(find.text('Make private'), findsNothing);
+      expect(find.text('Retry import'), findsNothing);
+    });
+
+    testWidgets('a queued set does not offer to share nothing either', (
+      tester,
+    ) async {
+      await pumpTile(
+        tester,
+        snp: snpFixture(
+          custom: true,
+          status: SnpImportStatus.pending,
+          vcfPath: '',
+        ),
+        isMine: true,
+      );
+      await openMenu(tester);
+
+      expect(find.text('Cancel — no files arrived'), findsOneWidget);
+      expect(find.text('Rename…'), findsNothing);
+      expect(find.text('Share with everyone'), findsNothing);
+    });
+
+    testWidgets('a failed URL import still offers retry, but not sharing', (
+      tester,
+    ) async {
+      await pumpTile(
+        tester,
+        snp: snpFixture(
+          custom: true,
+          status: SnpImportStatus.failed,
+          vcfPath: '',
+          sourceVcfUrl: 'https://example.org/panel.vcf.gz',
+        ),
+        isMine: true,
+      );
+      await openMenu(tester);
+
+      expect(find.text('Retry import'), findsOneWidget);
+      expect(find.text('Rename…'), findsNothing);
+    });
+
+    testWidgets('a ready set keeps the full menu', (tester) async {
+      // The regression guard for the gate itself.
+      await pumpTile(
+        tester,
+        snp: snpFixture(custom: true, private: true),
+        isMine: true,
+      );
+      await openMenu(tester);
+
+      expect(find.text('Rename…'), findsOneWidget);
+      expect(find.text('Share with everyone'), findsOneWidget);
+      expect(find.text('Delete…'), findsOneWidget);
+    });
   });
 }
