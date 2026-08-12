@@ -6,6 +6,12 @@ After=network.target
 Type=simple
 WorkingDirectory=/var/www/flumip_staging
 ExecStart=/var/www/flumip_staging/server --mode=staging --server-id=staging --logging=verbose --role=monolith --apply-migrations
+# Optional runtime configuration, chiefly the single sign-on settings; see
+# docs/authentication.md. The leading dash is required, not cosmetic: the
+# deploy workflows copy this unit onto hosts that have never run
+# setup-flumip.sh, where this file does not exist. Without the dash systemd
+# refuses to start the service and the next deploy of staging fails.
+EnvironmentFile=-/etc/flumip/flumip_staging.env
 Restart=always
 User=www-data
 

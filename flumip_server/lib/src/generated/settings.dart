@@ -16,10 +16,13 @@ abstract class Settings
     implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   Settings._({
     this.id,
+    bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -30,15 +33,26 @@ abstract class Settings
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
+    this.smtpPassword,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
-  }) : baseDir = baseDir ?? '/opt/flumip',
+    String? oidcIssuer,
+    String? oidcClientId,
+    this.oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
+  }) : demoMode = demoMode ?? false,
+       demoModeRetentionHours = demoModeRetentionHours ?? 168,
+       baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
        customSnpDir = customSnpDir ?? '/opt/flumip/data/custom_snp',
+       snpSourceAllowedHosts = snpSourceAllowedHosts ?? '',
        toolsDir = toolsDir ?? '/opt/flumip/tools',
        mipgenExecutable = mipgenExecutable ?? '/opt/flumip/MIPGEN/mipgen',
        exonExtractScript =
@@ -57,18 +71,27 @@ abstract class Settings
        smtpServer = smtpServer ?? '',
        smtpPort = smtpPort ?? 25,
        smtpUser = smtpUser ?? '',
-       smtpPassword = smtpPassword ?? '',
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme';
+       settingsPassword = settingsPassword ?? 'changeme',
+       oidcIssuer = oidcIssuer ?? '',
+       oidcClientId = oidcClientId ?? '',
+       oidcScopes = oidcScopes ?? 'openid email profile',
+       oidcButtonLabel = oidcButtonLabel ?? 'Sign in with SSO',
+       oidcAllowedEmailDomains = oidcAllowedEmailDomains ?? '',
+       oidcAdminEmails = oidcAdminEmails ?? '',
+       authPublicUrl = authPublicUrl ?? '';
 
   factory Settings({
     int? id,
+    bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -84,31 +107,61 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) = _SettingsImpl;
 
   factory Settings.fromJson(Map<String, dynamic> jsonSerialization) {
     return Settings(
       id: jsonSerialization['id'] as int?,
-      baseDir: jsonSerialization['baseDir'] as String,
-      projectDir: jsonSerialization['projectDir'] as String,
-      genomeDir: jsonSerialization['genomeDir'] as String,
-      customSnpDir: jsonSerialization['customSnpDir'] as String,
-      toolsDir: jsonSerialization['toolsDir'] as String,
-      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String,
-      exonExtractScript: jsonSerialization['exonExtractScript'] as String,
-      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String,
-      binCreationScript: jsonSerialization['binCreationScript'] as String,
+      demoMode: jsonSerialization['demoMode'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+      demoModeRetentionHours:
+          jsonSerialization['demoModeRetentionHours'] as int?,
+      baseDir: jsonSerialization['baseDir'] as String?,
+      projectDir: jsonSerialization['projectDir'] as String?,
+      genomeDir: jsonSerialization['genomeDir'] as String?,
+      customSnpDir: jsonSerialization['customSnpDir'] as String?,
+      snpSourceAllowedHosts:
+          jsonSerialization['snpSourceAllowedHosts'] as String?,
+      toolsDir: jsonSerialization['toolsDir'] as String?,
+      mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
+      exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
+      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String?,
+      binCreationScript: jsonSerialization['binCreationScript'] as String?,
       bigGenePredToGenePredExecutable:
-          jsonSerialization['bigGenePredToGenePredExecutable'] as String,
-      mailActive: jsonSerialization['mailActive'] as bool,
-      smtpServer: jsonSerialization['smtpServer'] as String,
-      smtpPort: jsonSerialization['smtpPort'] as int,
-      smtpUser: jsonSerialization['smtpUser'] as String,
-      smtpPassword: jsonSerialization['smtpPassword'] as String,
-      smtpFrom: jsonSerialization['smtpFrom'] as String,
-      startTLS: jsonSerialization['startTLS'] as bool,
-      loginRequired: jsonSerialization['loginRequired'] as bool,
-      settingsPassword: jsonSerialization['settingsPassword'] as String,
+          jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
+      mailActive: jsonSerialization['mailActive'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+      smtpServer: jsonSerialization['smtpServer'] as String?,
+      smtpPort: jsonSerialization['smtpPort'] as int?,
+      smtpUser: jsonSerialization['smtpUser'] as String?,
+      smtpPassword: jsonSerialization['smtpPassword'] as String?,
+      smtpFrom: jsonSerialization['smtpFrom'] as String?,
+      startTLS: jsonSerialization['startTLS'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+      loginRequired: jsonSerialization['loginRequired'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
+      settingsPassword: jsonSerialization['settingsPassword'] as String?,
+      oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
+      oidcClientId: jsonSerialization['oidcClientId'] as String?,
+      oidcClientSecret: jsonSerialization['oidcClientSecret'] as String?,
+      oidcScopes: jsonSerialization['oidcScopes'] as String?,
+      oidcButtonLabel: jsonSerialization['oidcButtonLabel'] as String?,
+      oidcAllowedEmailDomains:
+          jsonSerialization['oidcAllowedEmailDomains'] as String?,
+      oidcAdminEmails: jsonSerialization['oidcAdminEmails'] as String?,
+      authPublicUrl: jsonSerialization['authPublicUrl'] as String?,
     );
   }
 
@@ -119,6 +172,16 @@ abstract class Settings
   @override
   int? id;
 
+  bool demoMode;
+
+  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  ///
+  /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  /// raising it spares projects that were already queued. Lowering it cannot
+  /// pull a scheduled deletion earlier — that project keeps the deadline it was
+  /// created with. See DemoModeCleanup.
+  int demoModeRetentionHours;
+
   String baseDir;
 
   String projectDir;
@@ -126,6 +189,8 @@ abstract class Settings
   String genomeDir;
 
   String customSnpDir;
+
+  String snpSourceAllowedHosts;
 
   String toolsDir;
 
@@ -147,7 +212,7 @@ abstract class Settings
 
   String smtpUser;
 
-  String smtpPassword;
+  String? smtpPassword;
 
   String smtpFrom;
 
@@ -157,6 +222,22 @@ abstract class Settings
 
   String settingsPassword;
 
+  String oidcIssuer;
+
+  String oidcClientId;
+
+  String? oidcClientSecret;
+
+  String oidcScopes;
+
+  String oidcButtonLabel;
+
+  String oidcAllowedEmailDomains;
+
+  String oidcAdminEmails;
+
+  String authPublicUrl;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -165,10 +246,13 @@ abstract class Settings
   @_i1.useResult
   Settings copyWith({
     int? id,
+    bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -184,16 +268,27 @@ abstract class Settings
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'Settings',
       if (id != null) 'id': id,
+      'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
       'customSnpDir': customSnpDir,
+      'snpSourceAllowedHosts': snpSourceAllowedHosts,
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
@@ -204,11 +299,19 @@ abstract class Settings
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
       'smtpUser': smtpUser,
-      'smtpPassword': smtpPassword,
+      if (smtpPassword != null) 'smtpPassword': smtpPassword,
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
       'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      if (oidcClientSecret != null) 'oidcClientSecret': oidcClientSecret,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
     };
   }
 
@@ -217,10 +320,13 @@ abstract class Settings
     return {
       '__className__': 'Settings',
       if (id != null) 'id': id,
+      'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
       'customSnpDir': customSnpDir,
+      'snpSourceAllowedHosts': snpSourceAllowedHosts,
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
@@ -231,11 +337,17 @@ abstract class Settings
       'smtpServer': smtpServer,
       'smtpPort': smtpPort,
       'smtpUser': smtpUser,
-      'smtpPassword': smtpPassword,
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
       'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
     };
   }
 
@@ -274,10 +386,13 @@ class _Undefined {}
 class _SettingsImpl extends Settings {
   _SettingsImpl({
     int? id,
+    bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -293,12 +408,23 @@ class _SettingsImpl extends Settings {
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    String? oidcClientSecret,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) : super._(
          id: id,
+         demoMode: demoMode,
+         demoModeRetentionHours: demoModeRetentionHours,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
          customSnpDir: customSnpDir,
+         snpSourceAllowedHosts: snpSourceAllowedHosts,
          toolsDir: toolsDir,
          mipgenExecutable: mipgenExecutable,
          exonExtractScript: exonExtractScript,
@@ -314,6 +440,14 @@ class _SettingsImpl extends Settings {
          startTLS: startTLS,
          loginRequired: loginRequired,
          settingsPassword: settingsPassword,
+         oidcIssuer: oidcIssuer,
+         oidcClientId: oidcClientId,
+         oidcClientSecret: oidcClientSecret,
+         oidcScopes: oidcScopes,
+         oidcButtonLabel: oidcButtonLabel,
+         oidcAllowedEmailDomains: oidcAllowedEmailDomains,
+         oidcAdminEmails: oidcAdminEmails,
+         authPublicUrl: authPublicUrl,
        );
 
   /// Returns a shallow copy of this [Settings]
@@ -322,10 +456,13 @@ class _SettingsImpl extends Settings {
   @override
   Settings copyWith({
     Object? id = _Undefined,
+    bool? demoMode,
+    int? demoModeRetentionHours,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
     String? customSnpDir,
+    String? snpSourceAllowedHosts,
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
@@ -336,18 +473,31 @@ class _SettingsImpl extends Settings {
     String? smtpServer,
     int? smtpPort,
     String? smtpUser,
-    String? smtpPassword,
+    Object? smtpPassword = _Undefined,
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
     String? settingsPassword,
+    String? oidcIssuer,
+    String? oidcClientId,
+    Object? oidcClientSecret = _Undefined,
+    String? oidcScopes,
+    String? oidcButtonLabel,
+    String? oidcAllowedEmailDomains,
+    String? oidcAdminEmails,
+    String? authPublicUrl,
   }) {
     return Settings(
       id: id is int? ? id : this.id,
+      demoMode: demoMode ?? this.demoMode,
+      demoModeRetentionHours:
+          demoModeRetentionHours ?? this.demoModeRetentionHours,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,
       customSnpDir: customSnpDir ?? this.customSnpDir,
+      snpSourceAllowedHosts:
+          snpSourceAllowedHosts ?? this.snpSourceAllowedHosts,
       toolsDir: toolsDir ?? this.toolsDir,
       mipgenExecutable: mipgenExecutable ?? this.mipgenExecutable,
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
@@ -360,17 +510,39 @@ class _SettingsImpl extends Settings {
       smtpServer: smtpServer ?? this.smtpServer,
       smtpPort: smtpPort ?? this.smtpPort,
       smtpUser: smtpUser ?? this.smtpUser,
-      smtpPassword: smtpPassword ?? this.smtpPassword,
+      smtpPassword: smtpPassword is String? ? smtpPassword : this.smtpPassword,
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
       settingsPassword: settingsPassword ?? this.settingsPassword,
+      oidcIssuer: oidcIssuer ?? this.oidcIssuer,
+      oidcClientId: oidcClientId ?? this.oidcClientId,
+      oidcClientSecret: oidcClientSecret is String?
+          ? oidcClientSecret
+          : this.oidcClientSecret,
+      oidcScopes: oidcScopes ?? this.oidcScopes,
+      oidcButtonLabel: oidcButtonLabel ?? this.oidcButtonLabel,
+      oidcAllowedEmailDomains:
+          oidcAllowedEmailDomains ?? this.oidcAllowedEmailDomains,
+      oidcAdminEmails: oidcAdminEmails ?? this.oidcAdminEmails,
+      authPublicUrl: authPublicUrl ?? this.authPublicUrl,
     );
   }
 }
 
 class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
   SettingsUpdateTable(super.table);
+
+  _i1.ColumnValue<bool, bool> demoMode(bool value) => _i1.ColumnValue(
+    table.demoMode,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> demoModeRetentionHours(int value) =>
+      _i1.ColumnValue(
+        table.demoModeRetentionHours,
+        value,
+      );
 
   _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
     table.baseDir,
@@ -391,6 +563,12 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
     table.customSnpDir,
     value,
   );
+
+  _i1.ColumnValue<String, String> snpSourceAllowedHosts(String value) =>
+      _i1.ColumnValue(
+        table.snpSourceAllowedHosts,
+        value,
+      );
 
   _i1.ColumnValue<String, String> toolsDir(String value) => _i1.ColumnValue(
     table.toolsDir,
@@ -448,10 +626,11 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
     value,
   );
 
-  _i1.ColumnValue<String, String> smtpPassword(String value) => _i1.ColumnValue(
-    table.smtpPassword,
-    value,
-  );
+  _i1.ColumnValue<String, String> smtpPassword(String? value) =>
+      _i1.ColumnValue(
+        table.smtpPassword,
+        value,
+      );
 
   _i1.ColumnValue<String, String> smtpFrom(String value) => _i1.ColumnValue(
     table.smtpFrom,
@@ -473,11 +652,66 @@ class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
         table.settingsPassword,
         value,
       );
+
+  _i1.ColumnValue<String, String> oidcIssuer(String value) => _i1.ColumnValue(
+    table.oidcIssuer,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcClientId(String value) => _i1.ColumnValue(
+    table.oidcClientId,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcClientSecret(String? value) =>
+      _i1.ColumnValue(
+        table.oidcClientSecret,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcScopes(String value) => _i1.ColumnValue(
+    table.oidcScopes,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> oidcButtonLabel(String value) =>
+      _i1.ColumnValue(
+        table.oidcButtonLabel,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcAllowedEmailDomains(String value) =>
+      _i1.ColumnValue(
+        table.oidcAllowedEmailDomains,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> oidcAdminEmails(String value) =>
+      _i1.ColumnValue(
+        table.oidcAdminEmails,
+        value,
+      );
+
+  _i1.ColumnValue<String, String> authPublicUrl(String value) =>
+      _i1.ColumnValue(
+        table.authPublicUrl,
+        value,
+      );
 }
 
 class SettingsTable extends _i1.Table<int?> {
   SettingsTable({super.tableRelation}) : super(tableName: 'settings') {
     updateTable = SettingsUpdateTable(this);
+    demoMode = _i1.ColumnBool(
+      'demoMode',
+      this,
+      hasDefault: true,
+    );
+    demoModeRetentionHours = _i1.ColumnInt(
+      'demoModeRetentionHours',
+      this,
+      hasDefault: true,
+    );
     baseDir = _i1.ColumnString(
       'baseDir',
       this,
@@ -495,6 +729,11 @@ class SettingsTable extends _i1.Table<int?> {
     );
     customSnpDir = _i1.ColumnString(
       'customSnpDir',
+      this,
+      hasDefault: true,
+    );
+    snpSourceAllowedHosts = _i1.ColumnString(
+      'snpSourceAllowedHosts',
       this,
       hasDefault: true,
     );
@@ -551,7 +790,6 @@ class SettingsTable extends _i1.Table<int?> {
     smtpPassword = _i1.ColumnString(
       'smtpPassword',
       this,
-      hasDefault: true,
     );
     smtpFrom = _i1.ColumnString(
       'smtpFrom',
@@ -573,9 +811,58 @@ class SettingsTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
+    oidcIssuer = _i1.ColumnString(
+      'oidcIssuer',
+      this,
+      hasDefault: true,
+    );
+    oidcClientId = _i1.ColumnString(
+      'oidcClientId',
+      this,
+      hasDefault: true,
+    );
+    oidcClientSecret = _i1.ColumnString(
+      'oidcClientSecret',
+      this,
+    );
+    oidcScopes = _i1.ColumnString(
+      'oidcScopes',
+      this,
+      hasDefault: true,
+    );
+    oidcButtonLabel = _i1.ColumnString(
+      'oidcButtonLabel',
+      this,
+      hasDefault: true,
+    );
+    oidcAllowedEmailDomains = _i1.ColumnString(
+      'oidcAllowedEmailDomains',
+      this,
+      hasDefault: true,
+    );
+    oidcAdminEmails = _i1.ColumnString(
+      'oidcAdminEmails',
+      this,
+      hasDefault: true,
+    );
+    authPublicUrl = _i1.ColumnString(
+      'authPublicUrl',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final SettingsUpdateTable updateTable;
+
+  late final _i1.ColumnBool demoMode;
+
+  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  ///
+  /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  /// raising it spares projects that were already queued. Lowering it cannot
+  /// pull a scheduled deletion earlier — that project keeps the deadline it was
+  /// created with. See DemoModeCleanup.
+  late final _i1.ColumnInt demoModeRetentionHours;
 
   late final _i1.ColumnString baseDir;
 
@@ -584,6 +871,8 @@ class SettingsTable extends _i1.Table<int?> {
   late final _i1.ColumnString genomeDir;
 
   late final _i1.ColumnString customSnpDir;
+
+  late final _i1.ColumnString snpSourceAllowedHosts;
 
   late final _i1.ColumnString toolsDir;
 
@@ -615,13 +904,32 @@ class SettingsTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString settingsPassword;
 
+  late final _i1.ColumnString oidcIssuer;
+
+  late final _i1.ColumnString oidcClientId;
+
+  late final _i1.ColumnString oidcClientSecret;
+
+  late final _i1.ColumnString oidcScopes;
+
+  late final _i1.ColumnString oidcButtonLabel;
+
+  late final _i1.ColumnString oidcAllowedEmailDomains;
+
+  late final _i1.ColumnString oidcAdminEmails;
+
+  late final _i1.ColumnString authPublicUrl;
+
   @override
   List<_i1.Column> get columns => [
     id,
+    demoMode,
+    demoModeRetentionHours,
     baseDir,
     projectDir,
     genomeDir,
     customSnpDir,
+    snpSourceAllowedHosts,
     toolsDir,
     mipgenExecutable,
     exonExtractScript,
@@ -637,6 +945,14 @@ class SettingsTable extends _i1.Table<int?> {
     startTLS,
     loginRequired,
     settingsPassword,
+    oidcIssuer,
+    oidcClientId,
+    oidcClientSecret,
+    oidcScopes,
+    oidcButtonLabel,
+    oidcAllowedEmailDomains,
+    oidcAdminEmails,
+    authPublicUrl,
   ];
 }
 
@@ -696,7 +1012,7 @@ class SettingsRepository {
   /// );
   /// ```
   Future<List<Settings>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     int? offset,
@@ -704,6 +1020,8 @@ class SettingsRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<SettingsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Settings>(
       where: where?.call(Settings.t),
@@ -713,6 +1031,8 @@ class SettingsRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -734,13 +1054,15 @@ class SettingsRepository {
   /// );
   /// ```
   Future<Settings?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? offset,
     _i1.OrderByBuilder<SettingsTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<SettingsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Settings>(
       where: where?.call(Settings.t),
@@ -749,18 +1071,24 @@ class SettingsRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Settings] by its [id] or null if no such row exists.
   Future<Settings?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Settings>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -770,14 +1098,20 @@ class SettingsRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Settings>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Settings>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -785,7 +1119,7 @@ class SettingsRepository {
   ///
   /// The returned [Settings] will have its `id` field set.
   Future<Settings> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
@@ -801,7 +1135,7 @@ class SettingsRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Settings>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.ColumnSelections<SettingsTable>? columns,
     _i1.Transaction? transaction,
@@ -817,7 +1151,7 @@ class SettingsRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Settings> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.ColumnSelections<SettingsTable>? columns,
     _i1.Transaction? transaction,
@@ -832,7 +1166,7 @@ class SettingsRepository {
   /// Updates a single [Settings] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Settings?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -847,7 +1181,7 @@ class SettingsRepository {
   /// Updates all [Settings]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Settings>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<SettingsTable> where,
     int? limit,
@@ -873,7 +1207,7 @@ class SettingsRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Settings>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Settings> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -885,7 +1219,7 @@ class SettingsRepository {
 
   /// Deletes a single [Settings].
   Future<Settings> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Settings row, {
     _i1.Transaction? transaction,
   }) async {
@@ -897,7 +1231,7 @@ class SettingsRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Settings>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<SettingsTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -910,7 +1244,7 @@ class SettingsRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -918,6 +1252,22 @@ class SettingsRepository {
     return session.db.count<Settings>(
       where: where?.call(Settings.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Settings] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<SettingsTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Settings>(
+      where: where(Settings.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }

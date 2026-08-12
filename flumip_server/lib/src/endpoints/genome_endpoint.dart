@@ -3,11 +3,12 @@ import 'package:serverpod/server.dart';
 
 import '../generated/protocol.dart';
 import '../services/genome_service.dart';
+import 'flumip_endpoint.dart';
 
 /// Endpoint for genome-related operations.
-class GenomeEndpoint extends Endpoint {
+class GenomeEndpoint extends FlumipEndpoint {
   /// Instance of the genome service.
-  get genomeService => GenomeService();
+  GenomeService get genomeService => GenomeService();
 
   /// Retrieves a genome by its ID.
   ///
@@ -20,8 +21,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.getGenome(session, id);
     } catch (e) {
-      session.log('Error retrieving genome with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving genome with ID: $id',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -36,8 +40,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.getAllGenomes(session);
     } catch (e) {
-      session.log('Error retrieving all genomes',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving all genomes',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -53,8 +60,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.updateGenome(session, id, genome);
     } catch (e) {
-      session.log('Error updating genome with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error updating genome with ID: $id',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -68,40 +78,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.collectGenomes(session);
     } catch (e) {
-      session.log('Error collecting genomes',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
-
-  /// Indexes the FA file for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to index.
-  /// \throws Exception if an error occurs during indexing.
-  Future<void> indexGenome(Session session, int id) async {
-    session.log('Indexing genome with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.indexGenome(session, id);
-    } catch (e) {
-      session.log('Error indexing genome with ID: $id',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
-
-  /// Deletes the index for the specified genome.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the genome to delete the index for.
-  /// \throws Exception if an error occurs during deletion.
-  Future<void> deleteGenomeIndex(Session session, int id) async {
-    session.log('Deleting index for genome with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.deleteGenomeIndex(session, id);
-    } catch (e) {
-      session.log('Error deleting index for genome with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error collecting genomes',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -117,8 +98,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.getSnp(session, id);
     } catch (e) {
-      session.log('Error retrieving SNP with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving SNP with ID: $id',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -134,28 +118,22 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.getAllSnpForGenome(session, genomeId);
     } catch (e) {
-      session.log('Error retrieving all SNPs',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving all SNPs',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
 
-  /// Updates an SNP.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the SNP to update.
-  /// \param snp The updated SNP data.
-  /// \throws Exception if an error occurs during the update.
-  Future<void> updateSnp(Session session, int id, Snp snp) async {
-    session.log('Updating SNP with ID: $id', level: LogLevel.info);
-    try {
-      return genomeService.updateSnp(session, id, snp);
-    } catch (e) {
-      session.log('Error updating SNP with ID: $id',
-          level: LogLevel.error, exception: e);
-      rethrow;
-    }
-  }
+  // `updateSnp` used to live here. It took a whole client-supplied `Snp` row and
+  // handed it straight to `Snp.db.updateRow` with no check of any kind, which was
+  // survivable only because an SNP had nothing worth rewriting and nothing in the
+  // app ever called it. It now would: `owner`, `private`, `status` and `vcfPath`
+  // are all on the row, so the same method would let anyone take over, unshare or
+  // repoint anybody's SNP. Replaced by `SnpEndpoint.renameSnp` and
+  // `SnpEndpoint.setShared`, which change one thing each and are guarded.
 
   /// Retrieves all genome categories.
   ///
@@ -167,8 +145,11 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.getGenomeCategories(session);
     } catch (e) {
-      session.log('Error retrieving categories',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving categories',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -180,14 +161,21 @@ class GenomeEndpoint extends Endpoint {
   /// \returns A list of genomes in the specified category.
   /// \throws Exception if an error occurs during retrieval.
   Future<List<Genome>> getGenomeByCategory(
-      Session session, String category) async {
-    session.log('Retrieving genomes for category: $category',
-        level: LogLevel.info);
+    Session session,
+    String category,
+  ) async {
+    session.log(
+      'Retrieving genomes for category: $category',
+      level: LogLevel.info,
+    );
     try {
       return genomeService.getGenomeByCategory(session, category);
     } catch (e) {
-      session.log('Error retrieving genomes for category: $category',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error retrieving genomes for category: $category',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -197,20 +185,28 @@ class GenomeEndpoint extends Endpoint {
     try {
       return genomeService.indexFasta(session, id);
     } catch (e) {
-      session.log('Error indexing fasta for genome with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error indexing fasta for genome with ID: $id',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
 
   Future<void> deleteFastaIndex(Session session, int id) async {
-    session.log('Deleting fasta index for genome with ID: $id',
-        level: LogLevel.info);
+    session.log(
+      'Deleting fasta index for genome with ID: $id',
+      level: LogLevel.info,
+    );
     try {
       return genomeService.deleteFastaIndex(session, id);
     } catch (e) {
-      session.log('Error deleting fasta index for genome with ID: $id',
-          level: LogLevel.error, exception: e);
+      session.log(
+        'Error deleting fasta index for genome with ID: $id',
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

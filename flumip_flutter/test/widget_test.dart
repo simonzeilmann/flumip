@@ -1,21 +1,20 @@
-// This is a basic Flutter widget test.
+// Placeholder test so `flutter test` has something to run in CI.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_test/flutter_test.dart';
+// The app has no real widget tests yet. When adding them, use WidgetTester to
+// pump widgets and assert on the rendered tree, e.g.:
 //
-// import 'package:PROJECTNAME_flutter/main.dart';
+//   testWidgets('shows the project list', (tester) async {
+//     await tester.pumpWidget(const MyApp());
+//     expect(find.text('Projects'), findsOneWidget);
+//   });
+//
+// Note that `main.dart` builds a Serverpod client at startup, so tests covering
+// full pages need that dependency stubbed or injected first.
 
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test("testTest", () {
+  test('placeholder', () {
     expect(1, 1);
-  },
-  tags: ['integration', 'action'],
-  );
+  });
 }

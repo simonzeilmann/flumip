@@ -26,6 +26,7 @@ abstract class Project
     DateTime? created,
     this.owner,
     this.department,
+    this.trackToken,
     this.genes,
     bool? bedFileCreated,
     bool? active,
@@ -36,6 +37,7 @@ abstract class Project
     this.started,
     this.completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) : description = description ?? '',
        created = created ?? DateTime.now(),
@@ -44,6 +46,7 @@ abstract class Project
        size = size ?? 0,
        emailNotification = emailNotification ?? false,
        error = error ?? '',
+       warning = warning ?? '',
        cleanup = cleanup ?? false;
 
   factory Project({
@@ -57,6 +60,7 @@ abstract class Project
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -67,6 +71,7 @@ abstract class Project
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) = _ProjectImpl;
 
@@ -75,25 +80,36 @@ abstract class Project
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
       folderName: jsonSerialization['folderName'] as String?,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
       tags: jsonSerialization['tags'] == null
           ? null
           : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
-      created: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      created: jsonSerialization['created'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
+      trackToken: jsonSerialization['trackToken'] as String?,
       genes: jsonSerialization['genes'] == null
           ? null
           : _i2.Protocol().deserialize<List<String>>(
               jsonSerialization['genes'],
             ),
-      bedFileCreated: jsonSerialization['bedFileCreated'] as bool,
-      active: jsonSerialization['active'] as bool,
+      bedFileCreated: jsonSerialization['bedFileCreated'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['bedFileCreated']),
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
       pid: jsonSerialization['pid'] as int?,
-      size: jsonSerialization['size'] as int,
-      emailNotification: jsonSerialization['emailNotification'] as bool,
+      size: jsonSerialization['size'] as int?,
+      emailNotification: jsonSerialization['emailNotification'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['emailNotification'],
+            ),
       options: jsonSerialization['options'] as int,
       started: jsonSerialization['started'] == null
           ? null
@@ -103,8 +119,11 @@ abstract class Project
           : _i1.DurationJsonExtension.fromJson(
               jsonSerialization['completedIn'],
             ),
-      error: jsonSerialization['error'] as String,
-      cleanup: jsonSerialization['cleanup'] as bool,
+      error: jsonSerialization['error'] as String?,
+      warning: jsonSerialization['warning'] as String?,
+      cleanup: jsonSerialization['cleanup'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
     );
   }
 
@@ -123,15 +142,45 @@ abstract class Project
 
   int? genome;
 
+  /// The chosen SNP set, or null for "no SNP masking".
+  ///
+  /// onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  /// rather than leave a project aimed at a row that is gone. `generateMips`
+  /// refuses to run when this points at an SNP that is not ready, so a project
+  /// whose SNP was deleted fails loudly instead of quietly designing different
+  /// MIPs.
   int? snp;
 
   List<String>? tags;
 
   DateTime created;
 
+  /// The FlumipUser who created the project, or null.
+  ///
+  /// Null means "unowned", which every project on an existing install is, since
+  /// nothing wrote this column before authorization existed. Unowned projects
+  /// stay fully accessible to everyone so that switching single sign-on on does
+  /// not strand people's existing work — see `projectIsAccessible`.
+  ///
+  /// onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  /// the data they produced. The project falls back to unowned, which an admin
+  /// can then reassign.
   int? owner;
 
+  /// Reserved. Nothing sets this, because no department claim is collected from
+  /// the identity provider. `projectIsAccessible` reads it, but the clause
+  /// cannot match while the caller's department is always null. Wiring it means
+  /// adding a claim name to Settings — see docs/authorization.md.
   int? department;
+
+  /// Unguessable token for the public `/ucsc_track/<token>` URL.
+  ///
+  /// serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  /// an access check. The route itself cannot require a session — the fetcher is
+  /// genome.ucsc.edu, not a browser — so the token is what stops the track from
+  /// being enumerable. Null on projects created before this existed; minted on
+  /// first request.
+  String? trackToken;
 
   List<String>? genes;
 
@@ -153,6 +202,19 @@ abstract class Project
 
   String error;
 
+  /// Something worth knowing about a run that nonetheless succeeded.
+  ///
+  /// ⚠️ Distinct from [error], and the distinction is the point. Finalizing a
+  /// finished run does several things after the MIPs are safely on disk — sizing
+  /// the output, timing it, generating the UCSC track — and any of those
+  /// throwing used to land in `error`, which marks the whole project failed. A
+  /// project whose MIPs designed perfectly well would report "MIP generation
+  /// failed" because a track file could not be written.
+  ///
+  /// `error` means there is no result. `warning` means there is a result and
+  /// something about it is worth reading.
+  String warning;
+
   bool cleanup;
 
   @override
@@ -172,6 +234,7 @@ abstract class Project
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -182,6 +245,7 @@ abstract class Project
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   });
   @override
@@ -198,6 +262,7 @@ abstract class Project
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
+      if (trackToken != null) 'trackToken': trackToken,
       if (genes != null) 'genes': genes?.toJson(),
       'bedFileCreated': bedFileCreated,
       'active': active,
@@ -208,6 +273,7 @@ abstract class Project
       if (started != null) 'started': started?.toJson(),
       if (completedIn != null) 'completedIn': completedIn?.toJson(),
       'error': error,
+      'warning': warning,
       'cleanup': cleanup,
     };
   }
@@ -234,6 +300,7 @@ abstract class Project
       if (started != null) 'started': started?.toJson(),
       if (completedIn != null) 'completedIn': completedIn?.toJson(),
       'error': error,
+      'warning': warning,
       'cleanup': cleanup,
     };
   }
@@ -282,6 +349,7 @@ class _ProjectImpl extends Project {
     DateTime? created,
     int? owner,
     int? department,
+    String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -292,6 +360,7 @@ class _ProjectImpl extends Project {
     DateTime? started,
     Duration? completedIn,
     String? error,
+    String? warning,
     bool? cleanup,
   }) : super._(
          id: id,
@@ -304,6 +373,7 @@ class _ProjectImpl extends Project {
          created: created,
          owner: owner,
          department: department,
+         trackToken: trackToken,
          genes: genes,
          bedFileCreated: bedFileCreated,
          active: active,
@@ -314,6 +384,7 @@ class _ProjectImpl extends Project {
          started: started,
          completedIn: completedIn,
          error: error,
+         warning: warning,
          cleanup: cleanup,
        );
 
@@ -332,6 +403,7 @@ class _ProjectImpl extends Project {
     DateTime? created,
     Object? owner = _Undefined,
     Object? department = _Undefined,
+    Object? trackToken = _Undefined,
     Object? genes = _Undefined,
     bool? bedFileCreated,
     bool? active,
@@ -342,6 +414,7 @@ class _ProjectImpl extends Project {
     Object? started = _Undefined,
     Object? completedIn = _Undefined,
     String? error,
+    String? warning,
     bool? cleanup,
   }) {
     return Project(
@@ -355,6 +428,7 @@ class _ProjectImpl extends Project {
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is int? ? department : this.department,
+      trackToken: trackToken is String? ? trackToken : this.trackToken,
       genes: genes is List<String>?
           ? genes
           : this.genes?.map((e0) => e0).toList(),
@@ -367,6 +441,7 @@ class _ProjectImpl extends Project {
       started: started is DateTime? ? started : this.started,
       completedIn: completedIn is Duration? ? completedIn : this.completedIn,
       error: error ?? this.error,
+      warning: warning ?? this.warning,
       cleanup: cleanup ?? this.cleanup,
     );
   }
@@ -419,6 +494,11 @@ class ProjectUpdateTable extends _i1.UpdateTable<ProjectTable> {
 
   _i1.ColumnValue<int, int> department(int? value) => _i1.ColumnValue(
     table.department,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> trackToken(String? value) => _i1.ColumnValue(
+    table.trackToken,
     value,
   );
 
@@ -475,6 +555,11 @@ class ProjectUpdateTable extends _i1.UpdateTable<ProjectTable> {
     value,
   );
 
+  _i1.ColumnValue<String, String> warning(String value) => _i1.ColumnValue(
+    table.warning,
+    value,
+  );
+
   _i1.ColumnValue<bool, bool> cleanup(bool value) => _i1.ColumnValue(
     table.cleanup,
     value,
@@ -522,6 +607,10 @@ class ProjectTable extends _i1.Table<int?> {
       'department',
       this,
     );
+    trackToken = _i1.ColumnString(
+      'trackToken',
+      this,
+    );
     genes = _i1.ColumnSerializable<List<String>>(
       'genes',
       this,
@@ -567,6 +656,11 @@ class ProjectTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
+    warning = _i1.ColumnString(
+      'warning',
+      this,
+      hasDefault: true,
+    );
     cleanup = _i1.ColumnBool(
       'cleanup',
       this,
@@ -584,15 +678,45 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt genome;
 
+  /// The chosen SNP set, or null for "no SNP masking".
+  ///
+  /// onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  /// rather than leave a project aimed at a row that is gone. `generateMips`
+  /// refuses to run when this points at an SNP that is not ready, so a project
+  /// whose SNP was deleted fails loudly instead of quietly designing different
+  /// MIPs.
   late final _i1.ColumnInt snp;
 
   late final _i1.ColumnSerializable<List<String>> tags;
 
   late final _i1.ColumnDateTime created;
 
+  /// The FlumipUser who created the project, or null.
+  ///
+  /// Null means "unowned", which every project on an existing install is, since
+  /// nothing wrote this column before authorization existed. Unowned projects
+  /// stay fully accessible to everyone so that switching single sign-on on does
+  /// not strand people's existing work — see `projectIsAccessible`.
+  ///
+  /// onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  /// the data they produced. The project falls back to unowned, which an admin
+  /// can then reassign.
   late final _i1.ColumnInt owner;
 
+  /// Reserved. Nothing sets this, because no department claim is collected from
+  /// the identity provider. `projectIsAccessible` reads it, but the clause
+  /// cannot match while the caller's department is always null. Wiring it means
+  /// adding a claim name to Settings — see docs/authorization.md.
   late final _i1.ColumnInt department;
+
+  /// Unguessable token for the public `/ucsc_track/<token>` URL.
+  ///
+  /// serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  /// an access check. The route itself cannot require a session — the fetcher is
+  /// genome.ucsc.edu, not a browser — so the token is what stops the track from
+  /// being enumerable. Null on projects created before this existed; minted on
+  /// first request.
+  late final _i1.ColumnString trackToken;
 
   late final _i1.ColumnSerializable<List<String>> genes;
 
@@ -614,6 +738,19 @@ class ProjectTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString error;
 
+  /// Something worth knowing about a run that nonetheless succeeded.
+  ///
+  /// ⚠️ Distinct from [error], and the distinction is the point. Finalizing a
+  /// finished run does several things after the MIPs are safely on disk — sizing
+  /// the output, timing it, generating the UCSC track — and any of those
+  /// throwing used to land in `error`, which marks the whole project failed. A
+  /// project whose MIPs designed perfectly well would report "MIP generation
+  /// failed" because a track file could not be written.
+  ///
+  /// `error` means there is no result. `warning` means there is a result and
+  /// something about it is worth reading.
+  late final _i1.ColumnString warning;
+
   late final _i1.ColumnBool cleanup;
 
   @override
@@ -628,6 +765,7 @@ class ProjectTable extends _i1.Table<int?> {
     created,
     owner,
     department,
+    trackToken,
     genes,
     bedFileCreated,
     active,
@@ -638,6 +776,7 @@ class ProjectTable extends _i1.Table<int?> {
     started,
     completedIn,
     error,
+    warning,
     cleanup,
   ];
 }
@@ -698,7 +837,7 @@ class ProjectRepository {
   /// );
   /// ```
   Future<List<Project>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? limit,
     int? offset,
@@ -706,6 +845,8 @@ class ProjectRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Project>(
       where: where?.call(Project.t),
@@ -715,6 +856,8 @@ class ProjectRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -736,13 +879,15 @@ class ProjectRepository {
   /// );
   /// ```
   Future<Project?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? offset,
     _i1.OrderByBuilder<ProjectTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Project>(
       where: where?.call(Project.t),
@@ -751,18 +896,24 @@ class ProjectRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Project] by its [id] or null if no such row exists.
   Future<Project?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Project>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -772,14 +923,20 @@ class ProjectRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Project>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Project>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -787,7 +944,7 @@ class ProjectRepository {
   ///
   /// The returned [Project] will have its `id` field set.
   Future<Project> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.Transaction? transaction,
   }) async {
@@ -803,7 +960,7 @@ class ProjectRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Project>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.ColumnSelections<ProjectTable>? columns,
     _i1.Transaction? transaction,
@@ -819,7 +976,7 @@ class ProjectRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Project> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.ColumnSelections<ProjectTable>? columns,
     _i1.Transaction? transaction,
@@ -834,7 +991,7 @@ class ProjectRepository {
   /// Updates a single [Project] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Project?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -849,7 +1006,7 @@ class ProjectRepository {
   /// Updates all [Project]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Project>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<ProjectUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<ProjectTable> where,
     int? limit,
@@ -875,7 +1032,7 @@ class ProjectRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Project>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Project> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -887,7 +1044,7 @@ class ProjectRepository {
 
   /// Deletes a single [Project].
   Future<Project> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Project row, {
     _i1.Transaction? transaction,
   }) async {
@@ -899,7 +1056,7 @@ class ProjectRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Project>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<ProjectTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -912,7 +1069,7 @@ class ProjectRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -920,6 +1077,22 @@ class ProjectRepository {
     return session.db.count<Project>(
       where: where?.call(Project.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Project] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<ProjectTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Project>(
+      where: where(Project.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }

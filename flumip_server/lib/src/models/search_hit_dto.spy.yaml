@@ -1,0 +1,28 @@
+### One row of the unified search results. No table.
+###
+### Deliberately flat, and deliberately narrower than any of the three rows it can
+### describe. A hit needs a label, a subtitle, and *enough to open the thing* —
+### which for an SNP set means the genome it belongs to and the category that
+### genome sits in, because opening an SNP set means opening its genome.
+###
+### ⚠️ Carries no path, no owner and no `statusMessage`. `Snp.statusMessage` is
+### documented as able to contain anything, and a list somebody is typing into is
+### the wrong surface for arbitrary text from a remote server. Anything a user
+### needs beyond identifying the row is on the tab the hit opens.
+class: SearchHitDto
+fields:
+  kind: SearchHitKind
+  ### The row id of the project, genome or SNP set. Unique only within [kind].
+  id: int
+  name: String
+  ### The row's own description, empty when it has none.
+  subtitle: String, default=''
+  ### The genome to open in order to reach this hit: the genome itself for a
+  ### genome hit, the owning genome for an SNP set, null for a project.
+  genomeId: int?
+  ### The rail category that genome sits in, so the client can open the rail on
+  ### the way. Null for a project, and for a genome filed under no category.
+  category: String?
+  ### The trailing line under the name: the genome's name for an SNP set, the
+  ### category for a genome, empty for a project.
+  context: String, default=''

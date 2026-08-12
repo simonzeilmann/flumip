@@ -1,0 +1,23 @@
+### Everything the settings tab needs to show about the SSO setup that is not
+### itself a setting. No table — transport only.
+###
+### [redirectUri] is the highest-value field here: a mismatch between what this
+### server computes and what the provider has registered is the single most
+### common way an OIDC setup fails, and the error surfaces at the provider where
+### the admin cannot see our value. Showing it removes the guesswork.
+###
+### [secretConfigured] stands in for the client secret, which is never sent to
+### the browser. [envOverrides] names the fields an environment variable has
+### taken over, so the tab can render them read-only instead of letting an admin
+### save a value that silently has no effect.
+class: AuthAdminStatusDto
+fields:
+  enabled: bool, default=false
+  enforcing: bool, default=false
+  secretConfigured: bool, default=false
+  envOverrides: List<String>
+  redirectUri: String, default=""
+  discoveryOk: bool, default=false
+  discoveryError: String?
+  authorizationEndpoint: String?
+  tokenEndpoint: String?

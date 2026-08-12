@@ -112,44 +112,75 @@ abstract class ProjectOptions implements _i1.SerializableModel {
   factory ProjectOptions.fromJson(Map<String, dynamic> jsonSerialization) {
     return ProjectOptions(
       id: jsonSerialization['id'] as int?,
-      minCaptureSize: jsonSerialization['minCaptureSize'] as int,
-      maxCaptureSize: jsonSerialization['maxCaptureSize'] as int,
+      minCaptureSize: jsonSerialization['minCaptureSize'] as int?,
+      maxCaptureSize: jsonSerialization['maxCaptureSize'] as int?,
       armLengths: jsonSerialization['armLengths'] as String?,
-      armLengthSums: jsonSerialization['armLengthSums'] as String,
-      extMinLength: jsonSerialization['extMinLength'] as int,
-      extMaxLength: jsonSerialization['extMaxLength'] as int,
-      ligMinLength: jsonSerialization['ligMinLength'] as int,
-      tagSizes: jsonSerialization['tagSizes'] as String,
-      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num)
-          .toDouble(),
-      targetArmCopy: jsonSerialization['targetArmCopy'] as int,
-      maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int,
-      trf: jsonSerialization['trf'] as bool,
+      armLengthSums: jsonSerialization['armLengthSums'] as String?,
+      extMinLength: jsonSerialization['extMinLength'] as int?,
+      extMaxLength: jsonSerialization['extMaxLength'] as int?,
+      ligMinLength: jsonSerialization['ligMinLength'] as int?,
+      tagSizes: jsonSerialization['tagSizes'] as String?,
+      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num?)
+          ?.toDouble(),
+      targetArmCopy: jsonSerialization['targetArmCopy'] as int?,
+      maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int?,
+      trf: jsonSerialization['trf'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['trf']),
       genomeDir: jsonSerialization['genomeDir'] as String?,
-      featureFlank: jsonSerialization['featureFlank'] as int,
-      captureIncrement: jsonSerialization['captureIncrement'] as int,
-      logisticHeuristic: jsonSerialization['logisticHeuristic'] as bool,
-      maxMipOverlap: jsonSerialization['maxMipOverlap'] as int,
-      startingMipOverlap: jsonSerialization['startingMipOverlap'] as int,
-      checkCopyNumber: jsonSerialization['checkCopyNumber'] as bool,
-      sealBothStrands: jsonSerialization['sealBothStrands'] as bool,
-      halfSealBothStrands: jsonSerialization['halfSealBothStrands'] as bool,
+      featureFlank: jsonSerialization['featureFlank'] as int?,
+      captureIncrement: jsonSerialization['captureIncrement'] as int?,
+      logisticHeuristic: jsonSerialization['logisticHeuristic'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['logisticHeuristic'],
+            ),
+      maxMipOverlap: jsonSerialization['maxMipOverlap'] as int?,
+      startingMipOverlap: jsonSerialization['startingMipOverlap'] as int?,
+      checkCopyNumber: jsonSerialization['checkCopyNumber'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['checkCopyNumber'],
+            ),
+      sealBothStrands: jsonSerialization['sealBothStrands'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['sealBothStrands'],
+            ),
+      halfSealBothStrands: jsonSerialization['halfSealBothStrands'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['halfSealBothStrands'],
+            ),
       doubleTileStrandUnaware:
-          jsonSerialization['doubleTileStrandUnaware'] as bool,
+          jsonSerialization['doubleTileStrandUnaware'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['doubleTileStrandUnaware'],
+            ),
       doubleTileStrandsSeparately:
-          jsonSerialization['doubleTileStrandsSeparately'] as bool,
-      scoreMethod: _i2.ScoreMethod.fromJson(
-        (jsonSerialization['scoreMethod'] as String),
-      ),
-      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num)
-          .toDouble(),
-      svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num).toDouble(),
-      logisticPriorityScore: (jsonSerialization['logisticPriorityScore'] as num)
-          .toDouble(),
-      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num)
-          .toDouble(),
-      silentMode: jsonSerialization['silentMode'] as bool,
-      bwaThreads: jsonSerialization['bwaThreads'] as int,
+          jsonSerialization['doubleTileStrandsSeparately'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['doubleTileStrandsSeparately'],
+            ),
+      scoreMethod: jsonSerialization['scoreMethod'] == null
+          ? null
+          : _i2.ScoreMethod.fromJson(
+              (jsonSerialization['scoreMethod'] as String),
+            ),
+      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num?)
+          ?.toDouble(),
+      svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num?)
+          ?.toDouble(),
+      logisticPriorityScore:
+          (jsonSerialization['logisticPriorityScore'] as num?)?.toDouble(),
+      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num?)
+          ?.toDouble(),
+      silentMode: jsonSerialization['silentMode'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['silentMode']),
+      bwaThreads: jsonSerialization['bwaThreads'] as int?,
     );
   }
 

@@ -1,0 +1,118 @@
+name: Release build
+
+# Publishes the build tarball that deployment/setup-flumip.sh downloads by
+# default (https://github.com/<repo>/releases/latest/download/flumip-build.tar.gz).
+#
+# Unlike the staging/production pipelines this build is host-agnostic: it does
+# NOT pass --dart-define=API_URL or SITE_URL, so the frontend derives both from
+# the page origin at runtime (see flumip_flutter/lib/api_config.dart). That is
+# what lets one tarball be installed on any machine.
+#
+# Single sign-on is configured at runtime — in the Settings tab or through the
+# environment file the systemd units read (see docs/authentication.md) — so it
+# needs no --dart-define here. Do not add one: a compile-time OIDC setting would
+# make this tarball host-specific again, which is the whole thing it avoids.
+#
+# Cut a release by pushing a tag:  git tag v0.7.0 && git push origin v0.7.0
+# Run it manually (workflow_dispatch) to test the job: the tarball is uploaded
+# as a workflow artifact instead of being published as a release.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
+      - name: Determine version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # Tag is authoritative for a release; strip the leading 'v'.
+            APP_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            APP_VERSION="$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')"
+          fi
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+      - name: Build frontend
+        run: |
+          cd flumip_flutter
+          flutter build web --release --wasm \
+            --dart-define=APP_VERSION=${{ env.APP_VERSION }} \
+            --dart-define=SITE_TITLE=FLUMIP \
+            --output ../flumip_server/web/app
+
+      - name: Build server
+        run: |
+          cd flumip_server
+          mkdir app
+          dart compile exe bin/main.dart -o app/server
+          cp -r config app/config
+          cp -r migrations app/migrations
+          cp -r web app/web
+          cp -r ../deployment app/deployment
+
+      - name: Pack build
+        run: |
+          cd flumip_server
+          # passwords.yaml is gitignored and never injected in this workflow, but
+          # fail loudly rather than ship secrets if that ever changes.
+          if [ -e app/config/passwords.yaml ]; then
+            echo "::error::app/config/passwords.yaml is present; refusing to publish it."
+            exit 1
+          fi
+          tar -czf flumip-build.tar.gz -C app .
+          sha256sum flumip-build.tar.gz > flumip-build.tar.gz.sha256
+          # setup-flumip.sh rejects an archive without a top-level server binary.
+          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)server$'
+
+      - name: Upload artifact (manual runs)
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: flumip-build
+          path: |
+            flumip_server/flumip-build.tar.gz
+            flumip_server/flumip-build.tar.gz.sha256
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FLUMIP ${{ env.APP_VERSION }}
+          generate_release_notes: true
+          files: |
+            flumip_server/flumip-build.tar.gz
+            flumip_server/flumip-build.tar.gz.sha256
+          body: |
+            Install or update a FLUMIP server with:
+
+            ```bash
+            # 1. dependencies, MIPGEN and reference data
+            ./setup-mipgen.sh
+
+            # 2. the app itself (downloads this release)
+            ./setup-flumip.sh --host your.hostname
+            ```
+
+            Both scripts are inside `flumip-build.tar.gz` under `deployment/`.
