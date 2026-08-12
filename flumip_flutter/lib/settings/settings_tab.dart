@@ -1,351 +1,126 @@
-import 'package:flumip_client/flumip_client.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../main.dart';
+import '../services.dart';
+import '../ui/error_banner.dart';
+import '../ui/form_section.dart';
+import '../ui/layout.dart';
+import 'admin_settings_form.dart';
+import 'settings_access_views.dart';
+import 'settings_controller.dart';
 
+/// Server configuration, for whoever is allowed to see it.
+///
+/// Everything that talks to the server — what the caller may see, what the
+/// settings are, and what happens when they are saved — is in
+/// [SettingsController]. The fields themselves are in `settings_form.dart` (the
+/// values) and `admin_settings_form.dart` (the five sections); this file picks
+/// between five views and hangs the error banner above whichever is showing.
 class SettingsTab extends StatefulWidget {
-  const SettingsTab({super.key});
+  const SettingsTab({super.key, this.controller});
+
+  /// The controller to use, or null to take the app-wide one.
+  ///
+  /// ⚠️ App-wide by default, like the projects tab and unlike the two that poll:
+  /// this one holds the settings password somebody typed into the gate, and
+  /// rebuilding it on a tab switch would ask for it again.
+  final SettingsController? controller;
 
   @override
   State<SettingsTab> createState() => _SettingsTabState();
 }
 
 class _SettingsTabState extends State<SettingsTab> {
-  String? _errorMessage;
-  Settings? settings;
-
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _baseDirController = TextEditingController();
-  final TextEditingController _projectDirController = TextEditingController();
-  final TextEditingController _genomeDirController = TextEditingController();
-  final TextEditingController _customSnpDirController = TextEditingController();
-  final TextEditingController _toolsDirController = TextEditingController();
-  final TextEditingController _mipgenExecutableController =
-      TextEditingController();
-  final TextEditingController _exonExtractScriptController =
-      TextEditingController();
-  final TextEditingController _ucscTrackGeneratorController =
-      TextEditingController();
-  final TextEditingController _bigGenePredToGenePredExecutable =
-      TextEditingController();
-  final TextEditingController _binCreationScript = TextEditingController();
-  final TextEditingController _smtpServerController = TextEditingController();
-  final TextEditingController _smtpPortController = TextEditingController();
-  final TextEditingController _smtpUserController = TextEditingController();
-  final TextEditingController _smtpPasswordController = TextEditingController();
-  final TextEditingController _smtpFromController = TextEditingController();
-  final TextEditingController _newPasswordController = TextEditingController();
-
-  final ValueNotifier<bool> _mailActiveNotifier = ValueNotifier(false);
-  final ValueNotifier<bool> _startTLSNotifier = ValueNotifier(false);
-  final ValueNotifier<bool> _loginRequiredNotifier = ValueNotifier(false);
+  late final SettingsController _controller =
+      widget.controller ?? settingsController;
+  StreamSubscription<String>? _messages;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_onChanged);
+    _messages = _controller.messages.listen(_say);
+    _controller.load();
   }
 
   @override
   void dispose() {
-    _passwordController.dispose();
-    _baseDirController.dispose();
-    _projectDirController.dispose();
-    _genomeDirController.dispose();
-    _customSnpDirController.dispose();
-    _toolsDirController.dispose();
-    _mipgenExecutableController.dispose();
-    _exonExtractScriptController.dispose();
-    _ucscTrackGeneratorController.dispose();
-    _bigGenePredToGenePredExecutable.dispose();
-    _binCreationScript.dispose();
-    _smtpServerController.dispose();
-    _smtpPortController.dispose();
-    _smtpUserController.dispose();
-    _smtpPasswordController.dispose();
-    _smtpFromController.dispose();
-    _mailActiveNotifier.dispose();
-    _startTLSNotifier.dispose();
-    _loginRequiredNotifier.dispose();
-    _newPasswordController.dispose();
+    _messages?.cancel();
+    _controller.removeListener(_onChanged);
+    // ⚠️ Never disposed here — it outlives the tab, and disposing it would take
+    // the form's controllers with it, including the password.
     super.dispose();
   }
 
-  Future<void> _loadSettings() async {
-    try {
-      final settings =
-          await client.settings.getSettings(_passwordController.text);
-      setState(() {
-        _errorMessage = null;
-        this.settings = settings;
-        _baseDirController.text = settings.baseDir;
-        _projectDirController.text = settings.projectDir;
-        _genomeDirController.text = settings.genomeDir;
-        _customSnpDirController.text = settings.customSnpDir;
-        _toolsDirController.text = settings.toolsDir;
-        _mipgenExecutableController.text = settings.mipgenExecutable;
-        _exonExtractScriptController.text = settings.exonExtractScript;
-        _ucscTrackGeneratorController.text = settings.ucscTrackGenerator;
-        _bigGenePredToGenePredExecutable.text =
-            settings.bigGenePredToGenePredExecutable;
-        _binCreationScript.text = settings.binCreationScript;
-        _smtpServerController.text = settings.smtpServer;
-        _smtpPortController.text = settings.smtpPort.toString();
-        _smtpUserController.text = settings.smtpUser;
-        _smtpPasswordController.text = settings.smtpPassword;
-        _smtpFromController.text = settings.smtpFrom;
-        _mailActiveNotifier.value = settings.mailActive;
-        _startTLSNotifier.value = settings.startTLS;
-        _loginRequiredNotifier.value = settings.loginRequired;
-        _newPasswordController.text = settings.settingsPassword;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
 
-  Future<void> updateSettings() async {
-    try {
-      var settings = Settings(
-        id: this.settings!.id,
-        baseDir: _baseDirController.text,
-        projectDir: _projectDirController.text,
-        genomeDir: _genomeDirController.text,
-        customSnpDir: _customSnpDirController.text,
-        toolsDir: _toolsDirController.text,
-        mipgenExecutable: _mipgenExecutableController.text,
-        exonExtractScript: _exonExtractScriptController.text,
-        ucscTrackGenerator: _ucscTrackGeneratorController.text,
-        bigGenePredToGenePredExecutable: _bigGenePredToGenePredExecutable.text,
-        binCreationScript: _binCreationScript.text,
-        mailActive: _mailActiveNotifier.value,
-        smtpServer: _smtpServerController.text,
-        smtpPort: int.parse(_smtpPortController.text),
-        smtpUser: _smtpUserController.text,
-        smtpPassword: _smtpPasswordController.text,
-        smtpFrom: _smtpFromController.text,
-        startTLS: _startTLSNotifier.value,
-        loginRequired: _loginRequiredNotifier.value,
-        settingsPassword: _newPasswordController.text,
-      );
-
-      await client.settings.updateSettings(settings);
-      setState(() {
-        _errorMessage = null;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Settings updated successfully')),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = '$e';
-      });
-    }
+  void _say(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        spacing: 30,
-        children: [
-          if (_errorMessage != null)
-            Container(
-              color: Colors.red[300],
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  Text(_errorMessage!),
-                ],
-              ),
-            ),
-          SizedBox(height: 20),
-          if (settings == null) ...[
-            Row(
-              spacing: 10,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 250,
-                  child: TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: const InputDecoration(
-                        border: OutlineInputBorder(), labelText: 'Password'),
-                    onSubmitted: (_) => _loadSettings(),
-                  ),
-                ),
-                ElevatedButton(
-                    onPressed: _loadSettings, child: Text('Load settings')),
-              ],
-            ),
-          ] else ...[
-            SizedBox(
-              width: 400,
-              child: Column(
-                spacing: 3,
-                children: [
-                  TextField(
-                    controller: _baseDirController,
-                    decoration: InputDecoration(labelText: 'Base directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _projectDirController,
-                    decoration: InputDecoration(labelText: 'Project directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _genomeDirController,
-                    decoration: InputDecoration(labelText: 'Genome directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _customSnpDirController,
-                    decoration:
-                        InputDecoration(labelText: 'Custom SNP directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _toolsDirController,
-                    decoration: InputDecoration(labelText: 'Tools directory'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _mipgenExecutableController,
-                    decoration: InputDecoration(labelText: 'MIPGEN executable'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _exonExtractScriptController,
-                    decoration:
-                        InputDecoration(labelText: 'Exon extract script'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _ucscTrackGeneratorController,
-                    decoration:
-                        InputDecoration(labelText: 'UCSC track generator'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _bigGenePredToGenePredExecutable,
-                    decoration: InputDecoration(
-                        labelText: 'BigGenePred to GenePred executable'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  TextField(
-                    controller: _binCreationScript,
-                    decoration:
-                        InputDecoration(labelText: 'Bin creation script'),
-                    keyboardType: TextInputType.text,
-                  ),
-                  Row(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _mailActiveNotifier,
-                        builder: (context, value, child) {
-                          return Checkbox(
-                            value: value,
-                            onChanged: (value) {
-                              setState(() {
-                                _mailActiveNotifier.value = value!;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                      Text('Mail active'),
-                    ],
-                  ),
-                  if (_mailActiveNotifier.value) ...[
-                    TextField(
-                      controller: _smtpServerController,
-                      decoration: InputDecoration(labelText: 'SMTP server'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpPortController,
-                      decoration: InputDecoration(labelText: 'SMTP port'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: _smtpUserController,
-                      decoration: InputDecoration(labelText: 'SMTP user'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpPasswordController,
-                      obscureText: true,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      decoration: InputDecoration(labelText: 'SMTP password'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    TextField(
-                      controller: _smtpFromController,
-                      decoration: InputDecoration(labelText: 'SMTP from'),
-                      keyboardType: TextInputType.text,
-                    ),
-                    Row(
-                      children: [
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _startTLSNotifier,
-                          builder: (context, value, child) {
-                            return Checkbox(
-                              value: value,
-                              onChanged: (value) {
-                                _startTLSNotifier.value = value!;
-                              },
-                            );
-                          },
-                        ),
-                        Text('Start TLS'),
-                      ],
-                    ),
-                  ],
-                  Row(
-                    children: [
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _loginRequiredNotifier,
-                        builder: (context, value, child) {
-                          return Checkbox(
-                            value: value,
-                            onChanged: (value) {
-                              _loginRequiredNotifier.value = value!;
-                            },
-                          );
-                        },
-                      ),
-                      Text('Login required'),
-                    ],
-                  ),
-                  TextField(
-                    controller: _newPasswordController,
-                    obscureText: true,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: InputDecoration(labelText: 'New password'),
-                    keyboardType: TextInputType.text,
-                  ),
-                ],
-              ),
-            ),
-            Center(
-              child: ElevatedButton(
-                onPressed: updateSettings,
-                child: Text('Update settings'),
-              ),
-            ),
-            SizedBox(height: 50),
-          ],
-        ],
+    return switch (_controller.view) {
+      SettingsView.retry => _shell(
+        SettingsRetryView(onRetry: _controller.loadAccess),
       ),
+      SettingsView.loading => _shell(
+        const Center(child: CircularProgressIndicator()),
+      ),
+      SettingsView.passwordGate => _shell(
+        SettingsPasswordGate(
+          controller: _controller.form.password,
+          onSubmit: _controller.loadSettings,
+        ),
+      ),
+      SettingsView.noSettings => _shell(const NoSettingsView()),
+      SettingsView.adminForm => _shell(
+        AdminSettingsForm(
+          form: _controller.form,
+          authStatus: _controller.authStatus,
+          smtpPasswordConfigured: _controller.smtpPasswordConfigured,
+          onChanged: () => setState(() {}),
+          onTestConnection: _controller.refreshAuthStatus,
+          onSendTestMail: _controller.sendTestMail,
+        ),
+        saveBar: true,
+      ),
+    };
+  }
+
+  /// The error banner sits above whichever branch is showing.
+  ///
+  /// ⚠️ **Above, not inside the form.** The retry branch renders only a button;
+  /// the sentence explaining why comes from here. Move this into the admin form
+  /// and that branch becomes an unexplained button on a blank screen.
+  ///
+  /// It is also outside the scroll view, which is the other half of the fix: it
+  /// used to be the first child of the `SingleChildScrollView`, so a failed save
+  /// from the bottom of a long form showed the user nothing at all.
+  Widget _shell(Widget body, {bool saveBar = false}) {
+    final error = _controller.errorMessage;
+    return Column(
+      children: [
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: ContentWidth.form),
+                child: ErrorBanner(error, onDismiss: _controller.dismissError),
+              ),
+            ),
+          ),
+        Expanded(child: body),
+        if (saveBar)
+          FormSaveBar(onSave: _controller.save, maxWidth: ContentWidth.form),
+      ],
     );
   }
 }

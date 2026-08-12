@@ -1,18 +1,27 @@
 name: flumip_server
-description: Starting point for a Serverpod server.
-# version: 1.0.0
+description: Mipgen automation backend using Serverpod server.
+version: 0.7.0
 # homepage: https://www.example.com
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
-  serverpod: 3.0.1
-  uuid: ^4.4.2
-  get_it: ^8.0.0
+  serverpod: 3.4.11
+  uuid: ^4.6.0
+  get_it: ^9.2.1
+  mailer: ^6.4.1
+  # OIDC discovery and the authorization-code exchange are plain HTTPS calls.
+  http: ^1.6.0
+  # sha256, for hashing session tokens and the PKCE code challenge.
+  crypto: ^3.0.6
+  # Zipping a project's files for the "download all" route. Written to a temp
+  # file rather than held in memory, so a large project does not have to fit in
+  # the heap twice.
+  archive: ^4.0.9
 
 dev_dependencies:
-  lints: '>=3.0.0 <6.0.0'
+  lints: ^6.0.0
   test: '^1.24.2'
-  serverpod_test: 3.0.1
+  serverpod_test: 3.4.11
 

@@ -1,10 +1,28 @@
 class: Settings
 table: settings
 fields:
+  demoMode: bool, default=false
+  ### How long a project survives on a demo install, in hours. 168 = 7 days.
+  ###
+  ### ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
+  ### raising it spares projects that were already queued. Lowering it cannot
+  ### pull a scheduled deletion earlier — that project keeps the deadline it was
+  ### created with. See DemoModeCleanup.
+  demoModeRetentionHours: int, default=168
   baseDir: String, default="/opt/flumip"
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"
   customSnpDir: String, default="/opt/flumip/data/custom_snp"
+  # Comma-separated hosts the server may fetch custom SNP files from, matched
+  # exactly or as a subdomain. Empty means any public address, which is the
+  # default because a fresh install has no way to know which sources a lab uses.
+  #
+  # ⚠️ Filling this in is the practical answer to DNS rebinding, which
+  # `snpSourceUrlRejection` cannot close on its own. On a hospital or university
+  # network, listing the three or four real sources — ftp.ncbi.nlm.nih.gov,
+  # ftp.ensembl.org, hgdownload.soe.ucsc.edu — turns off the whole class of
+  # attack. See docs/authorization.md.
+  snpSourceAllowedHosts: String, default=""
   toolsDir: String, default="/opt/flumip/tools"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
@@ -15,8 +33,40 @@ fields:
   smtpServer: String, default=""
   smtpPort: int, default=25
   smtpUser: String, default=""
-  smtpPassword: String, default=""
+  # Never leaves the server. Written only through
+  # SettingsEndpoint.setSmtpPassword, never serialized to the browser — it used
+  # to be an ordinary field, so every `getSettings` call sent the mail account's
+  # password to whoever had the settings screen open, in cleartext.
+  #
+  # Nullable because serverOnly fields must be: the client cannot supply one, so
+  # it deserializes as null on the way in. SettingsService.updateSettings leaves
+  # it out of the merge, which is what stops an unrelated save from blanking it.
+  # Same shape as oidcClientSecret, for the same reason.
+  smtpPassword: String?, scope=serverOnly
   smtpFrom: String, default="flumip@yourdomain.com"
   startTLS: bool, default=true
   loginRequired: bool, default=false
   settingsPassword: String, default="changeme"
+  # OpenID Connect single sign-on. Off by default: running with no
+  # authentication at all is the standard deployment. See docs/authentication.md.
+  # Any of these can be overridden by an environment variable, in which case the
+  # environment wins and the field renders read-only in the settings tab.
+  oidcIssuer: String, default=""
+  oidcClientId: String, default=""
+  # Never leaves the server. Written only through
+  # SettingsEndpoint.setOidcClientSecret, never serialized to the browser.
+  # Nullable because serverOnly fields must be: the client cannot supply one,
+  # so it deserializes as null on the way in. SettingsService.updateSettings
+  # leaves it out of the merge, which is what stops an unrelated save from
+  # blanking it.
+  oidcClientSecret: String?, scope=serverOnly
+  oidcScopes: String, default="openid email profile"
+  oidcButtonLabel: String, default="Sign in with SSO"
+  # Comma-separated. Empty means every account the IdP authenticates is allowed.
+  oidcAllowedEmailDomains: String, default=""
+  # Comma-separated. These addresses get the `admin` scope.
+  oidcAdminEmails: String, default=""
+  # Public origin of this install, e.g. "https://flumip.uni.example". Needed
+  # when a reverse proxy terminates TLS, because the server otherwise derives
+  # the redirect URI from its own scheme, host and port.
+  authPublicUrl: String, default=""

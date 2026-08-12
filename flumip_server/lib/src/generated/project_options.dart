@@ -113,44 +113,75 @@ abstract class ProjectOptions
   factory ProjectOptions.fromJson(Map<String, dynamic> jsonSerialization) {
     return ProjectOptions(
       id: jsonSerialization['id'] as int?,
-      minCaptureSize: jsonSerialization['minCaptureSize'] as int,
-      maxCaptureSize: jsonSerialization['maxCaptureSize'] as int,
+      minCaptureSize: jsonSerialization['minCaptureSize'] as int?,
+      maxCaptureSize: jsonSerialization['maxCaptureSize'] as int?,
       armLengths: jsonSerialization['armLengths'] as String?,
-      armLengthSums: jsonSerialization['armLengthSums'] as String,
-      extMinLength: jsonSerialization['extMinLength'] as int,
-      extMaxLength: jsonSerialization['extMaxLength'] as int,
-      ligMinLength: jsonSerialization['ligMinLength'] as int,
-      tagSizes: jsonSerialization['tagSizes'] as String,
-      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num)
-          .toDouble(),
-      targetArmCopy: jsonSerialization['targetArmCopy'] as int,
-      maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int,
-      trf: jsonSerialization['trf'] as bool,
+      armLengthSums: jsonSerialization['armLengthSums'] as String?,
+      extMinLength: jsonSerialization['extMinLength'] as int?,
+      extMaxLength: jsonSerialization['extMaxLength'] as int?,
+      ligMinLength: jsonSerialization['ligMinLength'] as int?,
+      tagSizes: jsonSerialization['tagSizes'] as String?,
+      maskedArmThreshold: (jsonSerialization['maskedArmThreshold'] as num?)
+          ?.toDouble(),
+      targetArmCopy: jsonSerialization['targetArmCopy'] as int?,
+      maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int?,
+      trf: jsonSerialization['trf'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['trf']),
       genomeDir: jsonSerialization['genomeDir'] as String?,
-      featureFlank: jsonSerialization['featureFlank'] as int,
-      captureIncrement: jsonSerialization['captureIncrement'] as int,
-      logisticHeuristic: jsonSerialization['logisticHeuristic'] as bool,
-      maxMipOverlap: jsonSerialization['maxMipOverlap'] as int,
-      startingMipOverlap: jsonSerialization['startingMipOverlap'] as int,
-      checkCopyNumber: jsonSerialization['checkCopyNumber'] as bool,
-      sealBothStrands: jsonSerialization['sealBothStrands'] as bool,
-      halfSealBothStrands: jsonSerialization['halfSealBothStrands'] as bool,
+      featureFlank: jsonSerialization['featureFlank'] as int?,
+      captureIncrement: jsonSerialization['captureIncrement'] as int?,
+      logisticHeuristic: jsonSerialization['logisticHeuristic'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['logisticHeuristic'],
+            ),
+      maxMipOverlap: jsonSerialization['maxMipOverlap'] as int?,
+      startingMipOverlap: jsonSerialization['startingMipOverlap'] as int?,
+      checkCopyNumber: jsonSerialization['checkCopyNumber'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['checkCopyNumber'],
+            ),
+      sealBothStrands: jsonSerialization['sealBothStrands'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['sealBothStrands'],
+            ),
+      halfSealBothStrands: jsonSerialization['halfSealBothStrands'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['halfSealBothStrands'],
+            ),
       doubleTileStrandUnaware:
-          jsonSerialization['doubleTileStrandUnaware'] as bool,
+          jsonSerialization['doubleTileStrandUnaware'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['doubleTileStrandUnaware'],
+            ),
       doubleTileStrandsSeparately:
-          jsonSerialization['doubleTileStrandsSeparately'] as bool,
-      scoreMethod: _i2.ScoreMethod.fromJson(
-        (jsonSerialization['scoreMethod'] as String),
-      ),
-      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num)
-          .toDouble(),
-      svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num).toDouble(),
-      logisticPriorityScore: (jsonSerialization['logisticPriorityScore'] as num)
-          .toDouble(),
-      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num)
-          .toDouble(),
-      silentMode: jsonSerialization['silentMode'] as bool,
-      bwaThreads: jsonSerialization['bwaThreads'] as int,
+          jsonSerialization['doubleTileStrandsSeparately'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(
+              jsonSerialization['doubleTileStrandsSeparately'],
+            ),
+      scoreMethod: jsonSerialization['scoreMethod'] == null
+          ? null
+          : _i2.ScoreMethod.fromJson(
+              (jsonSerialization['scoreMethod'] as String),
+            ),
+      logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num?)
+          ?.toDouble(),
+      svrOptimalScore: (jsonSerialization['svrOptimalScore'] as num?)
+          ?.toDouble(),
+      logisticPriorityScore:
+          (jsonSerialization['logisticPriorityScore'] as num?)?.toDouble(),
+      svrPriorityScore: (jsonSerialization['svrPriorityScore'] as num?)
+          ?.toDouble(),
+      silentMode: jsonSerialization['silentMode'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['silentMode']),
+      bwaThreads: jsonSerialization['bwaThreads'] as int?,
     );
   }
 
@@ -985,7 +1016,7 @@ class ProjectOptionsRepository {
   /// );
   /// ```
   Future<List<ProjectOptions>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectOptionsTable>? where,
     int? limit,
     int? offset,
@@ -993,6 +1024,8 @@ class ProjectOptionsRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectOptionsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<ProjectOptions>(
       where: where?.call(ProjectOptions.t),
@@ -1002,6 +1035,8 @@ class ProjectOptionsRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -1023,13 +1058,15 @@ class ProjectOptionsRepository {
   /// );
   /// ```
   Future<ProjectOptions?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectOptionsTable>? where,
     int? offset,
     _i1.OrderByBuilder<ProjectOptionsTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<ProjectOptionsTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<ProjectOptions>(
       where: where?.call(ProjectOptions.t),
@@ -1038,18 +1075,24 @@ class ProjectOptionsRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [ProjectOptions] by its [id] or null if no such row exists.
   Future<ProjectOptions?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<ProjectOptions>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -1059,14 +1102,20 @@ class ProjectOptionsRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<ProjectOptions>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<ProjectOptions> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<ProjectOptions>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -1074,7 +1123,7 @@ class ProjectOptionsRepository {
   ///
   /// The returned [ProjectOptions] will have its `id` field set.
   Future<ProjectOptions> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     ProjectOptions row, {
     _i1.Transaction? transaction,
   }) async {
@@ -1090,7 +1139,7 @@ class ProjectOptionsRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<ProjectOptions>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<ProjectOptions> rows, {
     _i1.ColumnSelections<ProjectOptionsTable>? columns,
     _i1.Transaction? transaction,
@@ -1106,7 +1155,7 @@ class ProjectOptionsRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<ProjectOptions> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     ProjectOptions row, {
     _i1.ColumnSelections<ProjectOptionsTable>? columns,
     _i1.Transaction? transaction,
@@ -1121,7 +1170,7 @@ class ProjectOptionsRepository {
   /// Updates a single [ProjectOptions] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<ProjectOptions?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<ProjectOptionsUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -1136,7 +1185,7 @@ class ProjectOptionsRepository {
   /// Updates all [ProjectOptions]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<ProjectOptions>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<ProjectOptionsUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<ProjectOptionsTable> where,
     int? limit,
@@ -1162,7 +1211,7 @@ class ProjectOptionsRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<ProjectOptions>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<ProjectOptions> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -1174,7 +1223,7 @@ class ProjectOptionsRepository {
 
   /// Deletes a single [ProjectOptions].
   Future<ProjectOptions> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     ProjectOptions row, {
     _i1.Transaction? transaction,
   }) async {
@@ -1186,7 +1235,7 @@ class ProjectOptionsRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<ProjectOptions>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<ProjectOptionsTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -1199,7 +1248,7 @@ class ProjectOptionsRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<ProjectOptionsTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -1207,6 +1256,22 @@ class ProjectOptionsRepository {
     return session.db.count<ProjectOptions>(
       where: where?.call(ProjectOptions.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [ProjectOptions] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<ProjectOptionsTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<ProjectOptions>(
+      where: where(ProjectOptions.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }

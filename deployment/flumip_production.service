@@ -5,7 +5,13 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/var/www/flumip_production
-ExecStart=/var/www/flumip_production/server --mode=production --server-id=production --logging=normal --role=monolith
+ExecStart=/var/www/flumip_production/server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations
+# Optional runtime configuration, chiefly the single sign-on settings; see
+# docs/authentication.md. The leading dash is required, not cosmetic: the
+# deploy workflows copy this unit onto hosts that have never run
+# setup-flumip.sh, where this file does not exist. Without the dash systemd
+# refuses to start the service and the next deploy of production fails.
+EnvironmentFile=-/etc/flumip/flumip_production.env
 Restart=always
 User=www-data
 

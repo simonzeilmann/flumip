@@ -5,11 +5,40 @@ fields:
   folderName: String?, scope=serverOnly
   description: String, default=''
   genome: int?
-  snp: int?
+  ### The chosen SNP set, or null for "no SNP masking".
+  ###
+  ### onDelete=SetNull, exactly like [owner]: deleting an SNP must null the pointer
+  ### rather than leave a project aimed at a row that is gone. `generateMips`
+  ### refuses to run when this points at an SNP that is not ready, so a project
+  ### whose SNP was deleted fails loudly instead of quietly designing different
+  ### MIPs.
+  snp: int?, relation(parent=snp, onDelete=SetNull)
   tags: List<String>?
   created: DateTime, default=now
-  owner: int?
+  ### The FlumipUser who created the project, or null.
+  ###
+  ### Null means "unowned", which every project on an existing install is, since
+  ### nothing wrote this column before authorization existed. Unowned projects
+  ### stay fully accessible to everyone so that switching single sign-on on does
+  ### not strand people's existing work — see `projectIsAccessible`.
+  ###
+  ### onDelete=SetNull rather than Cascade: deleting an identity must not delete
+  ### the data they produced. The project falls back to unowned, which an admin
+  ### can then reassign.
+  owner: int?, relation(parent=flumip_user, onDelete=SetNull)
+  ### Reserved. Nothing sets this, because no department claim is collected from
+  ### the identity provider. `projectIsAccessible` reads it, but the clause
+  ### cannot match while the caller's department is always null. Wiring it means
+  ### adding a claim name to Settings — see docs/authorization.md.
   department: int?
+  ### Unguessable token for the public `/ucsc_track/<token>` URL.
+  ###
+  ### serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after
+  ### an access check. The route itself cannot require a session — the fetcher is
+  ### genome.ucsc.edu, not a browser — so the token is what stops the track from
+  ### being enumerable. Null on projects created before this existed; minted on
+  ### first request.
+  trackToken: String?, scope=serverOnly
   genes: List<String>?
   bedFileCreated: bool, default=false
   active: bool, default=false
@@ -20,4 +49,22 @@ fields:
   started: DateTime?
   completedIn: Duration?
   error: String, default=''
+  ### Something worth knowing about a run that nonetheless succeeded.
+  ###
+  ### ⚠️ Distinct from [error], and the distinction is the point. Finalizing a
+  ### finished run does several things after the MIPs are safely on disk — sizing
+  ### the output, timing it, generating the UCSC track — and any of those
+  ### throwing used to land in `error`, which marks the whole project failed. A
+  ### project whose MIPs designed perfectly well would report "MIP generation
+  ### failed" because a track file could not be written.
+  ###
+  ### `error` means there is no result. `warning` means there is a result and
+  ### something about it is worth reading.
+  warning: String, default=''
   cleanup: bool, default=false
+indexes:
+  project_owner_idx:
+    fields: owner
+  project_track_token_idx:
+    fields: trackToken
+    unique: true

@@ -4,25 +4,29 @@ import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+/// Polls the BWA index process for a genome. Registered automatically by the
+/// Serverpod 3.2+ generated future-call scheduler; scheduling lives in
+/// [GenomeService.scheduleIndexProgressCheck].
 class CheckIndexProgressFutureCall extends FutureCall<Genome> {
   final processService = sl<ProcessService>();
   final geneService = sl<GenomeService>();
 
-  @override
-  Future<void> invoke(Session session, Genome? object) async {
+  Future<void> run(Session session, Genome object) async {
     session.log(
-        "Checking BWA index progress for gene ID: ${object?.id}",
-        level: LogLevel.info);
-    if (await processService.checkIfIndexProcessIsRunning(session, object!)) {
+      "Checking BWA index progress for gene ID: ${object.id}",
+      level: LogLevel.info,
+    );
+    if (await processService.checkIfIndexProcessIsRunning(session, object)) {
       session.log(
-          "BWA index process is still running for gene ID: ${object.id}",
-          level: LogLevel.info);
-      await session.serverpod.futureCallWithDelay(
-          'checkIndexProgress', object, const Duration(minutes: 1));
+        "BWA index process is still running for gene ID: ${object.id}",
+        level: LogLevel.info,
+      );
+      await geneService.scheduleIndexProgressCheck(session, object);
     } else {
       session.log(
-          "BWA index process has finished for project ID: ${object.id}",
-          level: LogLevel.info);
+        "BWA index process has finished for project ID: ${object.id}",
+        level: LogLevel.info,
+      );
       await geneService.indexIsFinished(session, object);
     }
   }

@@ -1,0 +1,6 @@
+### The signed-in user, as shown in the app bar. No table — transport only.
+class: AuthUserDto
+fields:
+  email: String
+  displayName: String, default=""
+  isAdmin: bool, default=false

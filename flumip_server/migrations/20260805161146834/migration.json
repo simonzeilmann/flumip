@@ -1,0 +1,48 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "genome",
+        "schema": "public",
+        "addColumns": [],
+        "deleteColumns": [
+          "snp"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"snp\" of table \"genome\" will be dropped.",
+            "table": "genome",
+            "columns": [
+              "snp"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"snp\" of table \"genome\" will be dropped.",
+      "table": "genome",
+      "columns": [
+        "snp"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}

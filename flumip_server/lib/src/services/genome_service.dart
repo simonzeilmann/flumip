@@ -1,11 +1,17 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/file_service.dart';
+import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
+import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
+
+/// Where `bwa index` output is kept, beside the FASTA it is indexing.
+const bwaIndexLogName = 'bwa-index.log';
 
 class GenomeService {
   GenomeService();
@@ -59,7 +65,7 @@ class GenomeService {
     var genome = await Genome.db.findById(session, id);
     if (genome == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
     session.log("Genome retrieved with ID: $id", level: LogLevel.info);
     return genome;
@@ -84,7 +90,7 @@ class GenomeService {
     var genomeToUpdate = await Genome.db.findById(session, id);
     if (genomeToUpdate == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
     await Genome.db.updateRow(session, genome);
     session.log("Genome updated with ID: $id", level: LogLevel.info);
@@ -102,7 +108,7 @@ class GenomeService {
 
     if (!await categoryFolder.exists()) {
       session.log('Genome folder not found', level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome folder not found');
+      throw FlumipFileNotFoundException(message: 'Genome folder not found');
     }
 
     for (var category in categoryFolder.listSync().whereType<Directory>()) {
@@ -117,6 +123,12 @@ class GenomeService {
         }
       }
     }
+
+    // Custom SNPs live outside the genome tree, so the scan above cannot see
+    // them. Running both from one button means "Collect" keeps meaning "notice
+    // whatever is new", which is the only thing anyone using it wants.
+    await sl<SnpService>().collectCustomSnps(session);
+
     session.log("Genome collection completed", level: LogLevel.info);
   }
 
@@ -173,23 +185,30 @@ class GenomeService {
       level: LogLevel.info,
     );
     for (var snpDir in snpFolder.listSync().whereType<Directory>()) {
-      var snpFilesString = Directory(snpDir.path).listSync().toString();
-      if (_containsSnpFiles(snpFilesString)) {
-        var snp = Snp(
+      var found = SnpService.snpFilesIn(snpDir.listSync());
+      if (found.vcf == null || found.tbi == null) continue;
+
+      var existingSnp = await _snpExists(session, snpDir.path);
+      if (existingSnp != null) {
+        // Already known. Keeping its paths and size in step with the files is
+        // `SnpService.collectCustomSnps`' reconcile pass, which runs at the end
+        // of this scan and covers globals as well as customs.
+        continue;
+      }
+
+      await Snp.db.insertRow(
+        session,
+        Snp(
           name: snpDir.path.split('/').last,
-          vcfPath: _getFilePath(snpDir, ".vcf.gz"),
-          tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
+          vcfPath: found.vcf!.path,
+          tbiPath: found.tbi!.path,
           folder: snpDir.path,
           active: true,
+          genome: existingGenome.id,
           size: await fileService.getDirSize(snpDir.path),
-        );
-        var existingSnp = await _snpExists(session, snpDir.path);
-        if (existingSnp == null) {
-          var snpRet = await Snp.db.insertRow(session, snp);
-          existingGenome.snp ??= <int>[];
-          existingGenome.snp?.add(snpRet.id!);
-        }
-      }
+          created: DateTime.now().toUtc(),
+        ),
+      );
     }
     session.log(
       "SNP folder processed: ${snpFolder.path}",
@@ -236,13 +255,15 @@ class GenomeService {
       }
     }
     if (genome.refPath != null && genome.fastaPath != null) {
-      for (var snp in snps) {
-        var snpRet = await Snp.db.insertRow(session, snp);
-        genome.snp ??= <int>[];
-        genome.snp?.add(snpRet.id!);
-      }
       genome.size = await fileService.getDirSize(genomeFolder.path);
-      await Genome.db.insertRow(session, genome);
+      // The genome goes in first now, because `Snp.genome` is a real foreign key
+      // and there is no id to point at until the row exists. The SNP ids are then
+      // written back onto it in one update.
+      var inserted = await Genome.db.insertRow(session, genome);
+      for (var snp in snps) {
+        snp.genome = inserted.id;
+        await Snp.db.insertRow(session, snp);
+      }
     }
     session.log(
       "New genome created from folder: ${genomeFolder.path}",
@@ -267,19 +288,19 @@ class GenomeService {
     );
     List<Snp> snps = [];
     for (var snpDir in snpFolder.listSync().whereType<Directory>()) {
-      var snpFilesString = Directory(snpDir.path).listSync().toString();
-      if (_containsSnpFiles(snpFilesString)) {
-        snps.add(
-          Snp(
-            name: snpDir.path.split('/').last,
-            vcfPath: _getFilePath(snpDir, ".vcf.gz"),
-            tbiPath: _getFilePath(snpDir, ".vcf.gz.tbi"),
-            folder: snpDir.path,
-            active: true,
-            size: await fileService.getDirSize(snpDir.path),
-          ),
-        );
-      }
+      var found = SnpService.snpFilesIn(snpDir.listSync());
+      if (found.vcf == null || found.tbi == null) continue;
+      snps.add(
+        Snp(
+          name: snpDir.path.split('/').last,
+          vcfPath: found.vcf!.path,
+          tbiPath: found.tbi!.path,
+          folder: snpDir.path,
+          active: true,
+          size: await fileService.getDirSize(snpDir.path),
+          created: DateTime.now().toUtc(),
+        ),
+      );
     }
     session.log(
       "SNPs created from folder: ${snpFolder.path}",
@@ -308,15 +329,6 @@ class GenomeService {
         filesString.contains(".fa.ann");
   }
 
-  /// Checks if the specified files string contains SNP files.
-  ///
-  /// \param filesString The string containing file names.
-  /// \returns A boolean indicating if the string contains SNP files.
-  bool _containsSnpFiles(String filesString) {
-    return filesString.contains(".vcf.gz") &&
-        filesString.contains(".vcf.gz.tbi");
-  }
-
   /// Gets the file path with the specified extension from a directory.
   ///
   /// \param dir The directory to search in.
@@ -325,7 +337,12 @@ class GenomeService {
   String _getFilePath(Directory dir, String extension) {
     return dir
         .listSync()
-        .firstWhere((file) => file.path.endsWith(extension))
+        .firstWhere(
+          (file) => file.path.endsWith(extension),
+          orElse: () => throw FlumipFileNotFoundException(
+            message: 'No "$extension" file found in ${dir.path}',
+          ),
+        )
         .path;
   }
 
@@ -364,11 +381,16 @@ class GenomeService {
       throw ArgumentError();
     }
 
-    await Process.start(
+    await sl<ProcessRunner>().start(
       "bwa",
       ["index", genome.fastaPath!],
       workingDirectory: "${genome.path}/fa",
       runInShell: true,
+      // ⚠️ Same reasoning as mipgen's log. An index build takes hours and can
+      // fail on a truncated FASTA or a full disk; without this, bwa's
+      // explanation went into a pipe nobody read and the genome simply sat at
+      // `indexing` forever with nothing to look at.
+      outputPath: "${genome.path}/fa/$bwaIndexLogName",
     );
     genome.indexing = true;
     genome.indexPID = await processService.getProcessPID(
@@ -377,15 +399,23 @@ class GenomeService {
       genome.fastaPath!,
     );
     await Genome.db.updateRow(session, genome);
-    await session.serverpod.futureCallWithDelay(
-      'checkIndexProgress',
-      genome,
-      const Duration(minutes: 1),
-    );
+    await scheduleIndexProgressCheck(session, genome);
     session.log(
       "Indexing started for genome with ID: $id",
       level: LogLevel.info,
     );
+  }
+
+  /// Schedules a delayed future call that polls the BWA index progress for
+  /// [genome]. Used both to start polling and to reschedule the next check.
+  Future<void> scheduleIndexProgressCheck(
+    Session session,
+    Genome genome,
+  ) async {
+    await session.serverpod.futureCalls
+        .callWithDelay(const Duration(minutes: 1))
+        .checkIndexProgress
+        .run(genome);
   }
 
   /// Marks the indexing as finished for a genome.
@@ -455,7 +485,7 @@ class GenomeService {
     var snp = await Snp.db.findById(session, id);
     if (snp == null) {
       session.log("SNP not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'SNP not found');
+      throw FlumipFileNotFoundException(message: 'SNP not found');
     }
     session.log("SNP retrieved with ID: $id", level: LogLevel.info);
     return snp;
@@ -472,6 +502,15 @@ class GenomeService {
 
   /// Retrieves all SNPs for a genome.
   ///
+  /// Reads `Snp.genome`, which is the authoritative link, rather than walking
+  /// `Genome.snp`. That list is a denormalised copy: it is not maintained for
+  /// custom SNPs, it strands an SNP whose genome row was deleted and rediscovered,
+  /// and dereferencing it used to be a `genome.snp!` that crashed outright for any
+  /// genome that had never had one.
+  ///
+  /// Not visibility-filtered — that is the caller's job, and `SnpEndpoint`
+  /// does it. Nothing here should decide policy.
+  ///
   /// \param session The current session.
   /// \param genomeId The ID of the genome to retrieve SNPs for.
   /// \returns A list of SNPs for the specified genome.
@@ -483,32 +522,18 @@ class GenomeService {
     var genome = await Genome.db.findById(session, genomeId);
     if (genome == null) {
       session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
-      throw FileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(message: 'Genome not found');
     }
-    List<Snp> snps = [];
-    for (var snpId in genome.snp!) {
-      var snp = await Snp.db.findById(session, snpId);
-      if (snp != null) {
-        snps.add(snp);
-      }
-    }
-    return snps;
-  }
-
-  /// Updates an SNP.
-  ///
-  /// \param session The current session.
-  /// \param id The ID of the SNP to update.
-  /// \param snp The updated SNP data.
-  Future<void> updateSnp(Session session, int id, Snp snp) async {
-    session.log("Updating SNP with ID: $id", level: LogLevel.info);
-    var snpToUpdate = await Snp.db.findById(session, id);
-    if (snpToUpdate == null) {
-      session.log("SNP not found with ID: $id", level: LogLevel.error);
-      throw FileNotFoundException(message: 'SNP not found');
-    }
-    await Snp.db.updateRow(session, snp);
-    session.log("SNP updated with ID: $id", level: LogLevel.info);
+    // ⚠️ Ordered, and this is a bug fix rather than tidiness. Without an
+    // `orderBy` Postgres returns heap order, and an UPDATE rewrites the row at
+    // the end of the heap — so flipping an SNP's sharing, or a download bumping
+    // `bytesDownloaded`, moved that row to the bottom of the list under the
+    // user's cursor. By id, so the order is the one they were added in.
+    return Snp.db.find(
+      session,
+      where: (t) => t.genome.equals(genomeId),
+      orderBy: (t) => t.id,
+    );
   }
 
   /// Checks if a genome exists by its path.

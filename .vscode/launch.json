@@ -1,0 +1,187 @@
+{
+  // Local development configurations. See flumip_server/config/development.yaml
+  // for the ports: API 8080, Insights 8081, web 8082.
+  //
+  // The backend needs the development database before it will start:
+  //
+  //   cd flumip_server && docker compose --profile dev up -d postgres redis
+  //
+  // Without it the server hangs retrying the connection instead of failing, and
+  // note that config/passwords.yaml is gitignored but must exist locally.
+  //
+  // Linting: the "Lint" task in tasks.json analyzes both packages exactly the
+  // way CI does (Ctrl+Shift+B). A shell command cannot be a launch
+  // configuration, so it lives there rather than here; the "Full stack"
+  // compounds reach it through "Full stack: prepare", while the individual
+  // configurations skip it to keep restarts fast.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Everyday backend run. Leaves the schema untouched, so a pending
+      // migration shows up as a runtime error rather than being applied
+      // silently.
+      "name": "Server",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose"
+      ]
+    },
+    {
+      // Use after `serverpod create-migration`, or against a fresh database.
+      // Applies pending migrations at startup and then serves normally, which
+      // is what the deployed units do.
+      "name": "Server (apply migrations)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose",
+        "--apply-migrations"
+      ]
+    },
+    {
+      // Applies migrations and exits without serving — handy for setting up the
+      // database without leaving a server running.
+      "name": "Server: migrate only (exits)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "args": [
+        "--mode=development",
+        "--role=maintenance",
+        "--logging=verbose",
+        "--apply-migrations"
+      ]
+    },
+    {
+      // The one to use for anything behind the login.
+      //
+      // ⚠️ Sign-in cannot be tested with the "Frontend" configurations or either
+      // "Full stack" compound. `flutter run` serves the app on its own port, so
+      // it is not same-origin with the Serverpod web server; the session cookie
+      // is set on the web server's origin and never reaches /auth/session, which
+      // the browser blocks cross-origin anyway. The compounds therefore switch
+      // sign-in off before they start, so that combination is unreachable —
+      // running "Frontend (debug)" on its own while sign-in is enforced is the
+      // one way back into it, and there every API call returns 401.
+      //
+      // So this one skips `flutter run` entirely: the preLaunchTask starts the
+      // mock provider, switches single sign-on on, and builds the app into
+      // flumip_server/web/app — the directory the server itself serves. Open
+      // http://localhost:8082, NOT 8083.
+      //
+      // No hot reload, by construction: a rebuild means re-running the task.
+      // Use "Full stack (debug)" for everything that is not sign-in.
+      //
+      // The browser opens itself once the web server is actually listening, via
+      // serverReadyAction below — waiting on the log line rather than a fixed
+      // delay, because the server takes a variable few seconds to bind.
+      //
+      // The task chain prints who to sign in as; `boss@uni.example` is seeded as
+      // the administrator when no admin list is configured. Any other username
+      // signs in as an ordinary user, which is how you see both sides.
+      // Override with FLUMIP_DEV_ADMIN, or the "Auth: set admin emails" task.
+      // "Auth: disable" puts things back.
+      "name": "Server (single sign-on)",
+      "type": "dart",
+      "request": "launch",
+      "program": "bin/main.dart",
+      "cwd": "${workspaceFolder}/flumip_server",
+      "preLaunchTask": "Auth: sign-in ready",
+      "args": [
+        "--mode=development",
+        "--role=monolith",
+        "--logging=verbose"
+      ],
+      "serverReadyAction": {
+        // Matches "Webserver listening on http://localhost:8082" — the web
+        // port, which is the one that can complete a sign-in. Capturing the URL
+        // rather than hard-coding it keeps this right if the port ever moves.
+        "pattern": "Webserver listening on (https?://[^\\s]+)",
+        "uriFormat": "%s",
+        // Chrome specifically, not "openExternally" — that opens the system
+        // default, which is Firefox here.
+        //
+        // Two consequences worth knowing, both of which happen to suit this
+        // configuration. It attaches the JavaScript debugger, so the console and
+        // network panels are available in the Debug Console — which is where a
+        // failing /auth/session or a stale asset actually shows up. And it
+        // launches a temporary Chrome profile, so every run starts signed out
+        // with an empty cache: sign-in is two clicks against the mock provider,
+        // and a stale bundle cannot survive between runs.
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      // Hot reload and breakpoints. The web port is pinned so the URL is stable
+      // across runs; lib/api_config.dart recognises a localhost page on a port
+      // like this as a dev run and targets the API on 8080.
+      "name": "Frontend (debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/flumip_flutter",
+      "deviceId": "chrome",
+      "flutterMode": "debug",
+      "args": [
+        "--web-port=8083"
+      ]
+    },
+    {
+      // Release build, no debugger attached: no hot reload and no breakpoints,
+      // but representative of what an end user is served. Use this to check
+      // performance or anything that behaves differently in release.
+      "name": "Frontend (no debugging, release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}/flumip_flutter",
+      "deviceId": "chrome",
+      "flutterMode": "release",
+      "noDebug": true,
+      "args": [
+        "--web-port=8083"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      // Backend plus frontend in one click, for exercising a change end to end.
+      //
+      // The preLaunchTask switches sign-in **off** and then lints. Off is not
+      // optional here: `flutter run` serves the app on its own port, so the
+      // browser blocks the cross-origin /auth/session call and the app can never
+      // hold a bearer — with sign-in enforced every API call returns 401 behind
+      // CORS errors that name nothing useful. Use "Server (single sign-on)" when
+      // you want sign-in, and the "Auth: enable" task to put it back.
+      //
+      // Linting first also means a push-blocking analyze failure shows up here
+      // rather than in CI.
+      "name": "Full stack (debug)",
+      "preLaunchTask": "Full stack: prepare",
+      "configurations": [
+        "Server",
+        "Frontend (debug)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Full stack (apply migrations)",
+      "preLaunchTask": "Full stack: prepare",
+      "configurations": [
+        "Server (apply migrations)",
+        "Frontend (debug)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

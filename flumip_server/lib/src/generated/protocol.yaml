@@ -1,32 +1,43 @@
+auth:
+  - config:
+  - me:
+  - logout:
 file:
   - deleteByProducts:
   - showSnpMipsResult:
   - showMipsResult:
   - showMipsProgress:
   - showUSCSTrack:
+  - getUcscTrackToken:
+  - listProjectFiles:
+  - requireProject:
+  - requireProjectOptions:
 genome:
   - getGenome:
   - getAllGenomes:
   - updateGenome:
   - collectGenomes:
-  - indexGenome:
-  - deleteGenomeIndex:
   - getSnp:
   - getAllSnpForGenome:
-  - updateSnp:
   - getCategories:
   - getGenomeByCategory:
   - indexFasta:
   - deleteFastaIndex:
+  - requireProject:
+  - requireProjectOptions:
 mipgen:
   - createBedFile:
   - generateMips:
+  - requireProject:
+  - requireProjectOptions:
 options:
   - createProjectOptions:
   - insertProjectOptions:
   - getProjectOptions:
   - updateProjectOptions:
   - deleteProjectOptions:
+  - requireProject:
+  - requireProjectOptions:
 project:
   - createProject:
   - deleteProject:
@@ -36,7 +47,39 @@ project:
   - removeGeneFromProject:
   - addGenesToProject:
   - setGeneById:
+  - setEmailNotification:
+  - setProjectOwner:
+  - assignableOwners:
+  - notificationsAvailable:
   - setSnpById:
+  - requireProject:
+  - requireProjectOptions:
+search:
+  - search:
+  - requireProject:
+  - requireProjectOptions:
 settings:
+  - userSettings:
   - getSettings:
   - updateSettings:
+  - setOidcClientSecret:
+  - setSmtpPassword:
+  - smtpPasswordConfigured:
+  - getAuthAdminStatus:
+  - sendTestMail:
+snp:
+  - listSnpsForGenome:
+  - listMySnps:
+  - createUpload:
+  - finishUpload:
+  - cancelUpload:
+  - importFromUrls:
+  - retryImport:
+  - setShared:
+  - renameSnp:
+  - snpUsage:
+  - deleteCustomSnp:
+  - deleteSnpAsAdmin:
+  - collectCustomSnps:
+  - requireProject:
+  - requireProjectOptions:

@@ -1,600 +1,203 @@
 import 'dart:async';
-import 'dart:math';
-import 'package:web/web.dart' as web;
-import 'package:flutter/material.dart';
+
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flumip_flutter/main.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class GenomeRange {
-  final String name;
-  int start;
-  int end;
+import '../format.dart';
+import '../services.dart';
+import '../ui/responsive_row.dart';
+import '../ui/theme.dart';
+import 'genome_picker_dialog.dart';
+import 'owner_picker.dart';
+import 'project_inputs.dart';
+import 'project_options_view.dart';
+import 'project_result_actions.dart';
+import 'project_run_panel.dart';
+import 'project_state.dart';
+import 'project_state_pill.dart';
+import 'project_tile_controller.dart';
 
-  GenomeRange(this.name, this.start, this.end);
-}
-
-//ignore: must_be_immutable
+/// One project in the list: a row that says what it is doing, and — when opened —
+/// its inputs, its design parameters and its results.
+///
+/// Loading, polling and every endpoint call live in [ProjectTileController].
+/// What is left here is layout, two dialogs and the snack bars — the parts that
+/// need a `BuildContext`. Everything it draws is a sibling widget that takes data
+/// and callbacks:
+///
+///  * `project_inputs.dart` — genome, SNP set, genes
+///  * `project_options_view.dart` — the design parameters
+///  * `project_run_panel.dart` — the BED step, the run, the results
+///  * `project_state_pill.dart` — the collapsed row's badge
+///  * `project_result_actions.dart` — opening result files and downloads
+///  * `ucsc_track.dart` — building the UCSC links
 class ProjectTile extends StatefulWidget {
-  Project project;
+  const ProjectTile({
+    super.key,
+    required this.project,
+    required this.onDelete,
+    this.notificationsAvailable = false,
+    this.assignableOwners,
+    this.onOwnerChanged,
+    this.initiallyExpanded = false,
+    this.controller,
+  });
+
+  /// ⚠️ `final` now, and the class is `const`-constructible again. It used to be
+  /// a mutable field the tile wrote its own reload results back into, which is
+  /// what the `must_be_immutable` suppression was hiding. The controller holds
+  /// the project it is showing; this is only the list's copy.
+  final Project project;
+
   final VoidCallback onDelete;
 
-  ProjectTile({super.key, required this.project, required this.onDelete});
+  /// Whether an administrator has mail switched on for this install.
+  ///
+  /// Only controls whether the notification switch is offered — the server
+  /// decides what is actually sent.
+  final bool notificationsAvailable;
+
+  /// The users this project can be handed to, or null when the viewer is not an
+  /// administrator and the picker should not appear at all.
+  final List<FlumipUserDto>? assignableOwners;
+
+  /// Called with the new owner's id, or null to release the project to unowned.
+  final void Function(int? ownerId)? onOwnerChanged;
+
+  /// Opens without a click: a project that has just been created, or one a search
+  /// result revealed.
+  ///
+  /// Read on build *and* watched in `didUpdateWidget`, because a revealed project
+  /// may already be on screen with a `State` of its own.
+  final bool initiallyExpanded;
+
+  /// The controller to use, or null to build one from the app-wide client.
+  ///
+  /// ⚠️ Owned by this widget when it builds its own: it holds a poll for one
+  /// project, and there is one of these per row.
+  final ProjectTileController? controller;
 
   @override
   State<ProjectTile> createState() => _ProjectTileState();
 }
 
 class _ProjectTileState extends State<ProjectTile> {
-  bool _isExpanded = false;
-  bool _deleteExcessFiles = false;
-  late ProjectOptions projectOptions = ProjectOptions();
-  late Genome genome = Genome(name: 'default');
-  late Snp snp = Snp(
-    name: 'default',
-    vcfPath: '',
-    tbiPath: '',
-    folder: '',
-    active: false,
-  );
-  final TextEditingController _genesController = TextEditingController();
-  String? _errorMessage;
-  Timer? _timer;
+  late final bool _ownsController = widget.controller == null;
+  late final ProjectTileController _controller =
+      widget.controller ??
+      createProjectTileController(
+        widget.project,
+        expanded: widget.initiallyExpanded,
+      );
+  StreamSubscription<String>? _messages;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 10), (timer) {
-      if (_isExpanded) {
-        _reloadProject();
-      }
-    });
+    _controller.addListener(_onChanged);
+    _messages = _controller.messages.listen(_say);
+    // A tile that opens itself still has to load what it is going to show.
+    _controller.openIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(ProjectTile old) {
+    super.didUpdateWidget(old);
+    // The tab refetched the list; take its newer copy.
+    if (!identical(old.project, widget.project)) {
+      _controller.adopt(widget.project);
+    }
+    // ⚠️ A search result asking for a row that is already on screen. This tile is
+    // keyed `ValueKey(project.id)`, so a project that was already in the list
+    // keeps its `State` and never re-reads [ProjectTile.initiallyExpanded] through
+    // the constructor — without this the tab would scroll the revealed project to
+    // the top and leave it shut. The flag now means "should be open", not only
+    // "starts open".
+    if (!old.initiallyExpanded &&
+        widget.initiallyExpanded &&
+        !_controller.expanded) {
+      // Loads what the open tile shows, so nothing extra is needed here.
+      _controller.toggleExpanded();
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _messages?.cancel();
+    _controller.removeListener(_onChanged);
+    if (_ownsController) _controller.dispose();
     super.dispose();
   }
 
-  void _toggleExpand() async {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      genome = Genome(name: 'default');
-      snp = Snp(
-        name: 'default',
-        vcfPath: '',
-        tbiPath: '',
-        folder: '',
-        active: false,
-      );
-    });
-    if (_isExpanded) {
-      await _reloadProject();
-    }
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
 
-  Future<void> _reloadProject() async {
+  void _say(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Opens the genome picker and applies the answer.
+  ///
+  /// One dialog. The old flow was a category `DropdownButton` whose `onChanged`
+  /// fetched genomes and *then* opened a dialog — two controls for one decision,
+  /// with the dropdown hard-coded to `null` so it never reflected the choice.
+  Future<void> _pickGenome() async {
+    final List<String> categories;
     try {
-      var projectUpdate = await client.project.getProject(widget.project.id!);
-      final options = await client.options.getProjectOptions(
-        widget.project.options,
-      );
-      Genome? genomeUpdate;
-      if (widget.project.genome != null) {
-        genomeUpdate = await client.genome.getGenome(widget.project.genome!);
-      }
-      Snp? snpUpdate;
-      if (widget.project.snp != null) {
-        snpUpdate = await client.genome.getSnp(widget.project.snp!);
-      }
-      setState(() {
-        widget.project = projectUpdate;
-        projectOptions = options;
-        if (genomeUpdate != null) {
-          genome = genomeUpdate;
-        }
-        if (snpUpdate != null) {
-          snp = snpUpdate;
-        }
-      });
+      categories = await _controller.genomeCategories();
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to reload project: $e';
-      });
+      _controller.reportGenomeLoadFailure(e);
+      return;
     }
-  }
+    if (!mounted) return;
 
-  Future<void> _addGene(String gene) async {
-    try {
-      await client.project.addGeneToProject(widget.project.id!, gene);
-      await _reloadProject();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to add gene: $e')));
-      }
-    }
-  }
-
-  Future<void> _removeGene(String gene) async {
-    try {
-      await client.project.removeGeneFromProject(widget.project.id!, gene);
-      await _reloadProject();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to remove gene: $e')));
-      }
-    }
-  }
-
-  Future<void> _createBedFile() async {
-    try {
-      await client.mipgen.createBedFile(widget.project.id!);
-      await _reloadProject();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('BED file created successfully')),
-        );
-      }
-    } on ArgumentError {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ERROR: The supplied genes cannot be found')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create BED file: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _generateMips() async {
-    try {
-      await client.mipgen.generateMips(widget.project.id!, _deleteExcessFiles);
-      _reloadProject();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('MIPs generation started successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to generate MIPs: $e')));
-      }
-    }
-  }
-
-  Future<void> _showMipsResult() async {
-    try {
-      final result = await client.file.showMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("MIPs copied to clipboard")),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load MIPs result: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _showSnpMipsResult() async {
-    try {
-      final result = await client.file.showSnpMipsResult(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('SNP MIPs Result'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No SNP MIPs result file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _showProgress() async {
-    try {
-      final result = await client.file.showMipsProgress(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('MIPs Progress'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No progress file found.')]
-                      : result.map((line) => Text(line)).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load progress: $e')));
-      }
-    }
-  }
-
-  List<GenomeRange> _getGenomeRanges(List<String> ucscTrack) {
-    Set<String> uniqueNames = {};
-    for (var line in ucscTrack) {
-      if (line.startsWith('chr')) {
-        var parts = line.split('\t');
-        if (parts.length >= 3) {
-          var name = parts[0];
-          uniqueNames.add(name);
-        }
-      }
-    }
-    List<GenomeRange> ranges = [];
-    for (var name in uniqueNames) {
-      var result = GenomeRange(name, 0x20000000000000, 0);
-      for (var line in ucscTrack) {
-        if (line.startsWith(name)) {
-          var parts = line.split('\t');
-          if (parts.length >= 3) {
-            var start = int.parse(parts[1]);
-            var end = int.parse(parts[2]);
-            if (result.start > start) {
-              result.start = start;
-            }
-            if (result.end < end) {
-              result.end = end;
-            }
-          }
-        }
-      }
-      ranges.add(result);
-    }
-
-    return ranges;
-  }
-
-  Map<String, String> _generateUCSCTrackUrl(List<String> track) {
-    String url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?';
-    switch (genome.name) {
-      case 'hg18':
-        url += 'db=hg18';
-        break;
-      case 'hg19':
-        url += 'db=hg19';
-        break;
-      case 'hs1':
-        url += 'db=hs1';
-        break;
-      default:
-        url += 'db=hg38';
-        break;
-    }
-
-    var map = <String, String>{};
-
-    var genomeRanges = _getGenomeRanges(track);
-    for (var range in genomeRanges) {
-      map[range.name] = url +=
-          '&position=${range.name}:${range.start}-${range.end} &hgt.customText=http://localhost:8082/ucsc_track/${widget.project.id}';
-    }
-
-    return map;
-  }
-
-  Future<void> _showUCSCTrack() async {
-    try {
-      final result = await client.file.showUSCSTrack(widget.project.id!);
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('UCSC Track'),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: result.isEmpty
-                      ? [Text('No UCSC Track file found.')]
-                      : [
-                          SelectableText.rich(
-                            TextSpan(
-                              children: result
-                                  .map((line) => TextSpan(text: '$line\n'))
-                                  .toList(),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              actions: [
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      var ucscTrack = _generateUCSCTrackUrl(result);
-                      if (ucscTrack.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("No UCSC Track found")),
-                        );
-                        return;
-                      }
-                      if (ucscTrack.length == 1) {
-                        web.window.open(ucscTrack.values.first, 'new tab');
-                      } else {
-                        if (mounted) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('Select UCSC Track'),
-                                content: SingleChildScrollView(
-                                  child: ListBody(
-                                    children: ucscTrack.entries
-                                        .map(
-                                          (entry) => TextButton(
-                                            onPressed: () {
-                                              web.window.open(
-                                                entry.value,
-                                                'new tab',
-                                              );
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text(entry.key),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      }
-                    },
-                    child: Text('Open in UCSC Track browser'),
-                  ),
-                if (result.isNotEmpty)
-                  TextButton(
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: result.join('\n')),
-                      ).then((_) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Snp MIPs copied to clipboard"),
-                            ),
-                          );
-                        }
-                      });
-                    },
-                    child: Text('Copy to clipboard'),
-                  ),
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load SNP MIPs result: $e')),
-        );
-      }
-    }
-  }
-
-  void _showDeleteConfirmationDialog() {
-    showDialog(
+    final picked = await showDialog<Genome>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Delete Project'),
-          content: Text('Are you sure you want to delete this project?'),
-          actions: [
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () {
-                widget.onDelete();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+      builder: (_) => GenomePickerDialog(
+        categories: categories,
+        loadGenomes: _controller.genomesInCategory,
+        initialCategory: _controller.genome?.category,
+        selectedGenomeId: _controller.project.genome,
+      ),
+    );
+    if (picked == null) return;
+    await _controller.chooseGenome(picked);
+  }
+
+  void _confirmDelete() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Project'),
+        content: const Text('Are you sure you want to delete this project?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              widget.onDelete();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<List<String>> getGenomeCategories() async {
-    try {
-      var cat = await client.genome.getCategories();
-      cat.sort((a, b) => a.compareTo(b));
-      return cat;
-    } catch (e) {
-      _errorMessage = 'Failed to load gene categories: $e';
-      return [];
-    }
-  }
-
-  Future<List<Genome>> getGenomeByCategory(String category) async {
-    try {
-      return await client.genome.getGenomeByCategory(category);
-    } catch (e) {
-      _errorMessage = 'Failed to load genes for category: $e';
-      return [];
-    }
-  }
-
-  Future<List<Snp>> getSnpForGene(int geneId) async {
-    try {
-      return await client.genome.getAllSnpForGenome(geneId);
-    } catch (e) {
-      _errorMessage = 'Failed to load snps for genome: $e';
-      return [];
-    }
-  }
-
-  Future<void> setGenome(int geneId) async {
-    try {
-      await client.project.setGeneById(widget.project.id!, geneId);
-      await _reloadProject();
-    } catch (e) {
-      _errorMessage = 'Failed to set genome: $e';
-    }
-  }
-
-  Future<void> setSnp(int snpId) async {
-    try {
-      await client.project.setSnpById(widget.project.id!, snpId);
-      await _reloadProject();
-    } catch (e) {
-      _errorMessage = 'Failed to set snp: $e';
-    }
-  }
-
-  String _printDuration(Duration duration) {
-    String negativeSign = duration.isNegative ? '-' : '';
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60).abs());
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60).abs());
-    return "$negativeSign${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
-  }
-
-  double _truncateToDecimalPlaces(num value, int fractionalDigits) =>
-      (value * pow(10, fractionalDigits)).truncate() /
-      pow(10, fractionalDigits);
-
   @override
   Widget build(BuildContext context) {
-    bool isScreenWide = MediaQuery.sizeOf(context).width >= 795;
+    final project = _controller.project;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: context.colours.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -603,475 +206,122 @@ class _ProjectTileState extends State<ProjectTile> {
           ListTile(
             leading: IconButton(
               icon: Icon(
-                _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                _controller.expanded
+                    ? Icons.arrow_drop_up
+                    : Icons.arrow_drop_down,
               ),
-              onPressed: _toggleExpand,
+              onPressed: _controller.toggleExpanded,
             ),
-            title: Text(widget.project.name),
-            subtitle: Text(widget.project.description),
+            // ⚠️ SelectableText, not Text. A project name is something people
+            // copy into a lab notebook or an email, and in a Flutter web build
+            // ordinary text cannot be selected at all.
+            title: SelectableText(
+              project.name,
+              style: context.text.titleMedium,
+            ),
+            subtitle: project.description.isEmpty
+                ? null
+                : SelectableText(
+                    project.description,
+                    style: context.text.bodySmall,
+                    maxLines: 2,
+                  ),
             trailing: Wrap(
               spacing: 12,
-              children: <Widget>[
-                Text(DateFormat("dd.MM.yyyy").format(widget.project.created)),
-                Text(
-                  '${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
-                ),
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                // What this project is doing, without having to open it.
+                ProjectStatePill(state: ProjectState.of(project)),
+                Text(DateFormat('dd.MM.yyyy').format(project.created)),
+                Text(formatBytes(project.size)),
                 IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: _showDeleteConfirmationDialog,
+                  icon: const Icon(Icons.delete),
+                  tooltip: 'Delete project',
+                  onPressed: _confirmDelete,
                 ),
               ],
             ),
           ),
-          if (_isExpanded)
-            if (isScreenWide) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(child: buildGenomeSelectorColumn()),
-                    Expanded(child: buildProjectOptionsColumn()),
-                    Expanded(child: buildProjectActionColumn()),
-                  ],
-                ),
+          if (_controller.expanded) ...[
+            // Full width, above the three columns, so it appears once in both
+            // layouts — ownership is a property of the project, not of any one
+            // of them.
+            if (widget.assignableOwners != null)
+              OwnerPicker(
+                owners: widget.assignableOwners!,
+                ownerId: project.owner,
+                onChanged: (id) => widget.onOwnerChanged?.call(id),
               ),
-            ] else ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  spacing: 25,
-                  children: [
-                    buildGenomeSelectorColumn(),
-                    buildProjectOptionsColumn(),
-                    buildProjectActionColumn(),
-                  ],
-                ),
+            Padding(
+              // ⚠️ A bottom inset, not just horizontal. The columns used to run
+              // flush into the tile's own border, so the last row of the design
+              // options sat on the line.
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: ResponsiveRow(
+                // Was `MediaQuery.sizeOf(context).width >= 795`, i.e. about
+                // 265px a column. ResponsiveRow measures the tile rather than
+                // the window, which is what keeps this honest now that the list
+                // is capped: a wide monitor no longer implies a wide tile.
+                minChildWidth: 260,
+                spacing: 10,
+                stackSpacing: 25,
+                // ⚠️ One `SelectionArea` per column, nested inside the app-wide
+                // one. Without them a drag across the design options runs on
+                // into the results beside it, so copying the parameters gets you
+                // the parameters *and* whatever sat to their right. A nested
+                // SelectionArea claims its subtree, which scopes the drag to the
+                // column it started in.
+                children: [
+                  SelectionArea(child: _inputs()),
+                  SelectionArea(
+                    child: ProjectOptionsView(options: _controller.options),
+                  ),
+                  SelectionArea(child: _runPanel()),
+                ],
               ),
-            ],
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Column buildProjectActionColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (widget.project.genes?.isNotEmpty == true &&
-            widget.project.genome != null &&
-            widget.project.bedFileCreated == false) ...[
-          ElevatedButton(
-            onPressed: _createBedFile,
-            child: Text('Create BED File'),
-          ),
-        ],
-        if (widget.project.bedFileCreated == false &&
-            (widget.project.genes == null ||
-                widget.project.genes?.isEmpty == true ||
-                widget.project.genome == null)) ...[
-          Tooltip(
-            message: "Select a genome and add genes to create a BED file.",
-            child: ElevatedButton(
-              onPressed: null,
-              child: Text('Create BED File'),
-            ),
-          ),
-        ],
-        SizedBox(height: 5),
-        if (widget.project.bedFileCreated == true &&
-            widget.project.active == false &&
-            widget.project.completedIn == null)
-          buildMipgenStartColumn(),
-        SizedBox(height: 5),
-        if (widget.project.active == true && widget.project.completedIn == null)
-          buildMipgenProgressColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isEmpty)
-          buildMipgenResultColumn(),
-        if (widget.project.active == false &&
-            widget.project.completedIn != null &&
-            widget.project.error.isNotEmpty)
-          Text(
-            'Error: ${widget.project.error}',
-            style: TextStyle(color: Colors.red),
-          ),
-      ],
-    );
-  }
+  Widget _inputs() => ProjectInputsColumn(
+    project: _controller.project,
+    genome: _controller.genome,
+    snp: _controller.snp,
+    snpsForGenome: _controller.snpChoices,
+    errorMessage: _controller.errorMessage,
+    onDismissError: _controller.dismissError,
+    onPickGenome: _pickGenome,
+    onSnpChanged: _controller.setSnp,
+    onAddGene: _controller.addGene,
+    onRemoveGene: _controller.removeGene,
+  );
 
-  Column buildGenomeSelectorColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (_errorMessage != null)
-          Text(_errorMessage!, style: TextStyle(color: Colors.red)),
-        if (widget.project.genome == null) buildGenomeSelector(),
-        if (widget.project.genome != null) ...[
-          Text('Genome:', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (genome.name == 'default') ...[
-            Text('loading...'),
-          ] else ...[
-            Text(genome.name),
-          ],
-        ],
-        SizedBox(height: 10),
-        if (widget.project.genome != null &&
-            genome.snp != null &&
-            widget.project.snp == null &&
-            !widget.project.active &&
-            widget.project.completedIn == null)
-          buildSnpSelector(),
-        if (widget.project.snp != null) ...[
-          Text('Snp:', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (snp.name == 'default') ...[
-            Text('loading...'),
-          ] else ...[
-            Text(snp.name),
-          ],
-        ],
-        SizedBox(height: 10),
-        if (widget.project.genes != null && widget.project.genes!.isNotEmpty)
-          buildGeneColumn(),
-        if (widget.project.bedFileCreated == false) buildAddGeneColumn(),
-      ],
-    );
-  }
-
-  Column buildGenomeSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text("Select Category:"),
-        FutureBuilder<List<String>>(
-          future: getGenomeCategories(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (snapshot.data!.isNotEmpty) {
-                return DropdownButton<String>(
-                  value: null,
-                  onChanged: (String? category) {
-                    if (category != null) {
-                      getGenomeByCategory(category).then((genomes) {
-                        if (context.mounted) {
-                          genomes.sort((a, b) => a.name.compareTo(b.name));
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text('Select Genome:'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    for (var selectedGenome in genomes)
-                                      if (selectedGenome.active) ...[
-                                        if (selectedGenome.indexed) ...[
-                                          ListTile(
-                                            title: Text(selectedGenome.name),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else if (selectedGenome.indexing) ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (indexing)",
-                                            ),
-                                            subtitle: Text(
-                                              "Genome is currently unavailable",
-                                            ),
-                                            onTap: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ] else ...[
-                                          ListTile(
-                                            title: Text(
-                                              "${selectedGenome.name} (not indexed)",
-                                            ),
-                                            onTap: () {
-                                              genome = selectedGenome;
-                                              setGenome(selectedGenome.id!);
-                                              _reloadProject();
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
-                                        ],
-                                      ],
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      });
-                    } else {
-                      Text("No genomes available");
-                    }
-                  },
-                  items: snapshot.data!
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ),
-                      )
-                      .toList(),
-                );
-              } else {
-                return Text("No categories available");
-              }
-            } else if (snapshot.hasError) {
-              return Text('Failed to load gene categories: ${snapshot.error}');
-            } else {
-              return CircularProgressIndicator();
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Column buildSnpSelector() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text("Select SNP (optional):"),
-        FutureBuilder<List<Snp>>(
-          future: getSnpForGene(genome.id!),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return DropdownButton<Snp>(
-                value: null,
-                onChanged: (Snp? selectedSnp) {
-                  if (selectedSnp != null) {
-                    snp = selectedSnp;
-                    setSnp(selectedSnp.id!);
-                    _reloadProject();
-                  }
-                },
-                items: snapshot.data!
-                    .map(
-                      (snp) =>
-                          DropdownMenuItem(value: snp, child: Text(snp.name)),
-                    )
-                    .toList(),
-              );
-            } else if (snapshot.hasError) {
-              return Text('Failed to load snps: ${snapshot.error}');
-            } else {
-              return CircularProgressIndicator();
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Column buildProjectOptionsColumn() {
-    return Column(
-      spacing: 3,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text('Project Options:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Text('Min Capture Size: ${projectOptions.minCaptureSize}'),
-        Text('Max Capture Size: ${projectOptions.maxCaptureSize}'),
-        if (projectOptions.armLengths != null &&
-            projectOptions.armLengths!.isNotEmpty)
-          Text('Arm Lengths: ${projectOptions.armLengths}'),
-        Text('Arm Length Sums: ${projectOptions.armLengthSums}'),
-        Text('Ext Min Length: ${projectOptions.extMinLength}'),
-        Text('Ext Max Length: ${projectOptions.extMaxLength}'),
-        Text('Lig Min Length: ${projectOptions.ligMinLength}'),
-        Text('Tag Sizes: ${projectOptions.tagSizes}'),
-        Text('Masked Arm Threshold: ${projectOptions.maskedArmThreshold}'),
-        Text('Target Arm Copy: ${projectOptions.targetArmCopy}'),
-        Text('Max Arm Copy Product: ${projectOptions.maxArmCopyProduct}'),
-        if (projectOptions.trf) Text('TRF: on') else Text('TRF: off'),
-        if (projectOptions.genomeDir != null)
-          Text('Genome Dir: ${projectOptions.genomeDir}'),
-        Text('Feature Flank: ${projectOptions.featureFlank}'),
-        Text('Capture Increment: ${projectOptions.captureIncrement}'),
-        if (projectOptions.logisticHeuristic)
-          Text('Logistic Heuristic: on')
-        else
-          Text('Logistic Heuristic: off'),
-        Text('Max Mip Overlap: ${projectOptions.maxMipOverlap}'),
-        Text('Starting Mip Overlap: ${projectOptions.startingMipOverlap}'),
-        if (projectOptions.checkCopyNumber)
-          Text('Check Copy Number: on')
-        else
-          Text('Check Copy Number: off'),
-        if (projectOptions.sealBothStrands)
-          Text('Seal Both Strands: on')
-        else
-          Text('Seal Both Strands: off'),
-        if (projectOptions.halfSealBothStrands)
-          Text('Half Seal Both Strands: on')
-        else
-          Text('Half Seal Both Strands: off'),
-        if (projectOptions.doubleTileStrandUnaware)
-          Text('Double Tile Strand Unaware: on')
-        else
-          Text('Double Tile Strand Unaware: off'),
-        if (projectOptions.doubleTileStrandsSeparately)
-          Text('Double Tile Strands Separately: on')
-        else
-          Text('Double Tile Strands Separately: off'),
-        Text('Score Method: ${projectOptions.scoreMethod}'),
-        Text('Logistic Optimal Score: ${projectOptions.logisticOptimalScore}'),
-        Text('SVR Optimal Score: ${projectOptions.svrOptimalScore}'),
-        Text(
-          'Logistic Priority Score: ${projectOptions.logisticPriorityScore}',
-        ),
-        Text('SVR Priority Score: ${projectOptions.svrPriorityScore}'),
-        SizedBox(height: 5),
-      ],
-    );
-  }
-
-  Column buildGeneColumn() {
-    return Column(
-      children: [
-        Text('Genes:', style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Column(
-          children: widget.project.genes!.map((gene) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(gene, style: TextStyle(fontStyle: FontStyle.italic)),
-                if (widget.project.bedFileCreated == false)
-                  IconButton(
-                    icon: Icon(Icons.remove_circle_outline),
-                    onPressed: () => _removeGene(gene),
-                  ),
-              ],
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Column buildAddGeneColumn() {
-    return Column(
-      children: [
-        SizedBox(height: 15),
-        Row(
-          spacing: 10,
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _genesController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'add gene',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  contentPadding: EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 15,
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                onSubmitted: (value) {
-                  _addGene(value);
-                  _genesController.clear();
-                },
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                _addGene(_genesController.text);
-                _genesController.clear();
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Column buildMipgenStartColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: _deleteExcessFiles,
-              onChanged: (bool? value) {
-                setState(() {
-                  _deleteExcessFiles = value ?? false;
-                });
-              },
-            ),
-            Text('Auto delete intermediate files'),
-          ],
-        ),
-        SizedBox(width: 10),
-        ElevatedButton(onPressed: _generateMips, child: Text('Generate MIPs')),
-      ],
-    );
-  }
-
-  Column buildMipgenProgressColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        ElevatedButton(onPressed: _showProgress, child: Text('Show Progress')),
-        SizedBox(height: 10),
-      ],
-    );
-  }
-
-  Column buildMipgenResultColumn() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text('Completed in: ${_printDuration(widget.project.completedIn!)}'),
-        SizedBox(height: 10),
-        Text(
-          'Output size: ${_truncateToDecimalPlaces(widget.project.size / 1000000000, 2)} GB',
-        ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showMipsResult,
-          child: Text('Show MIPs Result'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showSnpMipsResult,
-          child: Text('Show SNP MIPs Result'),
-        ),
-        SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: _showUCSCTrack,
-          child: Text('Show UCSC Track'),
-        ),
-        SizedBox(height: 10),
-      ],
+  Widget _runPanel() {
+    final project = _controller.project;
+    return ProjectRunPanel(
+      project: project,
+      progress: _controller.progress,
+      notificationsAvailable: widget.notificationsAvailable,
+      deleteExcessFiles: _controller.deleteExcessFiles,
+      onDeleteExcessFilesChanged: _controller.setDeleteExcessFiles,
+      onEmailNotificationChanged: _controller.setEmailNotification,
+      onCreateBedFile: _controller.createBedFile,
+      onGenerateMips: _controller.generateMips,
+      onShowMipsResult: () => showMipsResultDialog(context, project.id!),
+      onShowSnpMipsResult: () => showSnpMipsResultDialog(context, project.id!),
+      onShowUcscTrack: () => openUcscTrack(
+        context,
+        projectId: project.id!,
+        // Unknown, or not yet loaded, means hg38 — which is what the app
+        // installs by default and what `ucscTrackUrls` falls back to.
+        genomeName: _controller.genome?.name ?? '',
+      ),
+      onShowUcscTrackFile: () => showUcscTrackFileDialog(context, project.id!),
+      onShowDesignLog: () => showDesignLogDialog(context, project.id!),
+      onShowDownloads: () => showProjectDownloadsDialog(context, project.id!),
     );
   }
 }

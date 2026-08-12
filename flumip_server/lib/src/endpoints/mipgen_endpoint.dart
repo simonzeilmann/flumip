@@ -1,8 +1,12 @@
+import 'package:flumip_server/src/generated/exceptions/GenomeExceptions/bed_creation_exception.dart';
+import 'package:flumip_server/src/generated/exceptions/argument_exception.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:flumip_server/src/endpoints/flumip_endpoint.dart';
+import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Endpoint for handling MIP generation-related operations.
-class MipgenEndpoint extends Endpoint {
+class MipgenEndpoint extends FlumipEndpoint {
   final mipgenService = MipgenService();
 
   /// Creates a BED file for the specified project.
@@ -10,13 +14,23 @@ class MipgenEndpoint extends Endpoint {
   /// \param session The current session.
   /// \param projectID The ID of the project.
   Future<void> createBedFile(Session session, int projectID) async {
-    session.log("Creating BED file for project ID: $projectID",
-        level: LogLevel.info);
+    session.log(
+      "Creating BED file for project ID: $projectID",
+      level: LogLevel.info,
+    );
     try {
+      await requireProject(session, projectID);
       return mipgenService.createBedFile(session, projectID);
+    } on BedCreationException {
+      rethrow;
+    } on ArgumentException {
+      rethrow;
     } catch (e) {
-      session.log("Error creating BED file for project ID: $projectID",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Unexpected error creating BED file for project ID: $projectID",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }
@@ -25,16 +39,29 @@ class MipgenEndpoint extends Endpoint {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  /// \param deleteExcessFiles Whether to delete excess files after generating MIPs.
+  /// \param deleteExcessFiles Whether to delete intermediate files after generating MIPs.
   Future<void> generateMips(
-      Session session, int projectID, bool deleteExcessFiles) async {
-    session.log("Generating MIPs for project ID: $projectID",
-        level: LogLevel.info);
+    Session session,
+    int projectID,
+    bool deleteExcessFiles,
+  ) async {
+    session.log(
+      "Generating MIPs for project ID: $projectID",
+      level: LogLevel.info,
+    );
     try {
+      await requireProject(session, projectID);
       return mipgenService.generateMips(session, projectID, deleteExcessFiles);
+    } on ArgumentException {
+      rethrow;
+    } on FileNotFoundException {
+      rethrow;
     } catch (e) {
-      session.log("Error generating MIPs for project ID: $projectID",
-          level: LogLevel.error, exception: e);
+      session.log(
+        "Error generating MIPs for project ID: $projectID",
+        level: LogLevel.error,
+        exception: e,
+      );
       rethrow;
     }
   }

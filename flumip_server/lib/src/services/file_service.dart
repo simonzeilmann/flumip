@@ -5,6 +5,8 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'dart:io';
 
+import 'package:archive/archive_io.dart';
+
 /// A service class for handling file-related operations.
 class FileService {
   FileService();
@@ -56,7 +58,6 @@ class FileService {
         "Gene file does not exist, creating: $geneFile",
         level: LogLevel.info,
       );
-      File(geneFile).create();
       await _writeListToFile(session, geneFile, genes);
     }
     session.log(
@@ -145,7 +146,11 @@ class FileService {
     for (var d in dir) {
       if (d.path.endsWith(".sai") || d.path.endsWith(".fq")) {
         session.log("Deleting byproduct file: ${d.path}", level: LogLevel.info);
-        d.delete();
+        // ⚠️ Awaited. Without it this reported "byproducts deleted
+        // successfully" before they were, and a delete that failed — a
+        // permission problem, a file still held open — surfaced as an unhandled
+        // async error rather than as this method failing.
+        await d.delete();
       }
     }
     session.log(
@@ -312,34 +317,12 @@ class FileService {
     return List.empty();
   }
 
-  Future<Stream<List<int>>> returnFile(
-    Session session,
-    int projectID,
-    String fileName,
-  ) async {
-    session.log(
-      "Returning file $fileName for project ID: $projectID",
-      level: LogLevel.info,
-    );
-    List<FileSystemEntity> dir = await _getFileList(session, projectID);
-
-    for (var d in dir) {
-      if (d.path.endsWith(fileName)) {
-        File f = File(d.path);
-        session.log(
-          "File $fileName found for project ID: $projectID",
-          level: LogLevel.info,
-        );
-        return f.openRead();
-      }
-    }
-
-    session.log(
-      "No file $fileName found for project ID: $projectID",
-      level: LogLevel.warning,
-    );
-    return Stream.empty();
-  }
+  // `returnFile` used to live here: a suffix-matching reader that streamed any
+  // project file whose path merely *ended* with the requested name, with no
+  // traversal guard of any kind. It was superseded by `resolveProjectFile` plus
+  // the `/download/...` route, and nothing has called it since — but leaving a
+  // guardless reader lying about invites somebody to reach for it believing it
+  // is the safe one. Use `resolveProjectFile`.
 
   Future<String> readFileAsString(
     Session session,
@@ -482,14 +465,143 @@ class FileService {
     }
 
     int totalSize = 0;
-    await dir.list(recursive: true, followLinks: false).forEach((
-      FileSystemEntity entity,
-    ) async {
+    // `await for`, not `forEach` with an async callback. The callback version
+    // returned as soon as the stream was drained, before its bodies had all run,
+    // so the total was whatever happened to have been added by then — a different
+    // number on every call for a large tree. Latent while this only fed a display
+    // figure; it now decides a per-SNP size.
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
       if (entity is File) {
-        totalSize += entity.lengthSync();
+        totalSize += await entity.length();
       }
-    });
+    }
 
     return totalSize;
+  }
+
+  /// The directory holding a project's files.
+  ///
+  /// Throws [FileNotFoundException] for an unknown project, matching what the
+  /// rest of this service does for a bad id.
+  Future<Directory> projectDirectory(Session session, int projectID) async {
+    final project = await Project.db.findById(session, projectID);
+    if (project == null) {
+      session.log(
+        "Project not found for project ID: $projectID",
+        level: LogLevel.error,
+      );
+      throw FileNotFoundException(message: 'Project not found');
+    }
+    final settings = await sl<SettingsService>().getSettings(session);
+    return Directory('${settings.projectDir}/${project.folderName}');
+  }
+
+  /// Every file a project has produced, newest-looking name order, with sizes.
+  ///
+  /// Flat rather than recursive: mipgen writes into the project directory
+  /// itself, and a recursive walk would invite a download URL that escapes it.
+  /// Directories are skipped rather than descended for the same reason.
+  ///
+  /// An absent directory yields an empty list, not an error — a project whose
+  /// generation never ran simply has nothing to download.
+  Future<List<({String name, int sizeBytes})>> listProjectFiles(
+    Session session,
+    int projectID,
+  ) async {
+    final dir = await projectDirectory(session, projectID);
+    if (!await dir.exists()) return const [];
+
+    final files = <({String name, int sizeBytes})>[];
+    await for (final entity in dir.list(followLinks: false)) {
+      if (entity is! File) continue;
+      final name = entity.uri.pathSegments.last;
+      files.add((name: name, sizeBytes: await entity.length()));
+    }
+    files.sort((a, b) => a.name.compareTo(b.name));
+    return files;
+  }
+
+  /// Resolves [fileName] inside the project directory, or null.
+  ///
+  /// ⚠️ **The traversal guard.** [fileName] arrives from a URL, so it is
+  /// rejected outright unless it is a bare name: anything containing a path
+  /// separator, or `..`, or an absolute path, cannot be resolved. The resolved
+  /// path is then checked to be inside the project directory, so a symlink
+  /// planted in the directory cannot point out of it either.
+  ///
+  /// Returns null rather than throwing for anything not found, so the caller can
+  /// answer one indistinguishable 404 — a probe must not be able to tell a
+  /// rejected name from a missing file.
+  Future<File?> resolveProjectFile(
+    Session session,
+    int projectID,
+    String fileName,
+  ) async {
+    if (fileName.isEmpty ||
+        fileName == '.' ||
+        fileName == '..' ||
+        fileName.contains('/') ||
+        fileName.contains(r'\')) {
+      session.log(
+        'Refused a download name that is not a bare file name, for project '
+        '$projectID',
+        level: LogLevel.warning,
+      );
+      return null;
+    }
+
+    final dir = await projectDirectory(session, projectID);
+    if (!await dir.exists()) return null;
+
+    final file = File('${dir.path}/$fileName');
+    if (!await file.exists()) return null;
+
+    // Resolve symlinks on both sides before comparing, so the containment check
+    // is about where the bytes actually are.
+    final resolved = await file.resolveSymbolicLinks();
+    final root = await dir.resolveSymbolicLinks();
+    if (!resolved.startsWith('$root/')) {
+      session.log(
+        'Refused a download resolving outside project $projectID',
+        level: LogLevel.warning,
+      );
+      return null;
+    }
+    return file;
+  }
+
+  /// Zips every file of a project into a temp file and returns it.
+  ///
+  /// The caller owns the result and must delete it once streamed. Written to
+  /// disk rather than built in memory: a project directory can be gigabytes, and
+  /// an in-memory archive would need it twice over.
+  ///
+  /// Null when the project has no files, so the caller can 404 rather than hand
+  /// back an empty archive that looks like a broken download.
+  Future<File?> zipProjectFiles(Session session, int projectID) async {
+    final files = await listProjectFiles(session, projectID);
+    if (files.isEmpty) return null;
+
+    final dir = await projectDirectory(session, projectID);
+    final target = File(
+      '${Directory.systemTemp.path}/flumip-project-$projectID-'
+      '${DateTime.now().microsecondsSinceEpoch}.zip',
+    );
+
+    final encoder = ZipFileEncoder();
+    encoder.create(target.path);
+    try {
+      for (final entry in files) {
+        await encoder.addFile(File('${dir.path}/${entry.name}'));
+      }
+    } finally {
+      await encoder.close();
+    }
+
+    session.log(
+      'Zipped ${files.length} file(s) for project $projectID',
+      level: LogLevel.info,
+    );
+    return target;
   }
 }

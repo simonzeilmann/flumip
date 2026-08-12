@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:flumip_server/src/generated/protocol.dart' as _i2;
 
 abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   Genome._({
@@ -22,7 +21,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     this.fastaPath,
     this.refPath,
     this.snpFolder,
-    this.snp,
     this.category,
     bool? active,
     bool? indexed,
@@ -46,7 +44,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -60,21 +57,24 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     return Genome(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      description: jsonSerialization['description'] as String,
+      description: jsonSerialization['description'] as String?,
       path: jsonSerialization['path'] as String?,
       fastaPath: jsonSerialization['fastaPath'] as String?,
       refPath: jsonSerialization['refPath'] as String?,
       snpFolder: jsonSerialization['snpFolder'] as String?,
-      snp: jsonSerialization['snp'] == null
-          ? null
-          : _i2.Protocol().deserialize<List<int>>(jsonSerialization['snp']),
       category: jsonSerialization['category'] as String?,
-      active: jsonSerialization['active'] as bool,
-      indexed: jsonSerialization['indexed'] as bool,
-      indexing: jsonSerialization['indexing'] as bool,
-      indexPID: jsonSerialization['indexPID'] as int,
-      indexResults: jsonSerialization['indexResults'] as int,
-      size: jsonSerialization['size'] as int,
+      active: jsonSerialization['active'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      indexed: jsonSerialization['indexed'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
+      indexing: jsonSerialization['indexing'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
+      indexPID: jsonSerialization['indexPID'] as int?,
+      indexResults: jsonSerialization['indexResults'] as int?,
+      size: jsonSerialization['size'] as int?,
     );
   }
 
@@ -96,8 +96,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   String? refPath;
 
   String? snpFolder;
-
-  List<int>? snp;
 
   String? category;
 
@@ -127,7 +125,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -147,7 +144,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       if (fastaPath != null) 'fastaPath': fastaPath,
       if (refPath != null) 'refPath': refPath,
       if (snpFolder != null) 'snpFolder': snpFolder,
-      if (snp != null) 'snp': snp?.toJson(),
       if (category != null) 'category': category,
       'active': active,
       'indexed': indexed,
@@ -169,7 +165,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       if (fastaPath != null) 'fastaPath': fastaPath,
       if (refPath != null) 'refPath': refPath,
       if (snpFolder != null) 'snpFolder': snpFolder,
-      if (snp != null) 'snp': snp?.toJson(),
       if (category != null) 'category': category,
       'active': active,
       'indexed': indexed,
@@ -221,7 +216,6 @@ class _GenomeImpl extends Genome {
     String? fastaPath,
     String? refPath,
     String? snpFolder,
-    List<int>? snp,
     String? category,
     bool? active,
     bool? indexed,
@@ -237,7 +231,6 @@ class _GenomeImpl extends Genome {
          fastaPath: fastaPath,
          refPath: refPath,
          snpFolder: snpFolder,
-         snp: snp,
          category: category,
          active: active,
          indexed: indexed,
@@ -259,7 +252,6 @@ class _GenomeImpl extends Genome {
     Object? fastaPath = _Undefined,
     Object? refPath = _Undefined,
     Object? snpFolder = _Undefined,
-    Object? snp = _Undefined,
     Object? category = _Undefined,
     bool? active,
     bool? indexed,
@@ -276,7 +268,6 @@ class _GenomeImpl extends Genome {
       fastaPath: fastaPath is String? ? fastaPath : this.fastaPath,
       refPath: refPath is String? ? refPath : this.refPath,
       snpFolder: snpFolder is String? ? snpFolder : this.snpFolder,
-      snp: snp is List<int>? ? snp : this.snp?.map((e0) => e0).toList(),
       category: category is String? ? category : this.category,
       active: active ?? this.active,
       indexed: indexed ?? this.indexed,
@@ -320,12 +311,6 @@ class GenomeUpdateTable extends _i1.UpdateTable<GenomeTable> {
     table.snpFolder,
     value,
   );
-
-  _i1.ColumnValue<List<int>, List<int>> snp(List<int>? value) =>
-      _i1.ColumnValue(
-        table.snp,
-        value,
-      );
 
   _i1.ColumnValue<String, String> category(String? value) => _i1.ColumnValue(
     table.category,
@@ -391,10 +376,6 @@ class GenomeTable extends _i1.Table<int?> {
       'snpFolder',
       this,
     );
-    snp = _i1.ColumnSerializable<List<int>>(
-      'snp',
-      this,
-    );
     category = _i1.ColumnString(
       'category',
       this,
@@ -445,8 +426,6 @@ class GenomeTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString snpFolder;
 
-  late final _i1.ColumnSerializable<List<int>> snp;
-
   late final _i1.ColumnString category;
 
   late final _i1.ColumnBool active;
@@ -470,7 +449,6 @@ class GenomeTable extends _i1.Table<int?> {
     fastaPath,
     refPath,
     snpFolder,
-    snp,
     category,
     active,
     indexed,
@@ -537,7 +515,7 @@ class GenomeRepository {
   /// );
   /// ```
   Future<List<Genome>> find(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     int? offset,
@@ -545,6 +523,8 @@ class GenomeRepository {
     bool orderDescending = false,
     _i1.OrderByListBuilder<GenomeTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Genome>(
       where: where?.call(Genome.t),
@@ -554,6 +534,8 @@ class GenomeRepository {
       limit: limit,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -575,13 +557,15 @@ class GenomeRepository {
   /// );
   /// ```
   Future<Genome?> findFirstRow(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? offset,
     _i1.OrderByBuilder<GenomeTable>? orderBy,
     bool orderDescending = false,
     _i1.OrderByListBuilder<GenomeTable>? orderByList,
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Genome>(
       where: where?.call(Genome.t),
@@ -590,18 +574,24 @@ class GenomeRepository {
       orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
   /// Finds a single [Genome] by its [id] or null if no such row exists.
   Future<Genome?> findById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     _i1.Transaction? transaction,
+    _i1.LockMode? lockMode,
+    _i1.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Genome>(
       id,
       transaction: transaction,
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
     );
   }
 
@@ -611,14 +601,20 @@ class GenomeRepository {
   ///
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// insert, none of the rows will be inserted.
+  ///
+  /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
+  /// rows are silently skipped, and only the successfully inserted rows are
+  /// returned.
   Future<List<Genome>> insert(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.Transaction? transaction,
+    bool ignoreConflicts = false,
   }) async {
     return session.db.insert<Genome>(
       rows,
       transaction: transaction,
+      ignoreConflicts: ignoreConflicts,
     );
   }
 
@@ -626,7 +622,7 @@ class GenomeRepository {
   ///
   /// The returned [Genome] will have its `id` field set.
   Future<Genome> insertRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
@@ -642,7 +638,7 @@ class GenomeRepository {
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
   Future<List<Genome>> update(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.ColumnSelections<GenomeTable>? columns,
     _i1.Transaction? transaction,
@@ -658,7 +654,7 @@ class GenomeRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Genome> updateRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.ColumnSelections<GenomeTable>? columns,
     _i1.Transaction? transaction,
@@ -673,7 +669,7 @@ class GenomeRepository {
   /// Updates a single [Genome] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Genome?> updateById(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     int id, {
     required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
     _i1.Transaction? transaction,
@@ -688,7 +684,7 @@ class GenomeRepository {
   /// Updates all [Genome]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
   Future<List<Genome>> updateWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
     required _i1.WhereExpressionBuilder<GenomeTable> where,
     int? limit,
@@ -714,7 +710,7 @@ class GenomeRepository {
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
   Future<List<Genome>> delete(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     List<Genome> rows, {
     _i1.Transaction? transaction,
   }) async {
@@ -726,7 +722,7 @@ class GenomeRepository {
 
   /// Deletes a single [Genome].
   Future<Genome> deleteRow(
-    _i1.Session session,
+    _i1.DatabaseSession session,
     Genome row, {
     _i1.Transaction? transaction,
   }) async {
@@ -738,7 +734,7 @@ class GenomeRepository {
 
   /// Deletes all rows matching the [where] expression.
   Future<List<Genome>> deleteWhere(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     required _i1.WhereExpressionBuilder<GenomeTable> where,
     _i1.Transaction? transaction,
   }) async {
@@ -751,7 +747,7 @@ class GenomeRepository {
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.Session session, {
+    _i1.DatabaseSession session, {
     _i1.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     _i1.Transaction? transaction,
@@ -759,6 +755,22 @@ class GenomeRepository {
     return session.db.count<Genome>(
       where: where?.call(Genome.t),
       limit: limit,
+      transaction: transaction,
+    );
+  }
+
+  /// Acquires row-level locks on [Genome] rows matching the [where] expression.
+  Future<void> lockRows(
+    _i1.DatabaseSession session, {
+    required _i1.WhereExpressionBuilder<GenomeTable> where,
+    required _i1.LockMode lockMode,
+    required _i1.Transaction transaction,
+    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+  }) async {
+    return session.db.lockRows<Genome>(
+      where: where(Genome.t),
+      lockMode: lockMode,
+      lockBehavior: lockBehavior,
       transaction: transaction,
     );
   }
