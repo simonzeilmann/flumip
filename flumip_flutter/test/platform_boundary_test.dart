@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:flumip_flutter/auth/signed_in_menu.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flumip_flutter/project/projects_tab.dart';
+import 'package:flumip_flutter/search/search_button.dart';
+import 'package:flumip_flutter/search/search_dialog.dart';
 import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/snp/add_custom_snp_dialog.dart';
 import 'package:flumip_flutter/snp/snp_section.dart';
@@ -123,5 +126,14 @@ void main() {
     expect(SnpSection, isNotNull);
     expect(ProjectTile, isNotNull);
     expect(AddCustomSnpDialog, isNotNull);
+    // Search sits in the app bar, which is `main.dart`'s own territory — so it is
+    // exactly the kind of widget that would have been written into that file, and
+    // become untestable, before the split.
+    expect(const SearchButton(), isA<SearchButton>());
+    expect(SearchDialog, isNotNull);
+    // ⚠️ This one *was* written into `main.dart`, and stayed there long enough to
+    // ship a label that overflowed the app bar on any narrow window — a bug no
+    // test could reach. It is here because moving it out is what found it.
+    expect(SignedInMenu, isNotNull);
   });
 }

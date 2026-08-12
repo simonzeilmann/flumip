@@ -2,15 +2,17 @@ import 'dart:async';
 import 'dart:js_interop';
 
 import 'package:flumip_flutter/auth/auth_controller.dart';
-import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
+import 'package:flumip_flutter/auth/signed_in_menu.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/project/projects_tab.dart';
+import 'package:flumip_flutter/search/search_button.dart';
 import 'package:flumip_flutter/services.dart';
 import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/settings/settings_tab.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:web/web.dart' as web;
 
@@ -136,31 +138,6 @@ class _AuthGate extends StatelessWidget {
   }
 }
 
-/// Who is signed in, and the way out.
-class _SignedInMenu extends StatelessWidget {
-  const _SignedInMenu({required this.user});
-
-  final SessionTokenResponse user;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = user.displayName.isEmpty ? user.email : user.displayName;
-    return Row(
-      children: [
-        Tooltip(
-          message: user.isAdmin ? '${user.email} (administrator)' : user.email,
-          child: Text(name),
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Sign out',
-          onPressed: () => authController.signOut(siteUrl),
-        ),
-      ],
-    );
-  }
-}
-
 class _SignInScreen extends StatelessWidget {
   const _SignInScreen({required this.label, required this.onSignIn});
 
@@ -235,11 +212,17 @@ class MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: Text(widget.title),
           centerTitle: true,
-          // Only present when someone is actually signed in, so the default
-          // install shows an unchanged app bar.
           actions: [
+            // The only entry point that reaches all three kinds of thing, so it
+            // sits in the one place visible from every tab.
+            const SearchButton(),
+            // Only present when someone is actually signed in, so the default
+            // install shows an unchanged app bar.
             if (authController.state == AuthState.signedIn)
-              _SignedInMenu(user: authController.user!),
+              SignedInMenu(
+                user: authController.user!,
+                onSignOut: () => authController.signOut(siteUrl),
+              ),
           ],
           // Scrollable + centred so the three tabs sit at their natural width
           // in the middle. Stretched across a full-width app bar they end up
@@ -255,14 +238,40 @@ class MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
-        // ⚠️ `SelectionArea` wraps the whole app body, because in a Flutter web
-        // build ordinary `Text` cannot be selected at all — which for an app
-        // full of gene names, file paths and genome coordinates is the wrong
-        // default. Fields and buttons keep their own behaviour; this only makes
-        // static text selectable.
-        body: const SelectionArea(
-          child: TabBarView(
-            children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+        // Ctrl+K, and Cmd+K for the Macs. Bound here rather than on the button
+        // because a shortcut has to be an ancestor of whatever holds focus.
+        //
+        // ⚠️ The `Focus(autofocus: true)` is load-bearing: key events travel up
+        // from the focused node, so with nothing in the app focused they would go
+        // to the root scope — which is *above* this widget — and the binding would
+        // never fire. Taking focus here puts this subtree in the chain, and it
+        // stays in the chain once the user clicks into a field further down.
+        body: Builder(
+          // A context under the DefaultTabController, which is what the dialog's
+          // own context is not. See `SearchButton.open`.
+          builder: (context) => CallbackShortcuts(
+            bindings: {
+              const SingleActivator(
+                LogicalKeyboardKey.keyK,
+                control: true,
+              ): () =>
+                  const SearchButton().open(context),
+              const SingleActivator(LogicalKeyboardKey.keyK, meta: true): () =>
+                  const SearchButton().open(context),
+            },
+            child: const Focus(
+              autofocus: true,
+              // ⚠️ `SelectionArea` wraps the whole app body, because in a Flutter
+              // web build ordinary `Text` cannot be selected at all — which for
+              // an app full of gene names, file paths and genome coordinates is
+              // the wrong default. Fields and buttons keep their own behaviour;
+              // this only makes static text selectable.
+              child: SelectionArea(
+                child: TabBarView(
+                  children: [ProjectsTab(), GenomeTab(), SettingsTab()],
+                ),
+              ),
+            ),
           ),
         ),
         bottomNavigationBar: SizedBox(

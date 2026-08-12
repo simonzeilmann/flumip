@@ -36,6 +36,16 @@ ThemeData buildAppTheme() {
     // would make any size assertion written later disagree with production.
     visualDensity: VisualDensity.compact,
 
+    // ⚠️ Material's own default here is `EdgeInsets.zero`, so the last action in
+    // an app bar sits flush against the window edge. That passes unnoticed for an
+    // `IconButton`, whose splash radius is mostly empty space, and looks broken
+    // the moment the last action has a visible border — as the search field does.
+    // Set on the theme rather than on the one `AppBar`, so the padding is what
+    // every reproduction of that bar in a widget test measures against too.
+    appBarTheme: const AppBarThemeData(
+      actionsPadding: EdgeInsets.only(right: 8),
+    ),
+
     // The highest-leverage entry in this file by a distance: 53 `TextField`s.
     // The underline default plus tight spacing is most of why the settings form
     // reads as a wall of text rather than a set of fields.
