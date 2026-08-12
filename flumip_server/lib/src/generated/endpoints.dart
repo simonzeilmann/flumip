@@ -17,14 +17,15 @@ import '../endpoints/genome_endpoint.dart' as _i4;
 import '../endpoints/mipgen_endpoint.dart' as _i5;
 import '../endpoints/options_endpoint.dart' as _i6;
 import '../endpoints/project_endpoint.dart' as _i7;
-import '../endpoints/settings_endpoint.dart' as _i8;
-import '../endpoints/snp_endpoint.dart' as _i9;
-import 'package:flumip_server/src/generated/genome.dart' as _i10;
-import 'package:flumip_server/src/generated/project_options.dart' as _i11;
-import 'package:flumip_server/src/generated/settings.dart' as _i12;
+import '../endpoints/search_endpoint.dart' as _i8;
+import '../endpoints/settings_endpoint.dart' as _i9;
+import '../endpoints/snp_endpoint.dart' as _i10;
+import 'package:flumip_server/src/generated/genome.dart' as _i11;
+import 'package:flumip_server/src/generated/project_options.dart' as _i12;
+import 'package:flumip_server/src/generated/settings.dart' as _i13;
 import 'package:flumip_server/src/generated/custom_snp_request_dto.dart'
-    as _i13;
-import 'package:flumip_server/src/generated/future_calls.dart' as _i14;
+    as _i14;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i15;
 export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
@@ -67,13 +68,19 @@ class Endpoints extends _i1.EndpointDispatch {
           'project',
           null,
         ),
-      'settings': _i8.SettingsEndpoint()
+      'search': _i8.SearchEndpoint()
+        ..initialize(
+          server,
+          'search',
+          null,
+        ),
+      'settings': _i9.SettingsEndpoint()
         ..initialize(
           server,
           'settings',
           null,
         ),
-      'snp': _i9.SnpEndpoint()
+      'snp': _i10.SnpEndpoint()
         ..initialize(
           server,
           'snp',
@@ -331,7 +338,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'genome': _i1.ParameterDescription(
               name: 'genome',
-              type: _i1.getType<_i10.Genome>(),
+              type: _i1.getType<_i11.Genome>(),
               nullable: false,
             ),
           },
@@ -606,7 +613,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i11.ProjectOptions>(),
+              type: _i1.getType<_i12.ProjectOptions>(),
               nullable: false,
             ),
           },
@@ -649,7 +656,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i11.ProjectOptions>(),
+              type: _i1.getType<_i12.ProjectOptions>(),
               nullable: false,
             ),
           },
@@ -737,7 +744,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'options': _i1.ParameterDescription(
               name: 'options',
-              type: _i1.getType<_i11.ProjectOptions>(),
+              type: _i1.getType<_i12.ProjectOptions>(),
               nullable: false,
             ),
             'description': _i1.ParameterDescription(
@@ -1041,6 +1048,68 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['search'] = _i1.EndpointConnector(
+      name: 'search',
+      endpoint: endpoints['search']!,
+      methodConnectors: {
+        'search': _i1.MethodConnector(
+          name: 'search',
+          params: {
+            'query': _i1.ParameterDescription(
+              name: 'query',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['search'] as _i8.SearchEndpoint).search(
+                session,
+                params['query'],
+              ),
+        ),
+        'requireProject': _i1.MethodConnector(
+          name: 'requireProject',
+          params: {
+            'projectId': _i1.ParameterDescription(
+              name: 'projectId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['search'] as _i8.SearchEndpoint).requireProject(
+                    session,
+                    params['projectId'],
+                  ),
+        ),
+        'requireProjectOptions': _i1.MethodConnector(
+          name: 'requireProjectOptions',
+          params: {
+            'optionsId': _i1.ParameterDescription(
+              name: 'optionsId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['search'] as _i8.SearchEndpoint)
+                  .requireProjectOptions(
+                    session,
+                    params['optionsId'],
+                  ),
+        ),
+      },
+    );
     connectors['settings'] = _i1.EndpointConnector(
       name: 'settings',
       endpoint: endpoints['settings']!,
@@ -1052,7 +1121,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .userSettings(session),
         ),
         'getSettings': _i1.MethodConnector(
@@ -1069,7 +1138,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['settings'] as _i8.SettingsEndpoint).getSettings(
+                  (endpoints['settings'] as _i9.SettingsEndpoint).getSettings(
                     session,
                     params['password'],
                   ),
@@ -1084,7 +1153,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'settings': _i1.ParameterDescription(
               name: 'settings',
-              type: _i1.getType<_i12.Settings>(),
+              type: _i1.getType<_i13.Settings>(),
               nullable: false,
             ),
           },
@@ -1092,7 +1161,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .updateSettings(
                     session,
                     params['password'],
@@ -1117,7 +1186,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .setOidcClientSecret(
                     session,
                     params['password'],
@@ -1142,7 +1211,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .setSmtpPassword(
                     session,
                     params['password'],
@@ -1162,7 +1231,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .smtpPasswordConfigured(
                     session,
                     params['password'],
@@ -1181,7 +1250,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i8.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i9.SettingsEndpoint)
                   .getAuthAdminStatus(
                     session,
                     params['password'],
@@ -1206,7 +1275,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['settings'] as _i8.SettingsEndpoint).sendTestMail(
+                  (endpoints['settings'] as _i9.SettingsEndpoint).sendTestMail(
                     session,
                     params['password'],
                     params['to'],
@@ -1232,7 +1301,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['snp'] as _i9.SnpEndpoint).listSnpsForGenome(
+                  (endpoints['snp'] as _i10.SnpEndpoint).listSnpsForGenome(
                     session,
                     params['genomeId'],
                   ),
@@ -1245,14 +1314,14 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['snp'] as _i9.SnpEndpoint).listMySnps(session),
+                  (endpoints['snp'] as _i10.SnpEndpoint).listMySnps(session),
         ),
         'createUpload': _i1.MethodConnector(
           name: 'createUpload',
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i13.CustomSnpRequestDto>(),
+              type: _i1.getType<_i14.CustomSnpRequestDto>(),
               nullable: false,
             ),
           },
@@ -1260,7 +1329,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).createUpload(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).createUpload(
                 session,
                 params['request'],
               ),
@@ -1278,7 +1347,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).finishUpload(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).finishUpload(
                 session,
                 params['snpId'],
               ),
@@ -1296,7 +1365,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).cancelUpload(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).cancelUpload(
                 session,
                 params['snpId'],
               ),
@@ -1306,7 +1375,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i13.CustomSnpRequestDto>(),
+              type: _i1.getType<_i14.CustomSnpRequestDto>(),
               nullable: false,
             ),
           },
@@ -1314,7 +1383,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).importFromUrls(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).importFromUrls(
                 session,
                 params['request'],
               ),
@@ -1332,7 +1401,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).retryImport(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).retryImport(
                 session,
                 params['snpId'],
               ),
@@ -1355,7 +1424,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).setShared(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).setShared(
                 session,
                 params['snpId'],
                 params['shared'],
@@ -1384,7 +1453,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).renameSnp(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).renameSnp(
                 session,
                 params['snpId'],
                 params['name'],
@@ -1404,7 +1473,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).snpUsage(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).snpUsage(
                 session,
                 params['snpId'],
               ),
@@ -1422,7 +1491,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).deleteCustomSnp(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).deleteCustomSnp(
                 session,
                 params['snpId'],
               ),
@@ -1450,12 +1519,13 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).deleteSnpAsAdmin(
-                session,
-                params['snpId'],
-                params['settingsPassword'],
-                force: params['force'],
-              ),
+              ) async =>
+                  (endpoints['snp'] as _i10.SnpEndpoint).deleteSnpAsAdmin(
+                    session,
+                    params['snpId'],
+                    params['settingsPassword'],
+                    force: params['force'],
+                  ),
         ),
         'collectCustomSnps': _i1.MethodConnector(
           name: 'collectCustomSnps',
@@ -1464,7 +1534,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint)
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint)
                   .collectCustomSnps(session),
         ),
         'requireProject': _i1.MethodConnector(
@@ -1480,7 +1550,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['snp'] as _i9.SnpEndpoint).requireProject(
+              ) async => (endpoints['snp'] as _i10.SnpEndpoint).requireProject(
                 session,
                 params['projectId'],
               ),
@@ -1499,7 +1569,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['snp'] as _i9.SnpEndpoint).requireProjectOptions(
+                  (endpoints['snp'] as _i10.SnpEndpoint).requireProjectOptions(
                     session,
                     params['optionsId'],
                   ),
@@ -1510,6 +1580,6 @@ class Endpoints extends _i1.EndpointDispatch {
 
   @override
   _i1.FutureCallDispatch? get futureCalls {
-    return _i14.FutureCalls();
+    return _i15.FutureCalls();
   }
 }

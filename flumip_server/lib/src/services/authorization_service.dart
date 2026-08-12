@@ -150,8 +150,28 @@ class AuthorizationService {
   /// small enough that it does not matter — `getProjects` already loaded every
   /// row and sorted them in the client. `project_owner_idx` exists for the
   /// `ON DELETE SET NULL` scan, not for this.
-  Future<List<Project>> visibleProjects(Session session) async {
-    final all = await Project.db.find(session, where: (t) => t.id > 0);
+  ///
+  /// [matching] narrows **what could match** — search's `ILIKE`, and nothing
+  /// else. It never expresses **who may see it**: the Dart filter below stays the
+  /// only answer to that question, which is the whole point of the paragraph
+  /// above. A [matching] that mentioned `owner` or `department` would be the
+  /// second expression of the access rule and is precisely what this parameter is
+  /// not for.
+  ///
+  /// ⚠️ **And there is deliberately no `limit`.** The visibility filter runs
+  /// *after* the query, so a SQL `LIMIT n` would cap what Postgres returns and
+  /// the filter would then remove some of those rows — handing back fewer than
+  /// `n` while matching, visible projects went unmentioned. A cap can only be
+  /// pushed into SQL when the SQL predicate is the *whole* predicate. Here it
+  /// never is, so capping belongs to the caller, after the filter.
+  Future<List<Project>> visibleProjects(
+    Session session, {
+    WhereExpressionBuilder<ProjectTable>? matching,
+  }) async {
+    final all = await Project.db.find(
+      session,
+      where: matching ?? (t) => t.id > 0,
+    );
     final enforcing = isEnforcing;
     if (!enforcing) return all;
 
@@ -228,6 +248,32 @@ class AuthorizationService {
             private: s.private,
             owner: s.owner,
           ),
+        )
+        .toList();
+  }
+
+  /// The subset of [all] the caller should be *offered*.
+  ///
+  /// [visibleSnps] plus the second rule: a shared SNP that is still downloading
+  /// is nobody's business but its owner's until it works. An administrator sees
+  /// everything, because cleaning up after a failed import is their job.
+  ///
+  /// Both callers — the genome tab's per-genome list and search — go through
+  /// here, so the two cannot drift. The filter used to sit inline in
+  /// `SnpEndpoint.listSnpsForGenome`, which was fine while it had one caller;
+  /// copying it for a second list is exactly the mistake [visibleProjects]
+  /// warns about.
+  Future<List<Snp>> listableSnps(Session session, List<Snp> all) async {
+    final visible = await visibleSnps(session, all);
+    if (!isEnforcing) return visible;
+
+    final who = await principal(session);
+    return visible
+        .where(
+          (s) =>
+              s.status == SnpImportStatus.ready ||
+              who.isAdmin ||
+              (s.owner != null && s.owner == who.userId),
         )
         .toList();
   }

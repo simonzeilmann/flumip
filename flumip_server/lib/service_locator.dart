@@ -12,6 +12,7 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/search_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:flumip_server/src/services/snp_downloader.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
@@ -60,6 +61,7 @@ void setup({
   sl.registerSingleton<GenomeService>(GenomeService());
   sl.registerSingleton<FileService>(FileService());
   sl.registerSingleton<SnpService>(SnpService());
+  sl.registerSingleton<SearchService>(SearchService());
   sl.registerSingleton<OptionsService>(OptionsService());
   sl.registerSingleton<MipgenService>(MipgenService());
   sl.registerSingleton<MailService>(MailService());
