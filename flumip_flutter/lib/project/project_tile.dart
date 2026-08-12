@@ -65,7 +65,11 @@ class ProjectTile extends StatefulWidget {
   /// Called with the new owner's id, or null to release the project to unowned.
   final void Function(int? ownerId)? onOwnerChanged;
 
-  /// Opens without a click, for a project that has just been created.
+  /// Opens without a click: a project that has just been created, or one a search
+  /// result revealed.
+  ///
+  /// Read on build *and* watched in `didUpdateWidget`, because a revealed project
+  /// may already be on screen with a `State` of its own.
   final bool initiallyExpanded;
 
   /// The controller to use, or null to build one from the app-wide client.
@@ -103,6 +107,18 @@ class _ProjectTileState extends State<ProjectTile> {
     // The tab refetched the list; take its newer copy.
     if (!identical(old.project, widget.project)) {
       _controller.adopt(widget.project);
+    }
+    // ⚠️ A search result asking for a row that is already on screen. This tile is
+    // keyed `ValueKey(project.id)`, so a project that was already in the list
+    // keeps its `State` and never re-reads [ProjectTile.initiallyExpanded] through
+    // the constructor — without this the tab would scroll the revealed project to
+    // the top and leave it shut. The flag now means "should be open", not only
+    // "starts open".
+    if (!old.initiallyExpanded &&
+        widget.initiallyExpanded &&
+        !_controller.expanded) {
+      // Loads what the open tile shows, so nothing extra is needed here.
+      _controller.toggleExpanded();
     }
   }
 

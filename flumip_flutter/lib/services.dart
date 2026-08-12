@@ -8,6 +8,8 @@ import 'genome/genome_controller.dart';
 import 'project/new_project_controller.dart';
 import 'project/project_tile_controller.dart';
 import 'project/projects_controller.dart';
+import 'search/reveal.dart';
+import 'search/search_controller.dart';
 import 'settings/settings_controller.dart';
 import 'snp/picked_file.dart';
 import 'snp/snp_section_controller.dart';
@@ -161,6 +163,54 @@ ProjectTileController createProjectTileController(
   setEmailNotification: (projectId, enabled) =>
       client.project.setEmailNotification(projectId, enabled),
 );
+
+/// A controller for the search box, wired to the real client.
+///
+/// ⚠️ A factory, like [createGenomeController] and for a related reason: it holds
+/// a debounce timer and a cache of answers, and neither should outlive the dialog
+/// they belong to.
+UnifiedSearchController createSearchController() =>
+    UnifiedSearchController(search: (query) => client.search.search(query));
+
+/// Outstanding requests to reveal a genome. See [GenomeReveals] for why the genome
+/// tab has to be asked rather than told.
+final GenomeReveals genomeReveals = GenomeReveals();
+
+/// The tabs, by position.
+///
+/// ⚠️ The order of the `TabBar` in `main.dart` is the contract these name, and
+/// nothing enforces it — there is no router to ask. Inserting a tab in the middle
+/// silently sends every search result to the wrong one, which is why
+/// `test/search/search_button_test.dart` asserts the two indices.
+const int projectsTabIndex = 0;
+const int genomesTabIndex = 1;
+
+/// Puts the tab that owns [hit] in front and asks it to show the row.
+///
+/// [goToTab] is passed in rather than resolved here because a `TabController` is
+/// found through the widget tree, and this file has no context — see the note in
+/// `search_button.dart` about where the dialog's context actually sits.
+void openSearchHit(SearchHitDto hit, void Function(int tabIndex) goToTab) {
+  switch (hit.kind) {
+    case SearchHitKind.project:
+      goToTab(projectsTabIndex);
+      projectsController.reveal(hit.id);
+    case SearchHitKind.genome:
+      goToTab(genomesTabIndex);
+      genomeReveals.request(
+        GenomeReveal(genomeId: hit.id, category: hit.category),
+      );
+    case SearchHitKind.snpSet:
+      // Opening an SNP set means opening its genome. The server never sends a set
+      // without one, but a nullable field off the wire is not a place for `!`.
+      final genomeId = hit.genomeId;
+      if (genomeId == null) return;
+      goToTab(genomesTabIndex);
+      genomeReveals.request(
+        GenomeReveal(genomeId: genomeId, category: hit.category),
+      );
+  }
+}
 
 /// A controller for the create-project form, wired to the real client.
 ///

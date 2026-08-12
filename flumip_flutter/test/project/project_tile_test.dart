@@ -183,6 +183,45 @@ void main() {
     h.controller.dispose();
   });
 
+  testWidgets('⚠️ a tile already on screen opens when it is revealed', (
+    tester,
+  ) async {
+    // A search result for a project that is already in the list. The tile is keyed
+    // `ValueKey(project.id)`, so it keeps the `State` it had and never re-reads
+    // `initiallyExpanded` through the constructor — without the didUpdateWidget
+    // clause the tab would hoist the row to the top and leave it shut.
+    final h = Harness();
+
+    Widget tile({required bool expanded}) => MaterialApp(
+      theme: buildAppTheme(),
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: ProjectTile(
+            key: ValueKey(h.project.id),
+            project: h.project,
+            onDelete: () => h.calls.add('delete'),
+            initiallyExpanded: expanded,
+            controller: h.controller,
+          ),
+        ),
+      ),
+    );
+
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(tile(expanded: false));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProjectOptionsView), findsNothing);
+
+    await tester.pumpWidget(tile(expanded: true));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProjectOptionsView), findsOneWidget);
+    h.controller.dispose();
+  });
+
   testWidgets('⚠️ a controller passed in is not disposed by the tile', (
     tester,
   ) async {

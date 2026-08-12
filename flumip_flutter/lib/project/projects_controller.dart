@@ -84,7 +84,8 @@ class ProjectsController extends ChangeNotifier {
   /// hides the picker entirely, an empty list means "an install with no users".
   List<FlumipUserDto>? get assignableOwners => _assignableOwners;
 
-  /// The project to open without a click, because it has just been created.
+  /// The project to open without a click: one just created, or one [reveal]ed by
+  /// a search result.
   int? get openProjectId => _openProjectId;
 
   /// Whether a tick is actually pending. For tests.
@@ -103,16 +104,47 @@ class ProjectsController extends ChangeNotifier {
   Future<void> refresh() async {
     try {
       final projects = await _loadProjects();
-      // ⚠️ Sorted here rather than by the caller, and on our own copy: the list
-      // the endpoint returns is ours to order, but sorting a list somebody else
-      // handed us in a test would be a surprise.
-      _projects = [...projects]..sort((a, b) => b.created.compareTo(a.created));
+      _projects = _ordered(projects);
       _errorMessage = null;
     } catch (e) {
       _errorMessage = describeError(e);
     }
     _notify();
     _rearm();
+  }
+
+  /// Newest first, with [openProjectId] — if any — hoisted to the top.
+  ///
+  /// ⚠️ Sorted here rather than by the caller, and on our own copy: the list the
+  /// endpoint returns is ours to order, but sorting a list somebody else handed us
+  /// in a test would be a surprise.
+  ///
+  /// Called from [refresh] as well as [reveal], so the one-minute poll cannot put
+  /// a revealed project back where it was while somebody is looking at it.
+  List<Project>? _ordered(List<Project>? projects) {
+    if (projects == null) return null;
+    final ordered = [...projects]
+      ..sort((a, b) => b.created.compareTo(a.created));
+
+    final open = _openProjectId;
+    if (open == null) return ordered;
+    final index = ordered.indexWhere((p) => p.id == open);
+    if (index <= 0) return ordered;
+    return [ordered[index], ...ordered]..removeAt(index + 1);
+  }
+
+  /// Opens [projectId] and puts it at the top of the list. A search result.
+  ///
+  /// ⚠️ Reordering rather than scrolling, and on purpose. The tab renders a
+  /// `ListView.builder`, so a project below the fold has no element at all and
+  /// `Scrollable.ensureVisible` has nothing to aim at; scrolling to an unbuilt
+  /// child needs either a fixed item extent or a package, and there is neither.
+  /// Putting it first makes scrolling unnecessary, is deterministic, and is
+  /// already what happens to a just-created project under the newest-first sort.
+  void reveal(int projectId) {
+    _openProjectId = projectId;
+    _projects = _ordered(_projects);
+    _notify();
   }
 
   /// Schedules the next read of the list, or stops.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
+import '../search/reveal.dart';
 import '../services.dart';
 import '../snp/snp_section.dart';
 import '../ui/layout.dart';
@@ -21,7 +22,7 @@ import 'genome_rail.dart';
 /// file is layout plus the two things that genuinely need a `BuildContext`: the
 /// confirm dialog and the snack bars.
 class GenomeTab extends StatefulWidget {
-  const GenomeTab({super.key, this.controller});
+  const GenomeTab({super.key, this.controller, this.reveals});
 
   /// The controller to use, or null to build one from the app-wide client.
   ///
@@ -31,6 +32,11 @@ class GenomeTab extends StatefulWidget {
   /// controller passed in belongs to the caller and is not disposed here.
   final GenomeController? controller;
 
+  /// Where requests to show a particular genome arrive from, or null for the
+  /// app-wide one. Because this tab owns its controller, asking it is the only way
+  /// a search result in the app bar can reach a genome; see [GenomeReveals].
+  final GenomeReveals? reveals;
+
   @override
   State<GenomeTab> createState() => _GenomeTabState();
 }
@@ -39,6 +45,7 @@ class _GenomeTabState extends State<GenomeTab> {
   late final bool _ownsController = widget.controller == null;
   late final GenomeController _controller =
       widget.controller ?? createGenomeController();
+  late final GenomeReveals _reveals = widget.reveals ?? genomeReveals;
   StreamSubscription<String>? _messages;
 
   @override
@@ -46,15 +53,28 @@ class _GenomeTabState extends State<GenomeTab> {
     super.initState();
     _controller.addListener(_onChanged);
     _messages = _controller.messages.listen(_say);
+    // `TabBarView` builds all three tabs eagerly, so this is listening from the
+    // start and a request made from another tab simply waits to be taken.
+    _reveals.addListener(_onReveal);
     _controller.load();
+    // A request made before this tab existed at all — the app-wide notifier keeps
+    // it, so take it now rather than losing it.
+    _onReveal();
   }
 
   @override
   void dispose() {
     _messages?.cancel();
+    _reveals.removeListener(_onReveal);
     _controller.removeListener(_onChanged);
     if (_ownsController) _controller.dispose();
     super.dispose();
+  }
+
+  void _onReveal() {
+    final target = _reveals.take();
+    if (target == null) return;
+    _controller.revealGenome(target.genomeId, target.category);
   }
 
   void _onChanged() {
