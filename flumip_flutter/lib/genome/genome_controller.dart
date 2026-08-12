@@ -141,6 +141,32 @@ class GenomeController extends ChangeNotifier {
     refreshSelected();
   }
 
+  /// Shows [genomeId], opening [category] in the rail on the way. A search result.
+  ///
+  /// Selects by id rather than by row, so it works for a genome in a category
+  /// nobody has opened yet — which is most of them, and the reason searching for a
+  /// genome is worth anything.
+  ///
+  /// The two halves land independently: [toggleCategory] kicks off its own fetch
+  /// for the rail while this one fetches the genome for the detail pane. A null
+  /// [category] is skipped rather than passed on, because `toggleCategory(null)`
+  /// *closes* the rail — the opposite of what revealing wants.
+  Future<void> revealGenome(int genomeId, String? category) async {
+    if (category != null && _expandedCategory != category) {
+      toggleCategory(category);
+    }
+    try {
+      _selectedGenome = await _loadGenome(genomeId);
+      _detailError = null;
+      _failures = 0;
+      _notify();
+      _rearm();
+    } catch (e) {
+      _detailError = describeError(e);
+      _notify();
+    }
+  }
+
   /// Drops the selection and stops the poll. The narrow layout's back button.
   void clearSelection() {
     _selectedGenome = null;

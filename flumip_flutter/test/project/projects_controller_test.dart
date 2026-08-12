@@ -297,6 +297,68 @@ void main() {
     expect(h.controller.projects, hasLength(1));
   });
 
+  group('revealing a project from a search result', () {
+    /// Three projects, oldest id first so the newest-first sort has work to do.
+    Future<Harness> loaded() async {
+      final h = Harness(
+        projects: [
+          projectFixture(id: 1, created: DateTime(2026, 1, 1)),
+          projectFixture(id: 2, created: DateTime(2026, 2, 1)),
+          projectFixture(id: 3, created: DateTime(2026, 3, 1)),
+        ],
+      );
+      await h.controller.load();
+      expect(h.controller.projects!.map((p) => p.id), [3, 2, 1]);
+      return h;
+    }
+
+    test('it opens the project and hoists it to the top', () async {
+      final h = await loaded();
+
+      h.controller.reveal(1);
+
+      expect(h.controller.openProjectId, 1);
+      // ⚠️ Hoisted rather than scrolled to: the tab is a `ListView.builder`, so a
+      // row below the fold has no element for `ensureVisible` to aim at.
+      expect(h.controller.projects!.map((p) => p.id), [1, 3, 2]);
+    });
+
+    test(
+      'revealing the project that is already first changes no order',
+      () async {
+        final h = await loaded();
+
+        h.controller.reveal(3);
+
+        expect(h.controller.projects!.map((p) => p.id), [3, 2, 1]);
+      },
+    );
+
+    test('⚠️ a later refresh keeps the revealed project first', () async {
+      // The list re-reads itself every minute while a design is running. Without
+      // the hoist in the sort, that tick would drop the revealed row back into
+      // date order under somebody who is reading it.
+      final h = await loaded();
+      h.controller.reveal(1);
+
+      await h.controller.refresh();
+
+      expect(h.controller.projects!.map((p) => p.id), [1, 3, 2]);
+    });
+
+    test(
+      'revealing a project that is not in the list leaves the order alone',
+      () async {
+        final h = await loaded();
+
+        h.controller.reveal(99);
+
+        expect(h.controller.openProjectId, 99);
+        expect(h.controller.projects!.map((p) => p.id), [3, 2, 1]);
+      },
+    );
+  });
+
   group('⚠️ the overview keeps up with a running design', () {
     // Reported: a design that finished while its tile was shut went on reading
     // "Designing" until somebody opened it. The tile polls every three seconds

@@ -238,6 +238,58 @@ void main() {
     });
   });
 
+  group('revealing a genome from a search result', () {
+    test('it opens the category and selects the genome', () async {
+      final h = Harness(genome: genomeFixture(id: 7, name: 'mm39'));
+      await h.controller.load();
+
+      await h.controller.revealGenome(7, 'Mus musculus');
+
+      expect(h.controller.expandedCategory, 'Mus musculus');
+      expect(h.controller.selectedGenome!.id, 7);
+      // Selected by id, which is the point: the genome need not be in a category
+      // anybody has opened, and most of them are not.
+      expect(h.calls, contains('genome 7'));
+      expect(h.calls, contains('genomes Mus musculus'));
+    });
+
+    test('⚠️ a null category leaves the rail alone', () async {
+      // `toggleCategory(null)` *closes* the rail, which is the opposite of what
+      // revealing wants — and a genome with no category is otherwise unreachable.
+      final h = Harness(genome: genomeFixture(id: 7));
+      await h.controller.load();
+      h.controller.toggleCategory('Homo sapiens');
+      await pumpEventQueue();
+
+      await h.controller.revealGenome(7, null);
+
+      expect(h.controller.expandedCategory, 'Homo sapiens');
+      expect(h.controller.selectedGenome!.id, 7);
+    });
+
+    test('the already-open category is not re-fetched', () async {
+      final h = Harness();
+      await h.controller.load();
+      h.controller.toggleCategory('Homo sapiens');
+      await pumpEventQueue();
+      h.calls.clear();
+
+      await h.controller.revealGenome(1, 'Homo sapiens');
+
+      expect(h.calls, ['genome 1']);
+    });
+
+    test('a failure lands on the detail banner, not the rail', () async {
+      final h = Harness()..genomeThrows = Exception('genome is gone');
+      await h.controller.load();
+
+      await h.controller.revealGenome(7, 'Homo sapiens');
+
+      expect(h.controller.detailError, contains('genome is gone'));
+      expect(h.controller.railError, isNull);
+    });
+  });
+
   group('the poll', () {
     test('⚠️ runs only while an index is being built', () async {
       // It used to be Timer.periodic(5s) for as long as a genome was selected,
