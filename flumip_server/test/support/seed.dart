@@ -9,6 +9,7 @@ import 'package:serverpod/serverpod.dart';
 Future<Genome> seedGenome(
   Session session, {
   String name = 'hg38',
+  String description = '',
   String? path,
   String? fastaPath,
   String? refPath,
@@ -22,6 +23,7 @@ Future<Genome> seedGenome(
     session,
     Genome(
       name: name,
+      description: description,
       path: path,
       fastaPath: fastaPath,
       refPath: refPath,
@@ -37,6 +39,7 @@ Future<Genome> seedGenome(
 Future<Snp> seedSnp(
   Session session, {
   String name = 'common',
+  String description = '',
   String vcfPath = '/tmp/snp.vcf.gz',
   String tbiPath = '/tmp/snp.vcf.gz.tbi',
   String folder = '/tmp/snp',
@@ -55,6 +58,7 @@ Future<Snp> seedSnp(
     session,
     Snp(
       name: name,
+      description: description,
       sourceVcfUrl: sourceVcfUrl,
       vcfPath: vcfPath,
       tbiPath: tbiPath,
@@ -78,6 +82,7 @@ Future<Snp> seedSnp(
 Future<Project> seedProject(
   Session session, {
   String name = 'test',
+  String description = '',
   required int options,
   String? folderName,
   int? genome,
@@ -93,6 +98,7 @@ Future<Project> seedProject(
     session,
     Project(
       name: name,
+      description: description,
       options: options,
       folderName: folderName,
       genome: genome,

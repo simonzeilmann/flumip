@@ -31,17 +31,20 @@ import 'project.dart' as _i18;
 import 'project_file_dto.dart' as _i19;
 import 'project_options.dart' as _i20;
 import 'score_method.dart' as _i21;
-import 'settings.dart' as _i22;
-import 'snp.dart' as _i23;
-import 'snp_import_status.dart' as _i24;
-import 'snp_usage_dto.dart' as _i25;
-import 'user_settings_dto.dart' as _i26;
-import 'package:flumip_server/src/generated/project_file_dto.dart' as _i27;
-import 'package:flumip_server/src/generated/genome.dart' as _i28;
-import 'package:flumip_server/src/generated/snp.dart' as _i29;
-import 'package:flumip_server/src/generated/project.dart' as _i30;
-import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i31;
-import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _i32;
+import 'search_hit_dto.dart' as _i22;
+import 'search_hit_kind.dart' as _i23;
+import 'settings.dart' as _i24;
+import 'snp.dart' as _i25;
+import 'snp_import_status.dart' as _i26;
+import 'snp_usage_dto.dart' as _i27;
+import 'user_settings_dto.dart' as _i28;
+import 'package:flumip_server/src/generated/project_file_dto.dart' as _i29;
+import 'package:flumip_server/src/generated/genome.dart' as _i30;
+import 'package:flumip_server/src/generated/snp.dart' as _i31;
+import 'package:flumip_server/src/generated/project.dart' as _i32;
+import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i33;
+import 'package:flumip_server/src/generated/search_hit_dto.dart' as _i34;
+import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _i35;
 export 'auth_admin_status_dto.dart';
 export 'auth_api_token.dart';
 export 'auth_config_dto.dart';
@@ -61,6 +64,8 @@ export 'project.dart';
 export 'project_file_dto.dart';
 export 'project_options.dart';
 export 'score_method.dart';
+export 'search_hit_dto.dart';
+export 'search_hit_kind.dart';
 export 'settings.dart';
 export 'snp.dart';
 export 'snp_import_status.dart';
@@ -1627,20 +1632,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i21.ScoreMethod) {
       return _i21.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i22.Settings) {
-      return _i22.Settings.fromJson(data) as T;
+    if (t == _i22.SearchHitDto) {
+      return _i22.SearchHitDto.fromJson(data) as T;
     }
-    if (t == _i23.Snp) {
-      return _i23.Snp.fromJson(data) as T;
+    if (t == _i23.SearchHitKind) {
+      return _i23.SearchHitKind.fromJson(data) as T;
     }
-    if (t == _i24.SnpImportStatus) {
-      return _i24.SnpImportStatus.fromJson(data) as T;
+    if (t == _i24.Settings) {
+      return _i24.Settings.fromJson(data) as T;
     }
-    if (t == _i25.SnpUsageDto) {
-      return _i25.SnpUsageDto.fromJson(data) as T;
+    if (t == _i25.Snp) {
+      return _i25.Snp.fromJson(data) as T;
     }
-    if (t == _i26.UserSettingsDto) {
-      return _i26.UserSettingsDto.fromJson(data) as T;
+    if (t == _i26.SnpImportStatus) {
+      return _i26.SnpImportStatus.fromJson(data) as T;
+    }
+    if (t == _i27.SnpUsageDto) {
+      return _i27.SnpUsageDto.fromJson(data) as T;
+    }
+    if (t == _i28.UserSettingsDto) {
+      return _i28.UserSettingsDto.fromJson(data) as T;
     }
     if (t == _i1.getType<_i3.AuthAdminStatusDto?>()) {
       return (data != null ? _i3.AuthAdminStatusDto.fromJson(data) : null) as T;
@@ -1708,20 +1719,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i21.ScoreMethod?>()) {
       return (data != null ? _i21.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i22.Settings?>()) {
-      return (data != null ? _i22.Settings.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i22.SearchHitDto?>()) {
+      return (data != null ? _i22.SearchHitDto.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i23.Snp?>()) {
-      return (data != null ? _i23.Snp.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i23.SearchHitKind?>()) {
+      return (data != null ? _i23.SearchHitKind.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i24.SnpImportStatus?>()) {
-      return (data != null ? _i24.SnpImportStatus.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i24.Settings?>()) {
+      return (data != null ? _i24.Settings.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i25.SnpUsageDto?>()) {
-      return (data != null ? _i25.SnpUsageDto.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i25.Snp?>()) {
+      return (data != null ? _i25.Snp.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i26.UserSettingsDto?>()) {
-      return (data != null ? _i26.UserSettingsDto.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i26.SnpImportStatus?>()) {
+      return (data != null ? _i26.SnpImportStatus.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i27.SnpUsageDto?>()) {
+      return (data != null ? _i27.SnpUsageDto.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i28.UserSettingsDto?>()) {
+      return (data != null ? _i28.UserSettingsDto.fromJson(data) : null) as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
@@ -1735,32 +1752,38 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i27.ProjectFileDto>) {
+    if (t == List<_i29.ProjectFileDto>) {
       return (data as List)
-              .map((e) => deserialize<_i27.ProjectFileDto>(e))
+              .map((e) => deserialize<_i29.ProjectFileDto>(e))
               .toList()
           as T;
     }
-    if (t == List<_i28.Genome>) {
-      return (data as List).map((e) => deserialize<_i28.Genome>(e)).toList()
+    if (t == List<_i30.Genome>) {
+      return (data as List).map((e) => deserialize<_i30.Genome>(e)).toList()
           as T;
     }
-    if (t == List<_i29.Snp>) {
-      return (data as List).map((e) => deserialize<_i29.Snp>(e)).toList() as T;
+    if (t == List<_i31.Snp>) {
+      return (data as List).map((e) => deserialize<_i31.Snp>(e)).toList() as T;
     }
-    if (t == List<_i30.Project>) {
-      return (data as List).map((e) => deserialize<_i30.Project>(e)).toList()
+    if (t == List<_i32.Project>) {
+      return (data as List).map((e) => deserialize<_i32.Project>(e)).toList()
           as T;
     }
-    if (t == List<_i31.FlumipUserDto>) {
+    if (t == List<_i33.FlumipUserDto>) {
       return (data as List)
-              .map((e) => deserialize<_i31.FlumipUserDto>(e))
+              .map((e) => deserialize<_i33.FlumipUserDto>(e))
               .toList()
           as T;
     }
-    if (t == List<_i32.SnpUsageDto>) {
+    if (t == List<_i34.SearchHitDto>) {
       return (data as List)
-              .map((e) => deserialize<_i32.SnpUsageDto>(e))
+              .map((e) => deserialize<_i34.SearchHitDto>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i35.SnpUsageDto>) {
+      return (data as List)
+              .map((e) => deserialize<_i35.SnpUsageDto>(e))
               .toList()
           as T;
     }
@@ -1791,11 +1814,13 @@ class Protocol extends _i1.SerializationManagerServer {
       _i19.ProjectFileDto => 'ProjectFileDto',
       _i20.ProjectOptions => 'ProjectOptions',
       _i21.ScoreMethod => 'ScoreMethod',
-      _i22.Settings => 'Settings',
-      _i23.Snp => 'Snp',
-      _i24.SnpImportStatus => 'SnpImportStatus',
-      _i25.SnpUsageDto => 'SnpUsageDto',
-      _i26.UserSettingsDto => 'UserSettingsDto',
+      _i22.SearchHitDto => 'SearchHitDto',
+      _i23.SearchHitKind => 'SearchHitKind',
+      _i24.Settings => 'Settings',
+      _i25.Snp => 'Snp',
+      _i26.SnpImportStatus => 'SnpImportStatus',
+      _i27.SnpUsageDto => 'SnpUsageDto',
+      _i28.UserSettingsDto => 'UserSettingsDto',
       _ => null,
     };
   }
@@ -1848,15 +1873,19 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'ProjectOptions';
       case _i21.ScoreMethod():
         return 'ScoreMethod';
-      case _i22.Settings():
+      case _i22.SearchHitDto():
+        return 'SearchHitDto';
+      case _i23.SearchHitKind():
+        return 'SearchHitKind';
+      case _i24.Settings():
         return 'Settings';
-      case _i23.Snp():
+      case _i25.Snp():
         return 'Snp';
-      case _i24.SnpImportStatus():
+      case _i26.SnpImportStatus():
         return 'SnpImportStatus';
-      case _i25.SnpUsageDto():
+      case _i27.SnpUsageDto():
         return 'SnpUsageDto';
-      case _i26.UserSettingsDto():
+      case _i28.UserSettingsDto():
         return 'UserSettingsDto';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1929,20 +1958,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'ScoreMethod') {
       return deserialize<_i21.ScoreMethod>(data['data']);
     }
+    if (dataClassName == 'SearchHitDto') {
+      return deserialize<_i22.SearchHitDto>(data['data']);
+    }
+    if (dataClassName == 'SearchHitKind') {
+      return deserialize<_i23.SearchHitKind>(data['data']);
+    }
     if (dataClassName == 'Settings') {
-      return deserialize<_i22.Settings>(data['data']);
+      return deserialize<_i24.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i23.Snp>(data['data']);
+      return deserialize<_i25.Snp>(data['data']);
     }
     if (dataClassName == 'SnpImportStatus') {
-      return deserialize<_i24.SnpImportStatus>(data['data']);
+      return deserialize<_i26.SnpImportStatus>(data['data']);
     }
     if (dataClassName == 'SnpUsageDto') {
-      return deserialize<_i25.SnpUsageDto>(data['data']);
+      return deserialize<_i27.SnpUsageDto>(data['data']);
     }
     if (dataClassName == 'UserSettingsDto') {
-      return deserialize<_i26.UserSettingsDto>(data['data']);
+      return deserialize<_i28.UserSettingsDto>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1974,10 +2009,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i18.Project.t;
       case _i20.ProjectOptions:
         return _i20.ProjectOptions.t;
-      case _i22.Settings:
-        return _i22.Settings.t;
-      case _i23.Snp:
-        return _i23.Snp.t;
+      case _i24.Settings:
+        return _i24.Settings.t;
+      case _i25.Snp:
+        return _i25.Snp.t;
     }
     return null;
   }

@@ -54,6 +54,10 @@ project:
   - setSnpById:
   - requireProject:
   - requireProjectOptions:
+search:
+  - search:
+  - requireProject:
+  - requireProjectOptions:
 settings:
   - userSettings:
   - getSettings:

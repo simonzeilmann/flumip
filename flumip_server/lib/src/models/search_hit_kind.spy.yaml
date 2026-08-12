@@ -1,0 +1,17 @@
+### Which of the three things a search hit is. No table.
+###
+### Decides the icon a hit gets, the group it appears under, and which tab opening
+### it lands on — so the client's tab indices are keyed off this and nothing else.
+###
+### `serialized: byName` for the same reason `SnpImportStatus` uses it: reordering
+### these values must not silently repoint traffic already on the wire.
+enum: SearchHitKind
+serialized: byName
+values:
+  ### A row of the projects tab.
+  - project
+  ### A genome in the library, whatever category the rail files it under.
+  - genome
+  ### An SNP set, global or custom. Named `snpSet` rather than `snp` because that
+  ### is what the UI calls it everywhere.
+  - snpSet

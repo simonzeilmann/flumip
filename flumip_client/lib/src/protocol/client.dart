@@ -20,12 +20,13 @@ import 'package:flumip_client/src/protocol/snp.dart' as _i7;
 import 'package:flumip_client/src/protocol/project_options.dart' as _i8;
 import 'package:flumip_client/src/protocol/project.dart' as _i9;
 import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i10;
-import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i11;
-import 'package:flumip_client/src/protocol/settings.dart' as _i12;
-import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i13;
-import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart' as _i14;
-import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _i15;
-import 'protocol.dart' as _i16;
+import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i11;
+import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i12;
+import 'package:flumip_client/src/protocol/settings.dart' as _i13;
+import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i14;
+import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart' as _i15;
+import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _i16;
+import 'protocol.dart' as _i17;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
@@ -835,6 +836,75 @@ class EndpointProject extends EndpointFlumip {
       );
 }
 
+/// Finding a project, a genome or an SNP set by typing part of its name.
+///
+/// Extends [FlumipEndpoint], so it is gated exactly as the three list endpoints it
+/// draws on — and it reuses their visibility rules rather than restating them; see
+/// [SearchService] for how the SQL and Dart predicates divide.
+/// {@category Endpoint}
+class EndpointSearch extends EndpointFlumip {
+  EndpointSearch(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'search';
+
+  /// Every project, genome and SNP set matching [query] that this caller may see.
+  ///
+  /// Grouped by the client, not here: the order is projects, then genomes, then
+  /// SNP sets, each capped at [SearchService.hitsPerKind]. A query shorter than
+  /// [SearchService.minQueryLength] answers with nothing rather than everything.
+  ///
+  /// ⚠️ **The query is not logged, unlike every other endpoint in this package.**
+  /// This one is called on a debounce tick while somebody types, and its only
+  /// argument is free text a user typed — a line per query would be both the
+  /// noisiest and the least appropriate entry in the log. Failures are logged;
+  /// queries are not. So silence here is the healthy state.
+  ///
+  /// \param session The current session.
+  /// \param query What the user typed.
+  _i2.Future<List<_i11.SearchHitDto>> search(String query) =>
+      caller.callServerEndpoint<List<_i11.SearchHitDto>>(
+        'search',
+        'search',
+        {'query': query},
+      );
+
+  /// Refuses unless the caller is allowed to touch this project.
+  ///
+  /// **Every endpoint method that takes a project id must start with this.**
+  ///
+  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
+  /// straight through so the operation still reports the not-found error it
+  /// always reported.
+  ///
+  /// The check lives here, at the request boundary, rather than inside
+  /// `ProjectService` — which would look like the tidier place — because the
+  /// services are also called by things that have no user at all. `DemoModeCleanup`
+  /// and the mipgen progress future calls run on unauthenticated sessions and go
+  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
+  /// there would have stopped demo-mode cleanup the moment a project had an
+  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
+  /// found", so it would have gone on reporting success while quietly doing
+  /// nothing.
+  ///
+  @override
+  _i2.Future<void> requireProject(int projectId) =>
+      caller.callServerEndpoint<void>(
+        'search',
+        'requireProject',
+        {'projectId': projectId},
+      );
+
+  /// Checks that the caller may touch the project owning these options.
+  @override
+  _i2.Future<void> requireProjectOptions(int optionsId) =>
+      caller.callServerEndpoint<void>(
+        'search',
+        'requireProjectOptions',
+        {'optionsId': optionsId},
+      );
+}
+
 /// Endpoint for handling settings-related operations.
 ///
 /// Deliberately **not** a [FlumipEndpoint]: [userSettings] has to answer before
@@ -863,8 +933,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// **The extension point for per-user settings**: see [UserSettingsDto].
   ///
   /// \param session The current session.
-  _i2.Future<_i11.UserSettingsDto> userSettings() =>
-      caller.callServerEndpoint<_i11.UserSettingsDto>(
+  _i2.Future<_i12.UserSettingsDto> userSettings() =>
+      caller.callServerEndpoint<_i12.UserSettingsDto>(
         'settings',
         'userSettings',
         {},
@@ -875,8 +945,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i12.Settings> getSettings(String? password) =>
-      caller.callServerEndpoint<_i12.Settings>(
+  _i2.Future<_i13.Settings> getSettings(String? password) =>
+      caller.callServerEndpoint<_i13.Settings>(
         'settings',
         'getSettings',
         {'password': password},
@@ -896,7 +966,7 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param settings The [Settings] object to update.
   _i2.Future<void> updateSettings(
     String? password,
-    _i12.Settings settings,
+    _i13.Settings settings,
   ) => caller.callServerEndpoint<void>(
     'settings',
     'updateSettings',
@@ -970,8 +1040,8 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
-  _i2.Future<_i13.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
-      caller.callServerEndpoint<_i13.AuthAdminStatusDto>(
+  _i2.Future<_i14.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
+      caller.callServerEndpoint<_i14.AuthAdminStatusDto>(
         'settings',
         'getAuthAdminStatus',
         {'password': password},
@@ -1009,9 +1079,9 @@ class EndpointSnp extends EndpointFlumip {
 
   /// Every SNP for a genome that this caller may see.
   ///
-  /// Filtered twice over: once for visibility, and again to hide somebody else's
-  /// half-finished import. A shared SNP that is still downloading is nobody's
-  /// business but its owner's until it works.
+  /// Filtered twice over — once for visibility, and again to hide somebody else's
+  /// half-finished import — by [AuthorizationService.listableSnps], which is
+  /// where both passes live now that search needs the same pair.
   ///
   /// \param session The current session.
   /// \param genomeId The genome whose SNP sets to list.
@@ -1049,7 +1119,7 @@ class EndpointSnp extends EndpointFlumip {
   /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
   /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
   /// ```
-  _i2.Future<_i7.Snp> createUpload(_i14.CustomSnpRequestDto request) =>
+  _i2.Future<_i7.Snp> createUpload(_i15.CustomSnpRequestDto request) =>
       caller.callServerEndpoint<_i7.Snp>(
         'snp',
         'createUpload',
@@ -1090,7 +1160,7 @@ class EndpointSnp extends EndpointFlumip {
   /// `failed` row the user has to go and find — and, more to the point, the
   /// address check is what stops this endpoint being a request proxy into the
   /// deployment's own network. See `snpSourceUrlRejection`.
-  _i2.Future<_i7.Snp> importFromUrls(_i14.CustomSnpRequestDto request) =>
+  _i2.Future<_i7.Snp> importFromUrls(_i15.CustomSnpRequestDto request) =>
       caller.callServerEndpoint<_i7.Snp>(
         'snp',
         'importFromUrls',
@@ -1151,8 +1221,8 @@ class EndpointSnp extends EndpointFlumip {
   ///
   /// Read before a delete is confirmed, so the dialog can name them rather than
   /// warning in the abstract.
-  _i2.Future<List<_i15.SnpUsageDto>> snpUsage(int snpId) =>
-      caller.callServerEndpoint<List<_i15.SnpUsageDto>>(
+  _i2.Future<List<_i16.SnpUsageDto>> snpUsage(int snpId) =>
+      caller.callServerEndpoint<List<_i16.SnpUsageDto>>(
         'snp',
         'snpUsage',
         {'snpId': snpId},
@@ -1274,7 +1344,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i16.Protocol(),
+         _i17.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -1289,6 +1359,7 @@ class Client extends _i1.ServerpodClientShared {
     mipgen = EndpointMipgen(this);
     options = EndpointOptions(this);
     project = EndpointProject(this);
+    search = EndpointSearch(this);
     settings = EndpointSettings(this);
     snp = EndpointSnp(this);
   }
@@ -1305,6 +1376,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointProject project;
 
+  late final EndpointSearch search;
+
   late final EndpointSettings settings;
 
   late final EndpointSnp snp;
@@ -1317,6 +1390,7 @@ class Client extends _i1.ServerpodClientShared {
     'mipgen': mipgen,
     'options': options,
     'project': project,
+    'search': search,
     'settings': settings,
     'snp': snp,
   };

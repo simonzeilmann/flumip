@@ -22,13 +22,14 @@ import 'package:flumip_server/src/generated/snp.dart' as _i8;
 import 'package:flumip_server/src/generated/project_options.dart' as _i9;
 import 'package:flumip_server/src/generated/project.dart' as _i10;
 import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i11;
-import 'package:flumip_server/src/generated/user_settings_dto.dart' as _i12;
-import 'package:flumip_server/src/generated/settings.dart' as _i13;
-import 'package:flumip_server/src/generated/auth_admin_status_dto.dart' as _i14;
+import 'package:flumip_server/src/generated/search_hit_dto.dart' as _i12;
+import 'package:flumip_server/src/generated/user_settings_dto.dart' as _i13;
+import 'package:flumip_server/src/generated/settings.dart' as _i14;
+import 'package:flumip_server/src/generated/auth_admin_status_dto.dart' as _i15;
 import 'package:flumip_server/src/generated/custom_snp_request_dto.dart'
-    as _i15;
-import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _i16;
-import 'package:flumip_server/src/generated/future_calls.dart' as _i17;
+    as _i16;
+import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _i17;
+import 'package:flumip_server/src/generated/future_calls.dart' as _i18;
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -157,6 +158,8 @@ class TestEndpoints {
 
   late final _ProjectEndpoint project;
 
+  late final _SearchEndpoint search;
+
   late final _SettingsEndpoint settings;
 
   late final _SnpEndpoint snp;
@@ -190,6 +193,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     project = _ProjectEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    search = _SearchEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1860,6 +1867,110 @@ class _ProjectEndpoint {
   }
 }
 
+class _SearchEndpoint {
+  _SearchEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i12.SearchHitDto>> search(
+    _i1.TestSessionBuilder sessionBuilder,
+    String query,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'search',
+            method: 'search',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'search',
+          methodName: 'search',
+          parameters: _i1.testObjectToJson({'query': query}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i12.SearchHitDto>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> requireProject(
+    _i1.TestSessionBuilder sessionBuilder,
+    int projectId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'search',
+            method: 'requireProject',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'search',
+          methodName: 'requireProject',
+          parameters: _i1.testObjectToJson({'projectId': projectId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> requireProjectOptions(
+    _i1.TestSessionBuilder sessionBuilder,
+    int optionsId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'search',
+            method: 'requireProjectOptions',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'search',
+          methodName: 'requireProjectOptions',
+          parameters: _i1.testObjectToJson({'optionsId': optionsId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _SettingsEndpoint {
   _SettingsEndpoint(
     this._endpointDispatch,
@@ -1870,7 +1981,7 @@ class _SettingsEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i12.UserSettingsDto> userSettings(
+  _i3.Future<_i13.UserSettingsDto> userSettings(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1892,7 +2003,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i12.UserSettingsDto>);
+                as _i3.Future<_i13.UserSettingsDto>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1900,7 +2011,7 @@ class _SettingsEndpoint {
     });
   }
 
-  _i3.Future<_i13.Settings> getSettings(
+  _i3.Future<_i14.Settings> getSettings(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
   ) async {
@@ -1923,7 +2034,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i13.Settings>);
+                as _i3.Future<_i14.Settings>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1934,7 +2045,7 @@ class _SettingsEndpoint {
   _i3.Future<void> updateSettings(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
-    _i13.Settings settings,
+    _i14.Settings settings,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2067,7 +2178,7 @@ class _SettingsEndpoint {
     });
   }
 
-  _i3.Future<_i14.AuthAdminStatusDto> getAuthAdminStatus(
+  _i3.Future<_i15.AuthAdminStatusDto> getAuthAdminStatus(
     _i1.TestSessionBuilder sessionBuilder,
     String? password,
   ) async {
@@ -2090,7 +2201,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i14.AuthAdminStatusDto>);
+                as _i3.Future<_i15.AuthAdminStatusDto>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2207,7 +2318,7 @@ class _SnpEndpoint {
 
   _i3.Future<_i8.Snp> createUpload(
     _i1.TestSessionBuilder sessionBuilder,
-    _i15.CustomSnpRequestDto request,
+    _i16.CustomSnpRequestDto request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2300,7 +2411,7 @@ class _SnpEndpoint {
 
   _i3.Future<_i8.Snp> importFromUrls(
     _i1.TestSessionBuilder sessionBuilder,
-    _i15.CustomSnpRequestDto request,
+    _i16.CustomSnpRequestDto request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2432,7 +2543,7 @@ class _SnpEndpoint {
     });
   }
 
-  _i3.Future<List<_i16.SnpUsageDto>> snpUsage(
+  _i3.Future<List<_i17.SnpUsageDto>> snpUsage(
     _i1.TestSessionBuilder sessionBuilder,
     int snpId,
   ) async {
@@ -2455,7 +2566,7 @@ class _SnpEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i16.SnpUsageDto>>);
+                as _i3.Future<List<_i17.SnpUsageDto>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2632,7 +2743,7 @@ class _CheckIndexProgressFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i17.CheckIndexProgressRunFutureCall().invoke(
+      await _i18.CheckIndexProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -2650,7 +2761,7 @@ class _CheckMipgenProgressFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i17.CheckMipgenProgressRunFutureCall().invoke(
+      await _i18.CheckMipgenProgressRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -2668,7 +2779,7 @@ class _DemoModeCleanupFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i17.DemoModeCleanupRunFutureCall().invoke(
+      await _i18.DemoModeCleanupRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -2686,7 +2797,7 @@ class _ImportSnpFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i17.ImportSnpRunFutureCall().invoke(
+      await _i18.ImportSnpRunFutureCall().invoke(
         _localUniqueSession,
         object,
       );

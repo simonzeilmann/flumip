@@ -21,9 +21,9 @@ class SnpEndpoint extends FlumipEndpoint {
 
   /// Every SNP for a genome that this caller may see.
   ///
-  /// Filtered twice over: once for visibility, and again to hide somebody else's
-  /// half-finished import. A shared SNP that is still downloading is nobody's
-  /// business but its owner's until it works.
+  /// Filtered twice over — once for visibility, and again to hide somebody else's
+  /// half-finished import — by [AuthorizationService.listableSnps], which is
+  /// where both passes live now that search needs the same pair.
   ///
   /// \param session The current session.
   /// \param genomeId The genome whose SNP sets to list.
@@ -31,17 +31,7 @@ class SnpEndpoint extends FlumipEndpoint {
     session.log('Listing SNPs for genome $genomeId', level: LogLevel.info);
     try {
       final all = await genomeService.getAllSnpForGenome(session, genomeId);
-      final visible = await authz.visibleSnps(session, all);
-      final who = await authz.principal(session);
-      return visible
-          .where(
-            (s) =>
-                s.status == SnpImportStatus.ready ||
-                who.isAdmin ||
-                (s.owner != null && s.owner == who.userId) ||
-                !authz.isEnforcing,
-          )
-          .toList();
+      return await authz.listableSnps(session, all);
     } catch (e) {
       session.log(
         'Error listing SNPs for genome $genomeId',
