@@ -329,5 +329,25 @@ void main() {
       expect(find.textContaining('Search projects'), findsOneWidget);
     });
 
+    testWidgets('⚠️ it does not sit flush against the window edge', (
+      tester,
+    ) async {
+      // Material defaults `AppBar.actionsPadding` to `EdgeInsets.zero`, so the
+      // last action ends exactly at the window edge. An `IconButton` gets away
+      // with it — most of its box is splash radius — but this field has a visible
+      // border, and a border touching the edge reads as clipped. The theme sets
+      // the padding; this is the assertion that it is still set, because the
+      // symptom is cosmetic and nothing else here would fail.
+      await pumpAppBar(tester, 1400, signedIn: false);
+
+      final field = tester.getRect(
+        find.descendant(
+          of: find.byType(SearchButton),
+          matching: find.byType(Material),
+        ),
+      );
+
+      expect(1400 - field.right, greaterThanOrEqualTo(12));
+    });
   });
 }
