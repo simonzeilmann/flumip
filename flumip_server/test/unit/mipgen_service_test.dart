@@ -344,63 +344,59 @@ void main() {
       tags: ['unit'],
     );
 
-    test(
-      'generateMips refuses to run when the chosen SNP is not ready',
-      () async {
-        // ⚠️ A behaviour change, and the point of it. The old code simply left
-        // `-snp_file` off the command line when the paths were empty, so the run
-        // went ahead and produced a perfectly plausible set of MIPs designed
-        // without the masking the user asked for — with nothing in the result to
-        // say so. Now that an SNP can fail to import or be deleted out from under
-        // a project, that is reachable in normal use.
-        final base = createTempDir('genmips');
-        await overrideSettingsDirs(
-          session,
-          projectDir: base.path,
-          mipgenExecutable: 'mipgen-exe',
-        );
-        final options = await seedOptions(session);
-        final genome = await seedGenome(
-          session,
-          name: 'hg38',
-          fastaPath: '/data/hg38.fa',
-        );
-        final snp = await seedSnp(
-          session,
-          name: 'broken panel',
-          genome: genome.id,
-          custom: true,
-          status: SnpImportStatus.failed,
-          vcfPath: '',
-          tbiPath: '',
-        );
-        final project = await seedProject(
-          session,
-          name: 'demo',
-          options: options.id!,
-          folderName: 'proj',
-          genome: genome.id,
-          snp: snp.id,
-        );
-        Directory('${base.path}/proj').createSync(recursive: true);
+    test('generateMips refuses to run when the chosen SNP is not ready', () async {
+      // ⚠️ A behaviour change, and the point of it. The old code simply left
+      // `-snp_file` off the command line when the paths were empty, so the run
+      // went ahead and produced a perfectly plausible set of MIPs designed
+      // without the masking the user asked for — with nothing in the result to
+      // say so. Now that an SNP can fail to import or be deleted out from under
+      // a project, that is reachable in normal use.
+      final base = createTempDir('genmips');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      final options = await seedOptions(session);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      final snp = await seedSnp(
+        session,
+        name: 'broken panel',
+        genome: genome.id,
+        custom: true,
+        status: SnpImportStatus.failed,
+        vcfPath: '',
+        tbiPath: '',
+      );
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+        snp: snp.id,
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
 
-        await expectLater(
-          NoScheduleMipgenService().generateMips(session, project.id!, false),
-          throwsA(
-            isA<ArgumentException>().having(
-              (e) => e.message,
-              'message',
-              contains('broken panel'),
-            ),
+      await expectLater(
+        NoScheduleMipgenService().generateMips(session, project.id!, false),
+        throwsA(
+          isA<ArgumentException>().having(
+            (e) => e.message,
+            'message',
+            contains('broken panel'),
           ),
-        );
-        expect(
-          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
-          isEmpty,
-        );
-      },
-      tags: ['unit'],
-    );
+        ),
+      );
+      expect(
+        fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+        isEmpty,
+      );
+    }, tags: ['unit']);
   });
 
   withServerpod('MipgenService.mipgenIsFinished', (sessionBuilder, endpoints) {

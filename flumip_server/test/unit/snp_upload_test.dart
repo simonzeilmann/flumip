@@ -347,56 +347,48 @@ void main() {
     setUp(fake.reset);
     final session = sessionBuilder.build();
 
-    test(
-      'createUpload makes a pending row with its own directory',
-      () async {
-        final root = createTempDir('flumip_create');
-        await overrideSettingsDirs(session, customSnpDir: root.path);
-        final genome = await seedGenome(session, name: 'hg38');
+    test('createUpload makes a pending row with its own directory', () async {
+      final root = createTempDir('flumip_create');
+      await overrideSettingsDirs(session, customSnpDir: root.path);
+      final genome = await seedGenome(session, name: 'hg38');
 
-        final snp = await endpoints.snp.createUpload(
+      final snp = await endpoints.snp.createUpload(
+        sessionBuilder,
+        CustomSnpRequestDto(
+          name: 'my panel',
+          genomeId: genome.id!,
+          private: true,
+        ),
+      );
+
+      expect(snp.status, SnpImportStatus.pending);
+      expect(snp.custom, isTrue);
+      expect(snp.genome, genome.id);
+      // The path is derived from the row id, so nothing a user typed can reach it.
+      expect(snp.folder, '${root.path}/user/${snp.id}');
+      expect(Directory(snp.folder).existsSync(), isTrue);
+    }, tags: ['integration']);
+
+    test('createUpload refuses an empty name and an unknown genome', () async {
+      final root = createTempDir('flumip_create');
+      await overrideSettingsDirs(session, customSnpDir: root.path);
+      final genome = await seedGenome(session, name: 'hg38');
+
+      await expectLater(
+        endpoints.snp.createUpload(
           sessionBuilder,
-          CustomSnpRequestDto(
-            name: 'my panel',
-            genomeId: genome.id!,
-            private: true,
-          ),
-        );
-
-        expect(snp.status, SnpImportStatus.pending);
-        expect(snp.custom, isTrue);
-        expect(snp.genome, genome.id);
-        // The path is derived from the row id, so nothing a user typed can reach it.
-        expect(snp.folder, '${root.path}/user/${snp.id}');
-        expect(Directory(snp.folder).existsSync(), isTrue);
-      },
-      tags: ['integration'],
-    );
-
-    test(
-      'createUpload refuses an empty name and an unknown genome',
-      () async {
-        final root = createTempDir('flumip_create');
-        await overrideSettingsDirs(session, customSnpDir: root.path);
-        final genome = await seedGenome(session, name: 'hg38');
-
-        await expectLater(
-          endpoints.snp.createUpload(
-            sessionBuilder,
-            CustomSnpRequestDto(name: ' ', genomeId: genome.id!, private: true),
-          ),
-          throwsA(isA<ArgumentException>()),
-        );
-        await expectLater(
-          endpoints.snp.createUpload(
-            sessionBuilder,
-            CustomSnpRequestDto(name: 'x', genomeId: -1, private: true),
-          ),
-          throwsA(isA<FlumipFileNotFoundException>()),
-        );
-      },
-      tags: ['integration'],
-    );
+          CustomSnpRequestDto(name: ' ', genomeId: genome.id!, private: true),
+        ),
+        throwsA(isA<ArgumentException>()),
+      );
+      await expectLater(
+        endpoints.snp.createUpload(
+          sessionBuilder,
+          CustomSnpRequestDto(name: 'x', genomeId: -1, private: true),
+        ),
+        throwsA(isA<FlumipFileNotFoundException>()),
+      );
+    }, tags: ['integration']);
 
     test('the whole flow: create, place files, finish', () async {
       final root = createTempDir('flumip_flow');
@@ -424,24 +416,20 @@ void main() {
       expect(finished.tbiPath, '${created.folder}/panel.vcf.gz.tbi');
     }, tags: ['integration']);
 
-    test(
-      'cancelUpload removes a pending row and its directory',
-      () async {
-        final root = createTempDir('flumip_cancel');
-        await overrideSettingsDirs(session, customSnpDir: root.path);
-        final genome = await seedGenome(session, name: 'hg38');
-        final created = await endpoints.snp.createUpload(
-          sessionBuilder,
-          CustomSnpRequestDto(name: 'x', genomeId: genome.id!, private: true),
-        );
+    test('cancelUpload removes a pending row and its directory', () async {
+      final root = createTempDir('flumip_cancel');
+      await overrideSettingsDirs(session, customSnpDir: root.path);
+      final genome = await seedGenome(session, name: 'hg38');
+      final created = await endpoints.snp.createUpload(
+        sessionBuilder,
+        CustomSnpRequestDto(name: 'x', genomeId: genome.id!, private: true),
+      );
 
-        await endpoints.snp.cancelUpload(sessionBuilder, created.id!);
+      await endpoints.snp.cancelUpload(sessionBuilder, created.id!);
 
-        expect(await Snp.db.findById(session, created.id!), isNull);
-        expect(Directory(created.folder).existsSync(), isFalse);
-      },
-      tags: ['integration'],
-    );
+      expect(await Snp.db.findById(session, created.id!), isNull);
+      expect(Directory(created.folder).existsSync(), isFalse);
+    }, tags: ['integration']);
 
     test('cancelUpload refuses an SNP that is already ready', () async {
       // It must not double as a delete without confirmation.
