@@ -437,7 +437,7 @@ class SnpEndpoint extends FlumipEndpoint {
     try {
       final snp = await _requireSnp(session, snpId);
       await authz.requireSnpAccess(session, snp);
-      return snpService.snpUsage(session, snpId);
+      return await snpService.snpUsage(session, snpId);
     } catch (e) {
       session.log(
         'Error reading usage of SNP $snpId',

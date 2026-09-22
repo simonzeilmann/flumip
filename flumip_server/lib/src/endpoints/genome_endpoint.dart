@@ -19,7 +19,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<Genome> getGenome(Session session, int id) async {
     session.log('Retrieving genome with ID: $id', level: LogLevel.info);
     try {
-      return genomeService.getGenome(session, id);
+      return await genomeService.getGenome(session, id);
     } catch (e) {
       session.log(
         'Error retrieving genome with ID: $id',
@@ -38,7 +38,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<List<Genome>> getAllGenomes(Session session) async {
     session.log('Retrieving all genomes', level: LogLevel.info);
     try {
-      return genomeService.getAllGenomes(session);
+      return await genomeService.getAllGenomes(session);
     } catch (e) {
       session.log(
         'Error retrieving all genomes',
@@ -58,7 +58,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> updateGenome(Session session, int id, Genome genome) async {
     session.log('Updating genome with ID: $id', level: LogLevel.info);
     try {
-      return genomeService.updateGenome(session, id, genome);
+      return await genomeService.updateGenome(session, id, genome);
     } catch (e) {
       session.log(
         'Error updating genome with ID: $id',
@@ -76,7 +76,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> collectGenomes(Session session) async {
     session.log('Collecting genomes', level: LogLevel.info);
     try {
-      return genomeService.collectGenomes(session);
+      return await genomeService.collectGenomes(session);
     } catch (e) {
       session.log(
         'Error collecting genomes',
@@ -96,7 +96,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<Snp> getSnp(Session session, int id) async {
     session.log('Retrieving SNP with ID: $id', level: LogLevel.info);
     try {
-      return genomeService.getSnp(session, id);
+      return await genomeService.getSnp(session, id);
     } catch (e) {
       session.log(
         'Error retrieving SNP with ID: $id',
@@ -116,7 +116,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<List<Snp>> getAllSnpForGenome(Session session, int genomeId) async {
     session.log('Retrieving all SNPs', level: LogLevel.info);
     try {
-      return genomeService.getAllSnpForGenome(session, genomeId);
+      return await genomeService.getAllSnpForGenome(session, genomeId);
     } catch (e) {
       session.log(
         'Error retrieving all SNPs',
@@ -143,7 +143,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<List<String>> getCategories(Session session) async {
     session.log('Retrieving categories', level: LogLevel.info);
     try {
-      return genomeService.getGenomeCategories(session);
+      return await genomeService.getGenomeCategories(session);
     } catch (e) {
       session.log(
         'Error retrieving categories',
@@ -169,7 +169,7 @@ class GenomeEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
-      return genomeService.getGenomeByCategory(session, category);
+      return await genomeService.getGenomeByCategory(session, category);
     } catch (e) {
       session.log(
         'Error retrieving genomes for category: $category',
@@ -183,7 +183,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> indexFasta(Session session, int id) async {
     session.log('Indexing fasta for genome with ID: $id', level: LogLevel.info);
     try {
-      return genomeService.indexFasta(session, id);
+      return await genomeService.indexFasta(session, id);
     } catch (e) {
       session.log(
         'Error indexing fasta for genome with ID: $id',
@@ -200,7 +200,7 @@ class GenomeEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
-      return genomeService.deleteFastaIndex(session, id);
+      return await genomeService.deleteFastaIndex(session, id);
     } catch (e) {
       session.log(
         'Error deleting fasta index for genome with ID: $id',

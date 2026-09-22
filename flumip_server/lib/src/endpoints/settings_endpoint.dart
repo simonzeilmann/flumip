@@ -66,7 +66,7 @@ class SettingsEndpoint extends Endpoint {
   Future<Settings> getSettings(Session session, String? password) async {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
-      return settingsService.getSettingsExternal(session, password);
+      return await settingsService.getSettingsExternal(session, password);
     } on ArgumentException {
       rethrow;
     } catch (e) {
