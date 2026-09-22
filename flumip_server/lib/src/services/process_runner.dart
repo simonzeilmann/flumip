@@ -14,6 +14,35 @@ String firstLineOf(String text, {int maxLength = 200}) {
   return line.length > maxLength ? '${line.substring(0, maxLength)}…' : line;
 }
 
+/// The line of a tool's stderr that actually names the failure, bounded.
+///
+/// ⚠️ Not [firstLineOf], and the difference is not cosmetic. A Python
+/// traceback's first line is the literal, information-free
+/// `Traceback (most recent call last):` — so recording the first line of a
+/// crashed script's stderr stores a string that is the same for every possible
+/// cause. That happened: a UCSC track generation failure was logged as
+/// "UCSC track generation failed for project ID: 33: Traceback (most recent
+/// call last):" and the actual exception — an `IndexError` on a truncated
+/// input file — had to be reconstructed by re-running the script by hand.
+///
+/// Python puts the exception last, and so does almost everything else that
+/// prints context before its complaint. For single-line stderr the last line
+/// *is* the first line, so this is never worse.
+///
+/// Bounded because it ends up in a database column and on a screen. The
+/// caller should log the whole of stderr separately — this is the summary, not
+/// the record.
+String failureLineOf(String text, {int maxLength = 200}) {
+  final lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => line.isNotEmpty)
+      .toList();
+  if (lines.isEmpty) return '';
+  final line = lines.last;
+  return line.length > maxLength ? '${line.substring(0, maxLength)}…' : line;
+}
+
 /// The executable is not installed, or not where the settings say it is.
 ///
 /// A separate type because it is the one process failure with an obvious remedy,
