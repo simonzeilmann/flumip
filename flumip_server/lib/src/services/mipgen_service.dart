@@ -516,11 +516,27 @@ class MipgenService {
     );
 
     if (process.exitCode != 0) {
+      final stderr = process.stderr.toString();
+
+      // ⚠️ The whole of stderr, on its own line, before the summary. The
+      // generator is a Python script, and a Python traceback names the cause on
+      // its *last* line — so a one-line summary is a summary, never the record.
+      // This log entry is the only place the traceback survives: the script
+      // writes nothing of its own, and the project row holds one sentence.
+      session.log(
+        "UCSC track generator (exit ${process.exitCode}) for project ID: "
+        "${project.id} wrote:\n${stderr.trim()}",
+        level: LogLevel.error,
+      );
+
       // ⚠️ Recorded, not merely logged. The track is an optional extra, so this
       // must not fail the run — but a project whose track silently never
       // appeared, with the reason only in the server log, is how somebody
       // spends an afternoon wondering where their UCSC link went.
-      final reason = firstLineOf(process.stderr.toString());
+      //
+      // [failureLineOf], not `firstLineOf`: see the note on both. The first line
+      // of a traceback is the same string for every possible cause.
+      final reason = failureLineOf(stderr);
       session.log(
         "UCSC track generation failed for project ID: ${project.id}: $reason",
         level: LogLevel.error,
