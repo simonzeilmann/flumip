@@ -51,9 +51,27 @@ jobs:
           channel: 'stable'
           flutter-version: '3.47.5'
 
-      # Before `pub get`, because formatting is syntactic and needs no packages —
-      # so a reflow-only failure comes back in seconds rather than after a
-      # dependency resolve.
+      - name: Get dependencies
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
+      # ⚠️ **After `pub get`, and it has to be.** This used to run first, on the
+      # reasoning that formatting is syntactic and needs no packages, so a
+      # reflow-only failure came back in seconds. That reasoning is wrong:
+      # `dart format` takes the language version from the resolved package
+      # config, and without `.dart_tool` it falls back to a different one and
+      # applies different line-splitting rules. It also cannot read
+      # `analysis_options.yaml` at all, and says so
+      # ("Package resolution error when reading ..."). The unresolved formatter
+      # disagreed with the resolved one about 14 files in flumip_flutter and 20
+      # in flumip_server — so the check was comparing against a configuration no
+      # developer runs.
+      #
+      # It passed for as long as it did by luck. Raising the sdk constraint to
+      # `^3.12.2` for Serverpod 4 moved the resolved language version and the
+      # two stopped agreeing. An explicit `--page-width` does not fix it; the
+      # difference is the language version, not the width.
       #
       # ⚠️ Generated code is excluded, and has to be. `serverpod generate` does
       # not emit `dart format` output, so formatting `lib/src/generated` or the
@@ -62,13 +80,12 @@ jobs:
       # entirety and is therefore not checked at all.
       #
       # The Flutter version is pinned above, so the formatter and the analyzer
-      # are the same ones every developer runs locally. That pin is the fix for
-      # the hazard this comment used to describe: on bare `channel: stable` a
-      # Dart release could change formatting, or add a diagnostic, and turn
-      # every pipeline red on code nobody had touched — which is exactly how
-      # `unawaited_return_in_try_block` arrived with Dart 3.13 and left CI
-      # failing. Bump the pin deliberately, run the two commands below, and
-      # commit the result.
+      # are the same ones every developer runs locally — which is the other half
+      # of making this check mean something. On bare `channel: stable` a Dart
+      # release could change formatting, or add a diagnostic, and turn every
+      # pipeline red on code nobody had touched; that is exactly how
+      # `unawaited_return_in_try_block` arrived with Dart 3.13. Bump the pin
+      # deliberately, run the two commands below, and commit the result.
       - name: Check formatting
         run: |
           cd flumip_flutter
@@ -79,11 +96,6 @@ jobs:
               -not -path 'lib/src/generated/*' \
               -not -path 'test/integration/test_tools/*'
           )
-
-      - name: Get dependencies
-        run: |
-          cd flumip_server && flutter pub get
-          cd ../flumip_flutter && flutter pub get
 
       - name: Analyze code
         run: |
