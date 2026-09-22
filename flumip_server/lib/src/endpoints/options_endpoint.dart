@@ -16,7 +16,7 @@ class OptionsEndpoint extends FlumipEndpoint {
   Future<ProjectOptions> createProjectOptions(Session session) async {
     session.log("Creating project options", level: LogLevel.info);
     try {
-      return optionsService.createProjectOptions(session);
+      return await optionsService.createProjectOptions(session);
     } catch (e) {
       session.log("Error creating project options - $e", level: LogLevel.error);
       rethrow;
@@ -34,7 +34,7 @@ class OptionsEndpoint extends FlumipEndpoint {
   ) async {
     session.log("Inserting project options", level: LogLevel.info);
     try {
-      return optionsService.insertProjectOptions(session, options);
+      return await optionsService.insertProjectOptions(session, options);
     } catch (e) {
       session.log(
         "Error inserting project options - $e",
@@ -53,7 +53,7 @@ class OptionsEndpoint extends FlumipEndpoint {
     session.log("Retrieving project options for ID: $id", level: LogLevel.info);
     try {
       await requireProjectOptions(session, id);
-      return optionsService.getProjectOptions(session, id);
+      return await optionsService.getProjectOptions(session, id);
     } catch (e) {
       session.log(
         "Error retrieving project options for ID: $id",
@@ -77,7 +77,7 @@ class OptionsEndpoint extends FlumipEndpoint {
     session.log("Updating project options for ID: $id", level: LogLevel.info);
     try {
       await requireProjectOptions(session, id);
-      return optionsService.updateProjectOptions(session, id, options);
+      return await optionsService.updateProjectOptions(session, id, options);
     } catch (e) {
       session.log(
         "Error updating project options for ID: $id",
@@ -96,7 +96,7 @@ class OptionsEndpoint extends FlumipEndpoint {
     session.log("Deleting project options for ID: $id", level: LogLevel.info);
     try {
       await requireProjectOptions(session, id);
-      return optionsService.deleteProjectOptions(session, id);
+      return await optionsService.deleteProjectOptions(session, id);
     } catch (e) {
       session.log(
         "Error deleting project options for ID: $id",

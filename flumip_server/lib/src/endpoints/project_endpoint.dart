@@ -26,7 +26,12 @@ class ProjectEndpoint extends FlumipEndpoint {
   ]) async {
     session.log("Creating project with name: $name", level: LogLevel.info);
     try {
-      return projectService.createProject(session, name, options, description);
+      return await projectService.createProject(
+        session,
+        name,
+        options,
+        description,
+      );
     } catch (e) {
       session.log(
         "Error creating project with name: $name",
@@ -45,7 +50,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Deleting project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.deleteProject(session, id);
+      return await projectService.deleteProject(session, id);
     } catch (e) {
       session.log(
         "Error deleting project with ID: $id",
@@ -66,7 +71,7 @@ class ProjectEndpoint extends FlumipEndpoint {
       // Filtered, not all of them. Foreign projects are dropped here rather than
       // refused on open, so a user simply never sees work that is not theirs and
       // ProjectAccessDeniedException stays a thing only a hand-built request can hit.
-      return authz.visibleProjects(session);
+      return await authz.visibleProjects(session);
     } catch (e) {
       session.log(
         "Error retrieving all projects",
@@ -86,7 +91,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Retrieving project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.getProject(session, id);
+      return await projectService.getProject(session, id);
     } catch (e) {
       session.log(
         "Error retrieving project with ID: $id",
@@ -106,7 +111,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Adding gene to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.addGeneToProject(session, id, gene);
+      return await projectService.addGeneToProject(session, id, gene);
     } catch (e) {
       session.log(
         "Error adding gene to project with ID: $id",
@@ -133,7 +138,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, id);
-      return projectService.removeGeneFromProject(session, id, gene);
+      return await projectService.removeGeneFromProject(session, id, gene);
     } catch (e) {
       session.log(
         "Error removing gene from project with ID: $id",
@@ -157,7 +162,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Adding genes to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.addGenesToProject(session, id, genes);
+      return await projectService.addGenesToProject(session, id, genes);
     } catch (e) {
       session.log(
         "Error adding genes to project with ID: $id",
@@ -177,7 +182,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Setting gene to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.setGenomeById(session, id, genomeId);
+      return await projectService.setGenomeById(session, id, genomeId);
     } catch (e) {
       session.log(
         "Error setting gene to project with ID: $id",
@@ -204,7 +209,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, id);
-      return projectService.setEmailNotification(session, id, enabled);
+      return await projectService.setEmailNotification(session, id, enabled);
     } catch (e) {
       session.log(
         "Error setting email notification for project with ID: $id",
@@ -300,7 +305,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Setting snp to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.setSnpById(session, id, snpId);
+      return await projectService.setSnpById(session, id, snpId);
     } catch (e) {
       session.log(
         "Error setting snp to project with ID: $id",
