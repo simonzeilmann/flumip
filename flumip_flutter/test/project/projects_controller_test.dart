@@ -158,11 +158,9 @@ void main() {
 
       final pending = h.controller.delete(1);
 
-      expect(
-        h.controller.projects!.map((p) => p.id),
-        [2],
-        reason: 'gone already, without awaiting the delete',
-      );
+      expect(h.controller.projects!.map((p) => p.id), [
+        2,
+      ], reason: 'gone already, without awaiting the delete');
       await pending;
       expect(h.controller.projects!.map((p) => p.id), [2]);
     });

@@ -195,11 +195,9 @@ void main() {
       await pumpEventQueue();
 
       expect(controller.expandedCategory, 'B');
-      expect(
-        controller.genomes.map((g) => g.name),
-        ['other'],
-        reason: "A's answer must not land in B's list",
-      );
+      expect(controller.genomes.map((g) => g.name), [
+        'other',
+      ], reason: "A's answer must not land in B's list");
     });
 
     test('a failed genome list is reported and stops the spinner', () async {
