@@ -10,10 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2kzrgg5;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Project implements _i1.SerializableModel {
+abstract class Project
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Project._({
     this.id,
     required this.name,
@@ -77,43 +78,47 @@ abstract class Project implements _i1.SerializableModel {
       snp: jsonSerialization['snp'] as int?,
       tags: jsonSerialization['tags'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
+          : _i2kzrgg5.Protocol().deserialize<List<String>>(
+              jsonSerialization['tags'],
+            ),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as int?,
       genes: jsonSerialization['genes'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _i2kzrgg5.Protocol().deserialize<List<String>>(
               jsonSerialization['genes'],
             ),
       bedFileCreated: jsonSerialization['bedFileCreated'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['bedFileCreated']),
+          : _isc.BoolJsonExtension.fromJson(
+              jsonSerialization['bedFileCreated'],
+            ),
       active: jsonSerialization['active'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['active']),
       size: jsonSerialization['size'] as int?,
       emailNotification: jsonSerialization['emailNotification'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['emailNotification'],
             ),
       options: jsonSerialization['options'] as int,
       started: jsonSerialization['started'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['started']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['started']),
       completedIn: jsonSerialization['completedIn'] == null
           ? null
-          : _i1.DurationJsonExtension.fromJson(
+          : _isc.DurationJsonExtension.fromJson(
               jsonSerialization['completedIn'],
             ),
       error: jsonSerialization['error'] as String?,
       warning: jsonSerialization['warning'] as String?,
       cleanup: jsonSerialization['cleanup'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
     );
   }
 
@@ -194,7 +199,7 @@ abstract class Project implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Project copyWith({
     int? id,
     String? name,
@@ -245,8 +250,35 @@ abstract class Project implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Project',
+      if (id != null) 'id': id,
+      'name': name,
+      'description': description,
+      if (genome != null) 'genome': genome,
+      if (snp != null) 'snp': snp,
+      if (tags != null) 'tags': tags?.toJson(),
+      'created': created.toJson(),
+      if (owner != null) 'owner': owner,
+      if (department != null) 'department': department,
+      if (genes != null) 'genes': genes?.toJson(),
+      'bedFileCreated': bedFileCreated,
+      'active': active,
+      'size': size,
+      'emailNotification': emailNotification,
+      'options': options,
+      if (started != null) 'started': started?.toJson(),
+      if (completedIn != null) 'completedIn': completedIn?.toJson(),
+      'error': error,
+      'warning': warning,
+      'cleanup': cleanup,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -299,7 +331,7 @@ class _ProjectImpl extends Project {
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Project copyWith({
     Object? id = _Undefined,

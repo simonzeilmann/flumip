@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// A user an administrator can hand a project to. No table — transport only.
 ///
@@ -24,12 +24,9 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// Both exist because they answer different questions: "who am I" and "who could
 /// own this".
 abstract class FlumipUserDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  FlumipUserDto._({
-    required this.id,
-    required this.email,
-    String? displayName,
-  }) : displayName = displayName ?? '';
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  FlumipUserDto._({required this.id, required this.email, String? displayName})
+    : displayName = displayName ?? '';
 
   factory FlumipUserDto({
     required int id,
@@ -53,12 +50,8 @@ abstract class FlumipUserDto
 
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  FlumipUserDto copyWith({
-    int? id,
-    String? email,
-    String? displayName,
-  });
+  @_is.useResult
+  FlumipUserDto copyWith({int? id, String? email, String? displayName});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -81,7 +74,7 @@ abstract class FlumipUserDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -90,21 +83,13 @@ class _FlumipUserDtoImpl extends FlumipUserDto {
     required int id,
     required String email,
     String? displayName,
-  }) : super._(
-         id: id,
-         email: email,
-         displayName: displayName,
-       );
+  }) : super._(id: id, email: email, displayName: displayName);
 
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  FlumipUserDto copyWith({
-    int? id,
-    String? email,
-    String? displayName,
-  }) {
+  FlumipUserDto copyWith({int? id, String? email, String? displayName}) {
     return FlumipUserDto(
       id: id ?? this.id,
       email: email ?? this.email,

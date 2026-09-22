@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'snp_import_status.dart' as _i2;
+import 'package:serverpod/serverpod.dart' as _is;
+import 'snp_import_status.dart' as _iq9n7xnd;
 
 /// One SNP dataset: a bgzip'd VCF plus its tabix index.
 ///
@@ -28,7 +28,7 @@ import 'snp_import_status.dart' as _i2;
 /// `folder` is the scanner's idempotency key and stays that way. For a custom SNP
 /// the folder is derived from the row id, so the row is authoritative and a scan
 /// only reconciles what is on disk against it.
-abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
   Snp._({
     this.id,
     required this.name,
@@ -42,7 +42,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     this.genome,
     this.owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     this.sourceVcfUrl,
     this.sourceTbiUrl,
@@ -54,7 +54,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
        private = private ?? false,
        size = size ?? 0,
        custom = custom ?? false,
-       status = status ?? _i2.SnpImportStatus.ready,
+       status = status ?? _iq9n7xnd.SnpImportStatus.ready,
        statusMessage = statusMessage ?? '',
        bytesDownloaded = bytesDownloaded ?? 0,
        totalBytes = totalBytes ?? 0,
@@ -73,7 +73,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -91,19 +91,19 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       vcfPath: jsonSerialization['vcfPath'] as String,
       tbiPath: jsonSerialization['tbiPath'] as String,
       folder: jsonSerialization['folder'] as String,
-      active: _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      active: _is.BoolJsonExtension.fromJson(jsonSerialization['active']),
       private: jsonSerialization['private'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['private']),
       size: jsonSerialization['size'] as int?,
       genome: jsonSerialization['genome'] as int?,
       owner: jsonSerialization['owner'] as int?,
       custom: jsonSerialization['custom'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['custom']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['custom']),
       status: jsonSerialization['status'] == null
           ? null
-          : _i2.SnpImportStatus.fromJson(
+          : _iq9n7xnd.SnpImportStatus.fromJson(
               (jsonSerialization['status'] as String),
             ),
       statusMessage: jsonSerialization['statusMessage'] as String?,
@@ -113,12 +113,12 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       totalBytes: jsonSerialization['totalBytes'] as int?,
       statusUpdated: jsonSerialization['statusUpdated'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['statusUpdated'],
             ),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
     );
   }
 
@@ -177,7 +177,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   /// Where the bytes are in their journey. `ready` is the only status mipgen will
   /// accept, and it is the default so that every row predating this feature —
   /// which means every global SNP — is usable with no data migration.
-  _i2.SnpImportStatus status;
+  _iq9n7xnd.SnpImportStatus status;
 
   /// Why it failed, or which step it is on. Never holds a remote response body: a
   /// fetched error page can contain anything and this string is rendered in the
@@ -203,11 +203,11 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   DateTime created;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   Snp copyWith({
     int? id,
     String? name,
@@ -221,7 +221,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -289,12 +289,11 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   }
 
   static SnpIncludeList includeList({
-    _i1.WhereExpressionBuilder<SnpTable>? where,
+    _is.WhereExpressionBuilder<SnpTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SnpTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SnpTable>? orderByList,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
     SnpInclude? include,
   }) {
     return SnpIncludeList._(
@@ -302,7 +301,6 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(Snp.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(Snp.t),
       include: include,
     );
@@ -310,7 +308,7 @@ abstract class Snp implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -330,7 +328,7 @@ class _SnpImpl extends Snp {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -363,7 +361,7 @@ class _SnpImpl extends Snp {
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   Snp copyWith({
     Object? id = _Undefined,
@@ -378,7 +376,7 @@ class _SnpImpl extends Snp {
     Object? genome = _Undefined,
     Object? owner = _Undefined,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     Object? sourceVcfUrl = _Undefined,
     Object? sourceTbiUrl = _Undefined,
@@ -414,228 +412,122 @@ class _SnpImpl extends Snp {
   }
 }
 
-class SnpUpdateTable extends _i1.UpdateTable<SnpTable> {
+class SnpUpdateTable extends _is.UpdateTable<SnpTable> {
   SnpUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
-    table.name,
-    value,
-  );
+  _is.ColumnValue<String, String> name(String value) =>
+      _is.ColumnValue(table.name, value);
 
-  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
-    table.description,
-    value,
-  );
+  _is.ColumnValue<String, String> description(String value) =>
+      _is.ColumnValue(table.description, value);
 
-  _i1.ColumnValue<String, String> vcfPath(String value) => _i1.ColumnValue(
-    table.vcfPath,
-    value,
-  );
+  _is.ColumnValue<String, String> vcfPath(String value) =>
+      _is.ColumnValue(table.vcfPath, value);
 
-  _i1.ColumnValue<String, String> tbiPath(String value) => _i1.ColumnValue(
-    table.tbiPath,
-    value,
-  );
+  _is.ColumnValue<String, String> tbiPath(String value) =>
+      _is.ColumnValue(table.tbiPath, value);
 
-  _i1.ColumnValue<String, String> folder(String value) => _i1.ColumnValue(
-    table.folder,
-    value,
-  );
+  _is.ColumnValue<String, String> folder(String value) =>
+      _is.ColumnValue(table.folder, value);
 
-  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
-    table.active,
-    value,
-  );
+  _is.ColumnValue<bool, bool> active(bool value) =>
+      _is.ColumnValue(table.active, value);
 
-  _i1.ColumnValue<bool, bool> private(bool value) => _i1.ColumnValue(
-    table.private,
-    value,
-  );
+  _is.ColumnValue<bool, bool> private(bool value) =>
+      _is.ColumnValue(table.private, value);
 
-  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
-    table.size,
-    value,
-  );
+  _is.ColumnValue<int, int> size(int value) =>
+      _is.ColumnValue(table.size, value);
 
-  _i1.ColumnValue<int, int> genome(int? value) => _i1.ColumnValue(
-    table.genome,
-    value,
-  );
+  _is.ColumnValue<int, int> genome(int? value) =>
+      _is.ColumnValue(table.genome, value);
 
-  _i1.ColumnValue<int, int> owner(int? value) => _i1.ColumnValue(
-    table.owner,
-    value,
-  );
+  _is.ColumnValue<int, int> owner(int? value) =>
+      _is.ColumnValue(table.owner, value);
 
-  _i1.ColumnValue<bool, bool> custom(bool value) => _i1.ColumnValue(
-    table.custom,
-    value,
-  );
+  _is.ColumnValue<bool, bool> custom(bool value) =>
+      _is.ColumnValue(table.custom, value);
 
-  _i1.ColumnValue<_i2.SnpImportStatus, _i2.SnpImportStatus> status(
-    _i2.SnpImportStatus value,
-  ) => _i1.ColumnValue(
-    table.status,
-    value,
-  );
+  _is.ColumnValue<_iq9n7xnd.SnpImportStatus, _iq9n7xnd.SnpImportStatus> status(
+    _iq9n7xnd.SnpImportStatus value,
+  ) => _is.ColumnValue(table.status, value);
 
-  _i1.ColumnValue<String, String> statusMessage(String value) =>
-      _i1.ColumnValue(
-        table.statusMessage,
-        value,
-      );
+  _is.ColumnValue<String, String> statusMessage(String value) =>
+      _is.ColumnValue(table.statusMessage, value);
 
-  _i1.ColumnValue<String, String> sourceVcfUrl(String? value) =>
-      _i1.ColumnValue(
-        table.sourceVcfUrl,
-        value,
-      );
+  _is.ColumnValue<String, String> sourceVcfUrl(String? value) =>
+      _is.ColumnValue(table.sourceVcfUrl, value);
 
-  _i1.ColumnValue<String, String> sourceTbiUrl(String? value) =>
-      _i1.ColumnValue(
-        table.sourceTbiUrl,
-        value,
-      );
+  _is.ColumnValue<String, String> sourceTbiUrl(String? value) =>
+      _is.ColumnValue(table.sourceTbiUrl, value);
 
-  _i1.ColumnValue<int, int> bytesDownloaded(int value) => _i1.ColumnValue(
-    table.bytesDownloaded,
-    value,
-  );
+  _is.ColumnValue<int, int> bytesDownloaded(int value) =>
+      _is.ColumnValue(table.bytesDownloaded, value);
 
-  _i1.ColumnValue<int, int> totalBytes(int value) => _i1.ColumnValue(
-    table.totalBytes,
-    value,
-  );
+  _is.ColumnValue<int, int> totalBytes(int value) =>
+      _is.ColumnValue(table.totalBytes, value);
 
-  _i1.ColumnValue<DateTime, DateTime> statusUpdated(DateTime? value) =>
-      _i1.ColumnValue(
-        table.statusUpdated,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> statusUpdated(DateTime? value) =>
+      _is.ColumnValue(table.statusUpdated, value);
 
-  _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
+      _is.ColumnValue(table.created, value);
 }
 
-class SnpTable extends _i1.Table<int?> {
+class SnpTable extends _is.Table<int?> {
   SnpTable({super.tableRelation}) : super(tableName: 'snp') {
     updateTable = SnpUpdateTable(this);
-    name = _i1.ColumnString(
-      'name',
-      this,
-    );
-    description = _i1.ColumnString(
-      'description',
-      this,
-      hasDefault: true,
-    );
-    vcfPath = _i1.ColumnString(
-      'vcfPath',
-      this,
-    );
-    tbiPath = _i1.ColumnString(
-      'tbiPath',
-      this,
-    );
-    folder = _i1.ColumnString(
-      'folder',
-      this,
-    );
-    active = _i1.ColumnBool(
-      'active',
-      this,
-    );
-    private = _i1.ColumnBool(
-      'private',
-      this,
-      hasDefault: true,
-    );
-    size = _i1.ColumnInt(
-      'size',
-      this,
-      hasDefault: true,
-    );
-    genome = _i1.ColumnInt(
-      'genome',
-      this,
-    );
-    owner = _i1.ColumnInt(
-      'owner',
-      this,
-    );
-    custom = _i1.ColumnBool(
-      'custom',
-      this,
-      hasDefault: true,
-    );
-    status = _i1.ColumnEnum(
+    name = _is.ColumnString('name', this);
+    description = _is.ColumnString('description', this, hasDefault: true);
+    vcfPath = _is.ColumnString('vcfPath', this);
+    tbiPath = _is.ColumnString('tbiPath', this);
+    folder = _is.ColumnString('folder', this);
+    active = _is.ColumnBool('active', this);
+    private = _is.ColumnBool('private', this, hasDefault: true);
+    size = _is.ColumnInt('size', this, hasDefault: true);
+    genome = _is.ColumnInt('genome', this);
+    owner = _is.ColumnInt('owner', this);
+    custom = _is.ColumnBool('custom', this, hasDefault: true);
+    status = _is.ColumnEnum(
       'status',
       this,
-      _i1.EnumSerialization.byName,
+      _is.EnumSerialization.byName,
       hasDefault: true,
     );
-    statusMessage = _i1.ColumnString(
-      'statusMessage',
-      this,
-      hasDefault: true,
-    );
-    sourceVcfUrl = _i1.ColumnString(
-      'sourceVcfUrl',
-      this,
-    );
-    sourceTbiUrl = _i1.ColumnString(
-      'sourceTbiUrl',
-      this,
-    );
-    bytesDownloaded = _i1.ColumnInt(
-      'bytesDownloaded',
-      this,
-      hasDefault: true,
-    );
-    totalBytes = _i1.ColumnInt(
-      'totalBytes',
-      this,
-      hasDefault: true,
-    );
-    statusUpdated = _i1.ColumnDateTime(
-      'statusUpdated',
-      this,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
+    statusMessage = _is.ColumnString('statusMessage', this, hasDefault: true);
+    sourceVcfUrl = _is.ColumnString('sourceVcfUrl', this);
+    sourceTbiUrl = _is.ColumnString('sourceTbiUrl', this);
+    bytesDownloaded = _is.ColumnInt('bytesDownloaded', this, hasDefault: true);
+    totalBytes = _is.ColumnInt('totalBytes', this, hasDefault: true);
+    statusUpdated = _is.ColumnDateTime('statusUpdated', this);
+    created = _is.ColumnDateTime('created', this, hasDefault: true);
   }
 
   late final SnpUpdateTable updateTable;
 
-  late final _i1.ColumnString name;
+  late final _is.ColumnString name;
 
-  late final _i1.ColumnString description;
+  late final _is.ColumnString description;
 
-  late final _i1.ColumnString vcfPath;
+  late final _is.ColumnString vcfPath;
 
-  late final _i1.ColumnString tbiPath;
+  late final _is.ColumnString tbiPath;
 
-  late final _i1.ColumnString folder;
+  late final _is.ColumnString folder;
 
   /// Written true by the scanner since the beginning and read by nothing. Left
   /// alone on purpose: [status] is the flag that actually decides whether an SNP
   /// can be used, and dropping a column earns migration risk for no behaviour
   /// change.
-  late final _i1.ColumnBool active;
+  late final _is.ColumnBool active;
 
   /// Visible only to [owner] and to administrators. The share toggle clears it.
   ///
   /// See `snpIsAccessible`, and note that the rule differs from
   /// `projectIsAccessible`: here a null owner is *not* a grant.
-  late final _i1.ColumnBool private;
+  late final _is.ColumnBool private;
 
-  late final _i1.ColumnInt size;
+  late final _is.ColumnInt size;
 
   /// The genome build this SNP is called against. Chosen when a custom SNP is
   /// added; filled in by the scanner for globals from the enclosing directory.
@@ -646,48 +538,48 @@ class SnpTable extends _i1.Table<int?> {
   ///
   /// SetNull rather than Cascade: deleting a genome must not destroy a user's
   /// uploaded file. Such an SNP appears in no picker and its owner can delete it.
-  late final _i1.ColumnInt genome;
+  late final _is.ColumnInt genome;
 
   /// The FlumipUser who added this, or null. Null for every global SNP and for
   /// anything added while single sign-on is off — mirroring `Project.owner`,
   /// including onDelete=SetNull, because deleting an identity must not delete the
   /// data they contributed.
-  late final _i1.ColumnInt owner;
+  late final _is.ColumnInt owner;
 
   /// False for scanner-discovered SNPs under `genomeDir`, true for anything under
   /// `customSnpDir`. Decides which of the two delete paths applies.
-  late final _i1.ColumnBool custom;
+  late final _is.ColumnBool custom;
 
   /// Where the bytes are in their journey. `ready` is the only status mipgen will
   /// accept, and it is the default so that every row predating this feature —
   /// which means every global SNP — is usable with no data migration.
-  late final _i1.ColumnEnum<_i2.SnpImportStatus> status;
+  late final _is.ColumnEnum<_iq9n7xnd.SnpImportStatus> status;
 
   /// Why it failed, or which step it is on. Never holds a remote response body: a
   /// fetched error page can contain anything and this string is rendered in the
   /// app.
-  late final _i1.ColumnString statusMessage;
+  late final _is.ColumnString statusMessage;
 
   /// Where the files were fetched from, for provenance and for retry. Null for
   /// uploads and for globals. Stored with any userinfo stripped.
-  late final _i1.ColumnString sourceVcfUrl;
+  late final _is.ColumnString sourceVcfUrl;
 
-  late final _i1.ColumnString sourceTbiUrl;
+  late final _is.ColumnString sourceTbiUrl;
 
-  late final _i1.ColumnInt bytesDownloaded;
+  late final _is.ColumnInt bytesDownloaded;
 
   /// From Content-Length when the server sent one, 0 when it did not.
-  late final _i1.ColumnInt totalBytes;
+  late final _is.ColumnInt totalBytes;
 
   /// Heartbeat, written on every status change and every throttled progress
   /// update, so a reconcile pass can tell a live import from one whose server
   /// died mid-flight.
-  late final _i1.ColumnDateTime statusUpdated;
+  late final _is.ColumnDateTime statusUpdated;
 
-  late final _i1.ColumnDateTime created;
+  late final _is.ColumnDateTime created;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     name,
     description,
@@ -711,23 +603,22 @@ class SnpTable extends _i1.Table<int?> {
   ];
 }
 
-class SnpInclude extends _i1.IncludeObject {
+class SnpInclude extends _is.IncludeObject {
   SnpInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => Snp.t;
+  _is.Table<int?> get table => Snp.t;
 }
 
-class SnpIncludeList extends _i1.IncludeList {
+class SnpIncludeList extends _is.IncludeList {
   SnpIncludeList._({
-    _i1.WhereExpressionBuilder<SnpTable>? where,
+    _is.WhereExpressionBuilder<SnpTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -735,10 +626,10 @@ class SnpIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => Snp.t;
+  _is.Table<int?> get table => Snp.t;
 }
 
 class SnpRepository {
@@ -767,22 +658,20 @@ class SnpRepository {
   /// );
   /// ```
   Future<List<Snp>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SnpTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SnpTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SnpTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SnpTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Snp>(
       where: where?.call(Snp.t),
       orderBy: orderBy?.call(Snp.t),
       orderByList: orderByList?.call(Snp.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -809,21 +698,19 @@ class SnpRepository {
   /// );
   /// ```
   Future<Snp?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SnpTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SnpTable>? where,
     int? offset,
-    _i1.OrderByBuilder<SnpTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SnpTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Snp>(
       where: where?.call(Snp.t),
       orderBy: orderBy?.call(Snp.t),
       orderByList: orderByList?.call(Snp.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -833,11 +720,11 @@ class SnpRepository {
 
   /// Finds a single [Snp] by its [id] or null if no such row exists.
   Future<Snp?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Snp>(
       id,
@@ -857,16 +744,22 @@ class SnpRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Snp>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Snp> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<Snp>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -874,12 +767,78 @@ class SnpRepository {
   ///
   /// The returned [Snp] will have its `id` field set.
   Future<Snp> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Snp row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Snp>(
+    return session.db.insertRow<Snp>(row, transaction: transaction);
+  }
+
+  /// Upserts all [Snp]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [Snp]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<Snp>> upsert(
+    _is.DatabaseSession session,
+    List<Snp> rows, {
+    required _is.ColumnSelections<SnpTable> conflictColumns,
+    _is.ColumnSelections<SnpTable>? updateColumns,
+    _is.WhereExpressionBuilder<SnpTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<Snp>(
+      rows,
+      conflictColumns: conflictColumns(Snp.t),
+      updateColumns: updateColumns?.call(Snp.t),
+      updateWhere: updateWhere?.call(Snp.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [Snp] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [Snp] will have its `id` field set.
+  Future<Snp?> upsertRow(
+    _is.DatabaseSession session,
+    Snp row, {
+    required _is.ColumnSelections<SnpTable> conflictColumns,
+    _is.ColumnSelections<SnpTable>? updateColumns,
+    _is.WhereExpressionBuilder<SnpTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<Snp>(
       row,
+      conflictColumns: conflictColumns(Snp.t),
+      updateColumns: updateColumns?.call(Snp.t),
+      updateWhere: updateWhere?.call(Snp.t),
       transaction: transaction,
     );
   }
@@ -889,16 +848,22 @@ class SnpRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Snp>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Snp> rows, {
-    _i1.ColumnSelections<SnpTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<SnpTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<Snp>(
       rows,
       columns: columns?.call(Snp.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -906,10 +871,10 @@ class SnpRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Snp> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Snp row, {
-    _i1.ColumnSelections<SnpTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<SnpTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<Snp>(
       row,
@@ -921,10 +886,10 @@ class SnpRepository {
   /// Updates a single [Snp] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Snp?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<SnpUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<SnpUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<Snp>(
       id,
@@ -935,16 +900,20 @@ class SnpRepository {
 
   /// Updates all [Snp]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Snp>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<SnpUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<SnpTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<SnpUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<SnpTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SnpTable>? orderBy,
-    _i1.OrderByListBuilder<SnpTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<Snp>(
       columnValues: columnValues(Snp.t.updateTable),
@@ -953,56 +922,80 @@ class SnpRepository {
       offset: offset,
       orderBy: orderBy?.call(Snp.t),
       orderByList: orderByList?.call(Snp.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [Snp]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Snp>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Snp> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<Snp>(
       rows,
+      orderBy: orderBy?.call(Snp.t),
+      orderByList: orderByList?.call(Snp.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [Snp].
   Future<Snp> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Snp row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Snp>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Snp>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Snp>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<SnpTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<SnpTable> where,
+    _is.OrderByBuilder<SnpTable>? orderBy,
+    _is.OrderByListBuilder<SnpTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<Snp>(
       where: where(Snp.t),
+      orderBy: orderBy?.call(Snp.t),
+      orderByList: orderByList?.call(Snp.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SnpTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SnpTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<Snp>(
       where: where?.call(Snp.t),
@@ -1013,11 +1006,11 @@ class SnpRepository {
 
   /// Acquires row-level locks on [Snp] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<SnpTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<SnpTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<Snp>(
       where: where(Snp.t),

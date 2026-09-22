@@ -15,18 +15,10 @@ import 'project_options_form.dart';
 /// should not come back.
 class NewProjectController extends ChangeNotifier {
   NewProjectController({
-    required Future<ProjectOptions> Function() loadDefaultOptions,
-    required Future<ProjectOptions> Function(ProjectOptions options)
-    insertOptions,
-    required Future<Project> Function(
-      String name,
-      ProjectOptions options,
-      String description,
-    )
-    createProject,
-  }) : _loadDefaultOptions = loadDefaultOptions,
-       _insertOptions = insertOptions,
-       _createProject = createProject;
+    required this._loadDefaultOptions,
+    required this._insertOptions,
+    required this._createProject,
+  });
 
   final Future<ProjectOptions> Function() _loadDefaultOptions;
   final Future<ProjectOptions> Function(ProjectOptions options) _insertOptions;

@@ -10,10 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'score_method.dart' as _i2;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'score_method.dart' as _iootg8bv;
 
-abstract class ProjectOptions implements _i1.SerializableModel {
+abstract class ProjectOptions
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   ProjectOptions._({
     this.id,
     int? minCaptureSize,
@@ -39,7 +40,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
     bool? halfSealBothStrands,
     bool? doubleTileStrandUnaware,
     bool? doubleTileStrandsSeparately,
-    _i2.ScoreMethod? scoreMethod,
+    _iootg8bv.ScoreMethod? scoreMethod,
     double? logisticOptimalScore,
     double? svrOptimalScore,
     double? logisticPriorityScore,
@@ -67,7 +68,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
        halfSealBothStrands = halfSealBothStrands ?? false,
        doubleTileStrandUnaware = doubleTileStrandUnaware ?? false,
        doubleTileStrandsSeparately = doubleTileStrandsSeparately ?? false,
-       scoreMethod = scoreMethod ?? _i2.ScoreMethod.logistic,
+       scoreMethod = scoreMethod ?? _iootg8bv.ScoreMethod.logistic,
        logisticOptimalScore = logisticOptimalScore ?? 0.98,
        svrOptimalScore = svrOptimalScore ?? 2.2,
        logisticPriorityScore = logisticPriorityScore ?? 0.9,
@@ -100,7 +101,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
     bool? halfSealBothStrands,
     bool? doubleTileStrandUnaware,
     bool? doubleTileStrandsSeparately,
-    _i2.ScoreMethod? scoreMethod,
+    _iootg8bv.ScoreMethod? scoreMethod,
     double? logisticOptimalScore,
     double? svrOptimalScore,
     double? logisticPriorityScore,
@@ -126,47 +127,47 @@ abstract class ProjectOptions implements _i1.SerializableModel {
       maxArmCopyProduct: jsonSerialization['maxArmCopyProduct'] as int?,
       trf: jsonSerialization['trf'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['trf']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['trf']),
       genomeDir: jsonSerialization['genomeDir'] as String?,
       featureFlank: jsonSerialization['featureFlank'] as int?,
       captureIncrement: jsonSerialization['captureIncrement'] as int?,
       logisticHeuristic: jsonSerialization['logisticHeuristic'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['logisticHeuristic'],
             ),
       maxMipOverlap: jsonSerialization['maxMipOverlap'] as int?,
       startingMipOverlap: jsonSerialization['startingMipOverlap'] as int?,
       checkCopyNumber: jsonSerialization['checkCopyNumber'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['checkCopyNumber'],
             ),
       sealBothStrands: jsonSerialization['sealBothStrands'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['sealBothStrands'],
             ),
       halfSealBothStrands: jsonSerialization['halfSealBothStrands'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['halfSealBothStrands'],
             ),
       doubleTileStrandUnaware:
           jsonSerialization['doubleTileStrandUnaware'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['doubleTileStrandUnaware'],
             ),
       doubleTileStrandsSeparately:
           jsonSerialization['doubleTileStrandsSeparately'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['doubleTileStrandsSeparately'],
             ),
       scoreMethod: jsonSerialization['scoreMethod'] == null
           ? null
-          : _i2.ScoreMethod.fromJson(
+          : _iootg8bv.ScoreMethod.fromJson(
               (jsonSerialization['scoreMethod'] as String),
             ),
       logisticOptimalScore: (jsonSerialization['logisticOptimalScore'] as num?)
@@ -179,7 +180,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
           ?.toDouble(),
       silentMode: jsonSerialization['silentMode'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['silentMode']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['silentMode']),
       bwaThreads: jsonSerialization['bwaThreads'] as int?,
     );
   }
@@ -235,7 +236,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
 
   bool doubleTileStrandsSeparately;
 
-  _i2.ScoreMethod scoreMethod;
+  _iootg8bv.ScoreMethod scoreMethod;
 
   double logisticOptimalScore;
 
@@ -251,7 +252,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [ProjectOptions]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ProjectOptions copyWith({
     int? id,
     int? minCaptureSize,
@@ -277,7 +278,7 @@ abstract class ProjectOptions implements _i1.SerializableModel {
     bool? halfSealBothStrands,
     bool? doubleTileStrandUnaware,
     bool? doubleTileStrandsSeparately,
-    _i2.ScoreMethod? scoreMethod,
+    _iootg8bv.ScoreMethod? scoreMethod,
     double? logisticOptimalScore,
     double? svrOptimalScore,
     double? logisticPriorityScore,
@@ -324,8 +325,46 @@ abstract class ProjectOptions implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'ProjectOptions',
+      if (id != null) 'id': id,
+      'minCaptureSize': minCaptureSize,
+      'maxCaptureSize': maxCaptureSize,
+      if (armLengths != null) 'armLengths': armLengths,
+      'armLengthSums': armLengthSums,
+      'extMinLength': extMinLength,
+      'extMaxLength': extMaxLength,
+      'ligMinLength': ligMinLength,
+      'tagSizes': tagSizes,
+      'maskedArmThreshold': maskedArmThreshold,
+      'targetArmCopy': targetArmCopy,
+      'maxArmCopyProduct': maxArmCopyProduct,
+      'trf': trf,
+      if (genomeDir != null) 'genomeDir': genomeDir,
+      'featureFlank': featureFlank,
+      'captureIncrement': captureIncrement,
+      'logisticHeuristic': logisticHeuristic,
+      'maxMipOverlap': maxMipOverlap,
+      'startingMipOverlap': startingMipOverlap,
+      'checkCopyNumber': checkCopyNumber,
+      'sealBothStrands': sealBothStrands,
+      'halfSealBothStrands': halfSealBothStrands,
+      'doubleTileStrandUnaware': doubleTileStrandUnaware,
+      'doubleTileStrandsSeparately': doubleTileStrandsSeparately,
+      'scoreMethod': scoreMethod.toJson(),
+      'logisticOptimalScore': logisticOptimalScore,
+      'svrOptimalScore': svrOptimalScore,
+      'logisticPriorityScore': logisticPriorityScore,
+      'svrPriorityScore': svrPriorityScore,
+      'silentMode': silentMode,
+      'bwaThreads': bwaThreads,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -357,7 +396,7 @@ class _ProjectOptionsImpl extends ProjectOptions {
     bool? halfSealBothStrands,
     bool? doubleTileStrandUnaware,
     bool? doubleTileStrandsSeparately,
-    _i2.ScoreMethod? scoreMethod,
+    _iootg8bv.ScoreMethod? scoreMethod,
     double? logisticOptimalScore,
     double? svrOptimalScore,
     double? logisticPriorityScore,
@@ -400,7 +439,7 @@ class _ProjectOptionsImpl extends ProjectOptions {
 
   /// Returns a shallow copy of this [ProjectOptions]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ProjectOptions copyWith({
     Object? id = _Undefined,
@@ -427,7 +466,7 @@ class _ProjectOptionsImpl extends ProjectOptions {
     bool? halfSealBothStrands,
     bool? doubleTileStrandUnaware,
     bool? doubleTileStrandsSeparately,
-    _i2.ScoreMethod? scoreMethod,
+    _iootg8bv.ScoreMethod? scoreMethod,
     double? logisticOptimalScore,
     double? svrOptimalScore,
     double? logisticPriorityScore,

@@ -21,44 +21,23 @@ import 'snp_upload_controller.dart';
 /// transfer that has to outlive this widget.
 class SnpSectionController extends ChangeNotifier {
   SnpSectionController({
-    required int genomeId,
-    required Future<List<Snp>> Function(int genomeId) loadSnps,
-    required Future<List<Snp>> Function() loadMySnps,
-    required Future<void> Function(int snpId, bool shared) setShared,
-    required Future<void> Function(int snpId, String name, String description)
-    rename,
-    required Future<void> Function(int snpId) retryImport,
-    required Future<void> Function(int snpId) cancelUpload,
-    required Future<void> Function(int snpId) deleteSnp,
-    required Future<void> Function(
-      int snpId,
-      String? password, {
-      required bool force,
-    })
-    deleteAsAdmin,
-    required Future<List<SnpUsageDto>> Function(int snpId) loadUsage,
-    required Future<void> Function(CustomSnpRequestDto request) importFromUrls,
-    required Future<Snp> Function(CustomSnpRequestDto request) createUpload,
+    required this._genomeId,
+    required this._loadSnps,
+    required this._loadMySnps,
+    required this._setShared,
+    required this._rename,
+    required this._retryImport,
+    required this._cancelUpload,
+    required this._deleteSnp,
+    required this._deleteAsAdmin,
+    required this._loadUsage,
+    required this._importFromUrls,
+    required this._createUpload,
     required SnpUploadController uploads,
-    required bool Function() isAdmin,
-    Listenable? auth,
-    Listenable? access,
-  }) : _genomeId = genomeId,
-       _loadSnps = loadSnps,
-       _loadMySnps = loadMySnps,
-       _setShared = setShared,
-       _rename = rename,
-       _retryImport = retryImport,
-       _cancelUpload = cancelUpload,
-       _deleteSnp = deleteSnp,
-       _deleteAsAdmin = deleteAsAdmin,
-       _loadUsage = loadUsage,
-       _importFromUrls = importFromUrls,
-       _createUpload = createUpload,
-       uploads = uploads,
-       _isAdmin = isAdmin,
-       _auth = auth,
-       _access = access {
+    required this._isAdmin,
+    this._auth,
+    this._access,
+  }) : uploads = uploads {
     _auth?.addListener(_onAuthChanged);
     _access?.addListener(_notify);
     // An upload's progress is only known in this browser — the server cannot see

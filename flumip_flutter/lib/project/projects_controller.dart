@@ -21,20 +21,14 @@ import 'project_state.dart';
 /// made the tab testable.
 class ProjectsController extends ChangeNotifier {
   ProjectsController({
-    required Future<List<Project>> Function() loadProjects,
-    required Future<void> Function(int projectId) deleteProject,
-    required Future<void> Function(int projectId, int? ownerId) setOwner,
-    required Future<bool> Function() loadNotificationsAvailable,
-    required Future<List<FlumipUserDto>> Function() loadAssignableOwners,
-    required bool Function() isAdmin,
-    Listenable? auth,
-  }) : _loadProjects = loadProjects,
-       _deleteProject = deleteProject,
-       _setOwner = setOwner,
-       _loadNotificationsAvailable = loadNotificationsAvailable,
-       _loadAssignableOwners = loadAssignableOwners,
-       _isAdmin = isAdmin,
-       _auth = auth {
+    required this._loadProjects,
+    required this._deleteProject,
+    required this._setOwner,
+    required this._loadNotificationsAvailable,
+    required this._loadAssignableOwners,
+    required this._isAdmin,
+    this._auth,
+  }) {
     // Who may reassign a project changes with sign-in state, and `TabBarView`
     // builds this tab before the bearer token exists — the same reason
     // AccessController listens.

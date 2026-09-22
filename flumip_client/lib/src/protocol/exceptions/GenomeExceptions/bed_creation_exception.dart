@@ -10,10 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class BedCreationException
-    implements _i1.SerializableException, _i1.SerializableModel {
+    implements
+        _isc.SerializableException,
+        _isc.SerializableModel,
+        _isc.ProtocolSerialization {
   BedCreationException._({required this.message});
 
   factory BedCreationException({required String message}) =
@@ -31,14 +34,16 @@ abstract class BedCreationException
 
   /// Returns a shallow copy of this [BedCreationException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   BedCreationException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
-    return {
-      '__className__': 'BedCreationException',
-      'message': message,
-    };
+    return {'__className__': 'BedCreationException', 'message': message};
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {'__className__': 'BedCreationException', 'message': message};
   }
 
   @override
@@ -53,7 +58,7 @@ class _BedCreationExceptionImpl extends BedCreationException {
 
   /// Returns a shallow copy of this [BedCreationException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   BedCreationException copyWith({String? message}) {
     return BedCreationException(message: message ?? this.message);

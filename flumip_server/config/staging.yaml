@@ -48,3 +48,14 @@ redis:
   enabled: false
   host: redis.private-staging.examplepod.com
   port: 6379
+
+# The largest request body the **API** server will accept, in bytes. This is the
+# framework default stated explicitly, not a change.
+#
+# ⚠️ It applies to the API server only. The web server's routes read their own
+# bodies, so `SnpUploadRoute` — where the request body *is* a multi-gigabyte VCF
+# streamed to disk — is not bounded by this. Its cap is
+# `SnpService.maxImportBytes`, enforced via `request.read(maxLength:)`. Changing
+# this number will not let larger SNP sets be uploaded, and lowering it will not
+# stop them.
+maxRequestSize: 524288

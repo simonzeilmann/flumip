@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Genome implements _i1.SerializableModel {
+abstract class Genome
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Genome._({
     this.id,
     required this.name,
@@ -65,13 +66,13 @@ abstract class Genome implements _i1.SerializableModel {
       category: jsonSerialization['category'] as String?,
       active: jsonSerialization['active'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['active']),
       indexed: jsonSerialization['indexed'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
       indexing: jsonSerialization['indexing'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
       indexPID: jsonSerialization['indexPID'] as int?,
       indexResults: jsonSerialization['indexResults'] as int?,
       size: jsonSerialization['size'] as int?,
@@ -111,7 +112,7 @@ abstract class Genome implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Genome]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Genome copyWith({
     int? id,
     String? name,
@@ -150,8 +151,29 @@ abstract class Genome implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Genome',
+      if (id != null) 'id': id,
+      'name': name,
+      'description': description,
+      if (path != null) 'path': path,
+      if (fastaPath != null) 'fastaPath': fastaPath,
+      if (refPath != null) 'refPath': refPath,
+      if (snpFolder != null) 'snpFolder': snpFolder,
+      if (category != null) 'category': category,
+      'active': active,
+      'indexed': indexed,
+      'indexing': indexing,
+      'indexPID': indexPID,
+      'indexResults': indexResults,
+      'size': size,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -192,7 +214,7 @@ class _GenomeImpl extends Genome {
 
   /// Returns a shallow copy of this [Genome]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Genome copyWith({
     Object? id = _Undefined,

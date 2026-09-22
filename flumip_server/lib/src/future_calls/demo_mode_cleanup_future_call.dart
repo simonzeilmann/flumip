@@ -15,6 +15,10 @@ import 'package:serverpod/serverpod.dart';
 /// `identifier`, and `futureCalls.cancel(identifier)` removes it again, which is
 /// what stops a deleted project's cleanup from firing against a row that is
 /// already gone.
+/// Safe to run more than once under Serverpod 4's at-least-once delivery, and
+/// deliberately left unguarded: `run` re-reads the settings, re-derives the
+/// retention window, and wraps the project reload in a try/catch, so a second
+/// delivery finds the project already gone and returns after logging.
 class DemoModeCleanupFutureCall extends FutureCall<Project> {
   final projectService = sl<ProjectService>();
   final settingsService = sl<SettingsService>();

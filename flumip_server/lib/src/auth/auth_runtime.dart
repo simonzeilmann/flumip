@@ -27,8 +27,8 @@ import 'package:serverpod/serverpod.dart';
 class AuthRuntime {
   AuthRuntime({
     this.refreshInterval = const Duration(seconds: 30),
-    Map<String, String>? environment,
-  }) : _environment = environment;
+    this._environment,
+  });
 
   /// How often the configuration and discovery document are re-read.
   ///

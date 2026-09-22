@@ -10,31 +10,34 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'dart:async' as _i2;
-import 'package:flumip_client/src/protocol/auth_config_dto.dart' as _i3;
-import 'package:flumip_client/src/protocol/auth_user_dto.dart' as _i4;
-import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i5;
-import 'package:flumip_client/src/protocol/genome.dart' as _i6;
-import 'package:flumip_client/src/protocol/snp.dart' as _i7;
-import 'package:flumip_client/src/protocol/project_options.dart' as _i8;
-import 'package:flumip_client/src/protocol/project.dart' as _i9;
-import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i10;
-import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i11;
-import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _i12;
-import 'package:flumip_client/src/protocol/settings.dart' as _i13;
-import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart' as _i14;
-import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart' as _i15;
-import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _i16;
-import 'protocol.dart' as _i17;
+import 'dart:async' as _ida;
+import 'package:flumip_client/src/protocol/auth_admin_status_dto.dart'
+    as _ifh830yy;
+import 'package:flumip_client/src/protocol/auth_config_dto.dart' as _im9pga5k;
+import 'package:flumip_client/src/protocol/auth_user_dto.dart' as _iqovtkew;
+import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart'
+    as _iqct5zkb;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i15z9m0g;
+import 'package:flumip_client/src/protocol/genome.dart' as _ixuye8o9;
+import 'package:flumip_client/src/protocol/project.dart' as _iqi8mkqf;
+import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i5l1g0eo;
+import 'package:flumip_client/src/protocol/project_options.dart' as _iqoum48a;
+import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i8y6t52d;
+import 'package:flumip_client/src/protocol/settings.dart' as _ibile1le;
+import 'package:flumip_client/src/protocol/snp.dart' as _iumnx4id;
+import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _idqeum9a;
+import 'package:flumip_client/src/protocol/user_settings_dto.dart' as _ikcb9gvb;
+import 'package:http/http.dart' as _i85jenna;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'protocol.dart' as _il2as5qe;
 
 /// What the app needs in order to decide whether to show a sign-in screen.
 ///
 /// Plain [Endpoint], never a [FlumipEndpoint]: the app calls [config] before it
 /// has any credential at all, so requiring one would be circular.
 /// {@category Endpoint}
-class EndpointAuth extends _i1.EndpointRef {
-  EndpointAuth(_i1.EndpointCaller caller) : super(caller);
+class EndpointAuth extends _isc.EndpointRef {
+  EndpointAuth(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'auth';
@@ -44,20 +47,12 @@ class EndpointAuth extends _i1.EndpointRef {
   /// Answered unauthenticated on purpose. It leaks only whether SSO is on and a
   /// label an administrator chose — both of which are visible from the sign-in
   /// page anyway.
-  _i2.Future<_i3.AuthConfigDto> config() =>
-      caller.callServerEndpoint<_i3.AuthConfigDto>(
-        'auth',
-        'config',
-        {},
-      );
+  _ida.Future<_im9pga5k.AuthConfigDto> config() =>
+      caller.callServerEndpoint<_im9pga5k.AuthConfigDto>('auth', 'config', {});
 
   /// The signed-in user, or null when this request carries no valid session.
-  _i2.Future<_i4.AuthUserDto?> me() =>
-      caller.callServerEndpoint<_i4.AuthUserDto?>(
-        'auth',
-        'me',
-        {},
-      );
+  _ida.Future<_iqovtkew.AuthUserDto?> me() =>
+      caller.callServerEndpoint<_iqovtkew.AuthUserDto?>('auth', 'me', {});
 
   /// Ends this browser session everywhere.
   ///
@@ -65,17 +60,14 @@ class EndpointAuth extends _i1.EndpointRef {
   /// every bearer minted from it — so other tabs lose access too, which is what
   /// signing out should mean. The cookie itself is cleared by `/auth/logout`,
   /// since only the web server can set headers on the app's own origin.
-  _i2.Future<void> logout() => caller.callServerEndpoint<void>(
-    'auth',
-    'logout',
-    {},
-  );
+  _ida.Future<void> logout() =>
+      caller.callServerEndpoint<void>('auth', 'logout', {});
 }
 
 /// Endpoint for handling file-related operations.
 /// {@category Endpoint}
 class EndpointFile extends EndpointFlumip {
-  EndpointFile(_i1.EndpointCaller caller) : super(caller);
+  EndpointFile(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'file';
@@ -84,55 +76,45 @@ class EndpointFile extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  _i2.Future<void> deleteByProducts(int projectID) =>
-      caller.callServerEndpoint<void>(
-        'file',
-        'deleteByProducts',
-        {'projectID': projectID},
-      );
+  _ida.Future<void> deleteByProducts(int projectID) =>
+      caller.callServerEndpoint<void>('file', 'deleteByProducts', {
+        'projectID': projectID,
+      });
 
   /// Shows the SNP MIPs result for the specified project.
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \returns A list of strings containing the SNP MIPs result.
-  _i2.Future<List<String>> showSnpMipsResult(int projectID) =>
-      caller.callServerEndpoint<List<String>>(
-        'file',
-        'showSnpMipsResult',
-        {'projectID': projectID},
-      );
+  _ida.Future<List<String>> showSnpMipsResult(int projectID) =>
+      caller.callServerEndpoint<List<String>>('file', 'showSnpMipsResult', {
+        'projectID': projectID,
+      });
 
   /// Shows the MIPs result for the specified project.
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \returns A list of strings containing the MIPs result.
-  _i2.Future<List<String>> showMipsResult(int projectID) =>
-      caller.callServerEndpoint<List<String>>(
-        'file',
-        'showMipsResult',
-        {'projectID': projectID},
-      );
+  _ida.Future<List<String>> showMipsResult(int projectID) =>
+      caller.callServerEndpoint<List<String>>('file', 'showMipsResult', {
+        'projectID': projectID,
+      });
 
   /// Shows the MIPs progress for the specified project.
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \returns A list of strings containing the MIPs progress.
-  _i2.Future<List<String>> showMipsProgress(int projectID) =>
-      caller.callServerEndpoint<List<String>>(
-        'file',
-        'showMipsProgress',
-        {'projectID': projectID},
-      );
+  _ida.Future<List<String>> showMipsProgress(int projectID) =>
+      caller.callServerEndpoint<List<String>>('file', 'showMipsProgress', {
+        'projectID': projectID,
+      });
 
-  _i2.Future<List<String>> showUSCSTrack(int projectID) =>
-      caller.callServerEndpoint<List<String>>(
-        'file',
-        'showUSCSTrack',
-        {'projectID': projectID},
-      );
+  _ida.Future<List<String>> showUSCSTrack(int projectID) =>
+      caller.callServerEndpoint<List<String>>('file', 'showUSCSTrack', {
+        'projectID': projectID,
+      });
 
   /// The token for this project's public UCSC track URL.
   ///
@@ -143,12 +125,10 @@ class EndpointFile extends EndpointFlumip {
   ///
   /// This is the access check that the public route cannot do: the token is only
   /// ever released to somebody allowed to open the project.
-  _i2.Future<String> getUcscTrackToken(int projectID) =>
-      caller.callServerEndpoint<String>(
-        'file',
-        'getUcscTrackToken',
-        {'projectID': projectID},
-      );
+  _ida.Future<String> getUcscTrackToken(int projectID) =>
+      caller.callServerEndpoint<String>('file', 'getUcscTrackToken', {
+        'projectID': projectID,
+      });
 
   /// Lists a project's files, so the app can offer them for download.
   ///
@@ -160,46 +140,11 @@ class EndpointFile extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  _i2.Future<List<_i5.ProjectFileDto>> listProjectFiles(int projectID) =>
-      caller.callServerEndpoint<List<_i5.ProjectFileDto>>(
+  _ida.Future<List<_i5l1g0eo.ProjectFileDto>> listProjectFiles(int projectID) =>
+      caller.callServerEndpoint<List<_i5l1g0eo.ProjectFileDto>>(
         'file',
         'listProjectFiles',
         {'projectID': projectID},
-      );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'file',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'file',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
       );
 }
 
@@ -215,37 +160,14 @@ class EndpointFile extends EndpointFlumip {
 /// misconfiguration becomes a lockout with no way back. That endpoint has its
 /// own gate, satisfied by either the settings password or an admin session.
 /// {@category Endpoint}
-abstract class EndpointFlumip extends _i1.EndpointRef {
-  EndpointFlumip(_i1.EndpointCaller caller) : super(caller);
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  _i2.Future<void> requireProject(int projectId);
-
-  /// Checks that the caller may touch the project owning these options.
-  _i2.Future<void> requireProjectOptions(int optionsId);
+abstract class EndpointFlumip extends _isc.EndpointRef {
+  EndpointFlumip(_isc.EndpointCaller caller) : super(caller);
 }
 
 /// Endpoint for genome-related operations.
 /// {@category Endpoint}
 class EndpointGenome extends EndpointFlumip {
-  EndpointGenome(_i1.EndpointCaller caller) : super(caller);
+  EndpointGenome(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'genome';
@@ -256,20 +178,16 @@ class EndpointGenome extends EndpointFlumip {
   /// \param id The ID of the genome to retrieve.
   /// \returns The genome with the specified ID.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<_i6.Genome> getGenome(int id) =>
-      caller.callServerEndpoint<_i6.Genome>(
-        'genome',
-        'getGenome',
-        {'id': id},
-      );
+  _ida.Future<_ixuye8o9.Genome> getGenome(int id) => caller
+      .callServerEndpoint<_ixuye8o9.Genome>('genome', 'getGenome', {'id': id});
 
   /// Retrieves all genomes.
   ///
   /// \param session The current session.
   /// \returns A list of all genomes.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i6.Genome>> getAllGenomes() =>
-      caller.callServerEndpoint<List<_i6.Genome>>(
+  _ida.Future<List<_ixuye8o9.Genome>> getAllGenomes() =>
+      caller.callServerEndpoint<List<_ixuye8o9.Genome>>(
         'genome',
         'getAllGenomes',
         {},
@@ -281,27 +199,18 @@ class EndpointGenome extends EndpointFlumip {
   /// \param id The ID of the genome to update.
   /// \param genome The updated genome data.
   /// \throws Exception if an error occurs during the update.
-  _i2.Future<void> updateGenome(
-    int id,
-    _i6.Genome genome,
-  ) => caller.callServerEndpoint<void>(
-    'genome',
-    'updateGenome',
-    {
-      'id': id,
-      'genome': genome,
-    },
-  );
+  _ida.Future<void> updateGenome(int id, _ixuye8o9.Genome genome) =>
+      caller.callServerEndpoint<void>('genome', 'updateGenome', {
+        'id': id,
+        'genome': genome,
+      });
 
   /// Collects genomes from the genome directory.
   ///
   /// \param session The current session.
   /// \throws Exception if an error occurs during collection.
-  _i2.Future<void> collectGenomes() => caller.callServerEndpoint<void>(
-    'genome',
-    'collectGenomes',
-    {},
-  );
+  _ida.Future<void> collectGenomes() =>
+      caller.callServerEndpoint<void>('genome', 'collectGenomes', {});
 
   /// Retrieves an SNP by its ID.
   ///
@@ -309,11 +218,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param id The ID of the SNP to retrieve.
   /// \returns The SNP with the specified ID.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<_i7.Snp> getSnp(int id) => caller.callServerEndpoint<_i7.Snp>(
-    'genome',
-    'getSnp',
-    {'id': id},
-  );
+  _ida.Future<_iumnx4id.Snp> getSnp(int id) =>
+      caller.callServerEndpoint<_iumnx4id.Snp>('genome', 'getSnp', {'id': id});
 
   /// Retrieves all SNPs for a specific genome.
   ///
@@ -321,8 +227,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param genomeId The ID of the genome to retrieve SNPs for.
   /// \returns A list of all SNPs for the specified genome.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i7.Snp>> getAllSnpForGenome(int genomeId) =>
-      caller.callServerEndpoint<List<_i7.Snp>>(
+  _ida.Future<List<_iumnx4id.Snp>> getAllSnpForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_iumnx4id.Snp>>(
         'genome',
         'getAllSnpForGenome',
         {'genomeId': genomeId},
@@ -333,12 +239,8 @@ class EndpointGenome extends EndpointFlumip {
   /// \param session The current session.
   /// \returns A list of all genome categories.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<String>> getCategories() =>
-      caller.callServerEndpoint<List<String>>(
-        'genome',
-        'getCategories',
-        {},
-      );
+  _ida.Future<List<String>> getCategories() =>
+      caller.callServerEndpoint<List<String>>('genome', 'getCategories', {});
 
   /// Retrieves genomes by category.
   ///
@@ -346,65 +248,24 @@ class EndpointGenome extends EndpointFlumip {
   /// \param category The category to filter genomes by.
   /// \returns A list of genomes in the specified category.
   /// \throws Exception if an error occurs during retrieval.
-  _i2.Future<List<_i6.Genome>> getGenomeByCategory(String category) =>
-      caller.callServerEndpoint<List<_i6.Genome>>(
+  _ida.Future<List<_ixuye8o9.Genome>> getGenomeByCategory(String category) =>
+      caller.callServerEndpoint<List<_ixuye8o9.Genome>>(
         'genome',
         'getGenomeByCategory',
         {'category': category},
       );
 
-  _i2.Future<void> indexFasta(int id) => caller.callServerEndpoint<void>(
-    'genome',
-    'indexFasta',
-    {'id': id},
-  );
+  _ida.Future<void> indexFasta(int id) =>
+      caller.callServerEndpoint<void>('genome', 'indexFasta', {'id': id});
 
-  _i2.Future<void> deleteFastaIndex(int id) => caller.callServerEndpoint<void>(
-    'genome',
-    'deleteFastaIndex',
-    {'id': id},
-  );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'genome',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'genome',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
-      );
+  _ida.Future<void> deleteFastaIndex(int id) =>
+      caller.callServerEndpoint<void>('genome', 'deleteFastaIndex', {'id': id});
 }
 
 /// Endpoint for handling MIP generation-related operations.
 /// {@category Endpoint}
 class EndpointMipgen extends EndpointFlumip {
-  EndpointMipgen(_i1.EndpointCaller caller) : super(caller);
+  EndpointMipgen(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'mipgen';
@@ -413,70 +274,27 @@ class EndpointMipgen extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  _i2.Future<void> createBedFile(int projectID) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'createBedFile',
-        {'projectID': projectID},
-      );
+  _ida.Future<void> createBedFile(int projectID) =>
+      caller.callServerEndpoint<void>('mipgen', 'createBedFile', {
+        'projectID': projectID,
+      });
 
   /// Generates MIPs for the specified project.
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \param deleteExcessFiles Whether to delete intermediate files after generating MIPs.
-  _i2.Future<void> generateMips(
-    int projectID,
-    bool deleteExcessFiles,
-  ) => caller.callServerEndpoint<void>(
-    'mipgen',
-    'generateMips',
-    {
-      'projectID': projectID,
-      'deleteExcessFiles': deleteExcessFiles,
-    },
-  );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'mipgen',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
-      );
+  _ida.Future<void> generateMips(int projectID, bool deleteExcessFiles) =>
+      caller.callServerEndpoint<void>('mipgen', 'generateMips', {
+        'projectID': projectID,
+        'deleteExcessFiles': deleteExcessFiles,
+      });
 }
 
 /// Endpoint for handling project options-related operations.
 /// {@category Endpoint}
 class EndpointOptions extends EndpointFlumip {
-  EndpointOptions(_i1.EndpointCaller caller) : super(caller);
+  EndpointOptions(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'options';
@@ -485,8 +303,8 @@ class EndpointOptions extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \returns The created [ProjectOptions] object.
-  _i2.Future<_i8.ProjectOptions> createProjectOptions() =>
-      caller.callServerEndpoint<_i8.ProjectOptions>(
+  _ida.Future<_iqoum48a.ProjectOptions> createProjectOptions() =>
+      caller.callServerEndpoint<_iqoum48a.ProjectOptions>(
         'options',
         'createProjectOptions',
         {},
@@ -497,9 +315,9 @@ class EndpointOptions extends EndpointFlumip {
   /// \param session The current session.
   /// \param options The [ProjectOptions] object to insert.
   /// \returns The inserted [ProjectOptions] object.
-  _i2.Future<_i8.ProjectOptions> insertProjectOptions(
-    _i8.ProjectOptions options,
-  ) => caller.callServerEndpoint<_i8.ProjectOptions>(
+  _ida.Future<_iqoum48a.ProjectOptions> insertProjectOptions(
+    _iqoum48a.ProjectOptions options,
+  ) => caller.callServerEndpoint<_iqoum48a.ProjectOptions>(
     'options',
     'insertProjectOptions',
     {'options': options},
@@ -510,8 +328,8 @@ class EndpointOptions extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project options to retrieve.
   /// \returns The retrieved [ProjectOptions] object.
-  _i2.Future<_i8.ProjectOptions> getProjectOptions(int id) =>
-      caller.callServerEndpoint<_i8.ProjectOptions>(
+  _ida.Future<_iqoum48a.ProjectOptions> getProjectOptions(int id) =>
+      caller.callServerEndpoint<_iqoum48a.ProjectOptions>(
         'options',
         'getProjectOptions',
         {'id': id},
@@ -522,69 +340,26 @@ class EndpointOptions extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project options to update.
   /// \param options The [ProjectOptions] object to update.
-  _i2.Future<void> updateProjectOptions(
+  _ida.Future<void> updateProjectOptions(
     int id,
-    _i8.ProjectOptions options,
-  ) => caller.callServerEndpoint<void>(
-    'options',
-    'updateProjectOptions',
-    {
-      'id': id,
-      'options': options,
-    },
-  );
+    _iqoum48a.ProjectOptions options,
+  ) => caller.callServerEndpoint<void>('options', 'updateProjectOptions', {
+    'id': id,
+    'options': options,
+  });
 
   /// Deletes project options by ID.
   ///
   /// \param session The current session.
   /// \param id The ID of the project options to delete.
-  _i2.Future<void> deleteProjectOptions(int id) =>
-      caller.callServerEndpoint<void>(
-        'options',
-        'deleteProjectOptions',
-        {'id': id},
-      );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'options',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'options',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
-      );
+  _ida.Future<void> deleteProjectOptions(int id) => caller
+      .callServerEndpoint<void>('options', 'deleteProjectOptions', {'id': id});
 }
 
 /// Endpoint for handling project-related operations.
 /// {@category Endpoint}
 class EndpointProject extends EndpointFlumip {
-  EndpointProject(_i1.EndpointCaller caller) : super(caller);
+  EndpointProject(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'project';
@@ -596,36 +371,29 @@ class EndpointProject extends EndpointFlumip {
   /// \param options The options for the project.
   /// \param description An optional description of the project.
   /// \returns The created [Project] object.
-  _i2.Future<_i9.Project> createProject(
+  _ida.Future<_iqi8mkqf.Project> createProject(
     String name,
-    _i8.ProjectOptions options, [
+    _iqoum48a.ProjectOptions options, [
     String? description,
-  ]) => caller.callServerEndpoint<_i9.Project>(
+  ]) => caller.callServerEndpoint<_iqi8mkqf.Project>(
     'project',
     'createProject',
-    {
-      'name': name,
-      'options': options,
-      'description': description,
-    },
+    {'name': name, 'options': options, 'description': description},
   );
 
   /// Deletes a project by ID.
   ///
   /// \param session The current session.
   /// \param id The ID of the project to delete.
-  _i2.Future<void> deleteProject(int id) => caller.callServerEndpoint<void>(
-    'project',
-    'deleteProject',
-    {'id': id},
-  );
+  _ida.Future<void> deleteProject(int id) =>
+      caller.callServerEndpoint<void>('project', 'deleteProject', {'id': id});
 
   /// Retrieves all projects.
   ///
   /// \param session The current session.
   /// \returns A list of [Project] objects.
-  _i2.Future<List<_i9.Project>> getProjects() =>
-      caller.callServerEndpoint<List<_i9.Project>>(
+  _ida.Future<List<_iqi8mkqf.Project>> getProjects() =>
+      caller.callServerEndpoint<List<_iqi8mkqf.Project>>(
         'project',
         'getProjects',
         {},
@@ -636,97 +404,65 @@ class EndpointProject extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project to retrieve.
   /// \returns The retrieved [Project] object.
-  _i2.Future<_i9.Project> getProject(int id) =>
-      caller.callServerEndpoint<_i9.Project>(
-        'project',
-        'getProject',
-        {'id': id},
-      );
+  _ida.Future<_iqi8mkqf.Project> getProject(int id) =>
+      caller.callServerEndpoint<_iqi8mkqf.Project>('project', 'getProject', {
+        'id': id,
+      });
 
   /// Adds a gene to a project.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param gene The gene to add.
-  _i2.Future<void> addGeneToProject(
-    int id,
-    String gene,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'addGeneToProject',
-    {
-      'id': id,
-      'gene': gene,
-    },
-  );
+  _ida.Future<void> addGeneToProject(int id, String gene) =>
+      caller.callServerEndpoint<void>('project', 'addGeneToProject', {
+        'id': id,
+        'gene': gene,
+      });
 
   /// Removes a gene from a project.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param gene The gene to remove.
-  _i2.Future<void> removeGeneFromProject(
-    int id,
-    String gene,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'removeGeneFromProject',
-    {
-      'id': id,
-      'gene': gene,
-    },
-  );
+  _ida.Future<void> removeGeneFromProject(int id, String gene) =>
+      caller.callServerEndpoint<void>('project', 'removeGeneFromProject', {
+        'id': id,
+        'gene': gene,
+      });
 
   /// Adds multiple genes to a project.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param genes The list of genes to add.
-  _i2.Future<void> addGenesToProject(
-    int id,
-    List<String> genes,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'addGenesToProject',
-    {
-      'id': id,
-      'genes': genes,
-    },
-  );
+  _ida.Future<void> addGenesToProject(int id, List<String> genes) =>
+      caller.callServerEndpoint<void>('project', 'addGenesToProject', {
+        'id': id,
+        'genes': genes,
+      });
 
   /// Sets the genome for a project by its ID.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param genomeId The ID of the genome to set.
-  _i2.Future<void> setGeneById(
-    int id,
-    int genomeId,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'setGeneById',
-    {
-      'id': id,
-      'genomeId': genomeId,
-    },
-  );
+  _ida.Future<void> setGeneById(int id, int genomeId) =>
+      caller.callServerEndpoint<void>('project', 'setGeneById', {
+        'id': id,
+        'genomeId': genomeId,
+      });
 
   /// Turns the finish notification on or off for a project.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param enabled Whether to email the project's owner when generation ends.
-  _i2.Future<void> setEmailNotification(
-    int id,
-    bool enabled,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'setEmailNotification',
-    {
-      'id': id,
-      'enabled': enabled,
-    },
-  );
+  _ida.Future<void> setEmailNotification(int id, bool enabled) =>
+      caller.callServerEndpoint<void>('project', 'setEmailNotification', {
+        'id': id,
+        'enabled': enabled,
+      });
 
   /// Hands a project to a different owner, or to nobody.
   ///
@@ -740,17 +476,11 @@ class EndpointProject extends EndpointFlumip {
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \param ownerId The `flumip_user` id of the new owner, or null for unowned.
-  _i2.Future<void> setProjectOwner(
-    int id,
-    int? ownerId,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'setProjectOwner',
-    {
-      'id': id,
-      'ownerId': ownerId,
-    },
-  );
+  _ida.Future<void> setProjectOwner(int id, int? ownerId) =>
+      caller.callServerEndpoint<void>('project', 'setProjectOwner', {
+        'id': id,
+        'ownerId': ownerId,
+      });
 
   /// Every user a project can be handed to.
   ///
@@ -759,8 +489,8 @@ class EndpointProject extends EndpointFlumip {
   /// business enumerating everyone with an account.
   ///
   /// \param session The current session.
-  _i2.Future<List<_i10.FlumipUserDto>> assignableOwners() =>
-      caller.callServerEndpoint<List<_i10.FlumipUserDto>>(
+  _ida.Future<List<_i15z9m0g.FlumipUserDto>> assignableOwners() =>
+      caller.callServerEndpoint<List<_i15z9m0g.FlumipUserDto>>(
         'project',
         'assignableOwners',
         {},
@@ -775,11 +505,8 @@ class EndpointProject extends EndpointFlumip {
   /// ordinary user has to be able to read this to render their own switch.
   ///
   /// \param session The current session.
-  _i2.Future<bool> notificationsAvailable() => caller.callServerEndpoint<bool>(
-    'project',
-    'notificationsAvailable',
-    {},
-  );
+  _ida.Future<bool> notificationsAvailable() =>
+      caller.callServerEndpoint<bool>('project', 'notificationsAvailable', {});
 
   /// Sets the SNP for a project, or clears it.
   ///
@@ -788,52 +515,11 @@ class EndpointProject extends EndpointFlumip {
   /// \param snpId The ID of the SNP to set, or null for no SNP masking. Clearing
   ///   became necessary once an SNP set could be deleted or fail to import, which
   ///   can leave a project pointing at one it can no longer use.
-  _i2.Future<void> setSnpById(
-    int id,
-    int? snpId,
-  ) => caller.callServerEndpoint<void>(
-    'project',
-    'setSnpById',
-    {
-      'id': id,
-      'snpId': snpId,
-    },
-  );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'project',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
-      );
+  _ida.Future<void> setSnpById(int id, int? snpId) =>
+      caller.callServerEndpoint<void>('project', 'setSnpById', {
+        'id': id,
+        'snpId': snpId,
+      });
 }
 
 /// Finding a project, a genome or an SNP set by typing part of its name.
@@ -843,7 +529,7 @@ class EndpointProject extends EndpointFlumip {
 /// [SearchService] for how the SQL and Dart predicates divide.
 /// {@category Endpoint}
 class EndpointSearch extends EndpointFlumip {
-  EndpointSearch(_i1.EndpointCaller caller) : super(caller);
+  EndpointSearch(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'search';
@@ -862,46 +548,11 @@ class EndpointSearch extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \param query What the user typed.
-  _i2.Future<List<_i11.SearchHitDto>> search(String query) =>
-      caller.callServerEndpoint<List<_i11.SearchHitDto>>(
+  _ida.Future<List<_i8y6t52d.SearchHitDto>> search(String query) =>
+      caller.callServerEndpoint<List<_i8y6t52d.SearchHitDto>>(
         'search',
         'search',
         {'query': query},
-      );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'search',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'search',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
       );
 }
 
@@ -916,8 +567,8 @@ class EndpointSearch extends EndpointFlumip {
 /// `SettingsService._isAdmin` for what that trades away, and for the escape that
 /// is left when the identity provider is the thing that broke.
 /// {@category Endpoint}
-class EndpointSettings extends _i1.EndpointRef {
-  EndpointSettings(_i1.EndpointCaller caller) : super(caller);
+class EndpointSettings extends _isc.EndpointRef {
+  EndpointSettings(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'settings';
@@ -933,8 +584,8 @@ class EndpointSettings extends _i1.EndpointRef {
   /// **The extension point for per-user settings**: see [UserSettingsDto].
   ///
   /// \param session The current session.
-  _i2.Future<_i12.UserSettingsDto> userSettings() =>
-      caller.callServerEndpoint<_i12.UserSettingsDto>(
+  _ida.Future<_ikcb9gvb.UserSettingsDto> userSettings() =>
+      caller.callServerEndpoint<_ikcb9gvb.UserSettingsDto>(
         'settings',
         'userSettings',
         {},
@@ -945,12 +596,10 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \returns The retrieved [Settings] object.
-  _i2.Future<_i13.Settings> getSettings(String? password) =>
-      caller.callServerEndpoint<_i13.Settings>(
-        'settings',
-        'getSettings',
-        {'password': password},
-      );
+  _ida.Future<_ibile1le.Settings> getSettings(String? password) =>
+      caller.callServerEndpoint<_ibile1le.Settings>('settings', 'getSettings', {
+        'password': password,
+      });
 
   /// Updates the settings.
   ///
@@ -964,17 +613,13 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \param settings The [Settings] object to update.
-  _i2.Future<void> updateSettings(
+  _ida.Future<void> updateSettings(
     String? password,
-    _i13.Settings settings,
-  ) => caller.callServerEndpoint<void>(
-    'settings',
-    'updateSettings',
-    {
-      'password': password,
-      'settings': settings,
-    },
-  );
+    _ibile1le.Settings settings,
+  ) => caller.callServerEndpoint<void>('settings', 'updateSettings', {
+    'password': password,
+    'settings': settings,
+  });
 
   /// Sets the OIDC client secret.
   ///
@@ -986,17 +631,11 @@ class EndpointSettings extends _i1.EndpointRef {
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \param secret The new client secret.
-  _i2.Future<void> setOidcClientSecret(
-    String? password,
-    String secret,
-  ) => caller.callServerEndpoint<void>(
-    'settings',
-    'setOidcClientSecret',
-    {
-      'password': password,
-      'secret': secret,
-    },
-  );
+  _ida.Future<void> setOidcClientSecret(String? password, String secret) =>
+      caller.callServerEndpoint<void>('settings', 'setOidcClientSecret', {
+        'password': password,
+        'secret': secret,
+      });
 
   /// Stores the SMTP password, which is never sent back.
   ///
@@ -1008,28 +647,20 @@ class EndpointSettings extends _i1.EndpointRef {
   /// An empty [secret] clears it, which is how a relay that needs no
   /// authentication is configured. To *keep* the stored one, do not call this —
   /// saving the rest of the settings leaves it alone.
-  _i2.Future<void> setSmtpPassword(
-    String? password,
-    String secret,
-  ) => caller.callServerEndpoint<void>(
-    'settings',
-    'setSmtpPassword',
-    {
-      'password': password,
-      'secret': secret,
-    },
-  );
+  _ida.Future<void> setSmtpPassword(String? password, String secret) =>
+      caller.callServerEndpoint<void>('settings', 'setSmtpPassword', {
+        'password': password,
+        'secret': secret,
+      });
 
   /// Whether an SMTP password is stored, without revealing it.
   ///
   /// Lets the settings tab say "a password is stored, type here to replace it"
   /// rather than showing an empty box that looks like nothing is configured.
-  _i2.Future<bool> smtpPasswordConfigured(String? password) =>
-      caller.callServerEndpoint<bool>(
-        'settings',
-        'smtpPasswordConfigured',
-        {'password': password},
-      );
+  _ida.Future<bool> smtpPasswordConfigured(String? password) =>
+      caller.callServerEndpoint<bool>('settings', 'smtpPasswordConfigured', {
+        'password': password,
+      });
 
   /// Everything the settings tab needs to show about the SSO setup that is not
   /// itself a stored setting.
@@ -1040,29 +671,24 @@ class EndpointSettings extends _i1.EndpointRef {
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
-  _i2.Future<_i14.AuthAdminStatusDto> getAuthAdminStatus(String? password) =>
-      caller.callServerEndpoint<_i14.AuthAdminStatusDto>(
-        'settings',
-        'getAuthAdminStatus',
-        {'password': password},
-      );
+  _ida.Future<_ifh830yy.AuthAdminStatusDto> getAuthAdminStatus(
+    String? password,
+  ) => caller.callServerEndpoint<_ifh830yy.AuthAdminStatusDto>(
+    'settings',
+    'getAuthAdminStatus',
+    {'password': password},
+  );
 
   /// Sends a test email so the SMTP configuration can be validated.
   ///
   /// \param session The current session.
   /// \param password The settings password, or null to rely on an admin session.
   /// \param to The recipient address.
-  _i2.Future<void> sendTestMail(
-    String? password,
-    String to,
-  ) => caller.callServerEndpoint<void>(
-    'settings',
-    'sendTestMail',
-    {
-      'password': password,
-      'to': to,
-    },
-  );
+  _ida.Future<void> sendTestMail(String? password, String to) =>
+      caller.callServerEndpoint<void>('settings', 'sendTestMail', {
+        'password': password,
+        'to': to,
+      });
 }
 
 /// Everything to do with SNP sets that a user, rather than the server's
@@ -1072,7 +698,7 @@ class EndpointSettings extends _i1.EndpointRef {
 /// and `GenomeEndpoint` has no notion of who owns what.
 /// {@category Endpoint}
 class EndpointSnp extends EndpointFlumip {
-  EndpointSnp(_i1.EndpointCaller caller) : super(caller);
+  EndpointSnp(_isc.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'snp';
@@ -1085,8 +711,8 @@ class EndpointSnp extends EndpointFlumip {
   ///
   /// \param session The current session.
   /// \param genomeId The genome whose SNP sets to list.
-  _i2.Future<List<_i7.Snp>> listSnpsForGenome(int genomeId) =>
-      caller.callServerEndpoint<List<_i7.Snp>>(
+  _ida.Future<List<_iumnx4id.Snp>> listSnpsForGenome(int genomeId) =>
+      caller.callServerEndpoint<List<_iumnx4id.Snp>>(
         'snp',
         'listSnpsForGenome',
         {'genomeId': genomeId},
@@ -1101,12 +727,8 @@ class EndpointSnp extends EndpointFlumip {
   ///
   /// Doubles as the app's answer to "which of these are mine?" — the session
   /// carries no user id, so the client works it out from the ids in this list.
-  _i2.Future<List<_i7.Snp>> listMySnps() =>
-      caller.callServerEndpoint<List<_i7.Snp>>(
-        'snp',
-        'listMySnps',
-        {},
-      );
+  _ida.Future<List<_iumnx4id.Snp>> listMySnps() =>
+      caller.callServerEndpoint<List<_iumnx4id.Snp>>('snp', 'listMySnps', {});
 
   /// Announces a custom SNP set whose files the browser is about to send.
   ///
@@ -1119,35 +741,29 @@ class EndpointSnp extends EndpointFlumip {
   /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
   /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
   /// ```
-  _i2.Future<_i7.Snp> createUpload(_i15.CustomSnpRequestDto request) =>
-      caller.callServerEndpoint<_i7.Snp>(
-        'snp',
-        'createUpload',
-        {'request': request},
-      );
+  _ida.Future<_iumnx4id.Snp> createUpload(
+    _iqct5zkb.CustomSnpRequestDto request,
+  ) => caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'createUpload', {
+    'request': request,
+  });
 
   /// Step three: works out what actually arrived and settles the row.
   ///
   /// Reads the directory rather than trusting the client's account of what it
   /// sent, so a browser that dropped the second `PUT` cannot leave a row claiming
   /// to be complete.
-  _i2.Future<_i7.Snp> finishUpload(int snpId) =>
-      caller.callServerEndpoint<_i7.Snp>(
-        'snp',
-        'finishUpload',
-        {'snpId': snpId},
-      );
+  _ida.Future<_iumnx4id.Snp> finishUpload(int snpId) =>
+      caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'finishUpload', {
+        'snpId': snpId,
+      });
 
   /// Removes a custom SNP set whose upload never completed.
   ///
   /// Distinct from [deleteCustomSnp] only in intent: this is the "cancel" the app
   /// offers on a `pending` row, and refusing anything further along stops it
   /// double-serving as a delete without confirmation.
-  _i2.Future<void> cancelUpload(int snpId) => caller.callServerEndpoint<void>(
-    'snp',
-    'cancelUpload',
-    {'snpId': snpId},
-  );
+  _ida.Future<void> cancelUpload(int snpId) =>
+      caller.callServerEndpoint<void>('snp', 'cancelUpload', {'snpId': snpId});
 
   /// Adds a custom SNP set whose files the server fetches for itself.
   ///
@@ -1160,24 +776,21 @@ class EndpointSnp extends EndpointFlumip {
   /// `failed` row the user has to go and find — and, more to the point, the
   /// address check is what stops this endpoint being a request proxy into the
   /// deployment's own network. See `snpSourceUrlRejection`.
-  _i2.Future<_i7.Snp> importFromUrls(_i15.CustomSnpRequestDto request) =>
-      caller.callServerEndpoint<_i7.Snp>(
-        'snp',
-        'importFromUrls',
-        {'request': request},
-      );
+  _ida.Future<_iumnx4id.Snp> importFromUrls(
+    _iqct5zkb.CustomSnpRequestDto request,
+  ) => caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'importFromUrls', {
+    'request': request,
+  });
 
   /// Puts a failed import back in the queue and reschedules it.
   ///
   /// Starts over rather than resuming: a half-download that silently continued
   /// against a *changed* remote file would produce a corrupt archive, which is a
   /// worse outcome than fetching a gigabyte twice.
-  _i2.Future<_i7.Snp> retryImport(int snpId) =>
-      caller.callServerEndpoint<_i7.Snp>(
-        'snp',
-        'retryImport',
-        {'snpId': snpId},
-      );
+  _ida.Future<_iumnx4id.Snp> retryImport(int snpId) =>
+      caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'retryImport', {
+        'snpId': snpId,
+      });
 
   /// Shares an SNP with everyone on this server, or takes it back.
   ///
@@ -1187,42 +800,32 @@ class EndpointSnp extends EndpointFlumip {
   /// \param session The current session.
   /// \param snpId The SNP to change.
   /// \param shared True to make it visible to everybody.
-  _i2.Future<_i7.Snp> setShared(
-    int snpId,
-    bool shared,
-  ) => caller.callServerEndpoint<_i7.Snp>(
-    'snp',
-    'setShared',
-    {
-      'snpId': snpId,
-      'shared': shared,
-    },
-  );
+  _ida.Future<_iumnx4id.Snp> setShared(int snpId, bool shared) =>
+      caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'setShared', {
+        'snpId': snpId,
+        'shared': shared,
+      });
 
   /// Renames an SNP and rewrites its description.
   ///
   /// Cosmetic only: the files on disk are named after the row id, never after
   /// this, so nothing has to move and no path changes.
-  _i2.Future<_i7.Snp> renameSnp(
+  _ida.Future<_iumnx4id.Snp> renameSnp(
     int snpId,
     String name,
     String description,
-  ) => caller.callServerEndpoint<_i7.Snp>(
-    'snp',
-    'renameSnp',
-    {
-      'snpId': snpId,
-      'name': name,
-      'description': description,
-    },
-  );
+  ) => caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'renameSnp', {
+    'snpId': snpId,
+    'name': name,
+    'description': description,
+  });
 
   /// The projects currently using this SNP.
   ///
   /// Read before a delete is confirmed, so the dialog can name them rather than
   /// warning in the abstract.
-  _i2.Future<List<_i16.SnpUsageDto>> snpUsage(int snpId) =>
-      caller.callServerEndpoint<List<_i16.SnpUsageDto>>(
+  _ida.Future<List<_idqeum9a.SnpUsageDto>> snpUsage(int snpId) =>
+      caller.callServerEndpoint<List<_idqeum9a.SnpUsageDto>>(
         'snp',
         'snpUsage',
         {'snpId': snpId},
@@ -1234,12 +837,8 @@ class EndpointSnp extends EndpointFlumip {
   /// the shared genome tree, which is a different decision needing a different
   /// gate — see [deleteSnpAsAdmin]. Keeping them as separate methods is what stops
   /// an ordinary user's delete button from ever being able to reach one.
-  _i2.Future<void> deleteCustomSnp(int snpId) =>
-      caller.callServerEndpoint<void>(
-        'snp',
-        'deleteCustomSnp',
-        {'snpId': snpId},
-      );
+  _ida.Future<void> deleteCustomSnp(int snpId) => caller
+      .callServerEndpoint<void>('snp', 'deleteCustomSnp', {'snpId': snpId});
 
   /// Deletes **any** SNP, including a global one, along with its files.
   ///
@@ -1263,88 +862,38 @@ class EndpointSnp extends EndpointFlumip {
   /// \param force Required when projects are still using it. Without it the call
   ///   refuses and names them, so nobody removes a file three running designs
   ///   depend on by accident.
-  _i2.Future<void> deleteSnpAsAdmin(
+  _ida.Future<void> deleteSnpAsAdmin(
     int snpId,
     String? settingsPassword, {
     required bool force,
-  }) => caller.callServerEndpoint<void>(
-    'snp',
-    'deleteSnpAsAdmin',
-    {
-      'snpId': snpId,
-      'settingsPassword': settingsPassword,
-      'force': force,
-    },
-  );
+  }) => caller.callServerEndpoint<void>('snp', 'deleteSnpAsAdmin', {
+    'snpId': snpId,
+    'settingsPassword': settingsPassword,
+    'force': force,
+  });
 
   /// Rescans the custom SNP directory.
   ///
   /// Ungated, matching `GenomeEndpoint.collectGenomes`, which has always been.
   /// It creates nothing a user did not already put on the server's disk, and
   /// gating both is a defensible hardening for another day.
-  _i2.Future<void> collectCustomSnps() => caller.callServerEndpoint<void>(
-    'snp',
-    'collectCustomSnps',
-    {},
-  );
-
-  /// Refuses unless the caller is allowed to touch this project.
-  ///
-  /// **Every endpoint method that takes a project id must start with this.**
-  ///
-  /// Adds [ProjectAccessDeniedException] and changes nothing else: an unknown id passes
-  /// straight through so the operation still reports the not-found error it
-  /// always reported.
-  ///
-  /// The check lives here, at the request boundary, rather than inside
-  /// `ProjectService` — which would look like the tidier place — because the
-  /// services are also called by things that have no user at all. `DemoModeCleanup`
-  /// and the mipgen progress future calls run on unauthenticated sessions and go
-  /// through `getProject`, `updateProject` and `deleteProject`; enforcing down
-  /// there would have stopped demo-mode cleanup the moment a project had an
-  /// owner, and `DemoModeCleanup` catches the failure and logs "Project not
-  /// found", so it would have gone on reporting success while quietly doing
-  /// nothing.
-  ///
-  @override
-  _i2.Future<void> requireProject(int projectId) =>
-      caller.callServerEndpoint<void>(
-        'snp',
-        'requireProject',
-        {'projectId': projectId},
-      );
-
-  /// Checks that the caller may touch the project owning these options.
-  @override
-  _i2.Future<void> requireProjectOptions(int optionsId) =>
-      caller.callServerEndpoint<void>(
-        'snp',
-        'requireProjectOptions',
-        {'optionsId': optionsId},
-      );
+  _ida.Future<void> collectCustomSnps() =>
+      caller.callServerEndpoint<void>('snp', 'collectCustomSnps', {});
 }
 
-class Client extends _i1.ServerpodClientShared {
+class Client extends _isc.ServerpodClientShared {
   Client(
     String host, {
     dynamic securityContext,
-    @Deprecated(
-      'Use authKeyProvider instead. This will be removed in future releases.',
-    )
-    super.authenticationKeyManager,
     Duration? streamingConnectionTimeout,
     Duration? connectionTimeout,
-    Function(
-      _i1.MethodCallContext,
-      Object,
-      StackTrace,
-    )?
-    onFailedCall,
-    Function(_i1.MethodCallContext)? onSucceededCall,
+    Function(_isc.MethodCallContext, Object, StackTrace)? onFailedCall,
+    Function(_isc.MethodCallContext)? onSucceededCall,
     bool? disconnectStreamsOnLostInternetConnection,
+    _i85jenna.Client? httpClientOverride,
   }) : super(
          host,
-         _i17.Protocol(),
+         _il2as5qe.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -1352,6 +901,7 @@ class Client extends _i1.ServerpodClientShared {
          onSucceededCall: onSucceededCall,
          disconnectStreamsOnLostInternetConnection:
              disconnectStreamsOnLostInternetConnection,
+         httpClientOverride: httpClientOverride,
        ) {
     auth = EndpointAuth(this);
     file = EndpointFile(this);
@@ -1383,7 +933,7 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointSnp snp;
 
   @override
-  Map<String, _i1.EndpointRef> get endpointRefLookup => {
+  Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'auth': auth,
     'file': file,
     'genome': genome,
@@ -1396,5 +946,5 @@ class Client extends _i1.ServerpodClientShared {
   };
 
   @override
-  Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {};
+  Map<String, _isc.ModuleEndpointCaller> get moduleLookup => {};
 }

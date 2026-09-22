@@ -10,9 +10,9 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
-abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+abstract class Genome implements _is.TableRow<int?>, _is.ProtocolSerialization {
   Genome._({
     this.id,
     required this.name,
@@ -65,13 +65,13 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       category: jsonSerialization['category'] as String?,
       active: jsonSerialization['active'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['active']),
       indexed: jsonSerialization['indexed'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['indexed']),
       indexing: jsonSerialization['indexing'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['indexing']),
       indexPID: jsonSerialization['indexPID'] as int?,
       indexResults: jsonSerialization['indexResults'] as int?,
       size: jsonSerialization['size'] as int?,
@@ -112,11 +112,11 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   int size;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [Genome]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   Genome copyWith({
     int? id,
     String? name,
@@ -180,12 +180,11 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   }
 
   static GenomeIncludeList includeList({
-    _i1.WhereExpressionBuilder<GenomeTable>? where,
+    _is.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<GenomeTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
     GenomeInclude? include,
   }) {
     return GenomeIncludeList._(
@@ -193,7 +192,6 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(Genome.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(Genome.t),
       include: include,
     );
@@ -201,7 +199,7 @@ abstract class Genome implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -242,7 +240,7 @@ class _GenomeImpl extends Genome {
 
   /// Returns a shallow copy of this [Genome]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   Genome copyWith({
     Object? id = _Undefined,
@@ -279,169 +277,97 @@ class _GenomeImpl extends Genome {
   }
 }
 
-class GenomeUpdateTable extends _i1.UpdateTable<GenomeTable> {
+class GenomeUpdateTable extends _is.UpdateTable<GenomeTable> {
   GenomeUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> name(String value) => _i1.ColumnValue(
-    table.name,
-    value,
-  );
+  _is.ColumnValue<String, String> name(String value) =>
+      _is.ColumnValue(table.name, value);
 
-  _i1.ColumnValue<String, String> description(String value) => _i1.ColumnValue(
-    table.description,
-    value,
-  );
+  _is.ColumnValue<String, String> description(String value) =>
+      _is.ColumnValue(table.description, value);
 
-  _i1.ColumnValue<String, String> path(String? value) => _i1.ColumnValue(
-    table.path,
-    value,
-  );
+  _is.ColumnValue<String, String> path(String? value) =>
+      _is.ColumnValue(table.path, value);
 
-  _i1.ColumnValue<String, String> fastaPath(String? value) => _i1.ColumnValue(
-    table.fastaPath,
-    value,
-  );
+  _is.ColumnValue<String, String> fastaPath(String? value) =>
+      _is.ColumnValue(table.fastaPath, value);
 
-  _i1.ColumnValue<String, String> refPath(String? value) => _i1.ColumnValue(
-    table.refPath,
-    value,
-  );
+  _is.ColumnValue<String, String> refPath(String? value) =>
+      _is.ColumnValue(table.refPath, value);
 
-  _i1.ColumnValue<String, String> snpFolder(String? value) => _i1.ColumnValue(
-    table.snpFolder,
-    value,
-  );
+  _is.ColumnValue<String, String> snpFolder(String? value) =>
+      _is.ColumnValue(table.snpFolder, value);
 
-  _i1.ColumnValue<String, String> category(String? value) => _i1.ColumnValue(
-    table.category,
-    value,
-  );
+  _is.ColumnValue<String, String> category(String? value) =>
+      _is.ColumnValue(table.category, value);
 
-  _i1.ColumnValue<bool, bool> active(bool value) => _i1.ColumnValue(
-    table.active,
-    value,
-  );
+  _is.ColumnValue<bool, bool> active(bool value) =>
+      _is.ColumnValue(table.active, value);
 
-  _i1.ColumnValue<bool, bool> indexed(bool value) => _i1.ColumnValue(
-    table.indexed,
-    value,
-  );
+  _is.ColumnValue<bool, bool> indexed(bool value) =>
+      _is.ColumnValue(table.indexed, value);
 
-  _i1.ColumnValue<bool, bool> indexing(bool value) => _i1.ColumnValue(
-    table.indexing,
-    value,
-  );
+  _is.ColumnValue<bool, bool> indexing(bool value) =>
+      _is.ColumnValue(table.indexing, value);
 
-  _i1.ColumnValue<int, int> indexPID(int value) => _i1.ColumnValue(
-    table.indexPID,
-    value,
-  );
+  _is.ColumnValue<int, int> indexPID(int value) =>
+      _is.ColumnValue(table.indexPID, value);
 
-  _i1.ColumnValue<int, int> indexResults(int value) => _i1.ColumnValue(
-    table.indexResults,
-    value,
-  );
+  _is.ColumnValue<int, int> indexResults(int value) =>
+      _is.ColumnValue(table.indexResults, value);
 
-  _i1.ColumnValue<int, int> size(int value) => _i1.ColumnValue(
-    table.size,
-    value,
-  );
+  _is.ColumnValue<int, int> size(int value) =>
+      _is.ColumnValue(table.size, value);
 }
 
-class GenomeTable extends _i1.Table<int?> {
+class GenomeTable extends _is.Table<int?> {
   GenomeTable({super.tableRelation}) : super(tableName: 'genome') {
     updateTable = GenomeUpdateTable(this);
-    name = _i1.ColumnString(
-      'name',
-      this,
-    );
-    description = _i1.ColumnString(
-      'description',
-      this,
-      hasDefault: true,
-    );
-    path = _i1.ColumnString(
-      'path',
-      this,
-    );
-    fastaPath = _i1.ColumnString(
-      'fastaPath',
-      this,
-    );
-    refPath = _i1.ColumnString(
-      'refPath',
-      this,
-    );
-    snpFolder = _i1.ColumnString(
-      'snpFolder',
-      this,
-    );
-    category = _i1.ColumnString(
-      'category',
-      this,
-    );
-    active = _i1.ColumnBool(
-      'active',
-      this,
-      hasDefault: true,
-    );
-    indexed = _i1.ColumnBool(
-      'indexed',
-      this,
-      hasDefault: true,
-    );
-    indexing = _i1.ColumnBool(
-      'indexing',
-      this,
-      hasDefault: true,
-    );
-    indexPID = _i1.ColumnInt(
-      'indexPID',
-      this,
-      hasDefault: true,
-    );
-    indexResults = _i1.ColumnInt(
-      'indexResults',
-      this,
-      hasDefault: true,
-    );
-    size = _i1.ColumnInt(
-      'size',
-      this,
-      hasDefault: true,
-    );
+    name = _is.ColumnString('name', this);
+    description = _is.ColumnString('description', this, hasDefault: true);
+    path = _is.ColumnString('path', this);
+    fastaPath = _is.ColumnString('fastaPath', this);
+    refPath = _is.ColumnString('refPath', this);
+    snpFolder = _is.ColumnString('snpFolder', this);
+    category = _is.ColumnString('category', this);
+    active = _is.ColumnBool('active', this, hasDefault: true);
+    indexed = _is.ColumnBool('indexed', this, hasDefault: true);
+    indexing = _is.ColumnBool('indexing', this, hasDefault: true);
+    indexPID = _is.ColumnInt('indexPID', this, hasDefault: true);
+    indexResults = _is.ColumnInt('indexResults', this, hasDefault: true);
+    size = _is.ColumnInt('size', this, hasDefault: true);
   }
 
   late final GenomeUpdateTable updateTable;
 
-  late final _i1.ColumnString name;
+  late final _is.ColumnString name;
 
-  late final _i1.ColumnString description;
+  late final _is.ColumnString description;
 
-  late final _i1.ColumnString path;
+  late final _is.ColumnString path;
 
-  late final _i1.ColumnString fastaPath;
+  late final _is.ColumnString fastaPath;
 
-  late final _i1.ColumnString refPath;
+  late final _is.ColumnString refPath;
 
-  late final _i1.ColumnString snpFolder;
+  late final _is.ColumnString snpFolder;
 
-  late final _i1.ColumnString category;
+  late final _is.ColumnString category;
 
-  late final _i1.ColumnBool active;
+  late final _is.ColumnBool active;
 
-  late final _i1.ColumnBool indexed;
+  late final _is.ColumnBool indexed;
 
-  late final _i1.ColumnBool indexing;
+  late final _is.ColumnBool indexing;
 
-  late final _i1.ColumnInt indexPID;
+  late final _is.ColumnInt indexPID;
 
-  late final _i1.ColumnInt indexResults;
+  late final _is.ColumnInt indexResults;
 
-  late final _i1.ColumnInt size;
+  late final _is.ColumnInt size;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     name,
     description,
@@ -459,23 +385,22 @@ class GenomeTable extends _i1.Table<int?> {
   ];
 }
 
-class GenomeInclude extends _i1.IncludeObject {
+class GenomeInclude extends _is.IncludeObject {
   GenomeInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => Genome.t;
+  _is.Table<int?> get table => Genome.t;
 }
 
-class GenomeIncludeList extends _i1.IncludeList {
+class GenomeIncludeList extends _is.IncludeList {
   GenomeIncludeList._({
-    _i1.WhereExpressionBuilder<GenomeTable>? where,
+    _is.WhereExpressionBuilder<GenomeTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -483,10 +408,10 @@ class GenomeIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => Genome.t;
+  _is.Table<int?> get table => Genome.t;
 }
 
 class GenomeRepository {
@@ -515,22 +440,20 @@ class GenomeRepository {
   /// );
   /// ```
   Future<List<Genome>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<GenomeTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<GenomeTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<GenomeTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Genome>(
       where: where?.call(Genome.t),
       orderBy: orderBy?.call(Genome.t),
       orderByList: orderByList?.call(Genome.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -557,21 +480,19 @@ class GenomeRepository {
   /// );
   /// ```
   Future<Genome?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<GenomeTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<GenomeTable>? where,
     int? offset,
-    _i1.OrderByBuilder<GenomeTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<GenomeTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Genome>(
       where: where?.call(Genome.t),
       orderBy: orderBy?.call(Genome.t),
       orderByList: orderByList?.call(Genome.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -581,11 +502,11 @@ class GenomeRepository {
 
   /// Finds a single [Genome] by its [id] or null if no such row exists.
   Future<Genome?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Genome>(
       id,
@@ -605,16 +526,22 @@ class GenomeRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Genome>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Genome> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<Genome>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -622,12 +549,78 @@ class GenomeRepository {
   ///
   /// The returned [Genome] will have its `id` field set.
   Future<Genome> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Genome row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Genome>(
+    return session.db.insertRow<Genome>(row, transaction: transaction);
+  }
+
+  /// Upserts all [Genome]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [Genome]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<Genome>> upsert(
+    _is.DatabaseSession session,
+    List<Genome> rows, {
+    required _is.ColumnSelections<GenomeTable> conflictColumns,
+    _is.ColumnSelections<GenomeTable>? updateColumns,
+    _is.WhereExpressionBuilder<GenomeTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<Genome>(
+      rows,
+      conflictColumns: conflictColumns(Genome.t),
+      updateColumns: updateColumns?.call(Genome.t),
+      updateWhere: updateWhere?.call(Genome.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [Genome] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [Genome] will have its `id` field set.
+  Future<Genome?> upsertRow(
+    _is.DatabaseSession session,
+    Genome row, {
+    required _is.ColumnSelections<GenomeTable> conflictColumns,
+    _is.ColumnSelections<GenomeTable>? updateColumns,
+    _is.WhereExpressionBuilder<GenomeTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<Genome>(
       row,
+      conflictColumns: conflictColumns(Genome.t),
+      updateColumns: updateColumns?.call(Genome.t),
+      updateWhere: updateWhere?.call(Genome.t),
       transaction: transaction,
     );
   }
@@ -637,16 +630,22 @@ class GenomeRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Genome>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Genome> rows, {
-    _i1.ColumnSelections<GenomeTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<GenomeTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<Genome>(
       rows,
       columns: columns?.call(Genome.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -654,10 +653,10 @@ class GenomeRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Genome> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Genome row, {
-    _i1.ColumnSelections<GenomeTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<GenomeTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<Genome>(
       row,
@@ -669,10 +668,10 @@ class GenomeRepository {
   /// Updates a single [Genome] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Genome?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<Genome>(
       id,
@@ -683,16 +682,20 @@ class GenomeRepository {
 
   /// Updates all [Genome]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Genome>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<GenomeTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<GenomeUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<GenomeTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<GenomeTable>? orderBy,
-    _i1.OrderByListBuilder<GenomeTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<Genome>(
       columnValues: columnValues(Genome.t.updateTable),
@@ -701,56 +704,80 @@ class GenomeRepository {
       offset: offset,
       orderBy: orderBy?.call(Genome.t),
       orderByList: orderByList?.call(Genome.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [Genome]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Genome>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Genome> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<Genome>(
       rows,
+      orderBy: orderBy?.call(Genome.t),
+      orderByList: orderByList?.call(Genome.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [Genome].
   Future<Genome> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Genome row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Genome>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Genome>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Genome>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<GenomeTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<GenomeTable> where,
+    _is.OrderByBuilder<GenomeTable>? orderBy,
+    _is.OrderByListBuilder<GenomeTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<Genome>(
       where: where(Genome.t),
+      orderBy: orderBy?.call(Genome.t),
+      orderByList: orderByList?.call(Genome.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<GenomeTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<GenomeTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<Genome>(
       where: where?.call(Genome.t),
@@ -761,11 +788,11 @@ class GenomeRepository {
 
   /// Acquires row-level locks on [Genome] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<GenomeTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<GenomeTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<Genome>(
       where: where(Genome.t),

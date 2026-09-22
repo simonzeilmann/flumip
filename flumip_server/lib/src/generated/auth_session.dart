@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// A signed-in browser session, keyed by the `flumip_auth` cookie.
 ///
@@ -23,7 +23,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// they stood at sign-in time, so that authenticating a request needs no join.
 /// Changing the admin list therefore takes effect on the next sign-in.
 abstract class AuthSession
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   AuthSession._({
     this.id,
     required this.userId,
@@ -56,14 +56,14 @@ abstract class AuthSession
       email: jsonSerialization['email'] as String,
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
-      expires: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      expires: _is.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
       lastSeen: jsonSerialization['lastSeen'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['lastSeen']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['lastSeen']),
     );
   }
 
@@ -89,11 +89,11 @@ abstract class AuthSession
   DateTime lastSeen;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [AuthSession]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   AuthSession copyWith({
     int? id,
     int? userId,
@@ -129,12 +129,11 @@ abstract class AuthSession
   }
 
   static AuthSessionIncludeList includeList({
-    _i1.WhereExpressionBuilder<AuthSessionTable>? where,
+    _is.WhereExpressionBuilder<AuthSessionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthSessionTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
     AuthSessionInclude? include,
   }) {
     return AuthSessionIncludeList._(
@@ -142,7 +141,6 @@ abstract class AuthSession
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(AuthSession.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(AuthSession.t),
       include: include,
     );
@@ -150,7 +148,7 @@ abstract class AuthSession
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -179,7 +177,7 @@ class _AuthSessionImpl extends AuthSession {
 
   /// Returns a shallow copy of this [AuthSession]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   AuthSession copyWith({
     Object? id = _Undefined,
@@ -204,102 +202,61 @@ class _AuthSessionImpl extends AuthSession {
   }
 }
 
-class AuthSessionUpdateTable extends _i1.UpdateTable<AuthSessionTable> {
+class AuthSessionUpdateTable extends _is.UpdateTable<AuthSessionTable> {
   AuthSessionUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> userId(int value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _is.ColumnValue<int, int> userId(int value) =>
+      _is.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<String, String> cookieHash(String value) => _i1.ColumnValue(
-    table.cookieHash,
-    value,
-  );
+  _is.ColumnValue<String, String> cookieHash(String value) =>
+      _is.ColumnValue(table.cookieHash, value);
 
-  _i1.ColumnValue<String, String> email(String value) => _i1.ColumnValue(
-    table.email,
-    value,
-  );
+  _is.ColumnValue<String, String> email(String value) =>
+      _is.ColumnValue(table.email, value);
 
-  _i1.ColumnValue<bool, bool> isAdmin(bool value) => _i1.ColumnValue(
-    table.isAdmin,
-    value,
-  );
+  _is.ColumnValue<bool, bool> isAdmin(bool value) =>
+      _is.ColumnValue(table.isAdmin, value);
 
-  _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
+      _is.ColumnValue(table.created, value);
 
-  _i1.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
-      _i1.ColumnValue(
-        table.expires,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
+      _is.ColumnValue(table.expires, value);
 
-  _i1.ColumnValue<DateTime, DateTime> lastSeen(DateTime value) =>
-      _i1.ColumnValue(
-        table.lastSeen,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> lastSeen(DateTime value) =>
+      _is.ColumnValue(table.lastSeen, value);
 }
 
-class AuthSessionTable extends _i1.Table<int?> {
+class AuthSessionTable extends _is.Table<int?> {
   AuthSessionTable({super.tableRelation}) : super(tableName: 'auth_session') {
     updateTable = AuthSessionUpdateTable(this);
-    userId = _i1.ColumnInt(
-      'userId',
-      this,
-    );
-    cookieHash = _i1.ColumnString(
-      'cookieHash',
-      this,
-    );
-    email = _i1.ColumnString(
-      'email',
-      this,
-    );
-    isAdmin = _i1.ColumnBool(
-      'isAdmin',
-      this,
-      hasDefault: true,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
-    expires = _i1.ColumnDateTime(
-      'expires',
-      this,
-    );
-    lastSeen = _i1.ColumnDateTime(
-      'lastSeen',
-      this,
-      hasDefault: true,
-    );
+    userId = _is.ColumnInt('userId', this);
+    cookieHash = _is.ColumnString('cookieHash', this);
+    email = _is.ColumnString('email', this);
+    isAdmin = _is.ColumnBool('isAdmin', this, hasDefault: true);
+    created = _is.ColumnDateTime('created', this, hasDefault: true);
+    expires = _is.ColumnDateTime('expires', this);
+    lastSeen = _is.ColumnDateTime('lastSeen', this, hasDefault: true);
   }
 
   late final AuthSessionUpdateTable updateTable;
 
-  late final _i1.ColumnInt userId;
+  late final _is.ColumnInt userId;
 
-  late final _i1.ColumnString cookieHash;
+  late final _is.ColumnString cookieHash;
 
-  late final _i1.ColumnString email;
+  late final _is.ColumnString email;
 
-  late final _i1.ColumnBool isAdmin;
+  late final _is.ColumnBool isAdmin;
 
-  late final _i1.ColumnDateTime created;
+  late final _is.ColumnDateTime created;
 
-  late final _i1.ColumnDateTime expires;
+  late final _is.ColumnDateTime expires;
 
-  late final _i1.ColumnDateTime lastSeen;
+  late final _is.ColumnDateTime lastSeen;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     userId,
     cookieHash,
@@ -311,23 +268,22 @@ class AuthSessionTable extends _i1.Table<int?> {
   ];
 }
 
-class AuthSessionInclude extends _i1.IncludeObject {
+class AuthSessionInclude extends _is.IncludeObject {
   AuthSessionInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => AuthSession.t;
+  _is.Table<int?> get table => AuthSession.t;
 }
 
-class AuthSessionIncludeList extends _i1.IncludeList {
+class AuthSessionIncludeList extends _is.IncludeList {
   AuthSessionIncludeList._({
-    _i1.WhereExpressionBuilder<AuthSessionTable>? where,
+    _is.WhereExpressionBuilder<AuthSessionTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -335,10 +291,10 @@ class AuthSessionIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => AuthSession.t;
+  _is.Table<int?> get table => AuthSession.t;
 }
 
 class AuthSessionRepository {
@@ -367,22 +323,20 @@ class AuthSessionRepository {
   /// );
   /// ```
   Future<List<AuthSession>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthSessionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthSessionTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthSessionTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthSessionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<AuthSession>(
       where: where?.call(AuthSession.t),
       orderBy: orderBy?.call(AuthSession.t),
       orderByList: orderByList?.call(AuthSession.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -409,21 +363,19 @@ class AuthSessionRepository {
   /// );
   /// ```
   Future<AuthSession?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthSessionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthSessionTable>? where,
     int? offset,
-    _i1.OrderByBuilder<AuthSessionTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthSessionTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<AuthSession>(
       where: where?.call(AuthSession.t),
       orderBy: orderBy?.call(AuthSession.t),
       orderByList: orderByList?.call(AuthSession.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -433,11 +385,11 @@ class AuthSessionRepository {
 
   /// Finds a single [AuthSession] by its [id] or null if no such row exists.
   Future<AuthSession?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<AuthSession>(
       id,
@@ -457,16 +409,22 @@ class AuthSessionRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthSession>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthSession> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<AuthSession>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -474,12 +432,78 @@ class AuthSessionRepository {
   ///
   /// The returned [AuthSession] will have its `id` field set.
   Future<AuthSession> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthSession row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<AuthSession>(
+    return session.db.insertRow<AuthSession>(row, transaction: transaction);
+  }
+
+  /// Upserts all [AuthSession]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [AuthSession]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<AuthSession>> upsert(
+    _is.DatabaseSession session,
+    List<AuthSession> rows, {
+    required _is.ColumnSelections<AuthSessionTable> conflictColumns,
+    _is.ColumnSelections<AuthSessionTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthSessionTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<AuthSession>(
+      rows,
+      conflictColumns: conflictColumns(AuthSession.t),
+      updateColumns: updateColumns?.call(AuthSession.t),
+      updateWhere: updateWhere?.call(AuthSession.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [AuthSession] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [AuthSession] will have its `id` field set.
+  Future<AuthSession?> upsertRow(
+    _is.DatabaseSession session,
+    AuthSession row, {
+    required _is.ColumnSelections<AuthSessionTable> conflictColumns,
+    _is.ColumnSelections<AuthSessionTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthSessionTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<AuthSession>(
       row,
+      conflictColumns: conflictColumns(AuthSession.t),
+      updateColumns: updateColumns?.call(AuthSession.t),
+      updateWhere: updateWhere?.call(AuthSession.t),
       transaction: transaction,
     );
   }
@@ -489,16 +513,22 @@ class AuthSessionRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthSession>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthSession> rows, {
-    _i1.ColumnSelections<AuthSessionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthSessionTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<AuthSession>(
       rows,
       columns: columns?.call(AuthSession.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -506,10 +536,10 @@ class AuthSessionRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<AuthSession> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthSession row, {
-    _i1.ColumnSelections<AuthSessionTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthSessionTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<AuthSession>(
       row,
@@ -521,10 +551,10 @@ class AuthSessionRepository {
   /// Updates a single [AuthSession] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<AuthSession?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<AuthSessionUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<AuthSessionUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<AuthSession>(
       id,
@@ -535,16 +565,20 @@ class AuthSessionRepository {
 
   /// Updates all [AuthSession]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthSession>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<AuthSessionUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<AuthSessionTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<AuthSessionUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<AuthSessionTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthSessionTable>? orderBy,
-    _i1.OrderByListBuilder<AuthSessionTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<AuthSession>(
       columnValues: columnValues(AuthSession.t.updateTable),
@@ -553,56 +587,80 @@ class AuthSessionRepository {
       offset: offset,
       orderBy: orderBy?.call(AuthSession.t),
       orderByList: orderByList?.call(AuthSession.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [AuthSession]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthSession>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthSession> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<AuthSession>(
       rows,
+      orderBy: orderBy?.call(AuthSession.t),
+      orderByList: orderByList?.call(AuthSession.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [AuthSession].
   Future<AuthSession> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthSession row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<AuthSession>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<AuthSession>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthSession>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthSessionTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthSessionTable> where,
+    _is.OrderByBuilder<AuthSessionTable>? orderBy,
+    _is.OrderByListBuilder<AuthSessionTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<AuthSession>(
       where: where(AuthSession.t),
+      orderBy: orderBy?.call(AuthSession.t),
+      orderByList: orderByList?.call(AuthSession.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthSessionTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthSessionTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<AuthSession>(
       where: where?.call(AuthSession.t),
@@ -613,11 +671,11 @@ class AuthSessionRepository {
 
   /// Acquires row-level locks on [AuthSession] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthSessionTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthSessionTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<AuthSession>(
       where: where(AuthSession.t),

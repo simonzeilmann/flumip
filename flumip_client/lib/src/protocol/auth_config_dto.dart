@@ -10,29 +10,26 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// What the app needs to know before anyone has signed in.
 ///
 /// Deliberately minimal and safe to serve unauthenticated: whether a sign-in is
 /// required at all, and what to put on the button. No table — transport only.
-abstract class AuthConfigDto implements _i1.SerializableModel {
-  AuthConfigDto._({
-    bool? enabled,
-    String? buttonLabel,
-  }) : enabled = enabled ?? false,
-       buttonLabel = buttonLabel ?? 'Sign in with SSO';
+abstract class AuthConfigDto
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
+  AuthConfigDto._({bool? enabled, String? buttonLabel})
+    : enabled = enabled ?? false,
+      buttonLabel = buttonLabel ?? 'Sign in with SSO';
 
-  factory AuthConfigDto({
-    bool? enabled,
-    String? buttonLabel,
-  }) = _AuthConfigDtoImpl;
+  factory AuthConfigDto({bool? enabled, String? buttonLabel}) =
+      _AuthConfigDtoImpl;
 
   factory AuthConfigDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return AuthConfigDto(
       enabled: jsonSerialization['enabled'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
       buttonLabel: jsonSerialization['buttonLabel'] as String?,
     );
   }
@@ -43,11 +40,8 @@ abstract class AuthConfigDto implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  AuthConfigDto copyWith({
-    bool? enabled,
-    String? buttonLabel,
-  });
+  @_isc.useResult
+  AuthConfigDto copyWith({bool? enabled, String? buttonLabel});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -58,28 +52,29 @@ abstract class AuthConfigDto implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'AuthConfigDto',
+      'enabled': enabled,
+      'buttonLabel': buttonLabel,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
 class _AuthConfigDtoImpl extends AuthConfigDto {
-  _AuthConfigDtoImpl({
-    bool? enabled,
-    String? buttonLabel,
-  }) : super._(
-         enabled: enabled,
-         buttonLabel: buttonLabel,
-       );
+  _AuthConfigDtoImpl({bool? enabled, String? buttonLabel})
+    : super._(enabled: enabled, buttonLabel: buttonLabel);
 
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
-  AuthConfigDto copyWith({
-    bool? enabled,
-    String? buttonLabel,
-  }) {
+  AuthConfigDto copyWith({bool? enabled, String? buttonLabel}) {
     return AuthConfigDto(
       enabled: enabled ?? this.enabled,
       buttonLabel: buttonLabel ?? this.buttonLabel,

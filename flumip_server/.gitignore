@@ -16,3 +16,13 @@ config/firebase_service_account_key.json
 
 # flutter web app files
 web/app
+
+# Embedded-PostgreSQL runtime artifacts: data directory, sockets, pidfiles.
+# Serverpod 4 can run its own postmaster; this project does not (it keeps the
+# docker-compose database), but `serverpod start` and the test harness will
+# create this if a config ever sets `database.dataPath`.
+.serverpod/
+
+# Ephemeral SQLite databases the Serverpod 4 test harness names after each
+# `withServerpod` group and deletes on teardown — a killed run leaves them.
+**/sp_*.db*

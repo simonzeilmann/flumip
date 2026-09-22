@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Settings implements _i1.SerializableModel {
+abstract class Settings
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Settings._({
     this.id,
     bool? demoMode,
@@ -117,7 +118,7 @@ abstract class Settings implements _i1.SerializableModel {
       id: jsonSerialization['id'] as int?,
       demoMode: jsonSerialization['demoMode'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
       demoModeRetentionHours:
           jsonSerialization['demoModeRetentionHours'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
@@ -135,17 +136,17 @@ abstract class Settings implements _i1.SerializableModel {
           jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
       mailActive: jsonSerialization['mailActive'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
       smtpServer: jsonSerialization['smtpServer'] as String?,
       smtpPort: jsonSerialization['smtpPort'] as int?,
       smtpUser: jsonSerialization['smtpUser'] as String?,
       smtpFrom: jsonSerialization['smtpFrom'] as String?,
       startTLS: jsonSerialization['startTLS'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
       loginRequired: jsonSerialization['loginRequired'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
       settingsPassword: jsonSerialization['settingsPassword'] as String?,
       oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
       oidcClientId: jsonSerialization['oidcClientId'] as String?,
@@ -227,7 +228,7 @@ abstract class Settings implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Settings copyWith({
     int? id,
     bool? demoMode,
@@ -296,8 +297,44 @@ abstract class Settings implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Settings',
+      if (id != null) 'id': id,
+      'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
+      'baseDir': baseDir,
+      'projectDir': projectDir,
+      'genomeDir': genomeDir,
+      'customSnpDir': customSnpDir,
+      'snpSourceAllowedHosts': snpSourceAllowedHosts,
+      'toolsDir': toolsDir,
+      'mipgenExecutable': mipgenExecutable,
+      'exonExtractScript': exonExtractScript,
+      'ucscTrackGenerator': ucscTrackGenerator,
+      'binCreationScript': binCreationScript,
+      'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
+      'mailActive': mailActive,
+      'smtpServer': smtpServer,
+      'smtpPort': smtpPort,
+      'smtpUser': smtpUser,
+      'smtpFrom': smtpFrom,
+      'startTLS': startTLS,
+      'loginRequired': loginRequired,
+      'settingsPassword': settingsPassword,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'authPublicUrl': authPublicUrl,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -368,7 +405,7 @@ class _SettingsImpl extends Settings {
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Settings copyWith({
     Object? id = _Undefined,

@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// Raised when the signed-in user may not touch the project they asked for.
 ///
@@ -24,7 +24,10 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 /// server does *not* use it to hide existence: list endpoints filter foreign
 /// projects out entirely, so a client that never guesses ids never sees this.
 abstract class ProjectAccessDeniedException
-    implements _i1.SerializableException, _i1.SerializableModel {
+    implements
+        _isc.SerializableException,
+        _isc.SerializableModel,
+        _isc.ProtocolSerialization {
   ProjectAccessDeniedException._({String? message})
     : message = message ?? 'You do not have access to this project';
 
@@ -43,10 +46,18 @@ abstract class ProjectAccessDeniedException
 
   /// Returns a shallow copy of this [ProjectAccessDeniedException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   ProjectAccessDeniedException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
+    return {
+      '__className__': 'ProjectAccessDeniedException',
+      'message': message,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
     return {
       '__className__': 'ProjectAccessDeniedException',
       'message': message,
@@ -65,7 +76,7 @@ class _ProjectAccessDeniedExceptionImpl extends ProjectAccessDeniedException {
 
   /// Returns a shallow copy of this [ProjectAccessDeniedException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   ProjectAccessDeniedException copyWith({String? message}) {
     return ProjectAccessDeniedException(message: message ?? this.message);

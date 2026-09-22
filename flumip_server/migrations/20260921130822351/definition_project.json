@@ -1,0 +1,1701 @@
+{
+  "__className__": "serverpod.DatabaseDefinition",
+  "schemaVersion": 2,
+  "moduleName": "flumip",
+  "tables": [
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "auth_api_token",
+      "dartName": "AuthApiToken",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "authSessionId",
+          "fieldName": "authSessionId",
+          "columnType": 6,
+          "isNullable": false,
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "tokenHash",
+          "fieldName": "tokenHash",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "email",
+          "fieldName": "email",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "isAdmin",
+          "fieldName": "isAdmin",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "expires",
+          "fieldName": "expires",
+          "columnType": 4,
+          "isNullable": false,
+          "dartType": "DateTime"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "auth_api_token_fk_0",
+          "columns": [
+            "authSessionId"
+          ],
+          "referenceTable": "auth_session",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 4
+        }
+      ],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_api_token_hash_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "tokenHash"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_api_token_session_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "authSessionId"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_api_token_expires_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "expires"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "auth_flow",
+      "dartName": "AuthFlow",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "state",
+          "fieldName": "state",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "codeVerifier",
+          "fieldName": "codeVerifier",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "nonce",
+          "fieldName": "nonce",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "redirectUri",
+          "fieldName": "redirectUri",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "expires",
+          "fieldName": "expires",
+          "columnType": 4,
+          "isNullable": false,
+          "dartType": "DateTime"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_flow_state_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "state"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_flow_expires_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "expires"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "auth_session",
+      "dartName": "AuthSession",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "userId",
+          "fieldName": "userId",
+          "columnType": 6,
+          "isNullable": false,
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "cookieHash",
+          "fieldName": "cookieHash",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "email",
+          "fieldName": "email",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "isAdmin",
+          "fieldName": "isAdmin",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "expires",
+          "fieldName": "expires",
+          "columnType": 4,
+          "isNullable": false,
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "lastSeen",
+          "fieldName": "lastSeen",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "auth_session_fk_0",
+          "columns": [
+            "userId"
+          ],
+          "referenceTable": "flumip_user",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 4
+        }
+      ],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_session_cookie_hash_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "cookieHash"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "auth_session_expires_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "expires"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "flumip_user",
+      "dartName": "FlumipUser",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "email",
+          "fieldName": "email",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "subject",
+          "fieldName": "subject",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "issuer",
+          "fieldName": "issuer",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "displayName",
+          "fieldName": "displayName",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "lastLogin",
+          "fieldName": "lastLogin",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "flumip_user_identity_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "issuer"
+            },
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "subject"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "flumip_user_email_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "email"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "genome",
+      "dartName": "Genome",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "name",
+          "fieldName": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "description",
+          "fieldName": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "path",
+          "fieldName": "path",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "fastaPath",
+          "fieldName": "fastaPath",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "refPath",
+          "fieldName": "refPath",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "snpFolder",
+          "fieldName": "snpFolder",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "category",
+          "fieldName": "category",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "active",
+          "fieldName": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "indexed",
+          "fieldName": "indexed",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "indexing",
+          "fieldName": "indexing",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "indexPID",
+          "fieldName": "indexPID",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "indexResults",
+          "fieldName": "indexResults",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "size",
+          "fieldName": "size",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "project",
+      "dartName": "Project",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "name",
+          "fieldName": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "folderName",
+          "fieldName": "folderName",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "description",
+          "fieldName": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "genome",
+          "fieldName": "genome",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "snp",
+          "fieldName": "snp",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "tags",
+          "fieldName": "tags",
+          "columnType": 8,
+          "isNullable": true,
+          "dartType": "List<String>?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "owner",
+          "fieldName": "owner",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "department",
+          "fieldName": "department",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "trackToken",
+          "fieldName": "trackToken",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "genes",
+          "fieldName": "genes",
+          "columnType": 8,
+          "isNullable": true,
+          "dartType": "List<String>?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "bedFileCreated",
+          "fieldName": "bedFileCreated",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "active",
+          "fieldName": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "pid",
+          "fieldName": "pid",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "size",
+          "fieldName": "size",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "emailNotification",
+          "fieldName": "emailNotification",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "options",
+          "fieldName": "options",
+          "columnType": 6,
+          "isNullable": false,
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "started",
+          "fieldName": "started",
+          "columnType": 4,
+          "isNullable": true,
+          "dartType": "DateTime?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "completedIn",
+          "fieldName": "completedIn",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "Duration?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "error",
+          "fieldName": "error",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "warning",
+          "fieldName": "warning",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "cleanup",
+          "fieldName": "cleanup",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "project_fk_0",
+          "columns": [
+            "snp"
+          ],
+          "referenceTable": "snp",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 0
+        },
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "project_fk_1",
+          "columns": [
+            "owner"
+          ],
+          "referenceTable": "flumip_user",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 0
+        }
+      ],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "project_owner_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "owner"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "project_track_token_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "trackToken"
+            }
+          ],
+          "type": "btree",
+          "isUnique": true,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "project_options",
+      "dartName": "ProjectOptions",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "minCaptureSize",
+          "fieldName": "minCaptureSize",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "162",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "maxCaptureSize",
+          "fieldName": "maxCaptureSize",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "162",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "armLengths",
+          "fieldName": "armLengths",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "armLengthSums",
+          "fieldName": "armLengthSums",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'40,41,42,43,44,45'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "extMinLength",
+          "fieldName": "extMinLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "16",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "extMaxLength",
+          "fieldName": "extMaxLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "18",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "ligMinLength",
+          "fieldName": "ligMinLength",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "18",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "tagSizes",
+          "fieldName": "tagSizes",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'5,0'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "maskedArmThreshold",
+          "fieldName": "maskedArmThreshold",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.5",
+          "dartType": "double"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "targetArmCopy",
+          "fieldName": "targetArmCopy",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "20",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "maxArmCopyProduct",
+          "fieldName": "maxArmCopyProduct",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "75",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "trf",
+          "fieldName": "trf",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "genomeDir",
+          "fieldName": "genomeDir",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "featureFlank",
+          "fieldName": "featureFlank",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "captureIncrement",
+          "fieldName": "captureIncrement",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "5",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "logisticHeuristic",
+          "fieldName": "logisticHeuristic",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "maxMipOverlap",
+          "fieldName": "maxMipOverlap",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "30",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "startingMipOverlap",
+          "fieldName": "startingMipOverlap",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "checkCopyNumber",
+          "fieldName": "checkCopyNumber",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "sealBothStrands",
+          "fieldName": "sealBothStrands",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "halfSealBothStrands",
+          "fieldName": "halfSealBothStrands",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "doubleTileStrandUnaware",
+          "fieldName": "doubleTileStrandUnaware",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "doubleTileStrandsSeparately",
+          "fieldName": "doubleTileStrandsSeparately",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "scoreMethod",
+          "fieldName": "scoreMethod",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'logistic'",
+          "dartType": "protocol:ScoreMethod"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "logisticOptimalScore",
+          "fieldName": "logisticOptimalScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.98",
+          "dartType": "double"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "svrOptimalScore",
+          "fieldName": "svrOptimalScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "2.2",
+          "dartType": "double"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "logisticPriorityScore",
+          "fieldName": "logisticPriorityScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "0.9",
+          "dartType": "double"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "svrPriorityScore",
+          "fieldName": "svrPriorityScore",
+          "columnType": 3,
+          "isNullable": false,
+          "columnDefault": "1.5",
+          "dartType": "double"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "silentMode",
+          "fieldName": "silentMode",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "bwaThreads",
+          "fieldName": "bwaThreads",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "1",
+          "dartType": "int"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "settings",
+      "dartName": "Settings",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "demoMode",
+          "fieldName": "demoMode",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "demoModeRetentionHours",
+          "fieldName": "demoModeRetentionHours",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "168",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "baseDir",
+          "fieldName": "baseDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "projectDir",
+          "fieldName": "projectDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/projects'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "genomeDir",
+          "fieldName": "genomeDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/data/genomes'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "customSnpDir",
+          "fieldName": "customSnpDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/data/custom_snp'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "snpSourceAllowedHosts",
+          "fieldName": "snpSourceAllowedHosts",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "toolsDir",
+          "fieldName": "toolsDir",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/tools'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "mipgenExecutable",
+          "fieldName": "mipgenExecutable",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/mipgen'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "exonExtractScript",
+          "fieldName": "exonExtractScript",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "ucscTrackGenerator",
+          "fieldName": "ucscTrackGenerator",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "binCreationScript",
+          "fieldName": "binCreationScript",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "bigGenePredToGenePredExecutable",
+          "fieldName": "bigGenePredToGenePredExecutable",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'/opt/flumip/tools/bigGenePredToGenePred'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "mailActive",
+          "fieldName": "mailActive",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "smtpServer",
+          "fieldName": "smtpServer",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "smtpPort",
+          "fieldName": "smtpPort",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "25",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "smtpUser",
+          "fieldName": "smtpUser",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "smtpPassword",
+          "fieldName": "smtpPassword",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "smtpFrom",
+          "fieldName": "smtpFrom",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'flumip@yourdomain.com'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "startTLS",
+          "fieldName": "startTLS",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "true",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "loginRequired",
+          "fieldName": "loginRequired",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "settingsPassword",
+          "fieldName": "settingsPassword",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'changeme'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcIssuer",
+          "fieldName": "oidcIssuer",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcClientId",
+          "fieldName": "oidcClientId",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcClientSecret",
+          "fieldName": "oidcClientSecret",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcScopes",
+          "fieldName": "oidcScopes",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'openid email profile'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcButtonLabel",
+          "fieldName": "oidcButtonLabel",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'Sign in with SSO'",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcAllowedEmailDomains",
+          "fieldName": "oidcAllowedEmailDomains",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "oidcAdminEmails",
+          "fieldName": "oidcAdminEmails",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "authPublicUrl",
+          "fieldName": "authPublicUrl",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [],
+      "managed": true
+    },
+    {
+      "__className__": "serverpod.TableDefinition",
+      "name": "snp",
+      "dartName": "Snp",
+      "module": "flumip",
+      "schema": "public",
+      "columns": [
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "id",
+          "fieldName": "id",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "serial",
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "name",
+          "fieldName": "name",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "description",
+          "fieldName": "description",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "vcfPath",
+          "fieldName": "vcfPath",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "tbiPath",
+          "fieldName": "tbiPath",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "folder",
+          "fieldName": "folder",
+          "columnType": 0,
+          "isNullable": false,
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "active",
+          "fieldName": "active",
+          "columnType": 1,
+          "isNullable": false,
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "private",
+          "fieldName": "private",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "size",
+          "fieldName": "size",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "genome",
+          "fieldName": "genome",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "owner",
+          "fieldName": "owner",
+          "columnType": 6,
+          "isNullable": true,
+          "dartType": "int?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "custom",
+          "fieldName": "custom",
+          "columnType": 1,
+          "isNullable": false,
+          "columnDefault": "false",
+          "dartType": "bool"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "status",
+          "fieldName": "status",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "'ready'",
+          "dartType": "protocol:SnpImportStatus"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "statusMessage",
+          "fieldName": "statusMessage",
+          "columnType": 0,
+          "isNullable": false,
+          "columnDefault": "''",
+          "dartType": "String"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "sourceVcfUrl",
+          "fieldName": "sourceVcfUrl",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "sourceTbiUrl",
+          "fieldName": "sourceTbiUrl",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "bytesDownloaded",
+          "fieldName": "bytesDownloaded",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "totalBytes",
+          "fieldName": "totalBytes",
+          "columnType": 6,
+          "isNullable": false,
+          "columnDefault": "0",
+          "dartType": "int"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "statusUpdated",
+          "fieldName": "statusUpdated",
+          "columnType": 4,
+          "isNullable": true,
+          "dartType": "DateTime?"
+        },
+        {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "created",
+          "fieldName": "created",
+          "columnType": 4,
+          "isNullable": false,
+          "columnDefault": "now",
+          "dartType": "DateTime"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "snp_fk_0",
+          "columns": [
+            "genome"
+          ],
+          "referenceTable": "genome",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 0
+        },
+        {
+          "__className__": "serverpod.ForeignKeyDefinition",
+          "constraintName": "snp_fk_1",
+          "columns": [
+            "owner"
+          ],
+          "referenceTable": "flumip_user",
+          "referenceTableSchema": "public",
+          "referenceColumns": [
+            "id"
+          ],
+          "onUpdate": 3,
+          "onDelete": 0
+        }
+      ],
+      "indexes": [
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "snp_genome_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "genome"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "snp_owner_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "owner"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        },
+        {
+          "__className__": "serverpod.IndexDefinition",
+          "indexName": "snp_folder_idx",
+          "elements": [
+            {
+              "__className__": "serverpod.IndexElementDefinition",
+              "type": 0,
+              "definition": "folder"
+            }
+          ],
+          "type": "btree",
+          "isUnique": false,
+          "isPrimary": false
+        }
+      ],
+      "managed": true
+    }
+  ],
+  "installedModules": [
+    {
+      "__className__": "serverpod.DatabaseMigrationVersion",
+      "module": "serverpod",
+      "version": "20260824182259319"
+    }
+  ],
+  "migrationApiVersion": 1
+}

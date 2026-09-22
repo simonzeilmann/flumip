@@ -10,8 +10,6 @@ file:
   - showUSCSTrack:
   - getUcscTrackToken:
   - listProjectFiles:
-  - requireProject:
-  - requireProjectOptions:
 genome:
   - getGenome:
   - getAllGenomes:
@@ -23,21 +21,15 @@ genome:
   - getGenomeByCategory:
   - indexFasta:
   - deleteFastaIndex:
-  - requireProject:
-  - requireProjectOptions:
 mipgen:
   - createBedFile:
   - generateMips:
-  - requireProject:
-  - requireProjectOptions:
 options:
   - createProjectOptions:
   - insertProjectOptions:
   - getProjectOptions:
   - updateProjectOptions:
   - deleteProjectOptions:
-  - requireProject:
-  - requireProjectOptions:
 project:
   - createProject:
   - deleteProject:
@@ -52,12 +44,8 @@ project:
   - assignableOwners:
   - notificationsAvailable:
   - setSnpById:
-  - requireProject:
-  - requireProjectOptions:
 search:
   - search:
-  - requireProject:
-  - requireProjectOptions:
 settings:
   - userSettings:
   - getSettings:
@@ -81,5 +69,3 @@ snp:
   - deleteCustomSnp:
   - deleteSnpAsAdmin:
   - collectCustomSnps:
-  - requireProject:
-  - requireProjectOptions:

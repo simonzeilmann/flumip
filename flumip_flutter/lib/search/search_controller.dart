@@ -28,10 +28,9 @@ import '../error_text.dart';
 /// or an in-flight request between one search and the next.
 class UnifiedSearchController extends ChangeNotifier {
   UnifiedSearchController({
-    required Future<List<SearchHitDto>> Function(String query) search,
+    required this._search,
     Duration debounce = searchDebounce,
-  }) : _search = search,
-       _debouncer = Debouncer(debounce);
+  }) : _debouncer = Debouncer(debounce);
 
   final Future<List<SearchHitDto>> Function(String query) _search;
   final Debouncer _debouncer;

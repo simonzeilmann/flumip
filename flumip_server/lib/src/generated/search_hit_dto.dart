@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'search_hit_kind.dart' as _i2;
+import 'package:serverpod/serverpod.dart' as _is;
+import 'search_hit_kind.dart' as _ia4xis23;
 
 /// One row of the unified search results. No table.
 ///
@@ -25,7 +25,7 @@ import 'search_hit_kind.dart' as _i2;
 /// the wrong surface for arbitrary text from a remote server. Anything a user
 /// needs beyond identifying the row is on the tab the hit opens.
 abstract class SearchHitDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   SearchHitDto._({
     required this.id,
     required this.kind,
@@ -39,7 +39,7 @@ abstract class SearchHitDto
 
   factory SearchHitDto({
     required int id,
-    required _i2.SearchHitKind kind,
+    required _ia4xis23.SearchHitKind kind,
     required String name,
     String? subtitle,
     int? genomeId,
@@ -50,7 +50,9 @@ abstract class SearchHitDto
   factory SearchHitDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return SearchHitDto(
       id: jsonSerialization['id'] as int,
-      kind: _i2.SearchHitKind.fromJson((jsonSerialization['kind'] as String)),
+      kind: _ia4xis23.SearchHitKind.fromJson(
+        (jsonSerialization['kind'] as String),
+      ),
       name: jsonSerialization['name'] as String,
       subtitle: jsonSerialization['subtitle'] as String?,
       genomeId: jsonSerialization['genomeId'] as int?,
@@ -59,7 +61,7 @@ abstract class SearchHitDto
     );
   }
 
-  _i2.SearchHitKind kind;
+  _ia4xis23.SearchHitKind kind;
 
   /// The row id of the project, genome or SNP set. Unique only within [kind].
   int id;
@@ -83,10 +85,10 @@ abstract class SearchHitDto
 
   /// Returns a shallow copy of this [SearchHitDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   SearchHitDto copyWith({
     int? id,
-    _i2.SearchHitKind? kind,
+    _ia4xis23.SearchHitKind? kind,
     String? name,
     String? subtitle,
     int? genomeId,
@@ -123,7 +125,7 @@ abstract class SearchHitDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -132,7 +134,7 @@ class _Undefined {}
 class _SearchHitDtoImpl extends SearchHitDto {
   _SearchHitDtoImpl({
     required int id,
-    required _i2.SearchHitKind kind,
+    required _ia4xis23.SearchHitKind kind,
     required String name,
     String? subtitle,
     int? genomeId,
@@ -150,11 +152,11 @@ class _SearchHitDtoImpl extends SearchHitDto {
 
   /// Returns a shallow copy of this [SearchHitDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   SearchHitDto copyWith({
     int? id,
-    _i2.SearchHitKind? kind,
+    _ia4xis23.SearchHitKind? kind,
     String? name,
     String? subtitle,
     Object? genomeId = _Undefined,

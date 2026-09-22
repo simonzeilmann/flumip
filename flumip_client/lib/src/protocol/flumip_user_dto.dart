@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// A user an administrator can hand a project to. No table — transport only.
 ///
@@ -23,12 +23,10 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 /// Distinct from AuthUserDto, which describes *the caller* and carries no id.
 /// Both exist because they answer different questions: "who am I" and "who could
 /// own this".
-abstract class FlumipUserDto implements _i1.SerializableModel {
-  FlumipUserDto._({
-    required this.id,
-    required this.email,
-    String? displayName,
-  }) : displayName = displayName ?? '';
+abstract class FlumipUserDto
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
+  FlumipUserDto._({required this.id, required this.email, String? displayName})
+    : displayName = displayName ?? '';
 
   factory FlumipUserDto({
     required int id,
@@ -52,12 +50,8 @@ abstract class FlumipUserDto implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  FlumipUserDto copyWith({
-    int? id,
-    String? email,
-    String? displayName,
-  });
+  @_isc.useResult
+  FlumipUserDto copyWith({int? id, String? email, String? displayName});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -69,8 +63,18 @@ abstract class FlumipUserDto implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'FlumipUserDto',
+      'id': id,
+      'email': email,
+      'displayName': displayName,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -79,21 +83,13 @@ class _FlumipUserDtoImpl extends FlumipUserDto {
     required int id,
     required String email,
     String? displayName,
-  }) : super._(
-         id: id,
-         email: email,
-         displayName: displayName,
-       );
+  }) : super._(id: id, email: email, displayName: displayName);
 
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
-  FlumipUserDto copyWith({
-    int? id,
-    String? email,
-    String? displayName,
-  }) {
+  FlumipUserDto copyWith({int? id, String? email, String? displayName}) {
     return FlumipUserDto(
       id: id ?? this.id,
       email: email ?? this.email,

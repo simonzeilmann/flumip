@@ -49,10 +49,22 @@ abstract class FlumipEndpoint extends Endpoint {
   /// found", so it would have gone on reporting success while quietly doing
   /// nothing.
   ///
+  /// ⚠️ [doNotGenerate] is load-bearing. These two are public methods whose
+  /// first parameter is a [Session], which is exactly the generator's signature
+  /// for an endpoint method — so without the annotation both were published as
+  /// remotely callable methods on all seven [FlumipEndpoint] subclasses:
+  /// fourteen authorization probes an unauthenticated caller could use to ask
+  /// "does project 41 exist, and may I touch it?".
+  ///
+  /// Renaming them with a leading underscore does not work as an alternative:
+  /// each subclass lives in its own library, so a private helper on the base
+  /// class would be unreachable from any of them.
+  @doNotGenerate
   Future<void> requireProject(Session session, int projectId) =>
       authz.requireProjectAccess(session, projectId);
 
   /// Checks that the caller may touch the project owning these options.
+  @doNotGenerate
   Future<void> requireProjectOptions(Session session, int optionsId) =>
       authz.requireOptionsAccess(session, optionsId);
 }

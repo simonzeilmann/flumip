@@ -25,11 +25,10 @@ import 'package:serverpod_client/serverpod_client.dart';
 /// storm.
 class SessionAuthKeyProvider implements RefresherClientAuthKeyProvider {
   SessionAuthKeyProvider({
-    required Future<SessionTokenResponse?> Function() fetchSession,
+    required this._fetchSession,
     this.refreshMargin = const Duration(minutes: 2),
     DateTime Function()? now,
-  }) : _fetchSession = fetchSession,
-       _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now;
 
   /// Fetches `/auth/session`. Injected so this is testable without a browser.
   final Future<SessionTokenResponse?> Function() _fetchSession;

@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// A short-lived bearer token minted from an AuthSession cookie.
 ///
@@ -30,7 +30,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// `email` and `isAdmin` are denormalised from AuthSession so that the
 /// authentication handler needs exactly one indexed lookup per request.
 abstract class AuthApiToken
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   AuthApiToken._({
     this.id,
     required this.authSessionId,
@@ -60,11 +60,11 @@ abstract class AuthApiToken
       email: jsonSerialization['email'] as String,
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
-      expires: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      expires: _is.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
     );
   }
 
@@ -88,11 +88,11 @@ abstract class AuthApiToken
   DateTime expires;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [AuthApiToken]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   AuthApiToken copyWith({
     int? id,
     int? authSessionId,
@@ -126,12 +126,11 @@ abstract class AuthApiToken
   }
 
   static AuthApiTokenIncludeList includeList({
-    _i1.WhereExpressionBuilder<AuthApiTokenTable>? where,
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthApiTokenTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
     AuthApiTokenInclude? include,
   }) {
     return AuthApiTokenIncludeList._(
@@ -139,7 +138,6 @@ abstract class AuthApiToken
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(AuthApiToken.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(AuthApiToken.t),
       include: include,
     );
@@ -147,7 +145,7 @@ abstract class AuthApiToken
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -174,7 +172,7 @@ class _AuthApiTokenImpl extends AuthApiToken {
 
   /// Returns a shallow copy of this [AuthApiToken]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   AuthApiToken copyWith({
     Object? id = _Undefined,
@@ -197,90 +195,56 @@ class _AuthApiTokenImpl extends AuthApiToken {
   }
 }
 
-class AuthApiTokenUpdateTable extends _i1.UpdateTable<AuthApiTokenTable> {
+class AuthApiTokenUpdateTable extends _is.UpdateTable<AuthApiTokenTable> {
   AuthApiTokenUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> authSessionId(int value) => _i1.ColumnValue(
-    table.authSessionId,
-    value,
-  );
+  _is.ColumnValue<int, int> authSessionId(int value) =>
+      _is.ColumnValue(table.authSessionId, value);
 
-  _i1.ColumnValue<String, String> tokenHash(String value) => _i1.ColumnValue(
-    table.tokenHash,
-    value,
-  );
+  _is.ColumnValue<String, String> tokenHash(String value) =>
+      _is.ColumnValue(table.tokenHash, value);
 
-  _i1.ColumnValue<String, String> email(String value) => _i1.ColumnValue(
-    table.email,
-    value,
-  );
+  _is.ColumnValue<String, String> email(String value) =>
+      _is.ColumnValue(table.email, value);
 
-  _i1.ColumnValue<bool, bool> isAdmin(bool value) => _i1.ColumnValue(
-    table.isAdmin,
-    value,
-  );
+  _is.ColumnValue<bool, bool> isAdmin(bool value) =>
+      _is.ColumnValue(table.isAdmin, value);
 
-  _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
+      _is.ColumnValue(table.created, value);
 
-  _i1.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
-      _i1.ColumnValue(
-        table.expires,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
+      _is.ColumnValue(table.expires, value);
 }
 
-class AuthApiTokenTable extends _i1.Table<int?> {
+class AuthApiTokenTable extends _is.Table<int?> {
   AuthApiTokenTable({super.tableRelation})
     : super(tableName: 'auth_api_token') {
     updateTable = AuthApiTokenUpdateTable(this);
-    authSessionId = _i1.ColumnInt(
-      'authSessionId',
-      this,
-    );
-    tokenHash = _i1.ColumnString(
-      'tokenHash',
-      this,
-    );
-    email = _i1.ColumnString(
-      'email',
-      this,
-    );
-    isAdmin = _i1.ColumnBool(
-      'isAdmin',
-      this,
-      hasDefault: true,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
-    expires = _i1.ColumnDateTime(
-      'expires',
-      this,
-    );
+    authSessionId = _is.ColumnInt('authSessionId', this);
+    tokenHash = _is.ColumnString('tokenHash', this);
+    email = _is.ColumnString('email', this);
+    isAdmin = _is.ColumnBool('isAdmin', this, hasDefault: true);
+    created = _is.ColumnDateTime('created', this, hasDefault: true);
+    expires = _is.ColumnDateTime('expires', this);
   }
 
   late final AuthApiTokenUpdateTable updateTable;
 
-  late final _i1.ColumnInt authSessionId;
+  late final _is.ColumnInt authSessionId;
 
-  late final _i1.ColumnString tokenHash;
+  late final _is.ColumnString tokenHash;
 
-  late final _i1.ColumnString email;
+  late final _is.ColumnString email;
 
-  late final _i1.ColumnBool isAdmin;
+  late final _is.ColumnBool isAdmin;
 
-  late final _i1.ColumnDateTime created;
+  late final _is.ColumnDateTime created;
 
-  late final _i1.ColumnDateTime expires;
+  late final _is.ColumnDateTime expires;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     authSessionId,
     tokenHash,
@@ -291,23 +255,22 @@ class AuthApiTokenTable extends _i1.Table<int?> {
   ];
 }
 
-class AuthApiTokenInclude extends _i1.IncludeObject {
+class AuthApiTokenInclude extends _is.IncludeObject {
   AuthApiTokenInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => AuthApiToken.t;
+  _is.Table<int?> get table => AuthApiToken.t;
 }
 
-class AuthApiTokenIncludeList extends _i1.IncludeList {
+class AuthApiTokenIncludeList extends _is.IncludeList {
   AuthApiTokenIncludeList._({
-    _i1.WhereExpressionBuilder<AuthApiTokenTable>? where,
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -315,10 +278,10 @@ class AuthApiTokenIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => AuthApiToken.t;
+  _is.Table<int?> get table => AuthApiToken.t;
 }
 
 class AuthApiTokenRepository {
@@ -347,22 +310,20 @@ class AuthApiTokenRepository {
   /// );
   /// ```
   Future<List<AuthApiToken>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthApiTokenTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthApiTokenTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthApiTokenTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<AuthApiToken>(
       where: where?.call(AuthApiToken.t),
       orderBy: orderBy?.call(AuthApiToken.t),
       orderByList: orderByList?.call(AuthApiToken.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -389,21 +350,19 @@ class AuthApiTokenRepository {
   /// );
   /// ```
   Future<AuthApiToken?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthApiTokenTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? where,
     int? offset,
-    _i1.OrderByBuilder<AuthApiTokenTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthApiTokenTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<AuthApiToken>(
       where: where?.call(AuthApiToken.t),
       orderBy: orderBy?.call(AuthApiToken.t),
       orderByList: orderByList?.call(AuthApiToken.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -413,11 +372,11 @@ class AuthApiTokenRepository {
 
   /// Finds a single [AuthApiToken] by its [id] or null if no such row exists.
   Future<AuthApiToken?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<AuthApiToken>(
       id,
@@ -437,16 +396,22 @@ class AuthApiTokenRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthApiToken>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthApiToken> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<AuthApiToken>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -454,12 +419,78 @@ class AuthApiTokenRepository {
   ///
   /// The returned [AuthApiToken] will have its `id` field set.
   Future<AuthApiToken> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthApiToken row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<AuthApiToken>(
+    return session.db.insertRow<AuthApiToken>(row, transaction: transaction);
+  }
+
+  /// Upserts all [AuthApiToken]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [AuthApiToken]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<AuthApiToken>> upsert(
+    _is.DatabaseSession session,
+    List<AuthApiToken> rows, {
+    required _is.ColumnSelections<AuthApiTokenTable> conflictColumns,
+    _is.ColumnSelections<AuthApiTokenTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<AuthApiToken>(
+      rows,
+      conflictColumns: conflictColumns(AuthApiToken.t),
+      updateColumns: updateColumns?.call(AuthApiToken.t),
+      updateWhere: updateWhere?.call(AuthApiToken.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [AuthApiToken] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [AuthApiToken] will have its `id` field set.
+  Future<AuthApiToken?> upsertRow(
+    _is.DatabaseSession session,
+    AuthApiToken row, {
+    required _is.ColumnSelections<AuthApiTokenTable> conflictColumns,
+    _is.ColumnSelections<AuthApiTokenTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<AuthApiToken>(
       row,
+      conflictColumns: conflictColumns(AuthApiToken.t),
+      updateColumns: updateColumns?.call(AuthApiToken.t),
+      updateWhere: updateWhere?.call(AuthApiToken.t),
       transaction: transaction,
     );
   }
@@ -469,16 +500,22 @@ class AuthApiTokenRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthApiToken>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthApiToken> rows, {
-    _i1.ColumnSelections<AuthApiTokenTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthApiTokenTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<AuthApiToken>(
       rows,
       columns: columns?.call(AuthApiToken.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -486,10 +523,10 @@ class AuthApiTokenRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<AuthApiToken> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthApiToken row, {
-    _i1.ColumnSelections<AuthApiTokenTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthApiTokenTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<AuthApiToken>(
       row,
@@ -501,10 +538,10 @@ class AuthApiTokenRepository {
   /// Updates a single [AuthApiToken] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<AuthApiToken?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<AuthApiTokenUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<AuthApiTokenUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<AuthApiToken>(
       id,
@@ -515,16 +552,20 @@ class AuthApiTokenRepository {
 
   /// Updates all [AuthApiToken]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthApiToken>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<AuthApiTokenUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<AuthApiTokenTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<AuthApiTokenUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<AuthApiTokenTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthApiTokenTable>? orderBy,
-    _i1.OrderByListBuilder<AuthApiTokenTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<AuthApiToken>(
       columnValues: columnValues(AuthApiToken.t.updateTable),
@@ -533,56 +574,80 @@ class AuthApiTokenRepository {
       offset: offset,
       orderBy: orderBy?.call(AuthApiToken.t),
       orderByList: orderByList?.call(AuthApiToken.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [AuthApiToken]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthApiToken>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthApiToken> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<AuthApiToken>(
       rows,
+      orderBy: orderBy?.call(AuthApiToken.t),
+      orderByList: orderByList?.call(AuthApiToken.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [AuthApiToken].
   Future<AuthApiToken> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthApiToken row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<AuthApiToken>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<AuthApiToken>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthApiToken>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthApiTokenTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthApiTokenTable> where,
+    _is.OrderByBuilder<AuthApiTokenTable>? orderBy,
+    _is.OrderByListBuilder<AuthApiTokenTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<AuthApiToken>(
       where: where(AuthApiToken.t),
+      orderBy: orderBy?.call(AuthApiToken.t),
+      orderByList: orderByList?.call(AuthApiToken.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthApiTokenTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthApiTokenTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<AuthApiToken>(
       where: where?.call(AuthApiToken.t),
@@ -593,11 +658,11 @@ class AuthApiTokenRepository {
 
   /// Acquires row-level locks on [AuthApiToken] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthApiTokenTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthApiTokenTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<AuthApiToken>(
       where: where(AuthApiToken.t),
