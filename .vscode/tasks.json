@@ -1,13 +1,11 @@
 {
-  // Mirrors the "Analyze code" step in
-  // .github/workflows/{development,staging,production}.yml. Keep the commands
-  // here identical to the ones there.
+  // Mirrors the "Analyze code" step in .github/workflows/checks.yml, which
+  // every pipeline calls. Keep the commands here identical to the ones there.
   //
-  // Note the asymmetry, which is deliberate and not a typo: the server is
-  // analyzed with `dart analyze`, the frontend with `flutter analyze`. The two
-  // deprecated_member_use infos in project_service.dart (DemoModeCleanup stays
-  // on the legacy future-call API) are non-fatal to `dart analyze` but fail
-  // `flutter analyze`. Running the wrong one on the server is what made the
+  // The asymmetry is deliberate and not a typo: the server is analyzed with
+  // `dart analyze`, the frontend with `flutter analyze`. flumip_server is a
+  // plain Dart package with no Flutter dependency, so `dart analyze` is simply
+  // the matching tool. Running the wrong one on the server is what made the
   // staging and production pipelines undeployable until PR #24.
   //
   // Run "Lint" with Ctrl+Shift+B; it stops at the first failing package, the

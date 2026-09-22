@@ -38,6 +38,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
       - name: Get dependencies
         run: |
@@ -66,7 +67,15 @@ jobs:
         run: |
           cd flumip_server
           mkdir app
-          dart compile exe bin/main.dart -o app/server
+          # `dart build cli`, not `dart compile exe`. Serverpod 4 pulls in
+          # sqlite3 (transitively, via serverpod_database), which ships a
+          # native build hook; `dart compile exe` does not run build hooks, so
+          # the binary it produces is missing its native libraries and dies at
+          # runtime. `dart build cli` emits build/bundle/bin/main alongside
+          # build/bundle/lib/, and the executable resolves those libraries
+          # relative to itself — so the bundle directory has to travel intact.
+          dart build cli --target bin/main.dart --output build
+          cp -r build/bundle app/bundle
           cp -r config app/config
           cp -r migrations app/migrations
           cp -r web app/web
@@ -83,8 +92,8 @@ jobs:
           fi
           tar -czf flumip-build.tar.gz -C app .
           sha256sum flumip-build.tar.gz > flumip-build.tar.gz.sha256
-          # setup-flumip.sh rejects an archive without a top-level server binary.
-          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)server$'
+          # setup-flumip.sh rejects an archive without the bundled executable.
+          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)bundle/bin/main$'
 
       - name: Upload artifact (manual runs)
         if: github.ref_type != 'tag'
