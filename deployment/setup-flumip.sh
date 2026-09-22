@@ -360,8 +360,11 @@ fetch_build() {
 
   # Fail before touching the target if the archive is not a usable build.
   tar -tzf "$out" >/dev/null 2>&1 || die "Not a valid .tar.gz archive: $out"
-  tar -tzf "$out" | grep -qE '(^|/)server$' \
-    || die "Archive contains no 'server' binary — is this a FLUMIP build?"
+  # Serverpod 4 builds with `dart build cli`, so the executable is
+  # bundle/bin/main with its native libraries next to it in bundle/lib/ —
+  # not a single top-level `server` binary as it was up to Serverpod 3.
+  tar -tzf "$out" | grep -qE '(^|/)bundle/bin/main$' \
+    || die "Archive contains no 'bundle/bin/main' executable — is this a FLUMIP build?"
 
   echo "$out"
 }
@@ -432,7 +435,7 @@ fi
 echo -e "${GREEN}Extracting build to $TARGET${NC}"
 sudo mkdir -p "$TARGET"
 sudo tar -xzf "$BUILD" -C "$TARGET"
-sudo chmod +x "$TARGET/server"
+sudo chmod +x "$TARGET/bundle/bin/main"
 
 # --- Config -----------------------------------------------------------------
 
@@ -562,7 +565,7 @@ sudo chmod 640 "$TARGET/config/passwords.yaml"
 # connection a few times in case the container is still starting up.
 if $MIGRATIONS; then
   echo -e "${GREEN}Applying database migrations...${NC}"
-  if ! sudo -u "$SERVICE_USER" sh -c "cd '$TARGET' && ./server \
+  if ! sudo -u "$SERVICE_USER" sh -c "cd '$TARGET' && ./bundle/bin/main \
       --mode='$ENV_NAME' \
       --server-id='$ENV_NAME' \
       --role=maintenance \

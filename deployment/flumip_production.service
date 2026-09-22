@@ -4,8 +4,12 @@ After=network.target
 
 [Service]
 Type=simple
+# The executable lives in bundle/bin/ because Serverpod 4 is built with
+# `dart build cli`, which emits it alongside the native libraries in
+# bundle/lib/ that it resolves relative to itself. WorkingDirectory stays the
+# install root so config/, web/ and migrations/ still resolve.
 WorkingDirectory=/var/www/flumip_production
-ExecStart=/var/www/flumip_production/server --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations
+ExecStart=/var/www/flumip_production/bundle/bin/main --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations
 # Optional runtime configuration, chiefly the single sign-on settings; see
 # docs/authentication.md. The leading dash is required, not cosmetic: the
 # deploy workflows copy this unit onto hosts that have never run
