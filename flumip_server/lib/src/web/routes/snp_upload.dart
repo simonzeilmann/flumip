@@ -74,9 +74,12 @@ class SnpUploadRoute extends Route {
     );
 
     final snpId = int.tryParse(request.pathParameters.get(_snpParam));
-    final fileName = Uri.decodeComponent(
-      request.pathParameters.get(_fileParam),
-    );
+    // Not `Uri.decodeComponent` — Relic has already decoded it, and decoding a
+    // second time throws on any raw non-ASCII character. See the longer note in
+    // `download.dart`. Accepted names are ASCII-only anyway, so the effect here
+    // was narrower: a name with an accent came back as a 500 instead of taking
+    // its place among the uniform 403s.
+    final fileName = request.pathParameters.get(_fileParam);
     if (snpId == null) return refused;
 
     final snp = await Snp.db.findById(session, snpId);

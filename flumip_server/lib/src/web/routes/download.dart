@@ -79,9 +79,19 @@ class DownloadRoute extends Route {
     );
 
     final projectId = int.tryParse(request.pathParameters.get(_projectParam));
-    final fileName = Uri.decodeComponent(
-      request.pathParameters.get(_fileParam),
-    );
+    // ⚠️ Not `Uri.decodeComponent`. Relic percent-decodes path parameters
+    // already, so decoding again is both wrong and fatal: `Uri.decodeComponent`
+    // rejects any raw non-ASCII character, so a browser asking for
+    // `M%C3%BCller.txt` arrived here as `Müller.txt` and threw
+    // `ArgumentError: Illegal percent encoding in URI` — a 500 before the
+    // access check had even run, on every project file with an accent in its
+    // name. A file called `a%b.txt` did the same.
+    //
+    // That also broke this route's one promise, that every refusal looks
+    // identical: a 500 says "this name made the server crash" where a 403 says
+    // nothing. And it made the RFC 5987 `filename*` half of
+    // [_attachmentHeaders] unreachable — the request never got that far.
+    final fileName = request.pathParameters.get(_fileParam);
     if (projectId == null) return refused;
 
     final project = await Project.db.findById(session, projectId);
