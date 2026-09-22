@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// One in-progress OIDC authorization-code exchange.
 ///
@@ -21,7 +21,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// `invalidateKey` does not report whether the key existed, so there is no
 /// atomic consume.
 abstract class AuthFlow
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   AuthFlow._({
     this.id,
     required this.state,
@@ -51,8 +51,8 @@ abstract class AuthFlow
       redirectUri: jsonSerialization['redirectUri'] as String,
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
-      expires: _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
+          : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      expires: _is.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
     );
   }
 
@@ -76,11 +76,11 @@ abstract class AuthFlow
   DateTime expires;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [AuthFlow]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   AuthFlow copyWith({
     int? id,
     String? state,
@@ -114,12 +114,11 @@ abstract class AuthFlow
   }
 
   static AuthFlowIncludeList includeList({
-    _i1.WhereExpressionBuilder<AuthFlowTable>? where,
+    _is.WhereExpressionBuilder<AuthFlowTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthFlowTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
     AuthFlowInclude? include,
   }) {
     return AuthFlowIncludeList._(
@@ -127,7 +126,6 @@ abstract class AuthFlow
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(AuthFlow.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(AuthFlow.t),
       include: include,
     );
@@ -135,7 +133,7 @@ abstract class AuthFlow
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -162,7 +160,7 @@ class _AuthFlowImpl extends AuthFlow {
 
   /// Returns a shallow copy of this [AuthFlow]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   AuthFlow copyWith({
     Object? id = _Undefined,
@@ -185,88 +183,55 @@ class _AuthFlowImpl extends AuthFlow {
   }
 }
 
-class AuthFlowUpdateTable extends _i1.UpdateTable<AuthFlowTable> {
+class AuthFlowUpdateTable extends _is.UpdateTable<AuthFlowTable> {
   AuthFlowUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> state(String value) => _i1.ColumnValue(
-    table.state,
-    value,
-  );
+  _is.ColumnValue<String, String> state(String value) =>
+      _is.ColumnValue(table.state, value);
 
-  _i1.ColumnValue<String, String> codeVerifier(String value) => _i1.ColumnValue(
-    table.codeVerifier,
-    value,
-  );
+  _is.ColumnValue<String, String> codeVerifier(String value) =>
+      _is.ColumnValue(table.codeVerifier, value);
 
-  _i1.ColumnValue<String, String> nonce(String value) => _i1.ColumnValue(
-    table.nonce,
-    value,
-  );
+  _is.ColumnValue<String, String> nonce(String value) =>
+      _is.ColumnValue(table.nonce, value);
 
-  _i1.ColumnValue<String, String> redirectUri(String value) => _i1.ColumnValue(
-    table.redirectUri,
-    value,
-  );
+  _is.ColumnValue<String, String> redirectUri(String value) =>
+      _is.ColumnValue(table.redirectUri, value);
 
-  _i1.ColumnValue<DateTime, DateTime> created(DateTime value) =>
-      _i1.ColumnValue(
-        table.created,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
+      _is.ColumnValue(table.created, value);
 
-  _i1.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
-      _i1.ColumnValue(
-        table.expires,
-        value,
-      );
+  _is.ColumnValue<DateTime, DateTime> expires(DateTime value) =>
+      _is.ColumnValue(table.expires, value);
 }
 
-class AuthFlowTable extends _i1.Table<int?> {
+class AuthFlowTable extends _is.Table<int?> {
   AuthFlowTable({super.tableRelation}) : super(tableName: 'auth_flow') {
     updateTable = AuthFlowUpdateTable(this);
-    state = _i1.ColumnString(
-      'state',
-      this,
-    );
-    codeVerifier = _i1.ColumnString(
-      'codeVerifier',
-      this,
-    );
-    nonce = _i1.ColumnString(
-      'nonce',
-      this,
-    );
-    redirectUri = _i1.ColumnString(
-      'redirectUri',
-      this,
-    );
-    created = _i1.ColumnDateTime(
-      'created',
-      this,
-      hasDefault: true,
-    );
-    expires = _i1.ColumnDateTime(
-      'expires',
-      this,
-    );
+    state = _is.ColumnString('state', this);
+    codeVerifier = _is.ColumnString('codeVerifier', this);
+    nonce = _is.ColumnString('nonce', this);
+    redirectUri = _is.ColumnString('redirectUri', this);
+    created = _is.ColumnDateTime('created', this, hasDefault: true);
+    expires = _is.ColumnDateTime('expires', this);
   }
 
   late final AuthFlowUpdateTable updateTable;
 
-  late final _i1.ColumnString state;
+  late final _is.ColumnString state;
 
-  late final _i1.ColumnString codeVerifier;
+  late final _is.ColumnString codeVerifier;
 
-  late final _i1.ColumnString nonce;
+  late final _is.ColumnString nonce;
 
-  late final _i1.ColumnString redirectUri;
+  late final _is.ColumnString redirectUri;
 
-  late final _i1.ColumnDateTime created;
+  late final _is.ColumnDateTime created;
 
-  late final _i1.ColumnDateTime expires;
+  late final _is.ColumnDateTime expires;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     state,
     codeVerifier,
@@ -277,23 +242,22 @@ class AuthFlowTable extends _i1.Table<int?> {
   ];
 }
 
-class AuthFlowInclude extends _i1.IncludeObject {
+class AuthFlowInclude extends _is.IncludeObject {
   AuthFlowInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => AuthFlow.t;
+  _is.Table<int?> get table => AuthFlow.t;
 }
 
-class AuthFlowIncludeList extends _i1.IncludeList {
+class AuthFlowIncludeList extends _is.IncludeList {
   AuthFlowIncludeList._({
-    _i1.WhereExpressionBuilder<AuthFlowTable>? where,
+    _is.WhereExpressionBuilder<AuthFlowTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -301,10 +265,10 @@ class AuthFlowIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => AuthFlow.t;
+  _is.Table<int?> get table => AuthFlow.t;
 }
 
 class AuthFlowRepository {
@@ -333,22 +297,20 @@ class AuthFlowRepository {
   /// );
   /// ```
   Future<List<AuthFlow>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthFlowTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthFlowTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthFlowTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthFlowTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<AuthFlow>(
       where: where?.call(AuthFlow.t),
       orderBy: orderBy?.call(AuthFlow.t),
       orderByList: orderByList?.call(AuthFlow.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -375,21 +337,19 @@ class AuthFlowRepository {
   /// );
   /// ```
   Future<AuthFlow?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthFlowTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthFlowTable>? where,
     int? offset,
-    _i1.OrderByBuilder<AuthFlowTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<AuthFlowTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<AuthFlow>(
       where: where?.call(AuthFlow.t),
       orderBy: orderBy?.call(AuthFlow.t),
       orderByList: orderByList?.call(AuthFlow.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -399,11 +359,11 @@ class AuthFlowRepository {
 
   /// Finds a single [AuthFlow] by its [id] or null if no such row exists.
   Future<AuthFlow?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<AuthFlow>(
       id,
@@ -423,16 +383,22 @@ class AuthFlowRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthFlow>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthFlow> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<AuthFlow>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -440,12 +406,78 @@ class AuthFlowRepository {
   ///
   /// The returned [AuthFlow] will have its `id` field set.
   Future<AuthFlow> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthFlow row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<AuthFlow>(
+    return session.db.insertRow<AuthFlow>(row, transaction: transaction);
+  }
+
+  /// Upserts all [AuthFlow]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [AuthFlow]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<AuthFlow>> upsert(
+    _is.DatabaseSession session,
+    List<AuthFlow> rows, {
+    required _is.ColumnSelections<AuthFlowTable> conflictColumns,
+    _is.ColumnSelections<AuthFlowTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthFlowTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<AuthFlow>(
+      rows,
+      conflictColumns: conflictColumns(AuthFlow.t),
+      updateColumns: updateColumns?.call(AuthFlow.t),
+      updateWhere: updateWhere?.call(AuthFlow.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [AuthFlow] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [AuthFlow] will have its `id` field set.
+  Future<AuthFlow?> upsertRow(
+    _is.DatabaseSession session,
+    AuthFlow row, {
+    required _is.ColumnSelections<AuthFlowTable> conflictColumns,
+    _is.ColumnSelections<AuthFlowTable>? updateColumns,
+    _is.WhereExpressionBuilder<AuthFlowTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<AuthFlow>(
       row,
+      conflictColumns: conflictColumns(AuthFlow.t),
+      updateColumns: updateColumns?.call(AuthFlow.t),
+      updateWhere: updateWhere?.call(AuthFlow.t),
       transaction: transaction,
     );
   }
@@ -455,16 +487,22 @@ class AuthFlowRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthFlow>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthFlow> rows, {
-    _i1.ColumnSelections<AuthFlowTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthFlowTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<AuthFlow>(
       rows,
       columns: columns?.call(AuthFlow.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -472,10 +510,10 @@ class AuthFlowRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<AuthFlow> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthFlow row, {
-    _i1.ColumnSelections<AuthFlowTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<AuthFlowTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<AuthFlow>(
       row,
@@ -487,10 +525,10 @@ class AuthFlowRepository {
   /// Updates a single [AuthFlow] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<AuthFlow?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<AuthFlowUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<AuthFlowUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<AuthFlow>(
       id,
@@ -501,16 +539,20 @@ class AuthFlowRepository {
 
   /// Updates all [AuthFlow]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthFlow>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<AuthFlowUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<AuthFlowTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<AuthFlowUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<AuthFlowTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<AuthFlowTable>? orderBy,
-    _i1.OrderByListBuilder<AuthFlowTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<AuthFlow>(
       columnValues: columnValues(AuthFlow.t.updateTable),
@@ -519,56 +561,80 @@ class AuthFlowRepository {
       offset: offset,
       orderBy: orderBy?.call(AuthFlow.t),
       orderByList: orderByList?.call(AuthFlow.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [AuthFlow]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthFlow>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<AuthFlow> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<AuthFlow>(
       rows,
+      orderBy: orderBy?.call(AuthFlow.t),
+      orderByList: orderByList?.call(AuthFlow.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [AuthFlow].
   Future<AuthFlow> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     AuthFlow row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<AuthFlow>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<AuthFlow>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<AuthFlow>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthFlowTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthFlowTable> where,
+    _is.OrderByBuilder<AuthFlowTable>? orderBy,
+    _is.OrderByListBuilder<AuthFlowTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<AuthFlow>(
       where: where(AuthFlow.t),
+      orderBy: orderBy?.call(AuthFlow.t),
+      orderByList: orderByList?.call(AuthFlow.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<AuthFlowTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<AuthFlowTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<AuthFlow>(
       where: where?.call(AuthFlow.t),
@@ -579,11 +645,11 @@ class AuthFlowRepository {
 
   /// Acquires row-level locks on [AuthFlow] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<AuthFlowTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<AuthFlowTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<AuthFlow>(
       where: where(AuthFlow.t),

@@ -7,7 +7,12 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_DB: flumip
+      # ⚠️ Deliberately no POSTGRES_DB. config/development.yaml connects to the
+      # default `postgres` database, which is where the dev schema actually
+      # lives. This used to say `POSTGRES_DB: flumip`, which created a second,
+      # permanently empty database and left two plausible answers to "where is
+      # my dev data?" — the schema was never in `flumip`. POSTGRES_DB only takes
+      # effect on first init anyway, so an existing volume was unaffected by it.
       POSTGRES_PASSWORD: "Ts9sUjpsxo_I4VGCOcw_UrF3gPrInFqG"
     volumes:
       - flumip_data:/var/lib/postgresql

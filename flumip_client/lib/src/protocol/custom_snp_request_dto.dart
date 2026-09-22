@@ -10,15 +10,16 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2kzrgg5;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// What the app sends to add a custom SNP, whether by upload or by URL. No table.
 ///
 /// The bytes themselves never travel through an endpoint — an upload streams to
 /// the `/snp_upload/...` web route, and a URL import is fetched by the server.
 /// This carries only the description of what is being added.
-abstract class CustomSnpRequestDto implements _i1.SerializableModel {
+abstract class CustomSnpRequestDto
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   CustomSnpRequestDto._({
     required this.name,
     String? description,
@@ -43,10 +44,12 @@ abstract class CustomSnpRequestDto implements _i1.SerializableModel {
       genomeId: jsonSerialization['genomeId'] as int,
       private: jsonSerialization['private'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['private']),
       urls: jsonSerialization['urls'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['urls']),
+          : _i2kzrgg5.Protocol().deserialize<List<String>>(
+              jsonSerialization['urls'],
+            ),
     );
   }
 
@@ -68,7 +71,7 @@ abstract class CustomSnpRequestDto implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [CustomSnpRequestDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   CustomSnpRequestDto copyWith({
     String? name,
     String? description,
@@ -89,8 +92,20 @@ abstract class CustomSnpRequestDto implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'CustomSnpRequestDto',
+      'name': name,
+      'description': description,
+      'genomeId': genomeId,
+      'private': private,
+      if (urls != null) 'urls': urls?.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -113,7 +128,7 @@ class _CustomSnpRequestDtoImpl extends CustomSnpRequestDto {
 
   /// Returns a shallow copy of this [CustomSnpRequestDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   CustomSnpRequestDto copyWith({
     String? name,

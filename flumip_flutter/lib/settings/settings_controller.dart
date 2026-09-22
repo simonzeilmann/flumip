@@ -37,30 +37,17 @@ enum SettingsView {
 /// the write half only mean anything together — see the warnings there.
 class SettingsController extends ChangeNotifier {
   SettingsController({
-    required Future<UserSettingsDto> Function() loadAccess,
-    required Future<Settings> Function(String password) loadSettings,
-    required Future<void> Function(String password, Settings settings)
-    saveSettings,
-    required Future<void> Function(String password, String smtpPassword)
-    setSmtpPassword,
-    required Future<void> Function(String password, String secret)
-    setOidcClientSecret,
-    required Future<bool> Function(String password) smtpPasswordConfigured,
-    required Future<AuthAdminStatusDto> Function(String password)
-    loadAuthStatus,
-    required Future<void> Function(String password, String to) sendTestMail,
-    required void Function() signOut,
-    Listenable? auth,
-  }) : _loadAccess = loadAccess,
-       _loadSettings = loadSettings,
-       _saveSettings = saveSettings,
-       _setSmtpPassword = setSmtpPassword,
-       _setOidcClientSecret = setOidcClientSecret,
-       _smtpPasswordConfigured = smtpPasswordConfigured,
-       _loadAuthStatus = loadAuthStatus,
-       _sendTestMail = sendTestMail,
-       _signOut = signOut,
-       _auth = auth {
+    required this._loadAccess,
+    required this._loadSettings,
+    required this._saveSettings,
+    required this._setSmtpPassword,
+    required this._setOidcClientSecret,
+    required this._smtpPasswordConfigured,
+    required this._loadAuthStatus,
+    required this._sendTestMail,
+    required this._signOut,
+    this._auth,
+  }) {
     // ⚠️ Asked again whenever sign-in state changes, not just once.
     //
     // TabBarView builds all three tabs when the app starts, so the first answer

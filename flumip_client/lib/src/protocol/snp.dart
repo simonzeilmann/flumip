@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'snp_import_status.dart' as _i2;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'snp_import_status.dart' as _iq9n7xnd;
 
 /// One SNP dataset: a bgzip'd VCF plus its tabix index.
 ///
@@ -28,7 +28,8 @@ import 'snp_import_status.dart' as _i2;
 /// `folder` is the scanner's idempotency key and stays that way. For a custom SNP
 /// the folder is derived from the row id, so the row is authoritative and a scan
 /// only reconciles what is on disk against it.
-abstract class Snp implements _i1.SerializableModel {
+abstract class Snp
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Snp._({
     this.id,
     required this.name,
@@ -42,7 +43,7 @@ abstract class Snp implements _i1.SerializableModel {
     this.genome,
     this.owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     this.sourceVcfUrl,
     this.sourceTbiUrl,
@@ -54,7 +55,7 @@ abstract class Snp implements _i1.SerializableModel {
        private = private ?? false,
        size = size ?? 0,
        custom = custom ?? false,
-       status = status ?? _i2.SnpImportStatus.ready,
+       status = status ?? _iq9n7xnd.SnpImportStatus.ready,
        statusMessage = statusMessage ?? '',
        bytesDownloaded = bytesDownloaded ?? 0,
        totalBytes = totalBytes ?? 0,
@@ -73,7 +74,7 @@ abstract class Snp implements _i1.SerializableModel {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -91,19 +92,19 @@ abstract class Snp implements _i1.SerializableModel {
       vcfPath: jsonSerialization['vcfPath'] as String,
       tbiPath: jsonSerialization['tbiPath'] as String,
       folder: jsonSerialization['folder'] as String,
-      active: _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+      active: _isc.BoolJsonExtension.fromJson(jsonSerialization['active']),
       private: jsonSerialization['private'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['private']),
       size: jsonSerialization['size'] as int?,
       genome: jsonSerialization['genome'] as int?,
       owner: jsonSerialization['owner'] as int?,
       custom: jsonSerialization['custom'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['custom']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['custom']),
       status: jsonSerialization['status'] == null
           ? null
-          : _i2.SnpImportStatus.fromJson(
+          : _iq9n7xnd.SnpImportStatus.fromJson(
               (jsonSerialization['status'] as String),
             ),
       statusMessage: jsonSerialization['statusMessage'] as String?,
@@ -113,12 +114,12 @@ abstract class Snp implements _i1.SerializableModel {
       totalBytes: jsonSerialization['totalBytes'] as int?,
       statusUpdated: jsonSerialization['statusUpdated'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(
+          : _isc.DateTimeJsonExtension.fromJson(
               jsonSerialization['statusUpdated'],
             ),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
     );
   }
 
@@ -175,7 +176,7 @@ abstract class Snp implements _i1.SerializableModel {
   /// Where the bytes are in their journey. `ready` is the only status mipgen will
   /// accept, and it is the default so that every row predating this feature —
   /// which means every global SNP — is usable with no data migration.
-  _i2.SnpImportStatus status;
+  _iq9n7xnd.SnpImportStatus status;
 
   /// Why it failed, or which step it is on. Never holds a remote response body: a
   /// fetched error page can contain anything and this string is rendered in the
@@ -202,7 +203,7 @@ abstract class Snp implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Snp copyWith({
     int? id,
     String? name,
@@ -216,7 +217,7 @@ abstract class Snp implements _i1.SerializableModel {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -253,8 +254,35 @@ abstract class Snp implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Snp',
+      if (id != null) 'id': id,
+      'name': name,
+      'description': description,
+      'vcfPath': vcfPath,
+      'tbiPath': tbiPath,
+      'folder': folder,
+      'active': active,
+      'private': private,
+      'size': size,
+      if (genome != null) 'genome': genome,
+      if (owner != null) 'owner': owner,
+      'custom': custom,
+      'status': status.toJson(),
+      'statusMessage': statusMessage,
+      if (sourceVcfUrl != null) 'sourceVcfUrl': sourceVcfUrl,
+      if (sourceTbiUrl != null) 'sourceTbiUrl': sourceTbiUrl,
+      'bytesDownloaded': bytesDownloaded,
+      'totalBytes': totalBytes,
+      if (statusUpdated != null) 'statusUpdated': statusUpdated?.toJson(),
+      'created': created.toJson(),
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -274,7 +302,7 @@ class _SnpImpl extends Snp {
     int? genome,
     int? owner,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     String? sourceVcfUrl,
     String? sourceTbiUrl,
@@ -307,7 +335,7 @@ class _SnpImpl extends Snp {
 
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Snp copyWith({
     Object? id = _Undefined,
@@ -322,7 +350,7 @@ class _SnpImpl extends Snp {
     Object? genome = _Undefined,
     Object? owner = _Undefined,
     bool? custom,
-    _i2.SnpImportStatus? status,
+    _iq9n7xnd.SnpImportStatus? status,
     String? statusMessage,
     Object? sourceVcfUrl = _Undefined,
     Object? sourceTbiUrl = _Undefined,

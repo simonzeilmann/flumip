@@ -36,10 +36,9 @@ class UploadJob {
 /// no browser: see `test/snp/snp_upload_controller_test.dart`.
 class SnpUploadController extends ChangeNotifier {
   SnpUploadController({
-    required SnpTransport transport,
+    required this._transport,
     required Future<void> Function(int snpId) finishUpload,
-  }) : _transport = transport,
-       _finish = finishUpload;
+  }) : _finish = finishUpload;
 
   final SnpTransport _transport;
   final Future<void> Function(int snpId) _finish;

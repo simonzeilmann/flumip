@@ -17,43 +17,24 @@ import 'project_state.dart';
 /// lifecycle. Its *pieces* were already covered; the state driving them was not.
 class ProjectTileController extends ChangeNotifier {
   ProjectTileController({
-    required Project project,
-    required bool expanded,
-    required Future<Project> Function(int projectId) loadProject,
-    required Future<ProjectOptions> Function(int optionsId) loadOptions,
-    required Future<Genome> Function(int genomeId) loadGenome,
-    required Future<Snp> Function(int snpId) loadSnp,
-    required Future<List<String>> Function(int projectId) loadProgress,
-    required Future<void> Function(int projectId, String gene) addGene,
-    required Future<void> Function(int projectId, String gene) removeGene,
-    required Future<void> Function(int projectId) createBedFile,
-    required Future<void> Function(int projectId, bool deleteExcessFiles)
-    generateMips,
-    required Future<List<String>> Function() loadGenomeCategories,
-    required Future<List<Genome>> Function(String category)
-    loadGenomesInCategory,
-    required Future<List<Snp>> Function(int genomeId) loadSnpsForGenome,
-    required Future<void> Function(int projectId, int genomeId) setGenome,
-    required Future<void> Function(int projectId, int? snpId) setSnp,
-    required Future<void> Function(int projectId, bool enabled)
-    setEmailNotification,
-  }) : _project = project,
-       _expanded = expanded,
-       _loadProject = loadProject,
-       _loadOptions = loadOptions,
-       _loadGenome = loadGenome,
-       _loadSnp = loadSnp,
-       _loadProgress = loadProgress,
-       _addGene = addGene,
-       _removeGene = removeGene,
-       _createBedFile = createBedFile,
-       _generateMips = generateMips,
-       _loadGenomeCategories = loadGenomeCategories,
-       _loadGenomesInCategory = loadGenomesInCategory,
-       _loadSnpsForGenome = loadSnpsForGenome,
-       _setGenome = setGenome,
-       _setSnp = setSnp,
-       _setEmailNotification = setEmailNotification;
+    required this._project,
+    required this._expanded,
+    required this._loadProject,
+    required this._loadOptions,
+    required this._loadGenome,
+    required this._loadSnp,
+    required this._loadProgress,
+    required this._addGene,
+    required this._removeGene,
+    required this._createBedFile,
+    required this._generateMips,
+    required this._loadGenomeCategories,
+    required this._loadGenomesInCategory,
+    required this._loadSnpsForGenome,
+    required this._setGenome,
+    required this._setSnp,
+    required this._setEmailNotification,
+  });
 
   final Future<Project> Function(int projectId) _loadProject;
   final Future<ProjectOptions> Function(int optionsId) _loadOptions;

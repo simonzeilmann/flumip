@@ -422,12 +422,40 @@ class GenomeService {
   ///
   /// \param session The current session.
   /// \param object The genome object.
-  Future<void> indexIsFinished(Session session, object) async {
+  Future<void> indexIsFinished(Session session, Genome object) async {
     session.log(
       "Indexing finished for genome with ID: ${object.id}",
       level: LogLevel.info,
     );
-    var faFilesString = Directory(object.path + "/fa").listSync().toString();
+    // ⚠️ This method must reach the writes below whatever it finds, because it
+    // is the *only* thing that clears `indexing`. Throwing here — on a genome
+    // with no path, or a directory that has since gone — would leave the row
+    // reading "indexing" forever with no poller left to resolve it, which looks
+    // to the user like a build that never ends. So a missing directory is
+    // treated the same way as a directory without index files in it: not
+    // indexed, and done.
+    //
+    // `path` is nullable and was previously concatenated with `+`, which threw
+    // on null rather than reporting it.
+    var faFilesString = '';
+    final path = object.path;
+    if (path == null) {
+      session.log(
+        "Genome ${object.id} has no path; recording it as not indexed.",
+        level: LogLevel.warning,
+      );
+    } else {
+      try {
+        faFilesString = Directory('$path/fa').listSync().toString();
+      } on FileSystemException catch (e) {
+        session.log(
+          "Could not list '$path/fa' for genome ${object.id}; recording it as "
+          "not indexed.",
+          level: LogLevel.warning,
+          exception: e,
+        );
+      }
+    }
     if (_containsFaIndexFiles(faFilesString)) {
       object.indexed = true;
       object.indexResults = 0;

@@ -17,11 +17,7 @@ import 'package:flutter/foundation.dart';
 /// Its one piece of I/O is a constructor parameter, so the state machine is
 /// testable on the Dart VM exactly like `AuthController`.
 class AccessController extends ChangeNotifier {
-  AccessController({
-    required Future<UserSettingsDto> Function() fetchAccess,
-    Listenable? auth,
-  }) : _fetchAccess = fetchAccess,
-       _auth = auth {
+  AccessController({required this._fetchAccess, this._auth}) {
     // The tabs are all built before the bearer token exists — `TabBarView`
     // constructs every one of them at startup — so the first answer describes an
     // anonymous caller. Re-asking whenever sign-in state changes is what stops a

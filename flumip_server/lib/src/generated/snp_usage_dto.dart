@@ -10,23 +10,18 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// One project currently pointing at an SNP. No table.
 ///
 /// Shown in the delete confirmation, so that nobody removes a file three running
 /// designs depend on without being told which three.
 abstract class SnpUsageDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  SnpUsageDto._({
-    required this.projectId,
-    required this.projectName,
-  });
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  SnpUsageDto._({required this.projectId, required this.projectName});
 
-  factory SnpUsageDto({
-    required int projectId,
-    required String projectName,
-  }) = _SnpUsageDtoImpl;
+  factory SnpUsageDto({required int projectId, required String projectName}) =
+      _SnpUsageDtoImpl;
 
   factory SnpUsageDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return SnpUsageDto(
@@ -41,11 +36,8 @@ abstract class SnpUsageDto
 
   /// Returns a shallow copy of this [SnpUsageDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  SnpUsageDto copyWith({
-    int? projectId,
-    String? projectName,
-  });
+  @_is.useResult
+  SnpUsageDto copyWith({int? projectId, String? projectName});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -66,27 +58,19 @@ abstract class SnpUsageDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _SnpUsageDtoImpl extends SnpUsageDto {
-  _SnpUsageDtoImpl({
-    required int projectId,
-    required String projectName,
-  }) : super._(
-         projectId: projectId,
-         projectName: projectName,
-       );
+  _SnpUsageDtoImpl({required int projectId, required String projectName})
+    : super._(projectId: projectId, projectName: projectName);
 
   /// Returns a shallow copy of this [SnpUsageDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  SnpUsageDto copyWith({
-    int? projectId,
-    String? projectName,
-  }) {
+  SnpUsageDto copyWith({int? projectId, String? projectName}) {
     return SnpUsageDto(
       projectId: projectId ?? this.projectId,
       projectName: projectName ?? this.projectName,

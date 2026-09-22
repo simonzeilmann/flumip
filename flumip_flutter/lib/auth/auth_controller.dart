@@ -29,12 +29,10 @@ enum AuthState {
 /// `test/auth/auth_controller_test.dart`.
 class AuthController extends ChangeNotifier {
   AuthController({
-    required Future<AuthConfigSnapshot> Function() fetchConfig,
-    required Future<SessionTokenResponse?> Function() fetchSession,
-    required void Function(String url) navigate,
-  }) : _fetchConfig = fetchConfig,
-       _fetchSession = fetchSession,
-       _navigate = navigate;
+    required this._fetchConfig,
+    required this._fetchSession,
+    required this._navigate,
+  });
 
   /// Builds the controller the running app uses.
   ///

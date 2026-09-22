@@ -10,10 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class Settings
-    implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
+    implements _is.TableRow<int?>, _is.ProtocolSerialization {
   Settings._({
     this.id,
     bool? demoMode,
@@ -122,7 +122,7 @@ abstract class Settings
       id: jsonSerialization['id'] as int?,
       demoMode: jsonSerialization['demoMode'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
       demoModeRetentionHours:
           jsonSerialization['demoModeRetentionHours'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
@@ -140,7 +140,7 @@ abstract class Settings
           jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
       mailActive: jsonSerialization['mailActive'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
       smtpServer: jsonSerialization['smtpServer'] as String?,
       smtpPort: jsonSerialization['smtpPort'] as int?,
       smtpUser: jsonSerialization['smtpUser'] as String?,
@@ -148,10 +148,10 @@ abstract class Settings
       smtpFrom: jsonSerialization['smtpFrom'] as String?,
       startTLS: jsonSerialization['startTLS'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
       loginRequired: jsonSerialization['loginRequired'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
       settingsPassword: jsonSerialization['settingsPassword'] as String?,
       oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
       oidcClientId: jsonSerialization['oidcClientId'] as String?,
@@ -239,11 +239,11 @@ abstract class Settings
   String authPublicUrl;
 
   @override
-  _i1.Table<int?> get table => t;
+  _is.Table<int?> get table => t;
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   Settings copyWith({
     int? id,
     bool? demoMode,
@@ -356,12 +356,11 @@ abstract class Settings
   }
 
   static SettingsIncludeList includeList({
-    _i1.WhereExpressionBuilder<SettingsTable>? where,
+    _is.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SettingsTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
     SettingsInclude? include,
   }) {
     return SettingsIncludeList._(
@@ -369,7 +368,6 @@ abstract class Settings
       limit: limit,
       offset: offset,
       orderBy: orderBy?.call(Settings.t),
-      orderDescending: orderDescending,
       orderByList: orderByList?.call(Settings.t),
       include: include,
     );
@@ -377,7 +375,7 @@ abstract class Settings
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -452,7 +450,7 @@ class _SettingsImpl extends Settings {
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   Settings copyWith({
     Object? id = _Undefined,
@@ -530,331 +528,183 @@ class _SettingsImpl extends Settings {
   }
 }
 
-class SettingsUpdateTable extends _i1.UpdateTable<SettingsTable> {
+class SettingsUpdateTable extends _is.UpdateTable<SettingsTable> {
   SettingsUpdateTable(super.table);
 
-  _i1.ColumnValue<bool, bool> demoMode(bool value) => _i1.ColumnValue(
-    table.demoMode,
-    value,
-  );
+  _is.ColumnValue<bool, bool> demoMode(bool value) =>
+      _is.ColumnValue(table.demoMode, value);
 
-  _i1.ColumnValue<int, int> demoModeRetentionHours(int value) =>
-      _i1.ColumnValue(
-        table.demoModeRetentionHours,
-        value,
-      );
+  _is.ColumnValue<int, int> demoModeRetentionHours(int value) =>
+      _is.ColumnValue(table.demoModeRetentionHours, value);
 
-  _i1.ColumnValue<String, String> baseDir(String value) => _i1.ColumnValue(
-    table.baseDir,
-    value,
-  );
+  _is.ColumnValue<String, String> baseDir(String value) =>
+      _is.ColumnValue(table.baseDir, value);
 
-  _i1.ColumnValue<String, String> projectDir(String value) => _i1.ColumnValue(
-    table.projectDir,
-    value,
-  );
+  _is.ColumnValue<String, String> projectDir(String value) =>
+      _is.ColumnValue(table.projectDir, value);
 
-  _i1.ColumnValue<String, String> genomeDir(String value) => _i1.ColumnValue(
-    table.genomeDir,
-    value,
-  );
+  _is.ColumnValue<String, String> genomeDir(String value) =>
+      _is.ColumnValue(table.genomeDir, value);
 
-  _i1.ColumnValue<String, String> customSnpDir(String value) => _i1.ColumnValue(
-    table.customSnpDir,
-    value,
-  );
+  _is.ColumnValue<String, String> customSnpDir(String value) =>
+      _is.ColumnValue(table.customSnpDir, value);
 
-  _i1.ColumnValue<String, String> snpSourceAllowedHosts(String value) =>
-      _i1.ColumnValue(
-        table.snpSourceAllowedHosts,
-        value,
-      );
+  _is.ColumnValue<String, String> snpSourceAllowedHosts(String value) =>
+      _is.ColumnValue(table.snpSourceAllowedHosts, value);
 
-  _i1.ColumnValue<String, String> toolsDir(String value) => _i1.ColumnValue(
-    table.toolsDir,
-    value,
-  );
+  _is.ColumnValue<String, String> toolsDir(String value) =>
+      _is.ColumnValue(table.toolsDir, value);
 
-  _i1.ColumnValue<String, String> mipgenExecutable(String value) =>
-      _i1.ColumnValue(
-        table.mipgenExecutable,
-        value,
-      );
+  _is.ColumnValue<String, String> mipgenExecutable(String value) =>
+      _is.ColumnValue(table.mipgenExecutable, value);
 
-  _i1.ColumnValue<String, String> exonExtractScript(String value) =>
-      _i1.ColumnValue(
-        table.exonExtractScript,
-        value,
-      );
+  _is.ColumnValue<String, String> exonExtractScript(String value) =>
+      _is.ColumnValue(table.exonExtractScript, value);
 
-  _i1.ColumnValue<String, String> ucscTrackGenerator(String value) =>
-      _i1.ColumnValue(
-        table.ucscTrackGenerator,
-        value,
-      );
+  _is.ColumnValue<String, String> ucscTrackGenerator(String value) =>
+      _is.ColumnValue(table.ucscTrackGenerator, value);
 
-  _i1.ColumnValue<String, String> binCreationScript(String value) =>
-      _i1.ColumnValue(
-        table.binCreationScript,
-        value,
-      );
+  _is.ColumnValue<String, String> binCreationScript(String value) =>
+      _is.ColumnValue(table.binCreationScript, value);
 
-  _i1.ColumnValue<String, String> bigGenePredToGenePredExecutable(
+  _is.ColumnValue<String, String> bigGenePredToGenePredExecutable(
     String value,
-  ) => _i1.ColumnValue(
-    table.bigGenePredToGenePredExecutable,
-    value,
-  );
+  ) => _is.ColumnValue(table.bigGenePredToGenePredExecutable, value);
 
-  _i1.ColumnValue<bool, bool> mailActive(bool value) => _i1.ColumnValue(
-    table.mailActive,
-    value,
-  );
+  _is.ColumnValue<bool, bool> mailActive(bool value) =>
+      _is.ColumnValue(table.mailActive, value);
 
-  _i1.ColumnValue<String, String> smtpServer(String value) => _i1.ColumnValue(
-    table.smtpServer,
-    value,
-  );
+  _is.ColumnValue<String, String> smtpServer(String value) =>
+      _is.ColumnValue(table.smtpServer, value);
 
-  _i1.ColumnValue<int, int> smtpPort(int value) => _i1.ColumnValue(
-    table.smtpPort,
-    value,
-  );
+  _is.ColumnValue<int, int> smtpPort(int value) =>
+      _is.ColumnValue(table.smtpPort, value);
 
-  _i1.ColumnValue<String, String> smtpUser(String value) => _i1.ColumnValue(
-    table.smtpUser,
-    value,
-  );
+  _is.ColumnValue<String, String> smtpUser(String value) =>
+      _is.ColumnValue(table.smtpUser, value);
 
-  _i1.ColumnValue<String, String> smtpPassword(String? value) =>
-      _i1.ColumnValue(
-        table.smtpPassword,
-        value,
-      );
+  _is.ColumnValue<String, String> smtpPassword(String? value) =>
+      _is.ColumnValue(table.smtpPassword, value);
 
-  _i1.ColumnValue<String, String> smtpFrom(String value) => _i1.ColumnValue(
-    table.smtpFrom,
-    value,
-  );
+  _is.ColumnValue<String, String> smtpFrom(String value) =>
+      _is.ColumnValue(table.smtpFrom, value);
 
-  _i1.ColumnValue<bool, bool> startTLS(bool value) => _i1.ColumnValue(
-    table.startTLS,
-    value,
-  );
+  _is.ColumnValue<bool, bool> startTLS(bool value) =>
+      _is.ColumnValue(table.startTLS, value);
 
-  _i1.ColumnValue<bool, bool> loginRequired(bool value) => _i1.ColumnValue(
-    table.loginRequired,
-    value,
-  );
+  _is.ColumnValue<bool, bool> loginRequired(bool value) =>
+      _is.ColumnValue(table.loginRequired, value);
 
-  _i1.ColumnValue<String, String> settingsPassword(String value) =>
-      _i1.ColumnValue(
-        table.settingsPassword,
-        value,
-      );
+  _is.ColumnValue<String, String> settingsPassword(String value) =>
+      _is.ColumnValue(table.settingsPassword, value);
 
-  _i1.ColumnValue<String, String> oidcIssuer(String value) => _i1.ColumnValue(
-    table.oidcIssuer,
-    value,
-  );
+  _is.ColumnValue<String, String> oidcIssuer(String value) =>
+      _is.ColumnValue(table.oidcIssuer, value);
 
-  _i1.ColumnValue<String, String> oidcClientId(String value) => _i1.ColumnValue(
-    table.oidcClientId,
-    value,
-  );
+  _is.ColumnValue<String, String> oidcClientId(String value) =>
+      _is.ColumnValue(table.oidcClientId, value);
 
-  _i1.ColumnValue<String, String> oidcClientSecret(String? value) =>
-      _i1.ColumnValue(
-        table.oidcClientSecret,
-        value,
-      );
+  _is.ColumnValue<String, String> oidcClientSecret(String? value) =>
+      _is.ColumnValue(table.oidcClientSecret, value);
 
-  _i1.ColumnValue<String, String> oidcScopes(String value) => _i1.ColumnValue(
-    table.oidcScopes,
-    value,
-  );
+  _is.ColumnValue<String, String> oidcScopes(String value) =>
+      _is.ColumnValue(table.oidcScopes, value);
 
-  _i1.ColumnValue<String, String> oidcButtonLabel(String value) =>
-      _i1.ColumnValue(
-        table.oidcButtonLabel,
-        value,
-      );
+  _is.ColumnValue<String, String> oidcButtonLabel(String value) =>
+      _is.ColumnValue(table.oidcButtonLabel, value);
 
-  _i1.ColumnValue<String, String> oidcAllowedEmailDomains(String value) =>
-      _i1.ColumnValue(
-        table.oidcAllowedEmailDomains,
-        value,
-      );
+  _is.ColumnValue<String, String> oidcAllowedEmailDomains(String value) =>
+      _is.ColumnValue(table.oidcAllowedEmailDomains, value);
 
-  _i1.ColumnValue<String, String> oidcAdminEmails(String value) =>
-      _i1.ColumnValue(
-        table.oidcAdminEmails,
-        value,
-      );
+  _is.ColumnValue<String, String> oidcAdminEmails(String value) =>
+      _is.ColumnValue(table.oidcAdminEmails, value);
 
-  _i1.ColumnValue<String, String> authPublicUrl(String value) =>
-      _i1.ColumnValue(
-        table.authPublicUrl,
-        value,
-      );
+  _is.ColumnValue<String, String> authPublicUrl(String value) =>
+      _is.ColumnValue(table.authPublicUrl, value);
 }
 
-class SettingsTable extends _i1.Table<int?> {
+class SettingsTable extends _is.Table<int?> {
   SettingsTable({super.tableRelation}) : super(tableName: 'settings') {
     updateTable = SettingsUpdateTable(this);
-    demoMode = _i1.ColumnBool(
-      'demoMode',
-      this,
-      hasDefault: true,
-    );
-    demoModeRetentionHours = _i1.ColumnInt(
+    demoMode = _is.ColumnBool('demoMode', this, hasDefault: true);
+    demoModeRetentionHours = _is.ColumnInt(
       'demoModeRetentionHours',
       this,
       hasDefault: true,
     );
-    baseDir = _i1.ColumnString(
-      'baseDir',
-      this,
-      hasDefault: true,
-    );
-    projectDir = _i1.ColumnString(
-      'projectDir',
-      this,
-      hasDefault: true,
-    );
-    genomeDir = _i1.ColumnString(
-      'genomeDir',
-      this,
-      hasDefault: true,
-    );
-    customSnpDir = _i1.ColumnString(
-      'customSnpDir',
-      this,
-      hasDefault: true,
-    );
-    snpSourceAllowedHosts = _i1.ColumnString(
+    baseDir = _is.ColumnString('baseDir', this, hasDefault: true);
+    projectDir = _is.ColumnString('projectDir', this, hasDefault: true);
+    genomeDir = _is.ColumnString('genomeDir', this, hasDefault: true);
+    customSnpDir = _is.ColumnString('customSnpDir', this, hasDefault: true);
+    snpSourceAllowedHosts = _is.ColumnString(
       'snpSourceAllowedHosts',
       this,
       hasDefault: true,
     );
-    toolsDir = _i1.ColumnString(
-      'toolsDir',
-      this,
-      hasDefault: true,
-    );
-    mipgenExecutable = _i1.ColumnString(
+    toolsDir = _is.ColumnString('toolsDir', this, hasDefault: true);
+    mipgenExecutable = _is.ColumnString(
       'mipgenExecutable',
       this,
       hasDefault: true,
     );
-    exonExtractScript = _i1.ColumnString(
+    exonExtractScript = _is.ColumnString(
       'exonExtractScript',
       this,
       hasDefault: true,
     );
-    ucscTrackGenerator = _i1.ColumnString(
+    ucscTrackGenerator = _is.ColumnString(
       'ucscTrackGenerator',
       this,
       hasDefault: true,
     );
-    binCreationScript = _i1.ColumnString(
+    binCreationScript = _is.ColumnString(
       'binCreationScript',
       this,
       hasDefault: true,
     );
-    bigGenePredToGenePredExecutable = _i1.ColumnString(
+    bigGenePredToGenePredExecutable = _is.ColumnString(
       'bigGenePredToGenePredExecutable',
       this,
       hasDefault: true,
     );
-    mailActive = _i1.ColumnBool(
-      'mailActive',
-      this,
-      hasDefault: true,
-    );
-    smtpServer = _i1.ColumnString(
-      'smtpServer',
-      this,
-      hasDefault: true,
-    );
-    smtpPort = _i1.ColumnInt(
-      'smtpPort',
-      this,
-      hasDefault: true,
-    );
-    smtpUser = _i1.ColumnString(
-      'smtpUser',
-      this,
-      hasDefault: true,
-    );
-    smtpPassword = _i1.ColumnString(
-      'smtpPassword',
-      this,
-    );
-    smtpFrom = _i1.ColumnString(
-      'smtpFrom',
-      this,
-      hasDefault: true,
-    );
-    startTLS = _i1.ColumnBool(
-      'startTLS',
-      this,
-      hasDefault: true,
-    );
-    loginRequired = _i1.ColumnBool(
-      'loginRequired',
-      this,
-      hasDefault: true,
-    );
-    settingsPassword = _i1.ColumnString(
+    mailActive = _is.ColumnBool('mailActive', this, hasDefault: true);
+    smtpServer = _is.ColumnString('smtpServer', this, hasDefault: true);
+    smtpPort = _is.ColumnInt('smtpPort', this, hasDefault: true);
+    smtpUser = _is.ColumnString('smtpUser', this, hasDefault: true);
+    smtpPassword = _is.ColumnString('smtpPassword', this);
+    smtpFrom = _is.ColumnString('smtpFrom', this, hasDefault: true);
+    startTLS = _is.ColumnBool('startTLS', this, hasDefault: true);
+    loginRequired = _is.ColumnBool('loginRequired', this, hasDefault: true);
+    settingsPassword = _is.ColumnString(
       'settingsPassword',
       this,
       hasDefault: true,
     );
-    oidcIssuer = _i1.ColumnString(
-      'oidcIssuer',
-      this,
-      hasDefault: true,
-    );
-    oidcClientId = _i1.ColumnString(
-      'oidcClientId',
-      this,
-      hasDefault: true,
-    );
-    oidcClientSecret = _i1.ColumnString(
-      'oidcClientSecret',
-      this,
-    );
-    oidcScopes = _i1.ColumnString(
-      'oidcScopes',
-      this,
-      hasDefault: true,
-    );
-    oidcButtonLabel = _i1.ColumnString(
+    oidcIssuer = _is.ColumnString('oidcIssuer', this, hasDefault: true);
+    oidcClientId = _is.ColumnString('oidcClientId', this, hasDefault: true);
+    oidcClientSecret = _is.ColumnString('oidcClientSecret', this);
+    oidcScopes = _is.ColumnString('oidcScopes', this, hasDefault: true);
+    oidcButtonLabel = _is.ColumnString(
       'oidcButtonLabel',
       this,
       hasDefault: true,
     );
-    oidcAllowedEmailDomains = _i1.ColumnString(
+    oidcAllowedEmailDomains = _is.ColumnString(
       'oidcAllowedEmailDomains',
       this,
       hasDefault: true,
     );
-    oidcAdminEmails = _i1.ColumnString(
+    oidcAdminEmails = _is.ColumnString(
       'oidcAdminEmails',
       this,
       hasDefault: true,
     );
-    authPublicUrl = _i1.ColumnString(
-      'authPublicUrl',
-      this,
-      hasDefault: true,
-    );
+    authPublicUrl = _is.ColumnString('authPublicUrl', this, hasDefault: true);
   }
 
   late final SettingsUpdateTable updateTable;
 
-  late final _i1.ColumnBool demoMode;
+  late final _is.ColumnBool demoMode;
 
   /// How long a project survives on a demo install, in hours. 168 = 7 days.
   ///
@@ -862,66 +712,66 @@ class SettingsTable extends _i1.Table<int?> {
   /// raising it spares projects that were already queued. Lowering it cannot
   /// pull a scheduled deletion earlier — that project keeps the deadline it was
   /// created with. See DemoModeCleanup.
-  late final _i1.ColumnInt demoModeRetentionHours;
+  late final _is.ColumnInt demoModeRetentionHours;
 
-  late final _i1.ColumnString baseDir;
+  late final _is.ColumnString baseDir;
 
-  late final _i1.ColumnString projectDir;
+  late final _is.ColumnString projectDir;
 
-  late final _i1.ColumnString genomeDir;
+  late final _is.ColumnString genomeDir;
 
-  late final _i1.ColumnString customSnpDir;
+  late final _is.ColumnString customSnpDir;
 
-  late final _i1.ColumnString snpSourceAllowedHosts;
+  late final _is.ColumnString snpSourceAllowedHosts;
 
-  late final _i1.ColumnString toolsDir;
+  late final _is.ColumnString toolsDir;
 
-  late final _i1.ColumnString mipgenExecutable;
+  late final _is.ColumnString mipgenExecutable;
 
-  late final _i1.ColumnString exonExtractScript;
+  late final _is.ColumnString exonExtractScript;
 
-  late final _i1.ColumnString ucscTrackGenerator;
+  late final _is.ColumnString ucscTrackGenerator;
 
-  late final _i1.ColumnString binCreationScript;
+  late final _is.ColumnString binCreationScript;
 
-  late final _i1.ColumnString bigGenePredToGenePredExecutable;
+  late final _is.ColumnString bigGenePredToGenePredExecutable;
 
-  late final _i1.ColumnBool mailActive;
+  late final _is.ColumnBool mailActive;
 
-  late final _i1.ColumnString smtpServer;
+  late final _is.ColumnString smtpServer;
 
-  late final _i1.ColumnInt smtpPort;
+  late final _is.ColumnInt smtpPort;
 
-  late final _i1.ColumnString smtpUser;
+  late final _is.ColumnString smtpUser;
 
-  late final _i1.ColumnString smtpPassword;
+  late final _is.ColumnString smtpPassword;
 
-  late final _i1.ColumnString smtpFrom;
+  late final _is.ColumnString smtpFrom;
 
-  late final _i1.ColumnBool startTLS;
+  late final _is.ColumnBool startTLS;
 
-  late final _i1.ColumnBool loginRequired;
+  late final _is.ColumnBool loginRequired;
 
-  late final _i1.ColumnString settingsPassword;
+  late final _is.ColumnString settingsPassword;
 
-  late final _i1.ColumnString oidcIssuer;
+  late final _is.ColumnString oidcIssuer;
 
-  late final _i1.ColumnString oidcClientId;
+  late final _is.ColumnString oidcClientId;
 
-  late final _i1.ColumnString oidcClientSecret;
+  late final _is.ColumnString oidcClientSecret;
 
-  late final _i1.ColumnString oidcScopes;
+  late final _is.ColumnString oidcScopes;
 
-  late final _i1.ColumnString oidcButtonLabel;
+  late final _is.ColumnString oidcButtonLabel;
 
-  late final _i1.ColumnString oidcAllowedEmailDomains;
+  late final _is.ColumnString oidcAllowedEmailDomains;
 
-  late final _i1.ColumnString oidcAdminEmails;
+  late final _is.ColumnString oidcAdminEmails;
 
-  late final _i1.ColumnString authPublicUrl;
+  late final _is.ColumnString authPublicUrl;
 
   @override
-  List<_i1.Column> get columns => [
+  List<_is.Column> get columns => [
     id,
     demoMode,
     demoModeRetentionHours,
@@ -956,23 +806,22 @@ class SettingsTable extends _i1.Table<int?> {
   ];
 }
 
-class SettingsInclude extends _i1.IncludeObject {
+class SettingsInclude extends _is.IncludeObject {
   SettingsInclude._();
 
   @override
-  Map<String, _i1.Include?> get includes => {};
+  Map<String, _is.Include?> get includes => {};
 
   @override
-  _i1.Table<int?> get table => Settings.t;
+  _is.Table<int?> get table => Settings.t;
 }
 
-class SettingsIncludeList extends _i1.IncludeList {
+class SettingsIncludeList extends _is.IncludeList {
   SettingsIncludeList._({
-    _i1.WhereExpressionBuilder<SettingsTable>? where,
+    _is.WhereExpressionBuilder<SettingsTable>? where,
     super.limit,
     super.offset,
     super.orderBy,
-    super.orderDescending,
     super.orderByList,
     super.include,
   }) {
@@ -980,10 +829,10 @@ class SettingsIncludeList extends _i1.IncludeList {
   }
 
   @override
-  Map<String, _i1.Include?> get includes => include?.includes ?? {};
+  Map<String, _is.Include?> get includes => include?.includes ?? {};
 
   @override
-  _i1.Table<int?> get table => Settings.t;
+  _is.Table<int?> get table => Settings.t;
 }
 
 class SettingsRepository {
@@ -1012,22 +861,20 @@ class SettingsRepository {
   /// );
   /// ```
   Future<List<Settings>> find(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SettingsTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SettingsTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SettingsTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.find<Settings>(
       where: where?.call(Settings.t),
       orderBy: orderBy?.call(Settings.t),
       orderByList: orderByList?.call(Settings.t),
-      orderDescending: orderDescending,
       limit: limit,
       offset: offset,
       transaction: transaction,
@@ -1054,21 +901,19 @@ class SettingsRepository {
   /// );
   /// ```
   Future<Settings?> findFirstRow(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SettingsTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SettingsTable>? where,
     int? offset,
-    _i1.OrderByBuilder<SettingsTable>? orderBy,
-    bool orderDescending = false,
-    _i1.OrderByListBuilder<SettingsTable>? orderByList,
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findFirstRow<Settings>(
       where: where?.call(Settings.t),
       orderBy: orderBy?.call(Settings.t),
       orderByList: orderByList?.call(Settings.t),
-      orderDescending: orderDescending,
       offset: offset,
       transaction: transaction,
       lockMode: lockMode,
@@ -1078,11 +923,11 @@ class SettingsRepository {
 
   /// Finds a single [Settings] by its [id] or null if no such row exists.
   Future<Settings?> findById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    _i1.Transaction? transaction,
-    _i1.LockMode? lockMode,
-    _i1.LockBehavior? lockBehavior,
+    _is.Transaction? transaction,
+    _is.LockMode? lockMode,
+    _is.LockBehavior? lockBehavior,
   }) async {
     return session.db.findById<Settings>(
       id,
@@ -1102,16 +947,22 @@ class SettingsRepository {
   /// If [ignoreConflicts] is set to `true`, rows that conflict with existing
   /// rows are silently skipped, and only the successfully inserted rows are
   /// returned.
+  ///
+  /// If [noReturn] is set to `true`, the inserted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Settings>> insert(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Settings> rows, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
     bool ignoreConflicts = false,
+    bool noReturn = false,
   }) async {
     return session.db.insert<Settings>(
       rows,
       transaction: transaction,
       ignoreConflicts: ignoreConflicts,
+      noReturn: noReturn,
     );
   }
 
@@ -1119,12 +970,78 @@ class SettingsRepository {
   ///
   /// The returned [Settings] will have its `id` field set.
   Future<Settings> insertRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Settings row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Settings>(
+    return session.db.insertRow<Settings>(row, transaction: transaction);
+  }
+
+  /// Upserts all [Settings]s in the list and returns the resulting rows.
+  ///
+  /// If a row conflicts on the given [conflictColumns], the existing row is
+  /// updated with the new values. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies to rows matching the
+  /// given expression. Conflicting rows that don't match are skipped and not
+  /// returned, so the resulting list may be shorter than [rows].
+  ///
+  /// The returned [Settings]s will have their `id` fields set.
+  ///
+  /// This is an atomic operation, meaning that if one of the rows fails,
+  /// none of the rows will be affected.
+  ///
+  /// If [noReturn] is set to `true`, the resulting rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
+  Future<List<Settings>> upsert(
+    _is.DatabaseSession session,
+    List<Settings> rows, {
+    required _is.ColumnSelections<SettingsTable> conflictColumns,
+    _is.ColumnSelections<SettingsTable>? updateColumns,
+    _is.WhereExpressionBuilder<SettingsTable>? updateWhere,
+    _is.Transaction? transaction,
+    bool noReturn = false,
+  }) async {
+    return session.db.upsert<Settings>(
+      rows,
+      conflictColumns: conflictColumns(Settings.t),
+      updateColumns: updateColumns?.call(Settings.t),
+      updateWhere: updateWhere?.call(Settings.t),
+      transaction: transaction,
+      noReturn: noReturn,
+    );
+  }
+
+  /// Upserts a single [Settings] and returns the resulting row.
+  ///
+  /// If the row conflicts on the given [conflictColumns], the existing row is
+  /// updated. Otherwise, a new row is inserted.
+  ///
+  /// If [updateColumns] is provided, only those columns will be updated on
+  /// conflict. If null, all non-conflict, non-id columns are updated.
+  ///
+  /// If [updateWhere] is provided, the update only applies when the existing
+  /// row matches the expression. Returns `null` if no row was affected — for
+  /// example when [updateWhere] does not match the conflicting row.
+  ///
+  /// The returned [Settings] will have its `id` field set.
+  Future<Settings?> upsertRow(
+    _is.DatabaseSession session,
+    Settings row, {
+    required _is.ColumnSelections<SettingsTable> conflictColumns,
+    _is.ColumnSelections<SettingsTable>? updateColumns,
+    _is.WhereExpressionBuilder<SettingsTable>? updateWhere,
+    _is.Transaction? transaction,
+  }) async {
+    return session.db.upsertRow<Settings>(
       row,
+      conflictColumns: conflictColumns(Settings.t),
+      updateColumns: updateColumns?.call(Settings.t),
+      updateWhere: updateWhere?.call(Settings.t),
       transaction: transaction,
     );
   }
@@ -1134,16 +1051,22 @@ class SettingsRepository {
   /// all columns.
   /// This is an atomic operation, meaning that if one of the rows fails to
   /// update, none of the rows will be updated.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Settings>> update(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Settings> rows, {
-    _i1.ColumnSelections<SettingsTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<SettingsTable>? columns,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.update<Settings>(
       rows,
       columns: columns?.call(Settings.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
@@ -1151,10 +1074,10 @@ class SettingsRepository {
   /// Optionally, a list of [columns] can be provided to only update those
   /// columns. Defaults to all columns.
   Future<Settings> updateRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Settings row, {
-    _i1.ColumnSelections<SettingsTable>? columns,
-    _i1.Transaction? transaction,
+    _is.ColumnSelections<SettingsTable>? columns,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateRow<Settings>(
       row,
@@ -1166,10 +1089,10 @@ class SettingsRepository {
   /// Updates a single [Settings] by its [id] with the specified [columnValues].
   /// Returns the updated row or null if no row with the given id exists.
   Future<Settings?> updateById(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     int id, {
-    required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
-    _i1.Transaction? transaction,
+    required _is.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
+    _is.Transaction? transaction,
   }) async {
     return session.db.updateById<Settings>(
       id,
@@ -1180,16 +1103,20 @@ class SettingsRepository {
 
   /// Updates all [Settings]s matching the [where] expression with the specified [columnValues].
   /// Returns the list of updated rows.
+  ///
+  /// If [noReturn] is set to `true`, the updated rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Settings>> updateWhere(
-    _i1.DatabaseSession session, {
-    required _i1.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
-    required _i1.WhereExpressionBuilder<SettingsTable> where,
+    _is.DatabaseSession session, {
+    required _is.ColumnValueListBuilder<SettingsUpdateTable> columnValues,
+    required _is.WhereExpressionBuilder<SettingsTable> where,
     int? limit,
     int? offset,
-    _i1.OrderByBuilder<SettingsTable>? orderBy,
-    _i1.OrderByListBuilder<SettingsTable>? orderByList,
-    bool orderDescending = false,
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.updateWhere<Settings>(
       columnValues: columnValues(Settings.t.updateTable),
@@ -1198,56 +1125,80 @@ class SettingsRepository {
       offset: offset,
       orderBy: orderBy?.call(Settings.t),
       orderByList: orderByList?.call(Settings.t),
-      orderDescending: orderDescending,
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes all [Settings]s in the list and returns the deleted rows.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
   /// This is an atomic operation, meaning that if one of the rows fail to
   /// be deleted, none of the rows will be deleted.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Settings>> delete(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     List<Settings> rows, {
-    _i1.Transaction? transaction,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.delete<Settings>(
       rows,
+      orderBy: orderBy?.call(Settings.t),
+      orderByList: orderByList?.call(Settings.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Deletes a single [Settings].
   Future<Settings> deleteRow(
-    _i1.DatabaseSession session,
+    _is.DatabaseSession session,
     Settings row, {
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Settings>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<Settings>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
+  ///
+  /// To specify the order of the returned rows use [orderBy] or [orderByList]
+  /// when sorting by multiple columns.
+  ///
+  /// If [noReturn] is set to `true`, the deleted rows are not read back from
+  /// the database and an empty list is returned. This avoids the overhead of
+  /// transferring and deserializing the rows when the result is not needed.
   Future<List<Settings>> deleteWhere(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<SettingsTable> where,
-    _i1.Transaction? transaction,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<SettingsTable> where,
+    _is.OrderByBuilder<SettingsTable>? orderBy,
+    _is.OrderByListBuilder<SettingsTable>? orderByList,
+    _is.Transaction? transaction,
+    bool noReturn = false,
   }) async {
     return session.db.deleteWhere<Settings>(
       where: where(Settings.t),
+      orderBy: orderBy?.call(Settings.t),
+      orderByList: orderByList?.call(Settings.t),
       transaction: transaction,
+      noReturn: noReturn,
     );
   }
 
   /// Counts the number of rows matching the [where] expression. If omitted,
   /// will return the count of all rows in the table.
   Future<int> count(
-    _i1.DatabaseSession session, {
-    _i1.WhereExpressionBuilder<SettingsTable>? where,
+    _is.DatabaseSession session, {
+    _is.WhereExpressionBuilder<SettingsTable>? where,
     int? limit,
-    _i1.Transaction? transaction,
+    _is.Transaction? transaction,
   }) async {
     return session.db.count<Settings>(
       where: where?.call(Settings.t),
@@ -1258,11 +1209,11 @@ class SettingsRepository {
 
   /// Acquires row-level locks on [Settings] rows matching the [where] expression.
   Future<void> lockRows(
-    _i1.DatabaseSession session, {
-    required _i1.WhereExpressionBuilder<SettingsTable> where,
-    required _i1.LockMode lockMode,
-    required _i1.Transaction transaction,
-    _i1.LockBehavior lockBehavior = _i1.LockBehavior.wait,
+    _is.DatabaseSession session, {
+    required _is.WhereExpressionBuilder<SettingsTable> where,
+    required _is.LockMode lockMode,
+    required _is.Transaction transaction,
+    _is.LockBehavior lockBehavior = _is.LockBehavior.wait,
   }) async {
     return session.db.lockRows<Settings>(
       where: where(Settings.t),

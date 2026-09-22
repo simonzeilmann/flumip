@@ -8,28 +8,30 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: depend_on_referenced_packages
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:flumip_server/src/generated/genome.dart' as _i2;
-import 'package:flumip_server/src/generated/project.dart' as _i3;
-import 'package:flumip_server/src/generated/snp.dart' as _i4;
-import 'dart:async' as _i5;
-import '../future_calls/check_index_progress_future_call.dart' as _i6;
-import '../future_calls/check_mipgen_progress_future_call.dart' as _i7;
-import '../future_calls/demo_mode_cleanup_future_call.dart' as _i8;
-import '../future_calls/import_snp_future_call.dart' as _i9;
+import 'dart:async' as _ida;
+import 'package:clock/clock.dart' as _io0w16m8;
+import 'package:flumip_server/src/generated/genome.dart' as _i2jfp72f;
+import 'package:flumip_server/src/generated/project.dart' as _idblq1ye;
+import 'package:flumip_server/src/generated/snp.dart' as _icqkl7md;
+import 'package:serverpod/serverpod.dart' as _is;
+import '../future_calls/check_index_progress_future_call.dart' as _i1ifq570;
+import '../future_calls/check_mipgen_progress_future_call.dart' as _iz0v9yds;
+import '../future_calls/demo_mode_cleanup_future_call.dart' as _isksirs8;
+import '../future_calls/import_snp_future_call.dart' as _i2a7c13a;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
-    Future<void> Function(String name, _i1.SerializableModel? object);
+    Future<void> Function(String name, _is.SerializableModel? object);
 
-extension ServerpodFutureCallsGetter on _i1.Serverpod {
+extension ServerpodFutureCallsGetter on _is.Serverpod {
   /// Generated future calls.
   FutureCalls get futureCalls => FutureCalls();
 }
 
-class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
+class FutureCalls extends _is.FutureCallDispatch<_FutureCallRef> {
   FutureCalls._();
 
   factory FutureCalls() {
@@ -38,7 +40,7 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
 
   static final FutureCalls _instance = FutureCalls._();
 
-  _i1.FutureCallManager? _futureCallManager;
+  _is.FutureCallManager? _futureCallManager;
 
   String? _serverId;
 
@@ -49,7 +51,7 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
     return _serverId!;
   }
 
-  _i1.FutureCallManager get _effectiveFutureCallManager {
+  _is.FutureCallManager get _effectiveFutureCallManager {
     if (_futureCallManager == null) {
       throw StateError('FutureCalls is not initialized.');
     }
@@ -57,11 +59,8 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  void initialize(
-    _i1.FutureCallManager futureCallManager,
-    String serverId,
-  ) {
-    var registeredFutureCalls = <String, _i1.FutureCall>{
+  void initialize(_is.FutureCallManager futureCallManager, String serverId) {
+    var registeredFutureCalls = <String, _is.InvokableFutureCall>{
       'CheckIndexProgressRunFutureCall': CheckIndexProgressRunFutureCall(),
       'CheckMipgenProgressRunFutureCall': CheckMipgenProgressRunFutureCall(),
       'DemoModeCleanupRunFutureCall': DemoModeCleanupRunFutureCall(),
@@ -75,44 +74,92 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  _FutureCallRef callAtTime(
-    DateTime time, {
-    String? identifier,
-  }) {
-    return _FutureCallRef(
-      (name, object) {
-        return _effectiveFutureCallManager.scheduleFutureCall(
-          name,
-          object,
-          time,
-          _effectiveServerId,
-          identifier,
-        );
-      },
-    );
+  _FutureCallRef callAtTime(DateTime time, {String? identifier}) {
+    return _FutureCallRef((name, object) {
+      return _effectiveFutureCallManager.scheduleFutureCall(
+        name,
+        object,
+        time,
+        _effectiveServerId,
+        identifier,
+      );
+    });
   }
 
   @override
-  _FutureCallRef callWithDelay(
-    Duration delay, {
+  _FutureCallRef callWithDelay(Duration delay, {String? identifier}) {
+    return _FutureCallRef((name, object) {
+      return _effectiveFutureCallManager.scheduleFutureCall(
+        name,
+        object,
+        DateTime.now().toUtc().add(delay),
+        _effectiveServerId,
+        identifier,
+      );
+    });
+  }
+
+  @override
+  _is.RecurringFutureCallDispatch<_FutureCallRef> callRecurring({
     String? identifier,
   }) {
-    return _FutureCallRef(
-      (name, object) {
-        return _effectiveFutureCallManager.scheduleFutureCall(
-          name,
-          object,
-          DateTime.now().toUtc().add(delay),
-          _effectiveServerId,
-          identifier,
-        );
-      },
+    return _RecurringFutureCallDispatchImpl(
+      _effectiveFutureCallManager,
+      _effectiveServerId,
+      identifier,
     );
   }
 
   @override
   Future<void> cancel(String identifier) async {
     await _effectiveFutureCallManager.cancelFutureCall(identifier);
+  }
+}
+
+class _RecurringFutureCallDispatchImpl
+    extends _is.RecurringFutureCallDispatch<_FutureCallRef> {
+  _RecurringFutureCallDispatchImpl(
+    this._futureCallManager,
+    this._serverId,
+    this._identifier,
+  );
+
+  final _is.FutureCallManager _futureCallManager;
+
+  final String _serverId;
+
+  final String? _identifier;
+
+  @override
+  _FutureCallRef cron(String cronExpression) {
+    return _FutureCallRef((name, object) {
+      return _futureCallManager.scheduleFutureCall(
+        name,
+        object,
+        _is.Cron.parse(cronExpression).nextTime(),
+        _serverId,
+        _identifier,
+        scheduling: _is.CronFutureCallScheduling(cron: cronExpression),
+      );
+    });
+  }
+
+  @override
+  _FutureCallRef every(Duration interval, {DateTime? start}) {
+    final now = _io0w16m8.clock.now().toUtc();
+    return _FutureCallRef((name, object) {
+      return _futureCallManager.scheduleFutureCall(
+        name,
+        object,
+        start ?? now.add(interval),
+        _serverId,
+        _identifier,
+        scheduling: _is.IntervalFutureCallScheduling(
+          interval: interval,
+          start: start,
+        ),
+      );
+    });
   }
 }
 
@@ -141,11 +188,8 @@ class _CheckIndexProgressFutureCallDispatcher {
 
   final _InvokeFutureCall _invokeFutureCall;
 
-  Future<void> run(_i2.Genome object) {
-    return _invokeFutureCall(
-      'CheckIndexProgressRunFutureCall',
-      object,
-    );
+  Future<void> run(_i2jfp72f.Genome object) {
+    return _invokeFutureCall('CheckIndexProgressRunFutureCall', object);
   }
 }
 
@@ -154,11 +198,8 @@ class _CheckMipgenProgressFutureCallDispatcher {
 
   final _InvokeFutureCall _invokeFutureCall;
 
-  Future<void> run(_i3.Project object) {
-    return _invokeFutureCall(
-      'CheckMipgenProgressRunFutureCall',
-      object,
-    );
+  Future<void> run(_idblq1ye.Project object) {
+    return _invokeFutureCall('CheckMipgenProgressRunFutureCall', object);
   }
 }
 
@@ -167,11 +208,8 @@ class _DemoModeCleanupFutureCallDispatcher {
 
   final _InvokeFutureCall _invokeFutureCall;
 
-  Future<void> run(_i3.Project object) {
-    return _invokeFutureCall(
-      'DemoModeCleanupRunFutureCall',
-      object,
-    );
+  Future<void> run(_idblq1ye.Project object) {
+    return _invokeFutureCall('DemoModeCleanupRunFutureCall', object);
   }
 }
 
@@ -180,62 +218,48 @@ class _ImportSnpFutureCallDispatcher {
 
   final _InvokeFutureCall _invokeFutureCall;
 
-  Future<void> run(_i4.Snp object) {
-    return _invokeFutureCall(
-      'ImportSnpRunFutureCall',
-      object,
-    );
+  Future<void> run(_icqkl7md.Snp object) {
+    return _invokeFutureCall('ImportSnpRunFutureCall', object);
   }
 }
 
-class CheckIndexProgressRunFutureCall extends _i1.FutureCall<_i2.Genome> {
+class CheckIndexProgressRunFutureCall extends _is.FutureCall<_i2jfp72f.Genome>
+    implements _is.InvokableFutureCall<_i2jfp72f.Genome> {
   @override
-  _i5.Future<void> invoke(
-    _i1.Session session,
-    _i2.Genome? object,
+  _ida.Future<void> invoke(
+    _is.Session session,
+    _i2jfp72f.Genome? object,
   ) async {
-    await _i6.CheckIndexProgressFutureCall().run(
-      session,
-      object!,
-    );
+    await _i1ifq570.CheckIndexProgressFutureCall().run(session, object!);
   }
 }
 
-class CheckMipgenProgressRunFutureCall extends _i1.FutureCall<_i3.Project> {
+class CheckMipgenProgressRunFutureCall extends _is.FutureCall<_idblq1ye.Project>
+    implements _is.InvokableFutureCall<_idblq1ye.Project> {
   @override
-  _i5.Future<void> invoke(
-    _i1.Session session,
-    _i3.Project? object,
+  _ida.Future<void> invoke(
+    _is.Session session,
+    _idblq1ye.Project? object,
   ) async {
-    await _i7.CheckMipgenProgressFutureCall().run(
-      session,
-      object!,
-    );
+    await _iz0v9yds.CheckMipgenProgressFutureCall().run(session, object!);
   }
 }
 
-class DemoModeCleanupRunFutureCall extends _i1.FutureCall<_i3.Project> {
+class DemoModeCleanupRunFutureCall extends _is.FutureCall<_idblq1ye.Project>
+    implements _is.InvokableFutureCall<_idblq1ye.Project> {
   @override
-  _i5.Future<void> invoke(
-    _i1.Session session,
-    _i3.Project? object,
+  _ida.Future<void> invoke(
+    _is.Session session,
+    _idblq1ye.Project? object,
   ) async {
-    await _i8.DemoModeCleanupFutureCall().run(
-      session,
-      object!,
-    );
+    await _isksirs8.DemoModeCleanupFutureCall().run(session, object!);
   }
 }
 
-class ImportSnpRunFutureCall extends _i1.FutureCall<_i4.Snp> {
+class ImportSnpRunFutureCall extends _is.FutureCall<_icqkl7md.Snp>
+    implements _is.InvokableFutureCall<_icqkl7md.Snp> {
   @override
-  _i5.Future<void> invoke(
-    _i1.Session session,
-    _i4.Snp? object,
-  ) async {
-    await _i9.ImportSnpFutureCall().run(
-      session,
-      object!,
-    );
+  _ida.Future<void> invoke(_is.Session session, _icqkl7md.Snp? object) async {
+    await _i2a7c13a.ImportSnpFutureCall().run(session, object!);
   }
 }

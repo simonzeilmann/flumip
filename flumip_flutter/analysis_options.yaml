@@ -7,6 +7,18 @@
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
+# Added by `flutter analyze` itself, which migrates this file on first run and
+# will put it back if removed. Harmless: none of these directories hold Dart the
+# analyzer should be walking.
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

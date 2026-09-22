@@ -8,43 +8,44 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:serverpod/protocol.dart' as _i2;
-import 'auth_admin_status_dto.dart' as _i3;
-import 'auth_api_token.dart' as _i4;
-import 'auth_config_dto.dart' as _i5;
-import 'auth_flow.dart' as _i6;
-import 'auth_session.dart' as _i7;
-import 'auth_user_dto.dart' as _i8;
-import 'custom_snp_request_dto.dart' as _i9;
-import 'exceptions.dart' as _i10;
-import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i11;
-import 'exceptions/argument_exception.dart' as _i12;
-import 'exceptions/flumip_file_not_found_exception.dart' as _i13;
-import 'exceptions/project_access_denied_exception.dart' as _i14;
-import 'flumip_user.dart' as _i15;
-import 'flumip_user_dto.dart' as _i16;
-import 'genome.dart' as _i17;
-import 'project.dart' as _i18;
-import 'project_file_dto.dart' as _i19;
-import 'project_options.dart' as _i20;
-import 'score_method.dart' as _i21;
-import 'search_hit_dto.dart' as _i22;
-import 'search_hit_kind.dart' as _i23;
-import 'settings.dart' as _i24;
-import 'snp.dart' as _i25;
-import 'snp_import_status.dart' as _i26;
-import 'snp_usage_dto.dart' as _i27;
-import 'user_settings_dto.dart' as _i28;
-import 'package:flumip_server/src/generated/project_file_dto.dart' as _i29;
-import 'package:flumip_server/src/generated/genome.dart' as _i30;
-import 'package:flumip_server/src/generated/snp.dart' as _i31;
-import 'package:flumip_server/src/generated/project.dart' as _i32;
-import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _i33;
-import 'package:flumip_server/src/generated/search_hit_dto.dart' as _i34;
-import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _i35;
+import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _ipn4uvlw;
+import 'package:flumip_server/src/generated/genome.dart' as _i2jfp72f;
+import 'package:flumip_server/src/generated/project.dart' as _idblq1ye;
+import 'package:flumip_server/src/generated/project_file_dto.dart' as _iaw3nq06;
+import 'package:flumip_server/src/generated/search_hit_dto.dart' as _ih1e1b1z;
+import 'package:flumip_server/src/generated/snp.dart' as _icqkl7md;
+import 'package:flumip_server/src/generated/snp_usage_dto.dart' as _ivyy2rnq;
+import 'package:serverpod/protocol.dart' as _isp;
+import 'package:serverpod/serverpod.dart' as _is;
+import 'auth_admin_status_dto.dart' as _ilu62sh8;
+import 'auth_api_token.dart' as _i1qrzley;
+import 'auth_config_dto.dart' as _i3pxz8st;
+import 'auth_flow.dart' as _iopq1986;
+import 'auth_session.dart' as _i1cqtl3u;
+import 'auth_user_dto.dart' as _i9fqmmja;
+import 'custom_snp_request_dto.dart' as _i50r13ns;
+import 'exceptions.dart' as _ifprdzfb;
+import 'exceptions/argument_exception.dart' as _ix5u8j9t;
+import 'exceptions/flumip_file_not_found_exception.dart' as _iua77lfj;
+import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _il9ya82w;
+import 'exceptions/project_access_denied_exception.dart' as _iq9wx7jy;
+import 'flumip_user.dart' as _ijkt6zbv;
+import 'flumip_user_dto.dart' as _im3lr0ct;
+import 'genome.dart' as _ik3s3pjn;
+import 'project.dart' as _ifiazq2p;
+import 'project_file_dto.dart' as _ip1wvjxo;
+import 'project_options.dart' as _i4kq7s26;
+import 'score_method.dart' as _iootg8bv;
+import 'search_hit_dto.dart' as _iy8r37ur;
+import 'search_hit_kind.dart' as _ia4xis23;
+import 'settings.dart' as _ibmr8d9c;
+import 'snp.dart' as _ip0fcn2o;
+import 'snp_import_status.dart' as _iq9n7xnd;
+import 'snp_usage_dto.dart' as _i8stnodc;
+import 'user_settings_dto.dart' as _igo562ik;
 export 'auth_admin_status_dto.dart';
 export 'auth_api_token.dart';
 export 'auth_config_dto.dart';
@@ -72,98 +73,85 @@ export 'snp_import_status.dart';
 export 'snp_usage_dto.dart';
 export 'user_settings_dto.dart';
 
-class Protocol extends _i1.SerializationManagerServer {
+class Protocol extends _is.DatabaseSerializationManager {
   Protocol._();
 
   factory Protocol() => _instance;
 
   static final Protocol _instance = Protocol._();
 
-  static final List<_i2.TableDefinition> targetTableDefinitions = [
-    _i2.TableDefinition(
+  static List<_isp.TableDefinition> get targetTableDefinitions => [
+    _isp.TableDefinition(
       name: 'auth_api_token',
       dartName: 'AuthApiToken',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'auth_api_token_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'authSessionId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'tokenHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'email',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'isAdmin',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expires',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'auth_api_token_fk_0',
           columns: ['authSessionId'],
           referenceTable: 'auth_session',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'auth_api_token_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_api_token_hash_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'tokenHash',
             ),
           ],
@@ -171,12 +159,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_api_token_session_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'authSessionId',
             ),
           ],
@@ -184,12 +172,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_api_token_expires_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expires',
             ),
           ],
@@ -200,78 +188,65 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'auth_flow',
       dartName: 'AuthFlow',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'auth_flow_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'state',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'codeVerifier',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'nonce',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'redirectUri',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expires',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'auth_flow_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_flow_state_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'state',
             ),
           ],
@@ -279,12 +254,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_flow_expires_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expires',
             ),
           ],
@@ -295,97 +270,84 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'auth_session',
       dartName: 'AuthSession',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'auth_session_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'userId',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'cookieHash',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'email',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'isAdmin',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'expires',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'lastSeen',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'auth_session_fk_0',
           columns: ['userId'],
           referenceTable: 'flumip_user',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.cascade,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'auth_session_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_session_cookie_hash_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'cookieHash',
             ),
           ],
@@ -393,12 +355,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'auth_session_expires_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'expires',
             ),
           ],
@@ -409,84 +371,71 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'flumip_user',
       dartName: 'FlumipUser',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'flumip_user_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'email',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'subject',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'issuer',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'displayName',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'lastLogin',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
       ],
       foreignKeys: [],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'flumip_user_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'flumip_user_identity_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'issuer',
             ),
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'subject',
             ),
           ],
@@ -494,12 +443,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: true,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'flumip_user_email_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'email',
             ),
           ],
@@ -510,320 +459,293 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'genome',
       dartName: 'Genome',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'genome_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'description',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'path',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'fastaPath',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'refPath',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'snpFolder',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'category',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'active',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'true',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'indexed',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'indexing',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'indexPID',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'indexResults',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'size',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
       ],
       foreignKeys: [],
-      indexes: [
-        _i2.IndexDefinition(
-          indexName: 'genome_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-      ],
+      indexes: [],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'project',
       dartName: 'Project',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'project_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'folderName',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'description',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'genome',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'snp',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'tags',
-          columnType: _i2.ColumnType.json,
+          columnType: _isp.ColumnType.json,
           isNullable: true,
           dartType: 'List<String>?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'owner',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'department',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'trackToken',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'genes',
-          columnType: _i2.ColumnType.json,
+          columnType: _isp.ColumnType.json,
           isNullable: true,
           dartType: 'List<String>?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'bedFileCreated',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'active',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'pid',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'size',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'emailNotification',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'options',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'started',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'completedIn',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'Duration?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'error',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'warning',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'cleanup',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'project_fk_0',
           columns: ['snp'],
           referenceTable: 'snp',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.setNull,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.setNull,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'project_fk_1',
           columns: ['owner'],
           referenceTable: 'flumip_user',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.setNull,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.setNull,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'project_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'project_owner_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'owner',
             ),
           ],
@@ -831,12 +753,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'project_track_token_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'trackToken',
             ),
           ],
@@ -847,668 +769,625 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'project_options',
       dartName: 'ProjectOptions',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'project_options_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'minCaptureSize',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '162',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'maxCaptureSize',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '162',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'armLengths',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'armLengthSums',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'40,41,42,43,44,45\'::text',
+          columnDefault: '\'40,41,42,43,44,45\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'extMinLength',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '16',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'extMaxLength',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '18',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ligMinLength',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '18',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'tagSizes',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'5,0\'::text',
+          columnDefault: '\'5,0\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'maskedArmThreshold',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
           columnDefault: '0.5',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'targetArmCopy',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '20',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'maxArmCopyProduct',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '75',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'trf',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'genomeDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'featureFlank',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'captureIncrement',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '5',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'logisticHeuristic',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'maxMipOverlap',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '30',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'startingMipOverlap',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'checkCopyNumber',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'true',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sealBothStrands',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'halfSealBothStrands',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'doubleTileStrandUnaware',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'doubleTileStrandsSeparately',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'scoreMethod',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:ScoreMethod',
-          columnDefault: '\'logistic\'::text',
+          columnDefault: '\'logistic\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'logisticOptimalScore',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
           columnDefault: '0.98',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'svrOptimalScore',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
           columnDefault: '2.2',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'logisticPriorityScore',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
           columnDefault: '0.9',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'svrPriorityScore',
-          columnType: _i2.ColumnType.doublePrecision,
+          columnType: _isp.ColumnType.doublePrecision,
           isNullable: false,
           dartType: 'double',
           columnDefault: '1.5',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'silentMode',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'bwaThreads',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '1',
         ),
       ],
       foreignKeys: [],
-      indexes: [
-        _i2.IndexDefinition(
-          indexName: 'project_options_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-      ],
+      indexes: [],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'settings',
       dartName: 'Settings',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'settings_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'demoMode',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'demoModeRetentionHours',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '168',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'baseDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip\'::text',
+          columnDefault: '\'/opt/flumip\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'projectDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/projects\'::text',
+          columnDefault: '\'/opt/flumip/projects\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'genomeDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/data/genomes\'::text',
+          columnDefault: '\'/opt/flumip/data/genomes\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'customSnpDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/data/custom_snp\'::text',
+          columnDefault: '\'/opt/flumip/data/custom_snp\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'snpSourceAllowedHosts',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'toolsDir',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/tools\'::text',
+          columnDefault: '\'/opt/flumip/tools\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'mipgenExecutable',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/MIPGEN/mipgen\'::text',
+          columnDefault: '\'/opt/flumip/MIPGEN/mipgen\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'exonExtractScript',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
           columnDefault:
-              '\'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh\'::text',
+              '\'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'ucscTrackGenerator',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault:
-              '\'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py\'::text',
+          columnDefault: '\'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'binCreationScript',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault:
-              '\'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py\'::text',
+          columnDefault: '\'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'bigGenePredToGenePredExecutable',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'/opt/flumip/tools/bigGenePredToGenePred\'::text',
+          columnDefault: '\'/opt/flumip/tools/bigGenePredToGenePred\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'mailActive',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'smtpServer',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'smtpPort',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '25',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'smtpUser',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'smtpPassword',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'smtpFrom',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'flumip@yourdomain.com\'::text',
+          columnDefault: '\'flumip@yourdomain.com\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'startTLS',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'true',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'loginRequired',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'settingsPassword',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'changeme\'::text',
+          columnDefault: '\'changeme\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcIssuer',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcClientId',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcClientSecret',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcScopes',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'openid email profile\'::text',
+          columnDefault: '\'openid email profile\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcButtonLabel',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'Sign in with SSO\'::text',
+          columnDefault: '\'Sign in with SSO\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcAllowedEmailDomains',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'oidcAdminEmails',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'authPublicUrl',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
       ],
       foreignKeys: [],
-      indexes: [
-        _i2.IndexDefinition(
-          indexName: 'settings_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-      ],
+      indexes: [],
       managed: true,
     ),
-    _i2.TableDefinition(
+    _isp.TableDefinition(
       name: 'snp',
       dartName: 'Snp',
       schema: 'public',
       module: 'flumip',
       columns: [
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'id',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int?',
-          columnDefault: 'nextval(\'snp_id_seq\'::regclass)',
+          columnDefault: 'serial',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'name',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'description',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'vcfPath',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'tbiPath',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'folder',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'active',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'private',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'size',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'genome',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'owner',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'custom',
-          columnType: _i2.ColumnType.boolean,
+          columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
           columnDefault: 'false',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'status',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'protocol:SnpImportStatus',
-          columnDefault: '\'ready\'::text',
+          columnDefault: '\'ready\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'statusMessage',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',
-          columnDefault: '\'\'::text',
+          columnDefault: '\'\'',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sourceVcfUrl',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'sourceTbiUrl',
-          columnType: _i2.ColumnType.text,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'bytesDownloaded',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'totalBytes',
-          columnType: _i2.ColumnType.bigint,
+          columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
           columnDefault: '0',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'statusUpdated',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: true,
           dartType: 'DateTime?',
         ),
-        _i2.ColumnDefinition(
+        _isp.ColumnDefinition(
           name: 'created',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
           dartType: 'DateTime',
-          columnDefault: 'CURRENT_TIMESTAMP',
+          columnDefault: 'now',
         ),
       ],
       foreignKeys: [
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'snp_fk_0',
           columns: ['genome'],
           referenceTable: 'genome',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.setNull,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.setNull,
           matchType: null,
         ),
-        _i2.ForeignKeyDefinition(
+        _isp.ForeignKeyDefinition(
           constraintName: 'snp_fk_1',
           columns: ['owner'],
           referenceTable: 'flumip_user',
           referenceTableSchema: 'public',
           referenceColumns: ['id'],
-          onUpdate: _i2.ForeignKeyAction.noAction,
-          onDelete: _i2.ForeignKeyAction.setNull,
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.setNull,
           matchType: null,
         ),
       ],
       indexes: [
-        _i2.IndexDefinition(
-          indexName: 'snp_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'snp_genome_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'genome',
             ),
           ],
@@ -1516,12 +1395,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'snp_owner_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'owner',
             ),
           ],
@@ -1529,12 +1408,12 @@ class Protocol extends _i1.SerializationManagerServer {
           isUnique: false,
           isPrimary: false,
         ),
-        _i2.IndexDefinition(
+        _isp.IndexDefinition(
           indexName: 'snp_folder_idx',
           tableSpace: null,
           elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'folder',
             ),
           ],
@@ -1545,7 +1424,7 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    ..._i2.Protocol.targetTableDefinitions,
+    ..._isp.Protocol.targetTableDefinitions,
   ];
 
   static String? getClassNameFromObjectJson(dynamic data) {
@@ -1555,10 +1434,7 @@ class Protocol extends _i1.SerializationManagerServer {
   }
 
   @override
-  T deserialize<T>(
-    dynamic data, [
-    Type? t,
-  ]) {
+  T deserialize<T>(dynamic data, [Type? t]) {
     t ??= T;
 
     final dataClassName = getClassNameFromObjectJson(data);
@@ -1568,182 +1444,197 @@ class Protocol extends _i1.SerializationManagerServer {
           'className': dataClassName,
           'data': data,
         });
-      } on FormatException catch (_) {
+      } on _is.DeserializationClassNameNotFoundException catch (_) {
         // If the className is not recognized (e.g., older client receiving
         // data with a new subtype), fall back to deserializing without the
         // className, using the expected type T.
       }
     }
 
-    if (t == _i3.AuthAdminStatusDto) {
-      return _i3.AuthAdminStatusDto.fromJson(data) as T;
+    if (t == _ilu62sh8.AuthAdminStatusDto) {
+      return _ilu62sh8.AuthAdminStatusDto.fromJson(data) as T;
     }
-    if (t == _i4.AuthApiToken) {
-      return _i4.AuthApiToken.fromJson(data) as T;
+    if (t == _i1qrzley.AuthApiToken) {
+      return _i1qrzley.AuthApiToken.fromJson(data) as T;
     }
-    if (t == _i5.AuthConfigDto) {
-      return _i5.AuthConfigDto.fromJson(data) as T;
+    if (t == _i3pxz8st.AuthConfigDto) {
+      return _i3pxz8st.AuthConfigDto.fromJson(data) as T;
     }
-    if (t == _i6.AuthFlow) {
-      return _i6.AuthFlow.fromJson(data) as T;
+    if (t == _iopq1986.AuthFlow) {
+      return _iopq1986.AuthFlow.fromJson(data) as T;
     }
-    if (t == _i7.AuthSession) {
-      return _i7.AuthSession.fromJson(data) as T;
+    if (t == _i1cqtl3u.AuthSession) {
+      return _i1cqtl3u.AuthSession.fromJson(data) as T;
     }
-    if (t == _i8.AuthUserDto) {
-      return _i8.AuthUserDto.fromJson(data) as T;
+    if (t == _i9fqmmja.AuthUserDto) {
+      return _i9fqmmja.AuthUserDto.fromJson(data) as T;
     }
-    if (t == _i9.CustomSnpRequestDto) {
-      return _i9.CustomSnpRequestDto.fromJson(data) as T;
+    if (t == _i50r13ns.CustomSnpRequestDto) {
+      return _i50r13ns.CustomSnpRequestDto.fromJson(data) as T;
     }
-    if (t == _i10.GeneExtractionException) {
-      return _i10.GeneExtractionException.fromJson(data) as T;
+    if (t == _ifprdzfb.GeneExtractionException) {
+      return _ifprdzfb.GeneExtractionException.fromJson(data) as T;
     }
-    if (t == _i11.BedCreationException) {
-      return _i11.BedCreationException.fromJson(data) as T;
+    if (t == _il9ya82w.BedCreationException) {
+      return _il9ya82w.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i12.ArgumentException) {
-      return _i12.ArgumentException.fromJson(data) as T;
+    if (t == _ix5u8j9t.ArgumentException) {
+      return _ix5u8j9t.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i13.FlumipFileNotFoundException) {
-      return _i13.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _iua77lfj.FlumipFileNotFoundException) {
+      return _iua77lfj.FlumipFileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i14.ProjectAccessDeniedException) {
-      return _i14.ProjectAccessDeniedException.fromJson(data) as T;
+    if (t == _iq9wx7jy.ProjectAccessDeniedException) {
+      return _iq9wx7jy.ProjectAccessDeniedException.fromJson(data) as T;
     }
-    if (t == _i15.FlumipUser) {
-      return _i15.FlumipUser.fromJson(data) as T;
+    if (t == _ijkt6zbv.FlumipUser) {
+      return _ijkt6zbv.FlumipUser.fromJson(data) as T;
     }
-    if (t == _i16.FlumipUserDto) {
-      return _i16.FlumipUserDto.fromJson(data) as T;
+    if (t == _im3lr0ct.FlumipUserDto) {
+      return _im3lr0ct.FlumipUserDto.fromJson(data) as T;
     }
-    if (t == _i17.Genome) {
-      return _i17.Genome.fromJson(data) as T;
+    if (t == _ik3s3pjn.Genome) {
+      return _ik3s3pjn.Genome.fromJson(data) as T;
     }
-    if (t == _i18.Project) {
-      return _i18.Project.fromJson(data) as T;
+    if (t == _ifiazq2p.Project) {
+      return _ifiazq2p.Project.fromJson(data) as T;
     }
-    if (t == _i19.ProjectFileDto) {
-      return _i19.ProjectFileDto.fromJson(data) as T;
+    if (t == _ip1wvjxo.ProjectFileDto) {
+      return _ip1wvjxo.ProjectFileDto.fromJson(data) as T;
     }
-    if (t == _i20.ProjectOptions) {
-      return _i20.ProjectOptions.fromJson(data) as T;
+    if (t == _i4kq7s26.ProjectOptions) {
+      return _i4kq7s26.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i21.ScoreMethod) {
-      return _i21.ScoreMethod.fromJson(data) as T;
+    if (t == _iootg8bv.ScoreMethod) {
+      return _iootg8bv.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i22.SearchHitDto) {
-      return _i22.SearchHitDto.fromJson(data) as T;
+    if (t == _iy8r37ur.SearchHitDto) {
+      return _iy8r37ur.SearchHitDto.fromJson(data) as T;
     }
-    if (t == _i23.SearchHitKind) {
-      return _i23.SearchHitKind.fromJson(data) as T;
+    if (t == _ia4xis23.SearchHitKind) {
+      return _ia4xis23.SearchHitKind.fromJson(data) as T;
     }
-    if (t == _i24.Settings) {
-      return _i24.Settings.fromJson(data) as T;
+    if (t == _ibmr8d9c.Settings) {
+      return _ibmr8d9c.Settings.fromJson(data) as T;
     }
-    if (t == _i25.Snp) {
-      return _i25.Snp.fromJson(data) as T;
+    if (t == _ip0fcn2o.Snp) {
+      return _ip0fcn2o.Snp.fromJson(data) as T;
     }
-    if (t == _i26.SnpImportStatus) {
-      return _i26.SnpImportStatus.fromJson(data) as T;
+    if (t == _iq9n7xnd.SnpImportStatus) {
+      return _iq9n7xnd.SnpImportStatus.fromJson(data) as T;
     }
-    if (t == _i27.SnpUsageDto) {
-      return _i27.SnpUsageDto.fromJson(data) as T;
+    if (t == _i8stnodc.SnpUsageDto) {
+      return _i8stnodc.SnpUsageDto.fromJson(data) as T;
     }
-    if (t == _i28.UserSettingsDto) {
-      return _i28.UserSettingsDto.fromJson(data) as T;
+    if (t == _igo562ik.UserSettingsDto) {
+      return _igo562ik.UserSettingsDto.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i3.AuthAdminStatusDto?>()) {
-      return (data != null ? _i3.AuthAdminStatusDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i4.AuthApiToken?>()) {
-      return (data != null ? _i4.AuthApiToken.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i5.AuthConfigDto?>()) {
-      return (data != null ? _i5.AuthConfigDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i6.AuthFlow?>()) {
-      return (data != null ? _i6.AuthFlow.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i7.AuthSession?>()) {
-      return (data != null ? _i7.AuthSession.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i8.AuthUserDto?>()) {
-      return (data != null ? _i8.AuthUserDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i9.CustomSnpRequestDto?>()) {
-      return (data != null ? _i9.CustomSnpRequestDto.fromJson(data) : null)
+    if (t == _is.getType<_ilu62sh8.AuthAdminStatusDto?>()) {
+      return (data != null ? _ilu62sh8.AuthAdminStatusDto.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i10.GeneExtractionException?>()) {
-      return (data != null ? _i10.GeneExtractionException.fromJson(data) : null)
+    if (t == _is.getType<_i1qrzley.AuthApiToken?>()) {
+      return (data != null ? _i1qrzley.AuthApiToken.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_i3pxz8st.AuthConfigDto?>()) {
+      return (data != null ? _i3pxz8st.AuthConfigDto.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i11.BedCreationException?>()) {
-      return (data != null ? _i11.BedCreationException.fromJson(data) : null)
-          as T;
+    if (t == _is.getType<_iopq1986.AuthFlow?>()) {
+      return (data != null ? _iopq1986.AuthFlow.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.ArgumentException?>()) {
-      return (data != null ? _i12.ArgumentException.fromJson(data) : null) as T;
+    if (t == _is.getType<_i1cqtl3u.AuthSession?>()) {
+      return (data != null ? _i1cqtl3u.AuthSession.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.FlumipFileNotFoundException?>()) {
+    if (t == _is.getType<_i9fqmmja.AuthUserDto?>()) {
+      return (data != null ? _i9fqmmja.AuthUserDto.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_i50r13ns.CustomSnpRequestDto?>()) {
       return (data != null
-              ? _i13.FlumipFileNotFoundException.fromJson(data)
+              ? _i50r13ns.CustomSnpRequestDto.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i14.ProjectAccessDeniedException?>()) {
+    if (t == _is.getType<_ifprdzfb.GeneExtractionException?>()) {
       return (data != null
-              ? _i14.ProjectAccessDeniedException.fromJson(data)
+              ? _ifprdzfb.GeneExtractionException.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i15.FlumipUser?>()) {
-      return (data != null ? _i15.FlumipUser.fromJson(data) : null) as T;
+    if (t == _is.getType<_il9ya82w.BedCreationException?>()) {
+      return (data != null
+              ? _il9ya82w.BedCreationException.fromJson(data)
+              : null)
+          as T;
     }
-    if (t == _i1.getType<_i16.FlumipUserDto?>()) {
-      return (data != null ? _i16.FlumipUserDto.fromJson(data) : null) as T;
+    if (t == _is.getType<_ix5u8j9t.ArgumentException?>()) {
+      return (data != null ? _ix5u8j9t.ArgumentException.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i17.Genome?>()) {
-      return (data != null ? _i17.Genome.fromJson(data) : null) as T;
+    if (t == _is.getType<_iua77lfj.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _iua77lfj.FlumipFileNotFoundException.fromJson(data)
+              : null)
+          as T;
     }
-    if (t == _i1.getType<_i18.Project?>()) {
-      return (data != null ? _i18.Project.fromJson(data) : null) as T;
+    if (t == _is.getType<_iq9wx7jy.ProjectAccessDeniedException?>()) {
+      return (data != null
+              ? _iq9wx7jy.ProjectAccessDeniedException.fromJson(data)
+              : null)
+          as T;
     }
-    if (t == _i1.getType<_i19.ProjectFileDto?>()) {
-      return (data != null ? _i19.ProjectFileDto.fromJson(data) : null) as T;
+    if (t == _is.getType<_ijkt6zbv.FlumipUser?>()) {
+      return (data != null ? _ijkt6zbv.FlumipUser.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i20.ProjectOptions?>()) {
-      return (data != null ? _i20.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _is.getType<_im3lr0ct.FlumipUserDto?>()) {
+      return (data != null ? _im3lr0ct.FlumipUserDto.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i21.ScoreMethod?>()) {
-      return (data != null ? _i21.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _is.getType<_ik3s3pjn.Genome?>()) {
+      return (data != null ? _ik3s3pjn.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i22.SearchHitDto?>()) {
-      return (data != null ? _i22.SearchHitDto.fromJson(data) : null) as T;
+    if (t == _is.getType<_ifiazq2p.Project?>()) {
+      return (data != null ? _ifiazq2p.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i23.SearchHitKind?>()) {
-      return (data != null ? _i23.SearchHitKind.fromJson(data) : null) as T;
+    if (t == _is.getType<_ip1wvjxo.ProjectFileDto?>()) {
+      return (data != null ? _ip1wvjxo.ProjectFileDto.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i24.Settings?>()) {
-      return (data != null ? _i24.Settings.fromJson(data) : null) as T;
+    if (t == _is.getType<_i4kq7s26.ProjectOptions?>()) {
+      return (data != null ? _i4kq7s26.ProjectOptions.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i25.Snp?>()) {
-      return (data != null ? _i25.Snp.fromJson(data) : null) as T;
+    if (t == _is.getType<_iootg8bv.ScoreMethod?>()) {
+      return (data != null ? _iootg8bv.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i26.SnpImportStatus?>()) {
-      return (data != null ? _i26.SnpImportStatus.fromJson(data) : null) as T;
+    if (t == _is.getType<_iy8r37ur.SearchHitDto?>()) {
+      return (data != null ? _iy8r37ur.SearchHitDto.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i27.SnpUsageDto?>()) {
-      return (data != null ? _i27.SnpUsageDto.fromJson(data) : null) as T;
+    if (t == _is.getType<_ia4xis23.SearchHitKind?>()) {
+      return (data != null ? _ia4xis23.SearchHitKind.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i28.UserSettingsDto?>()) {
-      return (data != null ? _i28.UserSettingsDto.fromJson(data) : null) as T;
+    if (t == _is.getType<_ibmr8d9c.Settings?>()) {
+      return (data != null ? _ibmr8d9c.Settings.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_ip0fcn2o.Snp?>()) {
+      return (data != null ? _ip0fcn2o.Snp.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_iq9n7xnd.SnpImportStatus?>()) {
+      return (data != null ? _iq9n7xnd.SnpImportStatus.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i8stnodc.SnpUsageDto?>()) {
+      return (data != null ? _i8stnodc.SnpUsageDto.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_igo562ik.UserSettingsDto?>()) {
+      return (data != null ? _igo562ik.UserSettingsDto.fromJson(data) : null)
+          as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == _i1.getType<List<String>?>()) {
+    if (t == _is.getType<List<String>?>()) {
       return (data != null
               ? (data as List).map((e) => deserialize<String>(e)).toList()
               : null)
@@ -1752,75 +1643,80 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i29.ProjectFileDto>) {
+    if (t == List<_iaw3nq06.ProjectFileDto>) {
       return (data as List)
-              .map((e) => deserialize<_i29.ProjectFileDto>(e))
+              .map((e) => deserialize<_iaw3nq06.ProjectFileDto>(e))
               .toList()
           as T;
     }
-    if (t == List<_i30.Genome>) {
-      return (data as List).map((e) => deserialize<_i30.Genome>(e)).toList()
-          as T;
-    }
-    if (t == List<_i31.Snp>) {
-      return (data as List).map((e) => deserialize<_i31.Snp>(e)).toList() as T;
-    }
-    if (t == List<_i32.Project>) {
-      return (data as List).map((e) => deserialize<_i32.Project>(e)).toList()
-          as T;
-    }
-    if (t == List<_i33.FlumipUserDto>) {
+    if (t == List<_i2jfp72f.Genome>) {
       return (data as List)
-              .map((e) => deserialize<_i33.FlumipUserDto>(e))
+              .map((e) => deserialize<_i2jfp72f.Genome>(e))
               .toList()
           as T;
     }
-    if (t == List<_i34.SearchHitDto>) {
+    if (t == List<_icqkl7md.Snp>) {
+      return (data as List).map((e) => deserialize<_icqkl7md.Snp>(e)).toList()
+          as T;
+    }
+    if (t == List<_idblq1ye.Project>) {
       return (data as List)
-              .map((e) => deserialize<_i34.SearchHitDto>(e))
+              .map((e) => deserialize<_idblq1ye.Project>(e))
               .toList()
           as T;
     }
-    if (t == List<_i35.SnpUsageDto>) {
+    if (t == List<_ipn4uvlw.FlumipUserDto>) {
       return (data as List)
-              .map((e) => deserialize<_i35.SnpUsageDto>(e))
+              .map((e) => deserialize<_ipn4uvlw.FlumipUserDto>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ih1e1b1z.SearchHitDto>) {
+      return (data as List)
+              .map((e) => deserialize<_ih1e1b1z.SearchHitDto>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ivyy2rnq.SnpUsageDto>) {
+      return (data as List)
+              .map((e) => deserialize<_ivyy2rnq.SnpUsageDto>(e))
               .toList()
           as T;
     }
     try {
-      return _i2.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+      return _isp.Protocol().deserialize<T>(data, t);
+    } on _is.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i3.AuthAdminStatusDto => 'AuthAdminStatusDto',
-      _i4.AuthApiToken => 'AuthApiToken',
-      _i5.AuthConfigDto => 'AuthConfigDto',
-      _i6.AuthFlow => 'AuthFlow',
-      _i7.AuthSession => 'AuthSession',
-      _i8.AuthUserDto => 'AuthUserDto',
-      _i9.CustomSnpRequestDto => 'CustomSnpRequestDto',
-      _i10.GeneExtractionException => 'GeneExtractionException',
-      _i11.BedCreationException => 'BedCreationException',
-      _i12.ArgumentException => 'ArgumentException',
-      _i13.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
-      _i14.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
-      _i15.FlumipUser => 'FlumipUser',
-      _i16.FlumipUserDto => 'FlumipUserDto',
-      _i17.Genome => 'Genome',
-      _i18.Project => 'Project',
-      _i19.ProjectFileDto => 'ProjectFileDto',
-      _i20.ProjectOptions => 'ProjectOptions',
-      _i21.ScoreMethod => 'ScoreMethod',
-      _i22.SearchHitDto => 'SearchHitDto',
-      _i23.SearchHitKind => 'SearchHitKind',
-      _i24.Settings => 'Settings',
-      _i25.Snp => 'Snp',
-      _i26.SnpImportStatus => 'SnpImportStatus',
-      _i27.SnpUsageDto => 'SnpUsageDto',
-      _i28.UserSettingsDto => 'UserSettingsDto',
+      _ilu62sh8.AuthAdminStatusDto => 'AuthAdminStatusDto',
+      _i1qrzley.AuthApiToken => 'AuthApiToken',
+      _i3pxz8st.AuthConfigDto => 'AuthConfigDto',
+      _iopq1986.AuthFlow => 'AuthFlow',
+      _i1cqtl3u.AuthSession => 'AuthSession',
+      _i9fqmmja.AuthUserDto => 'AuthUserDto',
+      _i50r13ns.CustomSnpRequestDto => 'CustomSnpRequestDto',
+      _ifprdzfb.GeneExtractionException => 'GeneExtractionException',
+      _il9ya82w.BedCreationException => 'BedCreationException',
+      _ix5u8j9t.ArgumentException => 'ArgumentException',
+      _iua77lfj.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _iq9wx7jy.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
+      _ijkt6zbv.FlumipUser => 'FlumipUser',
+      _im3lr0ct.FlumipUserDto => 'FlumipUserDto',
+      _ik3s3pjn.Genome => 'Genome',
+      _ifiazq2p.Project => 'Project',
+      _ip1wvjxo.ProjectFileDto => 'ProjectFileDto',
+      _i4kq7s26.ProjectOptions => 'ProjectOptions',
+      _iootg8bv.ScoreMethod => 'ScoreMethod',
+      _iy8r37ur.SearchHitDto => 'SearchHitDto',
+      _ia4xis23.SearchHitKind => 'SearchHitKind',
+      _ibmr8d9c.Settings => 'Settings',
+      _ip0fcn2o.Snp => 'Snp',
+      _iq9n7xnd.SnpImportStatus => 'SnpImportStatus',
+      _i8stnodc.SnpUsageDto => 'SnpUsageDto',
+      _igo562ik.UserSettingsDto => 'UserSettingsDto',
       _ => null,
     };
   }
@@ -1835,62 +1731,62 @@ class Protocol extends _i1.SerializationManagerServer {
     }
 
     switch (data) {
-      case _i3.AuthAdminStatusDto():
+      case _ilu62sh8.AuthAdminStatusDto():
         return 'AuthAdminStatusDto';
-      case _i4.AuthApiToken():
+      case _i1qrzley.AuthApiToken():
         return 'AuthApiToken';
-      case _i5.AuthConfigDto():
+      case _i3pxz8st.AuthConfigDto():
         return 'AuthConfigDto';
-      case _i6.AuthFlow():
+      case _iopq1986.AuthFlow():
         return 'AuthFlow';
-      case _i7.AuthSession():
+      case _i1cqtl3u.AuthSession():
         return 'AuthSession';
-      case _i8.AuthUserDto():
+      case _i9fqmmja.AuthUserDto():
         return 'AuthUserDto';
-      case _i9.CustomSnpRequestDto():
+      case _i50r13ns.CustomSnpRequestDto():
         return 'CustomSnpRequestDto';
-      case _i10.GeneExtractionException():
+      case _ifprdzfb.GeneExtractionException():
         return 'GeneExtractionException';
-      case _i11.BedCreationException():
+      case _il9ya82w.BedCreationException():
         return 'BedCreationException';
-      case _i12.ArgumentException():
+      case _ix5u8j9t.ArgumentException():
         return 'ArgumentException';
-      case _i13.FlumipFileNotFoundException():
+      case _iua77lfj.FlumipFileNotFoundException():
         return 'FlumipFileNotFoundException';
-      case _i14.ProjectAccessDeniedException():
+      case _iq9wx7jy.ProjectAccessDeniedException():
         return 'ProjectAccessDeniedException';
-      case _i15.FlumipUser():
+      case _ijkt6zbv.FlumipUser():
         return 'FlumipUser';
-      case _i16.FlumipUserDto():
+      case _im3lr0ct.FlumipUserDto():
         return 'FlumipUserDto';
-      case _i17.Genome():
+      case _ik3s3pjn.Genome():
         return 'Genome';
-      case _i18.Project():
+      case _ifiazq2p.Project():
         return 'Project';
-      case _i19.ProjectFileDto():
+      case _ip1wvjxo.ProjectFileDto():
         return 'ProjectFileDto';
-      case _i20.ProjectOptions():
+      case _i4kq7s26.ProjectOptions():
         return 'ProjectOptions';
-      case _i21.ScoreMethod():
+      case _iootg8bv.ScoreMethod():
         return 'ScoreMethod';
-      case _i22.SearchHitDto():
+      case _iy8r37ur.SearchHitDto():
         return 'SearchHitDto';
-      case _i23.SearchHitKind():
+      case _ia4xis23.SearchHitKind():
         return 'SearchHitKind';
-      case _i24.Settings():
+      case _ibmr8d9c.Settings():
         return 'Settings';
-      case _i25.Snp():
+      case _ip0fcn2o.Snp():
         return 'Snp';
-      case _i26.SnpImportStatus():
+      case _iq9n7xnd.SnpImportStatus():
         return 'SnpImportStatus';
-      case _i27.SnpUsageDto():
+      case _i8stnodc.SnpUsageDto():
         return 'SnpUsageDto';
-      case _i28.UserSettingsDto():
+      case _igo562ik.UserSettingsDto():
         return 'UserSettingsDto';
     }
-    className = _i2.Protocol().getClassNameForObject(data);
+    className = _isp.Protocol().getClassNameForObject(data);
     if (className != null) {
-      return 'serverpod.$className';
+      return className.contains('.') ? className : 'serverpod.$className';
     }
     return null;
   }
@@ -1902,123 +1798,123 @@ class Protocol extends _i1.SerializationManagerServer {
       return super.deserializeByClassName(data);
     }
     if (dataClassName == 'AuthAdminStatusDto') {
-      return deserialize<_i3.AuthAdminStatusDto>(data['data']);
+      return deserialize<_ilu62sh8.AuthAdminStatusDto>(data['data']);
     }
     if (dataClassName == 'AuthApiToken') {
-      return deserialize<_i4.AuthApiToken>(data['data']);
+      return deserialize<_i1qrzley.AuthApiToken>(data['data']);
     }
     if (dataClassName == 'AuthConfigDto') {
-      return deserialize<_i5.AuthConfigDto>(data['data']);
+      return deserialize<_i3pxz8st.AuthConfigDto>(data['data']);
     }
     if (dataClassName == 'AuthFlow') {
-      return deserialize<_i6.AuthFlow>(data['data']);
+      return deserialize<_iopq1986.AuthFlow>(data['data']);
     }
     if (dataClassName == 'AuthSession') {
-      return deserialize<_i7.AuthSession>(data['data']);
+      return deserialize<_i1cqtl3u.AuthSession>(data['data']);
     }
     if (dataClassName == 'AuthUserDto') {
-      return deserialize<_i8.AuthUserDto>(data['data']);
+      return deserialize<_i9fqmmja.AuthUserDto>(data['data']);
     }
     if (dataClassName == 'CustomSnpRequestDto') {
-      return deserialize<_i9.CustomSnpRequestDto>(data['data']);
+      return deserialize<_i50r13ns.CustomSnpRequestDto>(data['data']);
     }
     if (dataClassName == 'GeneExtractionException') {
-      return deserialize<_i10.GeneExtractionException>(data['data']);
+      return deserialize<_ifprdzfb.GeneExtractionException>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
-      return deserialize<_i11.BedCreationException>(data['data']);
+      return deserialize<_il9ya82w.BedCreationException>(data['data']);
     }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i12.ArgumentException>(data['data']);
+      return deserialize<_ix5u8j9t.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i13.FlumipFileNotFoundException>(data['data']);
+      return deserialize<_iua77lfj.FlumipFileNotFoundException>(data['data']);
     }
     if (dataClassName == 'ProjectAccessDeniedException') {
-      return deserialize<_i14.ProjectAccessDeniedException>(data['data']);
+      return deserialize<_iq9wx7jy.ProjectAccessDeniedException>(data['data']);
     }
     if (dataClassName == 'FlumipUser') {
-      return deserialize<_i15.FlumipUser>(data['data']);
+      return deserialize<_ijkt6zbv.FlumipUser>(data['data']);
     }
     if (dataClassName == 'FlumipUserDto') {
-      return deserialize<_i16.FlumipUserDto>(data['data']);
+      return deserialize<_im3lr0ct.FlumipUserDto>(data['data']);
     }
     if (dataClassName == 'Genome') {
-      return deserialize<_i17.Genome>(data['data']);
+      return deserialize<_ik3s3pjn.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i18.Project>(data['data']);
+      return deserialize<_ifiazq2p.Project>(data['data']);
     }
     if (dataClassName == 'ProjectFileDto') {
-      return deserialize<_i19.ProjectFileDto>(data['data']);
+      return deserialize<_ip1wvjxo.ProjectFileDto>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i20.ProjectOptions>(data['data']);
+      return deserialize<_i4kq7s26.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i21.ScoreMethod>(data['data']);
+      return deserialize<_iootg8bv.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'SearchHitDto') {
-      return deserialize<_i22.SearchHitDto>(data['data']);
+      return deserialize<_iy8r37ur.SearchHitDto>(data['data']);
     }
     if (dataClassName == 'SearchHitKind') {
-      return deserialize<_i23.SearchHitKind>(data['data']);
+      return deserialize<_ia4xis23.SearchHitKind>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i24.Settings>(data['data']);
+      return deserialize<_ibmr8d9c.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i25.Snp>(data['data']);
+      return deserialize<_ip0fcn2o.Snp>(data['data']);
     }
     if (dataClassName == 'SnpImportStatus') {
-      return deserialize<_i26.SnpImportStatus>(data['data']);
+      return deserialize<_iq9n7xnd.SnpImportStatus>(data['data']);
     }
     if (dataClassName == 'SnpUsageDto') {
-      return deserialize<_i27.SnpUsageDto>(data['data']);
+      return deserialize<_i8stnodc.SnpUsageDto>(data['data']);
     }
     if (dataClassName == 'UserSettingsDto') {
-      return deserialize<_i28.UserSettingsDto>(data['data']);
+      return deserialize<_igo562ik.UserSettingsDto>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
-      return _i2.Protocol().deserializeByClassName(data);
+      return _isp.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
 
   @override
-  _i1.Table? getTableForType(Type t) {
+  _is.Table? getTableForType(Type t) {
     {
-      var table = _i2.Protocol().getTableForType(t);
+      var table = _isp.Protocol().getTableForType(t);
       if (table != null) {
         return table;
       }
     }
     switch (t) {
-      case _i4.AuthApiToken:
-        return _i4.AuthApiToken.t;
-      case _i6.AuthFlow:
-        return _i6.AuthFlow.t;
-      case _i7.AuthSession:
-        return _i7.AuthSession.t;
-      case _i15.FlumipUser:
-        return _i15.FlumipUser.t;
-      case _i17.Genome:
-        return _i17.Genome.t;
-      case _i18.Project:
-        return _i18.Project.t;
-      case _i20.ProjectOptions:
-        return _i20.ProjectOptions.t;
-      case _i24.Settings:
-        return _i24.Settings.t;
-      case _i25.Snp:
-        return _i25.Snp.t;
+      case _i1qrzley.AuthApiToken:
+        return _i1qrzley.AuthApiToken.t;
+      case _iopq1986.AuthFlow:
+        return _iopq1986.AuthFlow.t;
+      case _i1cqtl3u.AuthSession:
+        return _i1cqtl3u.AuthSession.t;
+      case _ijkt6zbv.FlumipUser:
+        return _ijkt6zbv.FlumipUser.t;
+      case _ik3s3pjn.Genome:
+        return _ik3s3pjn.Genome.t;
+      case _ifiazq2p.Project:
+        return _ifiazq2p.Project.t;
+      case _i4kq7s26.ProjectOptions:
+        return _i4kq7s26.ProjectOptions.t;
+      case _ibmr8d9c.Settings:
+        return _ibmr8d9c.Settings.t;
+      case _ip0fcn2o.Snp:
+        return _ip0fcn2o.Snp.t;
     }
     return null;
   }
 
   @override
-  List<_i2.TableDefinition> getTargetTableDefinitions() =>
+  List<_isp.TableDefinition> getTargetTableDefinitions() =>
       targetTableDefinitions;
 
   @override
@@ -2034,7 +1930,7 @@ class Protocol extends _i1.SerializationManagerServer {
       return null;
     }
     try {
-      return _i2.Protocol().mapRecordToJson(record);
+      return _isp.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

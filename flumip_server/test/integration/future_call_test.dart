@@ -25,7 +25,7 @@ class RecordingGenomeService extends GenomeService {
   }
 
   @override
-  Future<void> indexIsFinished(Session session, dynamic object) async {
+  Future<void> indexIsFinished(Session session, Genome object) async {
     finished = true;
   }
 }
@@ -56,30 +56,36 @@ void main() {
     setUp(fake.reset);
     var session = sessionBuilder.build();
 
-    test(
-      'CheckIndexProgress reschedules while bwa is still running',
-      () async {
-        final recording = RecordingGenomeService();
-        sl.registerSingleton<GenomeService>(recording);
-        final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
-        fake.stubRun(
-          'ps',
-          exitCode: 0,
-          stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n',
-        );
+    test('CheckIndexProgress reschedules while bwa is still running', () async {
+      final recording = RecordingGenomeService();
+      sl.registerSingleton<GenomeService>(recording);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        indexPID: 555,
+        indexing: true,
+      );
+      fake.stubRun(
+        'ps',
+        exitCode: 0,
+        stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n',
+      );
 
-        await CheckIndexProgressFutureCall().run(session, genome);
+      await CheckIndexProgressFutureCall().run(session, genome);
 
-        expect(recording.scheduled, isTrue);
-        expect(recording.finished, isFalse);
-      },
-      tags: ['integration'],
-    );
+      expect(recording.scheduled, isTrue);
+      expect(recording.finished, isFalse);
+    }, tags: ['integration']);
 
     test('CheckIndexProgress finalizes when bwa has finished', () async {
       final recording = RecordingGenomeService();
       sl.registerSingleton<GenomeService>(recording);
-      final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        indexPID: 555,
+        indexing: true,
+      );
       fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
 
       await CheckIndexProgressFutureCall().run(session, genome);
@@ -93,7 +99,12 @@ void main() {
       () async {
         final recording = RecordingMipgenService();
         sl.registerSingleton<MipgenService>(recording);
-        final project = await seedProject(session, options: 1, pid: 1234);
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          active: true,
+        );
         fake.stubRun(
           'ps',
           exitCode: 0,
@@ -108,17 +119,97 @@ void main() {
       tags: ['integration'],
     );
 
+    test('CheckMipgenProgress finalizes when mipgen has finished', () async {
+      final recording = RecordingMipgenService();
+      sl.registerSingleton<MipgenService>(recording);
+      final project = await seedProject(
+        session,
+        options: 1,
+        pid: 1234,
+        active: true,
+      );
+      fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
+
+      await CheckMipgenProgressFutureCall().run(session, project);
+
+      expect(recording.finished, isTrue);
+      expect(recording.scheduled, isFalse);
+    }, tags: ['integration']);
+
+    // Serverpod 4 delivers future calls at least once, so both polls have to be
+    // safe to run twice. These two tests are the guard: without them a
+    // redelivery re-enters the finish path, and for mipgen that means a second
+    // completion email and a `completedIn` recomputed from the wall clock.
+    //
+    // Both seed the state a *finished* run leaves behind — `active: false` /
+    // `indexing: false`, pid cleared — and stub `ps` to exit 1, which is what
+    // `ps -p 0` does. That is the exact combination that reaches the second
+    // email if the guard is missing.
     test(
-      'CheckMipgenProgress finalizes when mipgen has finished',
+      'CheckMipgenProgress ignores a redelivery once the run is over',
       () async {
         final recording = RecordingMipgenService();
         sl.registerSingleton<MipgenService>(recording);
-        final project = await seedProject(session, options: 1, pid: 1234);
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 0,
+          active: false,
+        );
         fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
 
         await CheckMipgenProgressFutureCall().run(session, project);
 
-        expect(recording.finished, isTrue);
+        expect(
+          recording.finished,
+          isFalse,
+          reason: 'a second completion email',
+        );
+        expect(recording.scheduled, isFalse);
+      },
+      tags: ['integration'],
+    );
+
+    test(
+      'CheckIndexProgress ignores a redelivery once indexing is over',
+      () async {
+        final recording = RecordingGenomeService();
+        sl.registerSingleton<GenomeService>(recording);
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          indexPID: 0,
+          indexing: false,
+        );
+        fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
+
+        await CheckIndexProgressFutureCall().run(session, genome);
+
+        expect(recording.finished, isFalse);
+        expect(recording.scheduled, isFalse, reason: 'a forked poll chain');
+      },
+      tags: ['integration'],
+    );
+
+    // The guards read the database, not the serialised argument, so a row that
+    // has been deleted since scheduling must be a no-op rather than a throw —
+    // a throw would be retried forever under at-least-once.
+    test(
+      'CheckMipgenProgress ignores a project that no longer exists',
+      () async {
+        final recording = RecordingMipgenService();
+        sl.registerSingleton<MipgenService>(recording);
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          active: true,
+        );
+        await Project.db.deleteRow(session, project);
+
+        await CheckMipgenProgressFutureCall().run(session, project);
+
+        expect(recording.finished, isFalse);
         expect(recording.scheduled, isFalse);
       },
       tags: ['integration'],
