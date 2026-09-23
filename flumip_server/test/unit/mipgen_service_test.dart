@@ -11,6 +11,7 @@ import '../support/matchers.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_process_runner.dart';
+import '../support/mipgen_output.dart';
 import '../support/seed.dart';
 import '../support/temp_dir.dart';
 
@@ -404,7 +405,19 @@ void main() {
     var session = sessionBuilder.build();
     final mipgenService = sl<MipgenService>();
 
-    Future<({int id, String dir})> prepare({required bool withProgress}) async {
+    /// Seeds an active project and, when asked, the output of a run.
+    ///
+    /// ⚠️ `withProgress: true` writes a *complete* run: a progress file that
+    /// reaches mipgen's own completion marker and a design whose rows all carry
+    /// their twenty fields. It used to write the single line `done`, which is
+    /// what a run cut short leaves behind — so every test here that meant
+    /// "finished successfully" was in fact asserting success on the exact
+    /// output [MipgenService.designProblem] now refuses.
+    Future<({int id, String dir})> prepare({
+      required bool withProgress,
+      String? progress,
+      String? pickedMips,
+    }) async {
       final base = createTempDir('finish');
       await overrideSettingsDirs(
         session,
@@ -423,7 +436,12 @@ void main() {
       final dir = '${base.path}/proj';
       Directory(dir).createSync(recursive: true);
       if (withProgress) {
-        File('$dir/run.progress.txt').writeAsStringSync('done\n');
+        File(
+          '$dir/run.progress.txt',
+        ).writeAsStringSync(progress ?? completeProgress);
+        File(
+          '$dir/demo.$pickedMipsSuffix',
+        ).writeAsStringSync(pickedMips ?? completeDesign);
       }
       return (id: project.id!, dir: dir);
     }
@@ -538,6 +556,71 @@ void main() {
       expect(project.pid, 0);
       expect(project.error, contains('MIP generation failed'));
       expect(project.warning, isEmpty);
+    }, tags: ['unit']);
+
+    test('a design cut short is a failed project, not a complete one', () async {
+      // ⚠️ The bug this check exists for. Everything here says success by the
+      // old test — mipgen is gone, a progress file is there and reaches its own
+      // completion marker — and the design is still missing a field off its
+      // last row, because the run was killed while writing it.
+      final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
+      fake.stubRun('python', exitCode: 0);
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.active, isFalse);
+      expect(project.pid, 0);
+      expect(project.error, contains('should not be used'));
+      // Says which row, so the file can be opened at the same place.
+      expect(project.error, contains('row 3'));
+      // ⚠️ And it says what to do about it. The tile and the email show this
+      // string and nothing else, so a diagnosis with no next step strands the
+      // reader.
+      expect(project.error, contains('Generate the MIPs again'));
+      expect(project.error, contains(mipgenLogName));
+      // ⚠️ And it is a *failure*, not a warning about the track. Reporting this
+      // as "the MIPs were designed, but the UCSC track could not be built" is
+      // exactly how an incomplete design went unnoticed.
+      expect(project.warning, isEmpty);
+    }, tags: ['unit']);
+
+    test('an incomplete design is not handed to the track generator', () async {
+      // No point, and worse than no point: the generator reads the same
+      // truncated file, so it fails too and its complaint is what people see
+      // instead of the real one.
+      final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
+      fake.stubRun('python', exitCode: 0);
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      expect(fake.lastFor('python'), isNull);
+    }, tags: ['unit']);
+
+    test('a run that stopped before picking is a failed project', () async {
+      // The other ending: the file mipgen wrote is intact as far as it goes,
+      // and only its progress file shows it never reached the end.
+      final p = await prepare(
+        withProgress: true,
+        progress: interruptedProgress,
+      );
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.active, isFalse);
+      expect(project.error, contains('interrupted before it finished'));
+      expect(project.error, contains('Generate the MIPs again'));
+      expect(fake.lastFor('python'), isNull);
     }, tags: ['unit']);
   });
 }
