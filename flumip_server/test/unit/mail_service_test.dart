@@ -12,6 +12,7 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_mail_sender.dart';
 import '../support/fake_process_runner.dart';
 import '../support/matchers.dart';
+import '../support/mipgen_output.dart';
 import '../support/seed.dart';
 import '../support/temp_dir.dart';
 
@@ -446,7 +447,12 @@ void main() {
       final dir = '${base.path}/proj';
       Directory(dir).createSync(recursive: true);
       if (withProgress) {
-        File('$dir/run.progress.txt').writeAsStringSync('done\n');
+        // ⚠️ A *complete* run, not just a progress file. This used to write the
+        // single line `done`, which is what an interrupted run leaves behind —
+        // so "notifies with failed=false on success" was describing a project
+        // that [MipgenService.designProblem] now, correctly, calls failed.
+        File('$dir/run.progress.txt').writeAsStringSync(completeProgress);
+        File('$dir/demo.$pickedMipsSuffix').writeAsStringSync(completeDesign);
       }
       return project;
     }
