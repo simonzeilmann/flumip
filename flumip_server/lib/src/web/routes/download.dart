@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flumip_server/service_locator.dart';
@@ -195,36 +196,54 @@ class DownloadRoute extends Route {
     if (zip == null) return refused;
 
     final name = '${_safeStem(project.name)}-files.zip';
+    // Read before the stream starts, because the stream ends by deleting it.
+    final length = await zip.length();
     session.log(
-      'Serving ${await zip.length()} bytes of zip for project ${project.id}',
+      'Serving $length bytes of zip for project ${project.id}',
       level: LogLevel.info,
     );
 
-    // Deleted once the last byte has gone out. Tied to the stream rather than
-    // scheduled, so a client that disconnects halfway still cleans up.
-    final stream = zip.openRead().map(
-      (chunk) => chunk is Uint8List ? chunk : Uint8List.fromList(chunk),
-    );
     return Response.ok(
       body: Body.fromDataStream(
-        stream.transform(
-          StreamTransformer.fromHandlers(
-            handleDone: (sink) async {
-              sink.close();
-              try {
-                await zip.delete();
-              } catch (_) {
-                // A leftover in the system temp directory is not worth failing
-                // a completed download over.
-              }
-            },
-          ),
-        ),
-        contentLength: await zip.length(),
+        _readThenDelete(session, zip),
+        contentLength: length,
         mimeType: MimeType.octetStream,
       ),
       headers: _attachmentHeaders(name),
     );
+  }
+
+  /// The zip's bytes, and the zip deleted afterwards — however the reading ends.
+  ///
+  /// [FileService.zipProjectFiles] writes the whole archive to the system temp
+  /// directory before the first byte is sent, so something has to delete it,
+  /// and a response does not only end by finishing. The generator's `finally`
+  /// covers all three endings: the last chunk sent, an error off the disk, and
+  /// the client hanging up.
+  ///
+  /// ⚠️ That last one is why this is not a `handleDone` transformer, which
+  /// fires only when the source stream completes normally. A client that
+  /// disconnects cancels the subscription instead, which skips `handleDone`
+  /// entirely — so every aborted "download all" used to strand a full copy of
+  /// the project's files in the temp directory, and nothing ever reclaimed it.
+  Stream<Uint8List> _readThenDelete(Session session, File zip) async* {
+    try {
+      await for (final chunk in zip.openRead()) {
+        yield chunk is Uint8List ? chunk : Uint8List.fromList(chunk);
+      }
+    } finally {
+      try {
+        await zip.delete();
+      } catch (e) {
+        // Not worth failing a download over — but a temp directory quietly
+        // filling up is exactly the thing that should leave a trace.
+        session.log(
+          'Could not delete the temporary zip ${zip.path}',
+          level: LogLevel.warning,
+          exception: e,
+        );
+      }
+    }
   }
 
   /// `Content-Disposition: attachment`, so the browser saves rather than
