@@ -284,6 +284,7 @@ class AdminSettingsForm extends StatelessWidget {
           publicUrlController: form.authPublicUrl,
           allowedDomainsController: form.oidcAllowedDomains,
           adminEmailsController: form.oidcAdminEmails,
+          departmentClaimController: form.oidcDepartmentClaim,
           scopesController: form.oidcScopes,
           buttonLabelController: form.oidcButtonLabel,
           status: authStatus,

@@ -42,6 +42,8 @@ project:
   - setEmailNotification:
   - setProjectOwner:
   - assignableOwners:
+  - setProjectDepartment:
+  - assignableDepartments:
   - notificationsAvailable:
   - setSnpById:
 search:

@@ -94,6 +94,12 @@ class ProjectService {
       // at the endpoint boundary, where unauthenticated future calls cannot trip
       // over them.
       owner: await authz.ownerForNewProject(session),
+      // Stamped only when the creator is in exactly one group, because then
+      // there is nothing to choose. Somebody in several gets null and picks on
+      // the tile — guessing one of them and calling it the project's would be
+      // an arbitrary decision presented as a fact, and it widens who can see
+      // the project, so getting it wrong is not free.
+      department: (await authz.principal(session)).departments.singleOrNull,
       trackToken: Uuid().v7(),
     );
     var project = await Project.db.insertRow(session, projectRow);
@@ -536,6 +542,72 @@ class ProjectService {
 
     project.owner = ownerId;
     await Project.db.updateRow(session, project);
+  }
+
+  /// Moves a project into [department], or out of every department when null.
+  ///
+  /// ⚠️ **Refuses a department the caller is not in**, unless they are an
+  /// administrator. Without that, setting a department would be a way to hand
+  /// your own project to a group you have nothing to do with — and since a
+  /// department only ever widens access, that is a way to share a project with
+  /// people who were never meant to see it.
+  ///
+  /// An administrator may set any department, because they can see every
+  /// project anyway and are the ones who tidy up after a group is renamed.
+  Future<void> setDepartment(
+    Session session,
+    int id,
+    String? department,
+  ) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
+    }
+
+    final wanted = department?.trim();
+    if (wanted != null && wanted.isNotEmpty) {
+      final who = await authz.principal(session);
+      if (!who.isAdmin && !who.departments.contains(wanted)) {
+        session.log(
+          'Refused to move project $id into "$wanted" for $who',
+          level: LogLevel.warning,
+        );
+        throw ProjectAccessDeniedException(
+          message:
+              'You are not in "$wanted", so you cannot move a project into it.',
+        );
+      }
+    }
+
+    project.department = (wanted == null || wanted.isEmpty) ? null : wanted;
+    await Project.db.updateRow(session, project);
+  }
+
+  /// The departments the caller may put a project into, sorted.
+  ///
+  /// Their own groups; an administrator also gets every department already in
+  /// use, so they can move a project out of a group that has been renamed away
+  /// without joining it first.
+  Future<List<String>> assignableDepartments(Session session) async {
+    final who = await authz.principal(session);
+    final departments = <String>{...who.departments};
+
+    if (who.isAdmin) {
+      final projects = await Project.db.find(session);
+      departments.addAll(
+        projects
+            .map((p) => p.department)
+            .whereType<String>()
+            .where((d) => d.isNotEmpty),
+      );
+    }
+
+    final sorted = departments.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return sorted;
   }
 
   /// Every user a project can be handed to, oldest account first.

@@ -237,6 +237,43 @@ PostgreSQL, not in memory. A deploy or restart does not disturb anyone.
 so the app is no longer same-origin with the server and the session cookie is not
 sent. Build into `flumip_server/web/app` and open the server's web port instead.
 
+## What this server checks in an ID token
+
+Everything OpenID Connect Core §3.1.3.7 asks of a client in the authorization
+code flow, except the signature — and that exception is the spec's own:
+
+| Check | Where |
+| --- | --- |
+| `iss` matches the configured issuer | §3.1.3.7 item 1 |
+| `aud` contains this client id | items 3 |
+| **`azp` equals this client id when present, and is required when `aud` names several** | items 4 and 5 |
+| `exp` has not passed, with five minutes of clock skew | item 9 |
+| `nonce` matches the one sent with the request | item 11 |
+| `sub` is present and non-empty | §2 |
+
+⚠️ **The signature is not verified, deliberately.** §3.1.3.7 item 6 allows it:
+the token arrives by direct TLS-authenticated communication with the token
+endpoint, so TLS already establishes that the bytes came from the provider. The
+precondition is structural — `IdTokenClaims.parse` has exactly one caller, the
+`/auth/callback` route, acting on a body it just received. **Never add an
+endpoint that accepts an ID token from a client.**
+
+### email_verified
+
+`email` decides two things here: the domain allowlist, and who gets the
+administrator scope. Core §5.7 warns that the claim is neither guaranteed unique
+nor guaranteed verified, so:
+
+- **`email_verified: false` is refused.** At a provider that lets an account
+  assert an address it does not own, accepting it would hand out the admin scope
+  for the price of typing somebody else's address.
+- **An absent claim is accepted**, because it is optional and plenty of
+  providers omit it. It is logged when this install decides access by address,
+  which is the only case where it matters.
+
+Identity itself is keyed on `iss` + `sub`, never on the address — so a changed
+email moves with the account rather than creating a second one.
+
 ## If you are locked out
 
 In order of preference:

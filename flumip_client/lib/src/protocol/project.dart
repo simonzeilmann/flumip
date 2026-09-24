@@ -53,7 +53,7 @@ abstract class Project
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -78,7 +78,7 @@ abstract class Project
           ? null
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
-      department: jsonSerialization['department'] as int?,
+      department: jsonSerialization['department'] as String?,
       genes: jsonSerialization['genes'] == null
           ? null
           : _i2kzrgg5.Protocol().deserialize<List<String>>(
@@ -149,11 +149,22 @@ abstract class Project
   /// can then reassign.
   int? owner;
 
-  /// Reserved. Nothing sets this, because no department claim is collected from
-  /// the identity provider. `projectIsAccessible` reads it, but the clause
-  /// cannot match while the caller's department is always null. Wiring it means
-  /// adding a claim name to Settings — see docs/authorization.md.
-  int? department;
+  /// The group this project belongs to, as the identity provider spells it.
+  ///
+  /// A **String**, not an id: it holds a claim value verbatim (`cardiology`,
+  /// `realm_access.roles` entry, whatever the provider sends) and there is no
+  /// table of departments to point at. It was `int?` while nothing could set
+  /// it, which is exactly the shape a claim value cannot take.
+  ///
+  /// Null means "no department", which is every project created before this
+  /// and every project on an install with no department claim configured.
+  /// `projectIsAccessible` treats null as "owner and admins only" — a
+  /// department only ever *widens* access, never narrows it.
+  ///
+  /// Set through `ProjectEndpoint.setProjectDepartment`, by the owner or an
+  /// admin. Stamped automatically at creation when the creator belongs to
+  /// exactly one group, because then there is nothing to choose.
+  String? department;
 
   List<String>? genes;
 
@@ -199,7 +210,7 @@ abstract class Project
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -281,7 +292,7 @@ class _ProjectImpl extends Project {
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -348,7 +359,7 @@ class _ProjectImpl extends Project {
       snp: snp is int? ? snp : this.snp,
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
-      department: department is int? ? department : this.department,
+      department: department is String? ? department : this.department,
       genes: genes is List<String>?
           ? genes
           : this.genes?.map((e0) => e0).toList(),

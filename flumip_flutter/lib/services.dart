@@ -299,6 +299,9 @@ void installServices({
     loadProjects: () => client.project.getProjects(),
     deleteProject: (id) => client.project.deleteProject(id),
     setOwner: (id, ownerId) => client.project.setProjectOwner(id, ownerId),
+    setDepartment: (id, department) =>
+        client.project.setProjectDepartment(id, department),
+    loadAssignableDepartments: () => client.project.assignableDepartments(),
     loadNotificationsAvailable: () => client.project.notificationsAvailable(),
     loadAssignableOwners: () => client.project.assignableOwners(),
     // ⚠️ Read through a closure, not captured: `authController.user` changes

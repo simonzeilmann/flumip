@@ -64,7 +64,16 @@ class AuthorizationService {
       }
 
       final authSession = await _authSession(session, authSessionId);
-      return Principal(userId: authSession?.userId, isAdmin: isAdmin);
+      return Principal(
+        userId: authSession?.userId,
+        isAdmin: isAdmin,
+        // Read off the session row rather than the user, which is why it is
+        // denormalised there: this call already has the row in hand, and going
+        // to `flumip_user` for it would double the queries on every guarded
+        // request. The cost is that changing somebody's groups in the provider
+        // takes effect at their next sign-in — the same rule `isAdmin` follows.
+        departments: authSession?.departments ?? const [],
+      );
     } catch (e, stackTrace) {
       session.log(
         'Resolving the principal failed; treating the request as anonymous.',

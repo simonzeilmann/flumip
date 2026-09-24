@@ -94,6 +94,11 @@ LOGIN_FORM = """<!doctype html>
   <form method="post">
     <input type="hidden" name="rq" value="{rq}">
     <label>Username<br><input name="username" value="{default_user}" autofocus></label>
+    <label>Groups<br><input name="groups" value="" placeholder="cardiology, research"></label>
+    <p class="hint">Comma-separated, and optional. Emitted as the
+      <code>groups</code> claim in both the ID token and userinfo, so the
+      department claim can be exercised without a real provider. Leave empty for
+      a user in no groups.</p>
     <button type="submit">Sign in</button>
   </form>
   <p class="hint">Administrators are whatever <code>oidcAdminEmails</code> says;
@@ -187,6 +192,11 @@ class Handler(BaseHTTPRequestHandler):
 
         if path.endswith("/authorize"):
             username = form.get("username", [DEFAULT_USER])[0]
+            groups = [
+                g.strip()
+                for g in form.get("groups", [""])[0].split(",")
+                if g.strip()
+            ]
             padded = form.get("rq", [""])[0]
             rq = json.loads(base64.urlsafe_b64decode(
                 padded + "=" * (-len(padded) % 4)))
@@ -195,6 +205,7 @@ class Handler(BaseHTTPRequestHandler):
             CODES[code] = {
                 "email": email_for(username),
                 "name": username,
+                "groups": groups,
                 "nonce": rq["nonce"],
                 "challenge": rq["challenge"],
                 "redirect_uri": rq["redirect_uri"],
@@ -242,6 +253,10 @@ class Handler(BaseHTTPRequestHandler):
                 "email": entry["email"],
                 "email_verified": True,
                 "name": entry["name"],
+                # Only when there are some: a provider that sends an empty array
+                # and one that sends nothing are different, and FLUMIP tells
+                # them apart.
+                **({"groups": entry["groups"]} if entry.get("groups") else {}),
             }
             access_token = secrets.token_urlsafe(32)
             TOKENS[access_token] = {
@@ -249,6 +264,7 @@ class Handler(BaseHTTPRequestHandler):
                 "email": entry["email"],
                 "email_verified": True,
                 "name": entry["name"],
+                **({"groups": entry["groups"]} if entry.get("groups") else {}),
             }
             return self.send_json({
                 "token_type": "Bearer",

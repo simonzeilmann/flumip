@@ -17,7 +17,7 @@ void main() {
     bool enforcing = true,
     Principal principal = Principal.anonymous,
     int? projectOwner,
-    int? department,
+    String? department,
   }) => projectIsAccessible(
     enforcing: enforcing,
     principal: principal,
@@ -43,7 +43,7 @@ void main() {
           enforcing: false,
           principal: Principal.anonymous,
           projectOwner: 7,
-          department: 3,
+          department: 'cardiology',
         ),
         isTrue,
       );
@@ -103,37 +103,99 @@ void main() {
     test('a project with a department is not shared with a null-department '
         'caller', () {
       expect(
-        allowed(principal: other, projectOwner: 7, department: 3),
+        allowed(principal: other, projectOwner: 7, department: 'cardiology'),
         isFalse,
       );
     });
 
-    test('no Principal the server can build today has a department', () {
-      // Guards the claim made in Principal's and the model's documentation. If
-      // somebody wires a claim up, this fails and points at the docs to update.
-      expect(Principal.anonymous.departmentId, isNull);
-      expect(const Principal(userId: 1).departmentId, isNull);
-      expect(const Principal(userId: 1, isAdmin: true).departmentId, isNull);
+    test('a Principal has no departments unless a claim is configured', () {
+      // Empty is the default everywhere, which is what keeps the clause inert
+      // on an install that has not set `Settings.oidcDepartmentClaim`.
+      expect(Principal.anonymous.departments, isEmpty);
+      expect(const Principal(userId: 1).departments, isEmpty);
+      expect(const Principal(userId: 1, isAdmin: true).departments, isEmpty);
     });
 
-    test('matching departments grant access once one is set', () {
-      // The seam works — this is what switching the claim on would buy.
+    test('a shared department grants access', () {
       expect(
         allowed(
-          principal: const Principal(userId: 8, departmentId: 3),
+          principal: const Principal(userId: 8, departments: ['cardiology']),
           projectOwner: 7,
-          department: 3,
+          department: 'cardiology',
         ),
         isTrue,
       );
     });
 
-    test('mismatched departments are refused', () {
+    test('any one of several groups is enough', () {
+      // People are in more than one, which is why this is a list. A rule that
+      // only looked at the first would be wrong for most real users.
       expect(
         allowed(
-          principal: const Principal(userId: 8, departmentId: 4),
+          principal: const Principal(
+            userId: 8,
+            departments: ['research', 'cardiology', 'teaching'],
+          ),
           projectOwner: 7,
-          department: 3,
+          department: 'cardiology',
+        ),
+        isTrue,
+      );
+    });
+
+    test('a different department is refused', () {
+      expect(
+        allowed(
+          principal: const Principal(userId: 8, departments: ['research']),
+          projectOwner: 7,
+          department: 'cardiology',
+        ),
+        isFalse,
+      );
+    });
+
+    test('⚠️ departments are compared verbatim, including case', () {
+      // These are the provider's own strings on both sides. Folding case would
+      // make `Cardiology` and `cardiology` the same department at a provider
+      // that considers them different.
+      expect(
+        allowed(
+          principal: const Principal(userId: 8, departments: ['Cardiology']),
+          projectOwner: 7,
+          department: 'cardiology',
+        ),
+        isFalse,
+      );
+    });
+
+    test('⚠️ a project with no department is not shared with anybody', () {
+      // The emptiness guard. Without it this describes every project and every
+      // caller on an install with no claim configured, and the whole rule
+      // becomes "anyone may touch anything".
+      expect(
+        allowed(
+          principal: const Principal(userId: 8, departments: ['cardiology']),
+          projectOwner: 7,
+          department: null,
+        ),
+        isFalse,
+      );
+      expect(
+        allowed(
+          principal: const Principal(userId: 8, departments: ['cardiology']),
+          projectOwner: 7,
+          department: '',
+        ),
+        isFalse,
+      );
+    });
+
+    test('⚠️ a caller with no departments matches no project', () {
+      expect(
+        allowed(
+          principal: const Principal(userId: 8),
+          projectOwner: 7,
+          department: 'cardiology',
         ),
         isFalse,
       );

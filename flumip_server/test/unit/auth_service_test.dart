@@ -24,6 +24,7 @@ void main() {
     Session session, {
     String allowedDomains = '',
     String adminEmails = '',
+    String departmentClaim = '',
   }) async {
     final settingsService = sl<SettingsService>();
     final settings = await settingsService.getSettings(session);
@@ -33,6 +34,7 @@ void main() {
       ..oidcClientId = 'flumip'
       ..oidcAllowedEmailDomains = allowedDomains
       ..oidcAdminEmails = adminEmails
+      ..oidcDepartmentClaim = departmentClaim
       ..authPublicUrl = 'https://flumip.example';
     // Written directly because the secret is serverOnly and excluded from the
     // updateSettings merge, exactly as setOidcClientSecret does it.
@@ -51,6 +53,7 @@ void main() {
     String? name = 'Ada Lovelace',
     required String nonce,
     Duration? expiresIn,
+    Map<String, dynamic>? extra,
   }) => {
     'iss': issuer,
     'aud': 'flumip',
@@ -62,6 +65,7 @@ void main() {
     'iat': epochSeconds(DateTime.now().toUtc()),
     'email': ?email,
     'name': ?name,
+    ...?extra,
   };
 
   /// Runs a full sign-in and returns the resulting cookie.
@@ -71,6 +75,7 @@ void main() {
     String? email = 'a@uni.example',
     String? name = 'Ada Lovelace',
     Map<String, dynamic>? userinfo,
+    Map<String, dynamic>? extra,
   }) async {
     final authService = sl<AuthService>();
     final url = await authService.beginFlow(session);
@@ -87,6 +92,7 @@ void main() {
         email: email,
         name: name,
         nonce: flow!.nonce,
+        extra: extra,
       ),
       userinfo: userinfo,
     );
@@ -393,6 +399,127 @@ void main() {
     final session = sessionBuilder.build();
 
     setUp(http.reset);
+
+    group('email_verified — OpenID Connect Core §5.7', () {
+      // Identity is keyed on iss + sub, which is right. But *authorization* is
+      // keyed on the address: the domain allowlist and the administrator list
+      // are both string matches on it. At a provider that lets an account
+      // assert an address it does not own, that hands out the admin scope for
+      // the price of typing somebody else's email.
+      test('an explicitly unverified address is refused', () async {
+        await enableSso(session);
+        await expectLater(
+          () => signIn(session, extra: {'email_verified': false}),
+          throwsA(isA<AuthFlowException>()),
+        );
+      });
+
+      test('a verified address signs in', () async {
+        await enableSso(session);
+        final result = await signIn(session, extra: {'email_verified': true});
+        expect(result.session.email, 'a@uni.example');
+      });
+
+      test('⚠️ an absent claim is allowed, because it is optional', () async {
+        // Refusing these would lock out every provider that omits the claim,
+        // which is plenty of them. Absent means "the provider did not say" and
+        // is logged rather than treated as false.
+        await enableSso(session);
+        final result = await signIn(session);
+        expect(result.session.email, 'a@uni.example');
+      });
+    });
+
+    group('the department claim', () {
+      test('collects nothing while no claim is configured', () async {
+        // The default, and what keeps this inert on an install that has not
+        // asked for it.
+        await enableSso(session);
+        final result = await signIn(
+          session,
+          extra: {
+            'groups': ['cardiology'],
+          },
+        );
+        expect(result.session.departments, isNull);
+      });
+
+      test('collects the configured claim from the ID token', () async {
+        await enableSso(session, departmentClaim: 'groups');
+        final result = await signIn(
+          session,
+          extra: {
+            'groups': ['cardiology', 'research'],
+          },
+        );
+        expect(result.session.departments, ['cardiology', 'research']);
+
+        final user = await FlumipUser.db.findById(
+          session,
+          result.session.userId,
+        );
+        expect(user!.departments, ['cardiology', 'research']);
+      });
+
+      test('reads a nested claim, the way Keycloak sends one', () async {
+        await enableSso(session, departmentClaim: 'realm_access.roles');
+        final result = await signIn(
+          session,
+          extra: {
+            'realm_access': {
+              'roles': ['cardiology'],
+            },
+          },
+        );
+        expect(result.session.departments, ['cardiology']);
+      });
+
+      test('falls back to userinfo, like the email does', () async {
+        // Which of the two carries a claim is a per-provider decision.
+        await enableSso(session, departmentClaim: 'groups');
+        final result = await signIn(
+          session,
+          userinfo: {
+            'sub': 'user-123',
+            'groups': ['research'],
+          },
+        );
+        expect(result.session.departments, ['research']);
+      });
+
+      test('⚠️ groups are replaced at each sign-in, not merged', () async {
+        // The provider is the authority on who is in what, so a group somebody
+        // was removed from has to disappear here too.
+        await enableSso(session, departmentClaim: 'groups');
+        await signIn(
+          session,
+          extra: {
+            'groups': ['cardiology', 'research'],
+          },
+        );
+        final second = await signIn(
+          session,
+          extra: {
+            'groups': ['cardiology'],
+          },
+        );
+
+        expect(second.session.departments, ['cardiology']);
+        final user = await FlumipUser.db.findById(
+          session,
+          second.session.userId,
+        );
+        expect(user!.departments, ['cardiology']);
+      });
+
+      test('a member of nothing gets null rather than an empty list', () async {
+        // "Not collected" stays distinguishable from "collected, and they are
+        // in nothing".
+        await enableSso(session, departmentClaim: 'groups');
+        final result = await signIn(session);
+        expect(result.session.departments, isNull);
+      });
+    });
 
     test('signing in twice reuses one user record', () async {
       await enableSso(session);

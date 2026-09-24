@@ -64,6 +64,7 @@ Future<SsoControllers> pumpSso(
             publicUrlController: c.publicUrl,
             allowedDomainsController: c.allowedDomains,
             adminEmailsController: c.adminEmails,
+            departmentClaimController: TextEditingController(),
             scopesController: c.scopes,
             buttonLabelController: c.buttonLabel,
             status: status,

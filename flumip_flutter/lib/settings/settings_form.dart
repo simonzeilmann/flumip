@@ -79,6 +79,7 @@ class SettingsForm {
   final oidcButtonLabel = TextEditingController();
   final oidcAllowedDomains = TextEditingController();
   final oidcAdminEmails = TextEditingController();
+  final oidcDepartmentClaim = TextEditingController();
   final authPublicUrl = TextEditingController();
 
   bool mailActive = false;
@@ -110,6 +111,7 @@ class SettingsForm {
     oidcButtonLabel.text = settings.oidcButtonLabel;
     oidcAllowedDomains.text = settings.oidcAllowedEmailDomains;
     oidcAdminEmails.text = settings.oidcAdminEmails;
+    oidcDepartmentClaim.text = settings.oidcDepartmentClaim;
     authPublicUrl.text = settings.authPublicUrl;
 
     mailActive = settings.mailActive;
@@ -163,6 +165,7 @@ class SettingsForm {
     oidcButtonLabel: oidcButtonLabel.text.trim(),
     oidcAllowedEmailDomains: oidcAllowedDomains.text.trim(),
     oidcAdminEmails: oidcAdminEmails.text.trim(),
+    oidcDepartmentClaim: oidcDepartmentClaim.text.trim(),
     authPublicUrl: authPublicUrl.text.trim(),
   );
 
@@ -195,6 +198,7 @@ class SettingsForm {
       oidcButtonLabel,
       oidcAllowedDomains,
       oidcAdminEmails,
+      oidcDepartmentClaim,
       authPublicUrl,
     ]) {
       controller.dispose();

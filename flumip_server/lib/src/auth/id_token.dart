@@ -31,17 +31,28 @@ class IdTokenClaims {
     required this.subject,
     required this.audiences,
     required this.expires,
+    this.authorizedParty,
     this.issuedAt,
     this.nonce,
     this.email,
     this.emailVerified,
     this.name,
+    this.payload = const {},
   });
 
   final String issuer;
   final String subject;
   final List<String> audiences;
   final DateTime expires;
+
+  /// `azp`, the party the token was actually issued **to**.
+  ///
+  /// Distinct from [audiences], and the distinction is the point: a provider may
+  /// issue a token to client A and list client B as an additional audience, so
+  /// "our id appears in `aud`" does not mean "this token is ours". See
+  /// [validate].
+  final String? authorizedParty;
+
   final DateTime? issuedAt;
   final String? nonce;
 
@@ -49,8 +60,18 @@ class IdTokenClaims {
   /// returns it in the ID token even when granted. The callback falls back to
   /// the userinfo endpoint in that case.
   final String? email;
+
+  /// `email_verified`. **Null means the provider did not say**, which is not
+  /// the same as false and is treated differently — see `AuthService`.
   final bool? emailVerified;
   final String? name;
+
+  /// The decoded payload, kept so a configured claim can be read out of it.
+  ///
+  /// Which claim carries group membership is a per-provider setting, so it
+  /// cannot be a field on this class — there is no standard name for it. See
+  /// `claims.dart`.
+  final Map<String, dynamic> payload;
 
   /// Decodes the payload of [idToken] without verifying its signature.
   ///
@@ -84,11 +105,13 @@ class IdTokenClaims {
       subject: _requireString(payload, 'sub'),
       audiences: _audiences(payload['aud']),
       expires: expires,
+      authorizedParty: payload['azp'] as String?,
       issuedAt: issuedAt,
       nonce: payload['nonce'] as String?,
       email: (payload['email'] as String?)?.trim(),
       emailVerified: payload['email_verified'] as bool?,
       name: (payload['name'] ?? payload['preferred_username']) as String?,
+      payload: payload,
     );
   }
 
@@ -114,6 +137,27 @@ class IdTokenClaims {
       throw FormatException(
         'The ID token is addressed to ${audiences.join(', ')} rather than to '
         'this client ("$clientId").',
+      );
+    }
+    // OpenID Connect Core §3.1.3.7 items 4 and 5.
+    //
+    // ⚠️ `aud` containing our client id is **not** enough on its own. A provider
+    // may issue a token to client A and list client B as an extra audience, so
+    // without this a token minted for a different client of the same provider
+    // would be accepted here. `azp` names the party it was actually issued to.
+    //
+    // Only required when there is more than one audience; a single-audience
+    // token that omits `azp` is the ordinary case and entirely correct.
+    if (audiences.length > 1 && authorizedParty == null) {
+      throw const FormatException(
+        'The ID token names several audiences but no "azp" claim, so there is '
+        'no way to tell which client it was issued to.',
+      );
+    }
+    if (authorizedParty != null && authorizedParty != clientId) {
+      throw FormatException(
+        'The ID token was issued to "$authorizedParty" rather than to this '
+        'client ("$clientId").',
       );
     }
     if (this.nonce != nonce) {

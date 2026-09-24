@@ -307,6 +307,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           columnDefault: 'false',
         ),
         _isp.ColumnDefinition(
+          name: 'departments',
+          columnType: _isp.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
+        ),
+        _isp.ColumnDefinition(
           name: 'created',
           columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
@@ -406,6 +412,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           isNullable: false,
           dartType: 'String',
           columnDefault: '\'\'',
+        ),
+        _isp.ColumnDefinition(
+          name: 'departments',
+          columnType: _isp.ColumnType.json,
+          isNullable: true,
+          dartType: 'List<String>?',
         ),
         _isp.ColumnDefinition(
           name: 'created',
@@ -619,9 +631,9 @@ class Protocol extends _is.DatabaseSerializationManager {
         ),
         _isp.ColumnDefinition(
           name: 'department',
-          columnType: _isp.ColumnType.bigint,
+          columnType: _isp.ColumnType.text,
           isNullable: true,
-          dartType: 'int?',
+          dartType: 'String?',
         ),
         _isp.ColumnDefinition(
           name: 'trackToken',
@@ -1196,6 +1208,13 @@ class Protocol extends _is.DatabaseSerializationManager {
         ),
         _isp.ColumnDefinition(
           name: 'oidcAdminEmails',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'',
+        ),
+        _isp.ColumnDefinition(
+          name: 'oidcDepartmentClaim',
           columnType: _isp.ColumnType.text,
           isNullable: false,
           dartType: 'String',

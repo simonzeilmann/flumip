@@ -158,6 +158,8 @@ void main() {
         loadProjects: () async => const [],
         deleteProject: (_) async {},
         setOwner: (_, _) async {},
+        setDepartment: (_, _) async {},
+        loadAssignableDepartments: () async => const [],
         loadNotificationsAvailable: () async => false,
         loadAssignableOwners: () async => const [],
         isAdmin: () => false,

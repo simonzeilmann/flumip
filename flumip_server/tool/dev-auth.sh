@@ -19,6 +19,13 @@
 #   ./tool/dev-auth.sh token alice@uni.example     mint a bearer, no provider needed
 #   ./tool/dev-auth.sh token boss@x --admin        ... with the admin scope
 #   ./tool/dev-auth.sh signin boss@uni.example     full OIDC round trip, prints the bearer
+#   DEV_GROUPS=cardiology,research ./tool/dev-auth.sh signin alice@uni.example
+#                                                 ... and with a `groups` claim,
+#                                                 for the department feature.
+#                                                 ⚠️ NOT `GROUPS` — bash owns
+#                                                 that name (it is the caller's
+#                                                 gid list) and silently sent
+#                                                 "1000" the first time.
 #   ./tool/dev-auth.sh status                      what the server currently thinks
 #   ./tool/dev-auth.sh banner                      where to sign in, and as whom
 #
@@ -202,6 +209,7 @@ cmd_signin() {
   callback="$(curl -s -o /dev/null -D - -X POST "$location" \
     --data-urlencode "rq=$rq" \
     --data-urlencode "username=$email" \
+    --data-urlencode "groups=${DEV_GROUPS:-}" \
     | tr -d '\r' | awk 'tolower($1) == "location:" { print $2 }')"
   if [ -z "$callback" ]; then
     echo "The provider did not redirect back; check it is reachable at $ISSUER" >&2

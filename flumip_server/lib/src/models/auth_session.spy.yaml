@@ -16,6 +16,10 @@ fields:
   cookieHash: String
   email: String
   isAdmin: bool, default=false
+  ### Denormalised from FlumipUser for the same reason as [email] and [isAdmin]:
+  ### `AuthorizationService.principal` already reads this row on every guarded
+  ### call, so carrying the groups here keeps that at one query instead of two.
+  departments: List<String>?
   created: DateTime, default=now
   expires: DateTime
   lastSeen: DateTime, default=now

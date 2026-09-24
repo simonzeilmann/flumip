@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:flumip_server/src/generated/protocol.dart' as _ijyeyqvr;
 import 'package:serverpod/serverpod.dart' as _is;
 
 /// A signed-in browser session, keyed by the `flumip_auth` cookie.
@@ -30,6 +31,7 @@ abstract class AuthSession
     required this.cookieHash,
     required this.email,
     bool? isAdmin,
+    this.departments,
     DateTime? created,
     required this.expires,
     DateTime? lastSeen,
@@ -43,6 +45,7 @@ abstract class AuthSession
     required String cookieHash,
     required String email,
     bool? isAdmin,
+    List<String>? departments,
     DateTime? created,
     required DateTime expires,
     DateTime? lastSeen,
@@ -57,6 +60,11 @@ abstract class AuthSession
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
           : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+      departments: jsonSerialization['departments'] == null
+          ? null
+          : _ijyeyqvr.Protocol().deserialize<List<String>>(
+              jsonSerialization['departments'],
+            ),
       created: jsonSerialization['created'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -82,6 +90,11 @@ abstract class AuthSession
 
   bool isAdmin;
 
+  /// Denormalised from FlumipUser for the same reason as [email] and [isAdmin]:
+  /// `AuthorizationService.principal` already reads this row on every guarded
+  /// call, so carrying the groups here keeps that at one query instead of two.
+  List<String>? departments;
+
   DateTime created;
 
   DateTime expires;
@@ -100,6 +113,7 @@ abstract class AuthSession
     String? cookieHash,
     String? email,
     bool? isAdmin,
+    List<String>? departments,
     DateTime? created,
     DateTime? expires,
     DateTime? lastSeen,
@@ -113,6 +127,7 @@ abstract class AuthSession
       'cookieHash': cookieHash,
       'email': email,
       'isAdmin': isAdmin,
+      if (departments != null) 'departments': departments?.toJson(),
       'created': created.toJson(),
       'expires': expires.toJson(),
       'lastSeen': lastSeen.toJson(),
@@ -161,6 +176,7 @@ class _AuthSessionImpl extends AuthSession {
     required String cookieHash,
     required String email,
     bool? isAdmin,
+    List<String>? departments,
     DateTime? created,
     required DateTime expires,
     DateTime? lastSeen,
@@ -170,6 +186,7 @@ class _AuthSessionImpl extends AuthSession {
          cookieHash: cookieHash,
          email: email,
          isAdmin: isAdmin,
+         departments: departments,
          created: created,
          expires: expires,
          lastSeen: lastSeen,
@@ -185,6 +202,7 @@ class _AuthSessionImpl extends AuthSession {
     String? cookieHash,
     String? email,
     bool? isAdmin,
+    Object? departments = _Undefined,
     DateTime? created,
     DateTime? expires,
     DateTime? lastSeen,
@@ -195,6 +213,9 @@ class _AuthSessionImpl extends AuthSession {
       cookieHash: cookieHash ?? this.cookieHash,
       email: email ?? this.email,
       isAdmin: isAdmin ?? this.isAdmin,
+      departments: departments is List<String>?
+          ? departments
+          : this.departments?.map((e0) => e0).toList(),
       created: created ?? this.created,
       expires: expires ?? this.expires,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -217,6 +238,10 @@ class AuthSessionUpdateTable extends _is.UpdateTable<AuthSessionTable> {
   _is.ColumnValue<bool, bool> isAdmin(bool value) =>
       _is.ColumnValue(table.isAdmin, value);
 
+  _is.ColumnValue<List<String>, List<String>> departments(
+    List<String>? value,
+  ) => _is.ColumnValue(table.departments, value);
+
   _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
       _is.ColumnValue(table.created, value);
 
@@ -234,6 +259,7 @@ class AuthSessionTable extends _is.Table<int?> {
     cookieHash = _is.ColumnString('cookieHash', this);
     email = _is.ColumnString('email', this);
     isAdmin = _is.ColumnBool('isAdmin', this, hasDefault: true);
+    departments = _is.ColumnSerializable<List<String>>('departments', this);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     expires = _is.ColumnDateTime('expires', this);
     lastSeen = _is.ColumnDateTime('lastSeen', this, hasDefault: true);
@@ -249,6 +275,11 @@ class AuthSessionTable extends _is.Table<int?> {
 
   late final _is.ColumnBool isAdmin;
 
+  /// Denormalised from FlumipUser for the same reason as [email] and [isAdmin]:
+  /// `AuthorizationService.principal` already reads this row on every guarded
+  /// call, so carrying the groups here keeps that at one query instead of two.
+  late final _is.ColumnSerializable<List<String>> departments;
+
   late final _is.ColumnDateTime created;
 
   late final _is.ColumnDateTime expires;
@@ -262,6 +293,7 @@ class AuthSessionTable extends _is.Table<int?> {
     cookieHash,
     email,
     isAdmin,
+    departments,
     created,
     expires,
     lastSeen,

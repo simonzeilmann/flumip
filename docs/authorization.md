@@ -20,7 +20,7 @@ is true:
 | 1 | They are an **administrator** | Somebody has to be able to clean up after a person who has left. Administrators are the addresses in the admin list — the same ones who can open Settings without the password. |
 | 2 | They **own** it | Ownership is stamped at creation and never changes by itself. |
 | 3 | It is **unowned** | See the next section. This is the one that surprises people. |
-| 4 | Their **department** matches | Not reachable yet. See "Departments" below. |
+| 4 | Their **department** matches | Only when a department claim is configured. See "Departments" below. |
 
 Otherwise the project does not appear in their list, and opening it directly
 fails with *"You do not have access to this project"*.
@@ -66,19 +66,55 @@ reassign them.
 
 ## Departments
 
-`Project.department` exists, the access rule reads it, and **it can never
-match**, because nothing ever sets a user's department: FLUMIP collects no
-department claim from your identity provider.
+A project can belong to a **department**, and everybody in that department can
+see it. Off by default: it does nothing until an administrator names the claim
+that carries group membership.
 
-This is a deliberate half-measure rather than an accident. The rule is written
-with the department clause in place so that switching it on later is a change to
-sign-in plus one Settings field, instead of a change to every place that guards a
-project. Until somebody does that, department-based sharing does not work and you
-should ignore the field.
+### There is no standard claim for this
 
-If you are reading this because you want it: what is missing is a configurable
-claim name, reading that claim at sign-in, storing it on `flumip_user`, and
-copying it onto new projects.
+OpenID Connect Core §5.1 defines twenty standard claims and **none of them
+describe organisational membership**, so every provider invents its own. Set
+**Settings → Sign-in → Department claim** to whichever yours uses:
+
+| Provider | Claim |
+| --- | --- |
+| Okta, Auth0, Entra ID | `groups` |
+| Keycloak, realm roles | `realm_access.roles` |
+| Keycloak, client roles | `resource_access.flumip.roles` |
+| LDAP-backed | `department` or `ou` |
+
+Dots walk into a nested claim. The value may be a single string or an array;
+both are accepted, because providers disagree about which is right. You may also
+need to add a scope — `groups` at most providers — so that the claim is actually
+issued.
+
+Empty means departments are not used at all: nothing is collected and the
+department clause can never match. That is the default, so an install that has
+not asked for this behaves exactly as it did before the feature existed.
+
+### What it changes
+
+- At each sign-in the claim is read, from the ID token or from userinfo, and
+  stored on the user and on their session. **Changing somebody's groups at the
+  provider takes effect at their next sign-in**, the same rule the administrator
+  list already follows.
+- A new project is stamped with the creator's department **only when they are in
+  exactly one group**. With several there is nothing to choose from, so it is
+  left unset and they pick on the project tile.
+- The owner — not just an administrator — sets a project's department, from
+  their own groups. The server refuses a group the caller is not in, because
+  otherwise this would be a way to share a project with people who were never
+  meant to see it. An administrator may set any department in use, so that a
+  renamed group can be tidied up.
+
+⚠️ **A department only ever widens access.** A project with no department is
+visible to its owner and to administrators, exactly as before. Switching this on
+cannot take anyone's access away — but it can give access to everyone in a group,
+so think about which groups your provider sends before naming the claim.
+
+Departments are compared **verbatim, including case**: they are the provider's
+own strings on both sides, and folding case would merge two groups a provider
+considers distinct.
 
 ## The UCSC track URL is a separate matter
 
