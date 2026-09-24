@@ -1,5 +1,4 @@
-import 'package:flumip_server/src/generated/project_options.dart';
-import 'package:serverpod/protocol.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:serverpod/server.dart';
 
 /// A service class for handling project options.
@@ -34,11 +33,13 @@ class OptionsService {
   /// \param session The current session.
   /// \param id The ID of the project options to retrieve.
   /// \returns The retrieved [ProjectOptions] object.
-  /// \throws [FileNotFoundException] if the project options are not found.
+  /// \throws [FlumipFileNotFoundException] if the project options are not found.
   Future<ProjectOptions> getProjectOptions(Session session, int id) async {
     var projectOptions = await ProjectOptions.db.findById(session, id);
     if (projectOptions == null) {
-      throw FileNotFoundException(message: 'Project options not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     return projectOptions;
   }
@@ -48,7 +49,7 @@ class OptionsService {
   /// \param session The current session.
   /// \param id The ID of the project options to update.
   /// \param options The updated [ProjectOptions] object.
-  /// \throws [FileNotFoundException] if the project options are not found.
+  /// \throws [FlumipFileNotFoundException] if the project options are not found.
   Future<void> updateProjectOptions(
     Session session,
     int id,
@@ -56,7 +57,9 @@ class OptionsService {
   ) async {
     var projectOptions = await ProjectOptions.db.findById(session, id);
     if (projectOptions == null) {
-      throw FileNotFoundException(message: 'Project options not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     await ProjectOptions.db.updateRow(session, options);
   }
@@ -65,11 +68,13 @@ class OptionsService {
   ///
   /// \param session The current session.
   /// \param id The ID of the project options to delete.
-  /// \throws [FileNotFoundException] if the project options are not found.
+  /// \throws [FlumipFileNotFoundException] if the project options are not found.
   Future<void> deleteProjectOptions(Session session, int id) async {
     var projectOptions = await ProjectOptions.db.findById(session, id);
     if (projectOptions == null) {
-      throw FileNotFoundException(message: 'Project options not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     await ProjectOptions.db.deleteRow(session, projectOptions);
   }

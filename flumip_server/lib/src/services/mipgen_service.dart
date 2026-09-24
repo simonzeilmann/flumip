@@ -97,14 +97,16 @@ class MipgenService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'Project id does not exist');
+      throw ArgumentException(message: 'This project no longer exists.');
     }
     if (project.genome == null) {
       session.log(
         "No genome found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genome found in project');
+      throw ArgumentException(
+        message: 'This project has no genome yet. Choose one first.',
+      );
     }
     var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.refPath == null || genome.refPath!.isEmpty) {
@@ -112,14 +114,21 @@ class MipgenService {
         "No reference path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No reference path found in genome');
+      throw ArgumentException(
+        message:
+            'The genome "${genome.name}" has no gene annotation file on this '
+            'server, so the target regions cannot be worked out. Ask your '
+            'administrator to re-scan the genome library.',
+      );
     }
     if (project.genes == null || project.genes!.isEmpty) {
       session.log(
         "No genes found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genes found in project');
+      throw ArgumentException(
+        message: 'This project has no genes yet. Add at least one first.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -151,13 +160,33 @@ class MipgenService {
       timeout: helperToolTimeout,
     );
 
-    if (process.exitCode != 0 || process.stdout == "") {
+    // ⚠️ Two failures, two messages. These used to share one — "Error: The
+    // supplied genes cannot be found" — which is right for an empty result and
+    // simply wrong for a script that never ran, and sent whoever read it off
+    // checking gene symbols when the actual problem was a path in Settings.
+    if (process.exitCode != 0) {
       session.log(
-        "Failed to extract genes for project ID: $projectID",
+        "Exon extract script failed for project ID: $projectID "
+        "(exit ${process.exitCode})",
         level: LogLevel.error,
       );
       throw BedCreationException(
-        message: 'Error: The supplied genes cannot be found',
+        message:
+            'The gene lookup did not run. Ask your administrator to check the '
+            'exon extract script in Settings.',
+      );
+    }
+
+    if (process.stdout == "") {
+      session.log(
+        "No genes matched for project ID: $projectID",
+        level: LogLevel.error,
+      );
+      throw BedCreationException(
+        message:
+            'None of these genes were found in the annotation for '
+            '"${genome.name}". Check the spelling, and that they are symbols '
+            'this genome build uses.',
       );
     }
 
@@ -208,7 +237,9 @@ class MipgenService {
         "No genome found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genome found in project');
+      throw ArgumentException(
+        message: 'This project has no genome yet. Choose one first.',
+      );
     }
 
     var genome = await genomeService.getGenome(session, project.genome!);
@@ -218,7 +249,9 @@ class MipgenService {
         level: LogLevel.error,
       );
       throw FlumipFileNotFoundException(
-        message: 'No fasta path found in genome',
+        message:
+            'The genome "${genome.name}" has no sequence file on this server. '
+            'Ask your administrator to re-scan the genome library.',
       );
     }
     Snp? snp;
@@ -532,7 +565,7 @@ class MipgenService {
         "Project ID does not exist: ${projectModel.id}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'Project id does not exist');
+      throw ArgumentException(message: 'This project no longer exists.');
     }
 
     if (project.cleanup) {

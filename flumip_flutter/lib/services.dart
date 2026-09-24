@@ -283,8 +283,12 @@ void installServices({
         client.settings.setSmtpPassword(password, smtpPassword),
     setOidcClientSecret: (password, secret) =>
         client.settings.setOidcClientSecret(password, secret),
+    setSettingsPassword: (password, newPassword) =>
+        client.settings.setSettingsPassword(password, newPassword),
     smtpPasswordConfigured: (password) =>
         client.settings.smtpPasswordConfigured(password),
+    settingsPasswordIsDefault: (password) =>
+        client.settings.settingsPasswordIsDefault(password),
     loadAuthStatus: (password) => client.settings.getAuthAdminStatus(password),
     sendTestMail: (password, to) => client.settings.sendTestMail(password, to),
     signOut: () => authController.signOut(siteUrl),

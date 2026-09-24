@@ -9,6 +9,15 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'package:uuid/uuid.dart';
 
+/// What a gene symbol is allowed to look like.
+///
+/// ⚠️ Letters and numbers only, which rejects every real HGNC symbol containing
+/// a hyphen — `HLA-A`, `NKX2-1`, `MT-CO1`. That is the rule as it has always
+/// been, named here rather than repeated as a literal in two places so that
+/// widening it is one edit. Widening it is a behaviour change nobody has asked
+/// for yet; see HANDOFF.md.
+final geneSymbol = RegExp(r'^[A-Za-z0-9]+$');
+
 /// A service class for handling project-related operations.
 class ProjectService {
   ProjectService();
@@ -24,7 +33,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     session.log("Project retrieved with ID: $id", level: LogLevel.info);
     return project;
@@ -37,7 +48,7 @@ class ProjectService {
   /// \param options The [ProjectOptions] for the project.
   /// \param desc An optional description for the project.
   /// \returns The created [Project] object.
-  /// \throws [ArgumentError] if the project name is empty.
+  /// \throws [ArgumentException] if the project name is empty.
   Future<Project> createProject(
     Session session,
     String projectName,
@@ -50,7 +61,7 @@ class ProjectService {
     );
     if (projectName == '') {
       session.log("Project name cannot be empty", level: LogLevel.error);
-      throw ArgumentError('Project name cannot be empty');
+      throw ArgumentException(message: 'A project needs a name.');
     }
 
     var projectRow = Project(
@@ -94,7 +105,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     // Stop the run before the row goes, while the pid is still meaningful.
@@ -171,37 +184,54 @@ class ProjectService {
   /// \param gene The gene to add.
   /// \throws [FileNotFoundException] if the project is not found.
   /// \throws [Exception] if the gene already exists in the project.
-  /// \throws [ArgumentError] if the gene is empty or contains invalid characters.
+  /// \throws [ArgumentException] if the gene is empty or contains invalid characters.
   Future<void> addGeneToProject(Session session, int id, String gene) async {
     session.log("Adding gene to project with ID: $id", level: LogLevel.info);
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
-    }
-    if (project.genes != null && project.genes!.contains(gene)) {
-      session.log(
-        "Gene already exists in project with ID: $id",
-        level: LogLevel.error,
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
       );
-      throw Exception('Gene already exists in project');
     }
-    if (gene.isEmpty || gene == '') {
+    // ⚠️ Normalised *before* the duplicate check, which is the whole bug this
+    // replaced: the check read the string as typed while the list stores it
+    // upper-cased, so `contains('myh11')` never matched the `MYH11` already
+    // there. Typing a gene in lower case added it again, every time — a project
+    // in the wild had the same gene three times over, and the design would have
+    // been built from a list with it repeated.
+    final typed = gene.trim();
+    final normalised = typed.toUpperCase();
+
+    if (normalised.isEmpty) {
       session.log("Supplied gene is empty", level: LogLevel.error);
-      throw ArgumentError('Supplied gene empty');
+      throw ArgumentException(message: 'Enter a gene symbol.');
     }
-    if (RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
-      project.genes ??= [];
-      project.genes!.add(gene.toUpperCase());
-      await Project.db.updateRow(session, project);
-      session.log("Gene added to project with ID: $id", level: LogLevel.info);
-    } else {
+    if (!geneSymbol.hasMatch(normalised)) {
       session.log(
         "Gene name contains invalid characters",
         level: LogLevel.error,
       );
-      throw ArgumentError('Gene name contains invalid characters');
+      throw ArgumentException(
+        message:
+            'A gene symbol can only contain letters and numbers, so "$typed" '
+            'cannot be one.',
+      );
     }
+    if (project.genes?.contains(normalised) ?? false) {
+      session.log(
+        "Gene already exists in project with ID: $id",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: '$normalised is already on this project.',
+      );
+    }
+
+    project.genes ??= [];
+    project.genes!.add(normalised);
+    await Project.db.updateRow(session, project);
+    session.log("Gene added to project with ID: $id", level: LogLevel.info);
   }
 
   /// Removes a gene from a project.
@@ -223,11 +253,19 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     } else {
       if (project.genes == null) {
         session.log("Project does not have any genes", level: LogLevel.error);
-        throw Exception('Project does not have any genes');
+        // ⚠️ A typed exception, not a bare `Exception`. `describeError` has no
+        // case for the latter, so it reached the user as
+        // "Exception: Project does not have any genes" — the class name
+        // included.
+        throw FlumipFileNotFoundException(
+          message: 'This gene is not on this project.',
+        );
       }
       project.genes!.remove(gene);
       await Project.db.updateRow(session, project);
@@ -244,7 +282,7 @@ class ProjectService {
   /// \param id The ID of the project.
   /// \param genes The list of genes to add.
   /// \throws [FileNotFoundException] if the project is not found.
-  /// \throws [ArgumentError] if any gene is empty or contains invalid characters.
+  /// \throws [ArgumentException] if any gene is empty or contains invalid characters.
   Future<void> addGenesToProject(
     Session session,
     int id,
@@ -257,22 +295,39 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     } else {
+      // Same normalisation as [addGeneToProject], for the same reason. This
+      // replaces the whole list rather than appending, so without it a bulk
+      // write could seed mixed case that the single-gene duplicate check would
+      // then never catch.
+      final normalised = <String>[];
       for (var gene in genes) {
-        if (gene.isEmpty || gene == '') {
+        final typed = gene.trim();
+        if (typed.isEmpty) {
           session.log("Supplied gene is empty", level: LogLevel.error);
-          throw ArgumentError('Supplied gene empty');
+          throw ArgumentException(message: 'Enter a gene symbol.');
         }
-        if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
+        if (!geneSymbol.hasMatch(typed)) {
           session.log(
             "Gene name contains invalid characters",
             level: LogLevel.error,
           );
-          throw ArgumentError('Gene name contains invalid characters');
+          throw ArgumentException(
+            message:
+                'A gene symbol can only contain letters and numbers, so '
+                '"$typed" cannot be one.',
+          );
         }
+        final upper = typed.toUpperCase();
+        // Quietly dropped rather than refused: a list is pasted in one go, and
+        // failing the whole write over a repeat would make the caller diff it
+        // by hand.
+        if (!normalised.contains(upper)) normalised.add(upper);
       }
-      project.genes = genes;
+      project.genes = normalised;
       await Project.db.updateRow(session, project);
       session.log(
         "Multiple genes added to project with ID: $id",
@@ -295,7 +350,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     final existing = project.trackToken;
@@ -350,12 +407,16 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     var genome = await Genome.db.findById(session, geneId);
     if (genome == null) {
       session.log("Gene not found with ID: $geneId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Gene not found');
+      throw FlumipFileNotFoundException(
+        message: 'This gene is not on this project.',
+      );
     }
     project.genome = geneId;
     await Project.db.updateRow(session, project);
@@ -382,7 +443,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     if (snpId == null) {
@@ -394,7 +457,9 @@ class ProjectService {
     var snp = await Snp.db.findById(session, snpId);
     if (snp == null) {
       session.log("Snp not found with ID: $snpId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Snp not found');
+      throw FlumipFileNotFoundException(
+        message: 'This SNP set no longer exists.',
+      );
     }
     await authz.requireSnpAccess(session, snp);
 
@@ -405,7 +470,7 @@ class ProjectService {
         level: LogLevel.error,
       );
       throw ArgumentException(
-        message: 'That SNP set is for a different genome build.',
+        message: 'This SNP set is for a different genome build.',
       );
     }
 
@@ -414,7 +479,7 @@ class ProjectService {
         "Refused SNP $snpId for project $id: status is ${snp.status.name}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'That SNP set is not ready to use yet.');
+      throw ArgumentException(message: 'This SNP set is not ready to use yet.');
     }
 
     project.snp = snpId;
@@ -438,14 +503,18 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     if (ownerId != null) {
       final user = await FlumipUser.db.findById(session, ownerId);
       if (user == null) {
         session.log("User not found with ID: $ownerId", level: LogLevel.error);
-        throw FlumipFileNotFoundException(message: 'User not found');
+        throw FlumipFileNotFoundException(
+          message: 'This user no longer exists.',
+        );
       }
     }
 
@@ -479,7 +548,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     project.emailNotification = enabled;
     await Project.db.updateRow(session, project);

@@ -604,7 +604,10 @@ $(echo -e "${YELLOW}Next steps:${NC}")
      Follow the logs with:    journalctl -u flumip_${ENV_NAME} -f
 
   2. Change the admin settings password. It defaults to 'changeme' and gates
-     the settings screen, including the SMTP configuration.
+     the settings screen, including the SMTP configuration. The Settings tab
+     warns until you do. It is stored hashed and is never shown again, so the
+     box there is write-only: type a new one, or leave it empty to keep the
+     current one.
 
   3. Traffic is plain HTTP on port ${WEB_PORT}. To serve it over HTTPS, put a
      reverse proxy in front, for example with nginx and certbot:

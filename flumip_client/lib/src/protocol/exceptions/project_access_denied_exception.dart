@@ -29,7 +29,7 @@ abstract class ProjectAccessDeniedException
         _isc.SerializableModel,
         _isc.ProtocolSerialization {
   ProjectAccessDeniedException._({String? message})
-    : message = message ?? 'You do not have access to this project';
+    : message = message ?? 'You do not have access to this project.';
 
   factory ProjectAccessDeniedException({String? message}) =
       _ProjectAccessDeniedExceptionImpl;

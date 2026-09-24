@@ -37,7 +37,7 @@ abstract class Settings
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
+    this.settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     this.oidcClientSecret,
@@ -74,7 +74,6 @@ abstract class Settings
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme',
        oidcIssuer = oidcIssuer ?? '',
        oidcClientId = oidcClientId ?? '',
        oidcScopes = oidcScopes ?? 'openid email profile',
@@ -220,7 +219,7 @@ abstract class Settings
 
   bool loginRequired;
 
-  String settingsPassword;
+  String? settingsPassword;
 
   String oidcIssuer;
 
@@ -303,7 +302,7 @@ abstract class Settings
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
-      'settingsPassword': settingsPassword,
+      if (settingsPassword != null) 'settingsPassword': settingsPassword,
       'oidcIssuer': oidcIssuer,
       'oidcClientId': oidcClientId,
       if (oidcClientSecret != null) 'oidcClientSecret': oidcClientSecret,
@@ -340,7 +339,6 @@ abstract class Settings
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
-      'settingsPassword': settingsPassword,
       'oidcIssuer': oidcIssuer,
       'oidcClientId': oidcClientId,
       'oidcScopes': oidcScopes,
@@ -475,7 +473,7 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
+    Object? settingsPassword = _Undefined,
     String? oidcIssuer,
     String? oidcClientId,
     Object? oidcClientSecret = _Undefined,
@@ -512,7 +510,9 @@ class _SettingsImpl extends Settings {
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
-      settingsPassword: settingsPassword ?? this.settingsPassword,
+      settingsPassword: settingsPassword is String?
+          ? settingsPassword
+          : this.settingsPassword,
       oidcIssuer: oidcIssuer ?? this.oidcIssuer,
       oidcClientId: oidcClientId ?? this.oidcClientId,
       oidcClientSecret: oidcClientSecret is String?
@@ -595,7 +595,7 @@ class SettingsUpdateTable extends _is.UpdateTable<SettingsTable> {
   _is.ColumnValue<bool, bool> loginRequired(bool value) =>
       _is.ColumnValue(table.loginRequired, value);
 
-  _is.ColumnValue<String, String> settingsPassword(String value) =>
+  _is.ColumnValue<String, String> settingsPassword(String? value) =>
       _is.ColumnValue(table.settingsPassword, value);
 
   _is.ColumnValue<String, String> oidcIssuer(String value) =>
@@ -675,11 +675,7 @@ class SettingsTable extends _is.Table<int?> {
     smtpFrom = _is.ColumnString('smtpFrom', this, hasDefault: true);
     startTLS = _is.ColumnBool('startTLS', this, hasDefault: true);
     loginRequired = _is.ColumnBool('loginRequired', this, hasDefault: true);
-    settingsPassword = _is.ColumnString(
-      'settingsPassword',
-      this,
-      hasDefault: true,
-    );
+    settingsPassword = _is.ColumnString('settingsPassword', this);
     oidcIssuer = _is.ColumnString('oidcIssuer', this, hasDefault: true);
     oidcClientId = _is.ColumnString('oidcClientId', this, hasDefault: true);
     oidcClientSecret = _is.ColumnString('oidcClientSecret', this);

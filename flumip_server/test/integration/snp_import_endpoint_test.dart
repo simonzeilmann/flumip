@@ -276,7 +276,7 @@ void main() {
             genome: genome.id,
             custom: true,
             status: SnpImportStatus.failed,
-            statusMessage: 'That address answered 404 (not found).',
+            statusMessage: 'This address answered 404 (not found).',
           );
           snp
             ..sourceVcfUrl = 'https://example.org/x.vcf.gz'

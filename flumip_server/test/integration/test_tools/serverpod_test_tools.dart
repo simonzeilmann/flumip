@@ -1749,6 +1749,72 @@ class _SettingsEndpoint {
     });
   }
 
+  _ida.Future<void> setSettingsPassword(
+    _ist.TestSessionBuilder sessionBuilder,
+    String? password,
+    String newPassword,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'setSettingsPassword',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'setSettingsPassword',
+          parameters: _ist.testObjectToJson({
+            'password': password,
+            'newPassword': newPassword,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<bool> settingsPasswordIsDefault(
+    _ist.TestSessionBuilder sessionBuilder,
+    String? password,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'settings',
+            method: 'settingsPasswordIsDefault',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'settings',
+          methodName: 'settingsPasswordIsDefault',
+          parameters: _ist.testObjectToJson({'password': password}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<bool>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_ifmlm0wl.AuthAdminStatusDto> getAuthAdminStatus(
     _ist.TestSessionBuilder sessionBuilder,
     String? password,

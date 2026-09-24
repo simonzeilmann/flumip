@@ -5,6 +5,8 @@ import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../error_text.dart';
+
 /// Where the app is with respect to signing in.
 enum AuthState {
   /// Before [AuthController.bootstrap] has finished.
@@ -121,7 +123,7 @@ class AuthController extends ChangeNotifier {
       await _authKeyProvider!.refreshAuthKey(force: true);
       _set(AuthState.signedIn);
     } catch (e) {
-      _errorMessage = '$e';
+      _errorMessage = describeError(e);
       _set(AuthState.disabled);
     }
   }

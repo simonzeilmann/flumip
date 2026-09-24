@@ -28,6 +28,13 @@ class ProcessService {
   ///
   /// Throws an [ArgumentError] if the project ID does not exist.
   ///
+  /// ⚠️ A plain [ArgumentError] on purpose, unlike the services a request can
+  /// reach. Everything here runs from a future call — nothing is waiting on the
+  /// other end of a connection — so these land in the server log, which is where
+  /// a diagnostic with a `ps` exit code belongs. Turning them into
+  /// `ArgumentException` would dress up an internal fault as something a user
+  /// could act on.
+  ///
   /// \param session The current session.
   /// \param projectModel The project model to check.
   /// \returns A boolean indicating whether the process is running.

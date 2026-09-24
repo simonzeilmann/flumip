@@ -21,7 +21,6 @@ abstract class Project
     String? description,
     this.genome,
     this.snp,
-    this.tags,
     DateTime? created,
     this.owner,
     this.department,
@@ -52,7 +51,6 @@ abstract class Project
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
     int? department,
@@ -76,11 +74,6 @@ abstract class Project
       description: jsonSerialization['description'] as String?,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
-      tags: jsonSerialization['tags'] == null
-          ? null
-          : _i2kzrgg5.Protocol().deserialize<List<String>>(
-              jsonSerialization['tags'],
-            ),
       created: jsonSerialization['created'] == null
           ? null
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -141,8 +134,6 @@ abstract class Project
   /// whose SNP was deleted fails loudly instead of quietly designing different
   /// MIPs.
   int? snp;
-
-  List<String>? tags;
 
   DateTime created;
 
@@ -206,7 +197,6 @@ abstract class Project
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
     int? department,
@@ -231,7 +221,6 @@ abstract class Project
       'description': description,
       if (genome != null) 'genome': genome,
       if (snp != null) 'snp': snp,
-      if (tags != null) 'tags': tags?.toJson(),
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
@@ -258,7 +247,6 @@ abstract class Project
       'description': description,
       if (genome != null) 'genome': genome,
       if (snp != null) 'snp': snp,
-      if (tags != null) 'tags': tags?.toJson(),
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
@@ -291,7 +279,6 @@ class _ProjectImpl extends Project {
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
     int? department,
@@ -312,7 +299,6 @@ class _ProjectImpl extends Project {
          description: description,
          genome: genome,
          snp: snp,
-         tags: tags,
          created: created,
          owner: owner,
          department: department,
@@ -339,7 +325,6 @@ class _ProjectImpl extends Project {
     String? description,
     Object? genome = _Undefined,
     Object? snp = _Undefined,
-    Object? tags = _Undefined,
     DateTime? created,
     Object? owner = _Undefined,
     Object? department = _Undefined,
@@ -361,7 +346,6 @@ class _ProjectImpl extends Project {
       description: description ?? this.description,
       genome: genome is int? ? genome : this.genome,
       snp: snp is int? ? snp : this.snp,
-      tags: tags is List<String>? ? tags : this.tags?.map((e0) => e0).toList(),
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is int? ? department : this.department,

@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 ///
 /// The backend throws a mix of Dart core errors (ArgumentError) and Serverpod
 /// serializable exceptions (ArgumentException, FlumipFileNotFoundException,
-/// FileNotFoundException, BedCreationException), all of which expose a
+/// FlumipFileNotFoundException, BedCreationException), all of which expose a
 /// `message` field, plus plain `Exception('...')` values. This checks the
 /// dynamic `.message` (exact or substring) and falls back to `toString()`, so
 /// tests assert on the message without coupling to the specific type.

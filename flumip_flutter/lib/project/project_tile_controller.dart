@@ -230,6 +230,15 @@ class ProjectTileController extends ChangeNotifier {
       _say('BED file created successfully');
     } on BedCreationException catch (e) {
       _say(e.message);
+    } on ArgumentException catch (e) {
+      // ⚠️ Shown bare, like [generateMips] already does it. These messages are
+      // written for the person who pressed the button — "This project has no
+      // genes yet. Add at least one first." — so prefixing them with "Failed to
+      // create BED file:" reports the failure twice and buries the instruction
+      // behind a restatement of the button they just pressed.
+      _say(e.message);
+    } on FlumipFileNotFoundException catch (e) {
+      _say(e.message);
     } catch (e) {
       _say('Failed to create BED file: ${describeError(e)}');
     }

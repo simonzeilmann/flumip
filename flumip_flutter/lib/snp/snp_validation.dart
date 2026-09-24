@@ -16,14 +16,14 @@ String? validateVcfName(String name) {
     return 'FLUMIP needs a bgzip-compressed VCF (.vcf.gz). '
         'Compress it first with: bgzip -c yourfile.vcf > yourfile.vcf.gz';
   }
-  if (!name.endsWith('.vcf.gz')) return 'That is not a .vcf.gz file.';
+  if (!name.endsWith('.vcf.gz')) return 'This is not a .vcf.gz file.';
   return null;
 }
 
 /// Whether [name] looks like a tabix index.
 String? validateTbiName(String name) {
   if (name.isEmpty) return null; // optional
-  if (!name.endsWith('.vcf.gz.tbi')) return 'That is not a .vcf.gz.tbi file.';
+  if (!name.endsWith('.vcf.gz.tbi')) return 'This is not a .vcf.gz.tbi file.';
   return null;
 }
 
@@ -32,7 +32,7 @@ String? validateVcfUrl(String url) {
   final basic = _validateUrl(url, required: true);
   if (basic != null) return basic;
   if (!_pathOf(url).endsWith('.vcf.gz')) {
-    return 'The address should end in .vcf.gz';
+    return 'The address should end in .vcf.gz.';
   }
   return null;
 }
@@ -43,7 +43,7 @@ String? validateTbiUrl(String url) {
   final basic = _validateUrl(url, required: false);
   if (basic != null) return basic;
   if (!_pathOf(url).endsWith('.vcf.gz.tbi')) {
-    return 'The address should end in .vcf.gz.tbi';
+    return 'The address should end in .vcf.gz.tbi.';
   }
   return null;
 }
@@ -65,7 +65,7 @@ String? _validateUrl(String url, {required bool required}) {
   if (trimmed.isEmpty) return required ? 'Paste a download address.' : null;
 
   final parsed = Uri.tryParse(trimmed);
-  if (parsed == null) return 'That is not a valid address.';
+  if (parsed == null) return 'This is not a valid web address.';
   if (parsed.scheme.isEmpty) {
     return 'Start the address with https://';
   }
@@ -76,7 +76,7 @@ String? _validateUrl(String url, {required bool required}) {
         'These files are usually available over https.';
   }
   if (!parsed.hasAuthority || parsed.host.isEmpty) {
-    return 'That address has no host.';
+    return 'This address has no host.';
   }
   if (parsed.userInfo.isNotEmpty) {
     return 'Remove the username and password from the address.';

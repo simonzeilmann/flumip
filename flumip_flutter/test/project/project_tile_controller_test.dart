@@ -383,14 +383,14 @@ void main() {
     test('a refused run says why and starts nothing', () async {
       final h = Harness()
         ..actionThrows = ArgumentException(
-          message: 'That SNP set is not ready',
+          message: 'This SNP set is not ready',
         );
       addTearDown(h.controller.dispose);
 
       await h.controller.generateMips();
       await pumpEventQueue();
 
-      expect(h.messages.single, 'That SNP set is not ready');
+      expect(h.messages.single, 'This SNP set is not ready');
     });
   });
 

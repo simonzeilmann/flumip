@@ -56,8 +56,14 @@ class SettingsForm {
   /// Not a setting — the recipient for the "send test email" button.
   final testMail = TextEditingController();
 
-  /// ⚠️ **Not** write-only, unlike the two secrets. The current value is loaded
-  /// into it and sent back verbatim, so emptying it sets an empty password.
+  /// ⚠️ Write-only, like [smtpPassword] and [oidcClientSecret]. Never filled by
+  /// [load]; cleared by the caller after sending, so an empty field means "keep
+  /// the current password".
+  ///
+  /// It used to be loaded with the stored password and sent back verbatim on
+  /// every save — which is what made the password readable in the browser, and
+  /// meant clearing the box set an empty password. The server now stores only a
+  /// hash and has nothing to load here.
   final newPassword = TextEditingController();
 
   final demoRetentionHours = TextEditingController();
@@ -97,7 +103,6 @@ class SettingsForm {
     smtpPort.text = '${settings.smtpPort}';
     smtpUser.text = settings.smtpUser;
     smtpFrom.text = settings.smtpFrom;
-    newPassword.text = settings.settingsPassword;
     demoRetentionHours.text = '${settings.demoModeRetentionHours}';
     oidcIssuer.text = settings.oidcIssuer;
     oidcClientId.text = settings.oidcClientId;
@@ -112,11 +117,12 @@ class SettingsForm {
     loginRequired = settings.loginRequired;
     demoMode = settings.demoMode;
 
-    // ⚠️ Cleared, never populated. The server does not send either secret back,
-    // so leaving a stale value here would offer to re-send something this
+    // ⚠️ Cleared, never populated. The server does not send any of these three
+    // back, so leaving a stale value here would offer to re-send something this
     // browser cannot know.
     smtpPassword.clear();
     oidcClientSecret.clear();
+    newPassword.clear();
   }
 
   /// What the form currently says, as the object the server stores.
@@ -144,7 +150,6 @@ class SettingsForm {
     smtpFrom: smtpFrom.text,
     startTLS: startTLS,
     loginRequired: loginRequired,
-    settingsPassword: newPassword.text,
     demoMode: demoMode,
     // The server clamps this to 1..8760, so a nonsense entry becomes the nearest
     // sane value rather than being rejected.

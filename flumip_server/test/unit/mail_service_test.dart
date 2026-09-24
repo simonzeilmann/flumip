@@ -106,7 +106,7 @@ void main() {
       await overrideMailSettings(session, smtpServer: 'smtp.example.test');
       expect(
         () => mailService.sendTestMail(session, ''),
-        throwsMessage('No recipient supplied'),
+        throwsMessage('Enter an address to send the test email to.'),
       );
     }, tags: ['unit']);
 
@@ -114,7 +114,7 @@ void main() {
       await overrideMailSettings(session, smtpServer: '');
       expect(
         () => mailService.sendTestMail(session, 'admin@example.test'),
-        throwsMessage('No SMTP server configured'),
+        throwsMessage('No SMTP server is configured'),
       );
     }, tags: ['unit']);
 

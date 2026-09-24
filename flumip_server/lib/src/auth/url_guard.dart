@@ -36,7 +36,7 @@ String? snpSourceUrlRejection(
     return 'Only http and https addresses can be fetched.';
   }
   if (!url.hasAuthority || url.host.isEmpty) {
-    return 'That address has no host.';
+    return 'This address has no host.';
   }
 
   // A `user:pass@` would be stored in `sourceVcfUrl` and rendered back in the
@@ -56,7 +56,7 @@ String? snpSourceUrlRejection(
   }
 
   if (resolved.isEmpty) {
-    return 'That host could not be found.';
+    return 'This host could not be found.';
   }
 
   // ⚠️ **Every** resolved address must pass, not merely the one that would be
@@ -64,7 +64,7 @@ String? snpSourceUrlRejection(
   // rebinding attack with the work already done for it.
   for (final address in resolved) {
     if (!_isGlobalUnicast(address)) {
-      return 'That address resolves to a private or reserved network, which '
+      return 'This address resolves to a private or reserved network, which '
           'this server will not fetch from.';
     }
   }

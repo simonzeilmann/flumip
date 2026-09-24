@@ -267,6 +267,14 @@ In order of preference:
 
    Change that password again immediately afterwards.
 
+   ⚠️ **That column holds a PBKDF2 hash, not the password** — and the statement
+   above still works anyway. A value that is not a hash is read as a password
+   left there by an install that predates hashing: it is accepted once, and
+   accepting it is what replaces it with a hash of itself. So writing a plaintext
+   password in is a supported way back in, and the next sign-in tidies up after
+   you. Nothing can read the real password out of that column, including this
+   server.
+
 ## How it works, briefly
 
 The whole OpenID Connect exchange runs on FLUMIP's *web* server, which is the
