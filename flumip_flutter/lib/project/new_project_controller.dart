@@ -69,7 +69,9 @@ class NewProjectController extends ChangeNotifier {
   /// the navigation decision with the widget.
   Future<Project?> create() async {
     if (name.text.isEmpty) {
-      _errorMessage = 'Project name is required';
+      // The server's own wording for the same refusal, so the guard reads as
+      // the same rule rather than a second, differently-worded one.
+      _errorMessage = 'A project needs a name.';
       _notify();
       return null;
     }

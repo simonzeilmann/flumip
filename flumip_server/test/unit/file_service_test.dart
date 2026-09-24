@@ -5,7 +5,7 @@ import 'package:archive/archive.dart';
 
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/services/file_service.dart';
-import 'package:serverpod/protocol.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 import '../support/matchers.dart';
@@ -110,7 +110,7 @@ void main() {
         );
         expect(
           () => fileService.createGeneFile(session, project.id!, ['BRCA1']),
-          throwsMessage('Project directory does not exist'),
+          throwsMessage('This project has no files on the server'),
         );
       },
       tags: ['unit'],
@@ -153,7 +153,7 @@ void main() {
     test('deleteGeneFile throws for a missing project', () async {
       expect(
         () => fileService.deleteGeneFile(session, -1),
-        throwsMessage('Project id does not exist'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -180,7 +180,7 @@ void main() {
         );
         expect(
           () => fileService.deleteByproducts(session, project.id!),
-          throwsA(isA<FileNotFoundException>()),
+          throwsA(isA<FlumipFileNotFoundException>()),
         );
       },
       tags: ['unit'],
@@ -219,7 +219,7 @@ void main() {
     test('showMipsProgress throws for a missing project', () async {
       expect(
         () => fileService.showMipsProgress(session, -1),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['unit']);
 

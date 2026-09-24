@@ -81,7 +81,7 @@ void main() {
         await settingsService.getSettings(session);
         await expectLater(
           settingsService.getSettingsExternal(session, 'wrong'),
-          throwsMessage('Invalid password'),
+          throwsMessage('This password is not correct.'),
         );
       }, tags: ['unit']);
 
@@ -99,7 +99,7 @@ void main() {
         await enforceSso();
         await expectLater(
           settingsService.getSettingsExternal(session, 'changeme'),
-          throwsMessage('Invalid password'),
+          throwsMessage('This password is not correct.'),
         );
       }, tags: ['unit']);
 

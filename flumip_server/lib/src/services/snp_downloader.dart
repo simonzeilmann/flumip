@@ -191,7 +191,7 @@ class HttpSnpDownloader implements SnpDownloader {
       );
       if (refusal != null) {
         throw SnpDownloadException(
-          hop == 0 ? refusal : 'That address redirected somewhere refused.',
+          hop == 0 ? refusal : 'This address redirected somewhere refused.',
         );
       }
 
@@ -209,7 +209,7 @@ class HttpSnpDownloader implements SnpDownloader {
         await response.drain<void>();
         if (location == null || location.isEmpty) {
           throw SnpDownloadException(
-            'That address redirected without saying where to.',
+            'This address redirected without saying where to.',
           );
         }
         current = current.resolve(location);
@@ -219,7 +219,7 @@ class HttpSnpDownloader implements SnpDownloader {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         await response.drain<void>();
         throw SnpDownloadException(
-          'That address answered ${response.statusCode} '
+          'This address answered ${response.statusCode} '
           '${_reason(response.statusCode)}.',
         );
       }
@@ -228,7 +228,7 @@ class HttpSnpDownloader implements SnpDownloader {
     }
 
     throw SnpDownloadException(
-      'That address redirected more than $maxRedirects times.',
+      'This address redirected more than $maxRedirects times.',
     );
   }
 

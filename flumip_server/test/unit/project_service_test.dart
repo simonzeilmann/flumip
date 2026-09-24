@@ -50,7 +50,7 @@ void main() {
     test('empty project name should throw an exception', () async {
       expect(
         () => projectService.createProject(session, "", ProjectOptions(id: 1)),
-        throwsMessage('Project name cannot be empty'),
+        throwsMessage('A project needs a name.'),
       );
     }, tags: ['unit']);
   });
@@ -82,7 +82,7 @@ void main() {
     test('non existent project id should throw an exception', () async {
       expect(
         () => projectService.deleteProject(session, -1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     });
 
@@ -154,7 +154,7 @@ void main() {
         'should throw an exception', () async {
       expect(
         () => projectService.getProject(session, -1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     });
 
@@ -248,7 +248,7 @@ void main() {
     test('setGenomeById throws when the project is missing', () async {
       expect(
         () => projectService.setGenomeById(session, -1, 1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -256,7 +256,7 @@ void main() {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.setGenomeById(session, project.id!, -1),
-        throwsMessage('Gene not found'),
+        throwsMessage('This gene is not on this project.'),
       );
     }, tags: ['unit']);
 
@@ -271,7 +271,7 @@ void main() {
     test('setSnpById throws when the project is missing', () async {
       expect(
         () => projectService.setSnpById(session, -1, 1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -279,7 +279,7 @@ void main() {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.setSnpById(session, project.id!, -1),
-        throwsMessage('Snp not found'),
+        throwsMessage('This SNP set no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -353,19 +353,47 @@ void main() {
       await projectService.addGeneToProject(session, project.id!, 'BRCA1');
       expect(
         () => projectService.addGeneToProject(session, project.id!, 'BRCA1'),
-        throwsA(
-          predicate(
-            (e) => e is Exception && '$e'.contains('Gene already exists'),
-          ),
-        ),
+        throwsMessage('BRCA1 is already on this project.'),
       );
     }, tags: ['unit']);
+
+    test('⚠️ addGeneToProject rejects a duplicate typed in any case', () async {
+      // The bug this pins. The duplicate check read the string as typed while
+      // the list stores it upper-cased, so `contains('myh11')` never matched the
+      // `MYH11` already there and lower case added it again every time. A
+      // project in the wild ended up with the same gene three times over.
+      final project = await seedProject(session, options: 1);
+      await projectService.addGeneToProject(session, project.id!, 'MYH11');
+
+      for (final typed in ['myh11', 'Myh11', 'mYh11', '  myh11  ']) {
+        await expectLater(
+          () => projectService.addGeneToProject(session, project.id!, typed),
+          throwsMessage('MYH11 is already on this project.'),
+          reason: 'accepted "$typed" as a second MYH11',
+        );
+      }
+
+      final reread = await projectService.getProject(session, project.id!);
+      expect(reread.genes, ['MYH11']);
+    }, tags: ['unit']);
+
+    test(
+      'addGeneToProject stores the symbol upper-cased and trimmed',
+      () async {
+        final project = await seedProject(session, options: 1);
+        await projectService.addGeneToProject(session, project.id!, '  brca1 ');
+
+        final reread = await projectService.getProject(session, project.id!);
+        expect(reread.genes, ['BRCA1']);
+      },
+      tags: ['unit'],
+    );
 
     test('addGeneToProject rejects an empty gene', () async {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.addGeneToProject(session, project.id!, ''),
-        throwsMessage('Supplied gene empty'),
+        throwsMessage('Enter a gene symbol.'),
       );
     }, tags: ['unit']);
 
@@ -373,15 +401,31 @@ void main() {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.addGeneToProject(session, project.id!, 'BR-CA1'),
-        throwsMessage('Gene name contains invalid characters'),
+        throwsMessage('can only contain letters and numbers'),
       );
     }, tags: ['unit']);
 
     test('addGeneToProject throws when the project is missing', () async {
       expect(
         () => projectService.addGeneToProject(session, -1, 'BRCA1'),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
+    }, tags: ['unit']);
+
+    test('addGenesToProject normalises and drops repeats', () async {
+      // It replaces the whole list rather than appending, so without this a bulk
+      // write could seed mixed case that the single-gene check would then never
+      // catch. Repeats are dropped rather than refused: a list arrives in one
+      // go, and failing the whole write would make the caller diff it by hand.
+      final project = await seedProject(session, options: 1);
+      await projectService.addGenesToProject(session, project.id!, [
+        'brca1',
+        ' TP53 ',
+        'BRCA1',
+      ]);
+
+      final reread = await projectService.getProject(session, project.id!);
+      expect(reread.genes, ['BRCA1', 'TP53']);
     }, tags: ['unit']);
 
     test('addGenesToProject rejects invalid characters', () async {
@@ -391,14 +435,14 @@ void main() {
           'OK',
           'bad gene',
         ]),
-        throwsMessage('Gene name contains invalid characters'),
+        throwsMessage('can only contain letters and numbers'),
       );
     }, tags: ['unit']);
 
     test('addGenesToProject throws when the project is missing', () async {
       expect(
         () => projectService.addGenesToProject(session, -1, ['BRCA1']),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -408,7 +452,9 @@ void main() {
         () => projectService.removeGeneFromProject(session, project.id!, 'X'),
         throwsA(
           predicate(
-            (e) => e is Exception && '$e'.contains('does not have any genes'),
+            (e) =>
+                e is Exception &&
+                '$e'.contains('This gene is not on this project.'),
           ),
         ),
       );
@@ -469,7 +515,7 @@ void main() {
     test('setEmailNotification throws when the project is missing', () async {
       expect(
         () => projectService.setEmailNotification(session, -1, true),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
   });
@@ -518,7 +564,7 @@ void main() {
 
       await expectLater(
         projectService.setOwner(session, project.id!, 999999),
-        throwsMessage('User not found'),
+        throwsMessage('This user no longer exists.'),
       );
 
       final reloaded = await projectService.getProject(session, project.id!);
@@ -528,7 +574,7 @@ void main() {
     test('setOwner throws when the project is missing', () async {
       await expectLater(
         projectService.setOwner(session, -1, null),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 

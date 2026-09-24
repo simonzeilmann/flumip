@@ -95,7 +95,7 @@ void main() {
       final p = await prepare(withGenome: false, genes: ['BRCA1']);
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('No genome found in project'),
+        throwsMessage('This project has no genome yet.'),
       );
     }, tags: ['unit']);
 
@@ -105,7 +105,7 @@ void main() {
         final p = await prepare(refPath: null, genes: ['BRCA1']);
         expect(
           () => mipgenService.createBedFile(session, p.id),
-          throwsMessage('No reference path found in genome'),
+          throwsMessage('has no gene annotation file'),
         );
       },
       tags: ['unit'],
@@ -115,16 +115,28 @@ void main() {
       final p = await prepare();
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('No genes found in project'),
+        throwsMessage('This project has no genes yet.'),
       );
     }, tags: ['unit']);
 
-    test('createBedFile throws when the exon script fails', () async {
+    // ⚠️ Two tests, because these used to be one message for two causes — and
+    // the shared wording sent whoever read it off checking gene symbols when
+    // the real problem was a path in Settings.
+    test('createBedFile blames the script when the script fails', () async {
       final p = await prepare(genes: ['BRCA1']);
       fake.stubRun('exon-script', exitCode: 1, stdout: '');
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('The supplied genes cannot be found'),
+        throwsMessage('The gene lookup did not run'),
+      );
+    }, tags: ['unit']);
+
+    test('createBedFile blames the genes when nothing matched', () async {
+      final p = await prepare(genes: ['BRCA1']);
+      fake.stubRun('exon-script', exitCode: 0, stdout: '');
+      expect(
+        () => mipgenService.createBedFile(session, p.id),
+        throwsMessage('None of these genes were found'),
       );
     }, tags: ['unit']);
   });
@@ -187,7 +199,7 @@ void main() {
       expect(
         () =>
             NoScheduleMipgenService().generateMips(session, project.id!, false),
-        throwsMessage('No genome found in project'),
+        throwsMessage('This project has no genome yet.'),
       );
     }, tags: ['unit']);
 
@@ -249,7 +261,7 @@ void main() {
       expect(
         () =>
             NoScheduleMipgenService().generateMips(session, project.id!, false),
-        throwsMessage('No fasta path found in genome'),
+        throwsMessage('has no sequence file'),
       );
     }, tags: ['unit']);
 

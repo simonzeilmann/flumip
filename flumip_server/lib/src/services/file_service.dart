@@ -1,5 +1,5 @@
 import 'package:flumip_server/service_locator.dart';
-import 'package:flumip_server/src/generated/project.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
@@ -16,7 +16,7 @@ class FileService {
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \param genes The list of genes to write to the file.
-  /// \throws [ArgumentError] if the project directory or project ID does not exist.
+  /// \throws [FlumipFileNotFoundException] if the project directory or project ID does not exist.
   Future<void> createGeneFile(
     Session session,
     int projectID,
@@ -33,7 +33,11 @@ class FileService {
         "Project directory does not exist for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project directory does not exist');
+      throw FlumipFileNotFoundException(
+        message:
+            'This project has no files on the server. It may never have been '
+            'run, or its folder may have been removed.',
+      );
     }
     var project = await Project.db.findById(session, projectID);
     if (project == null) {
@@ -41,7 +45,9 @@ class FileService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -71,7 +77,7 @@ class FileService {
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \returns A boolean indicating whether the BED file exists and is larger than 1024 bytes.
-  /// \throws [ArgumentError] if the project directory or project ID does not exist.
+  /// \throws [FlumipFileNotFoundException] if the project directory or project ID does not exist.
   Future<bool> checkBedFileExists(Session session, int projectID) async {
     SettingsService settingsService = sl<SettingsService>();
 
@@ -84,7 +90,9 @@ class FileService {
         "Project directory does not exist for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     var project = await Project.db.findById(session, projectID);
     if (project == null) {
@@ -92,7 +100,9 @@ class FileService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -120,7 +130,15 @@ class FileService {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  /// \throws [FileNotFoundException] if the project directory or project ID does not exist.
+  /// ⚠️ **[FlumipFileNotFoundException], not Serverpod's own
+  /// `FileNotFoundException`** — and every throw in this file is the same, for a
+  /// reason that is invisible from the server. `serverpod_client` does not ship
+  /// `FileNotFoundException`, so the app cannot deserialize it: the sentence
+  /// written here was thrown away and the user was shown
+  /// *"FormatException: No deserialization found for type named
+  /// serverpod.FileNotFoundException"* instead. Measured, not guessed.
+  ///
+  /// \throws [FlumipFileNotFoundException] if the project directory or project ID does not exist.
   Future<void> deleteByproducts(Session session, int projectID) async {
     session.log(
       "Starting deleteByproducts for project ID: $projectID",
@@ -131,7 +149,9 @@ class FileService {
         "Project directory does not exist for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw FileNotFoundException(message: 'The Project does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     var project = await Project.db.findById(session, projectID);
     if (project == null) {
@@ -139,7 +159,9 @@ class FileService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     List<FileSystemEntity> dir = await _getFileList(session, projectID);
@@ -163,7 +185,7 @@ class FileService {
   ///
   /// \param session The current session.
   /// \param projectID The ID of the project.
-  /// \throws [ArgumentError] if the project ID does not exist.
+  /// \throws [FlumipFileNotFoundException] if the project ID does not exist.
   Future<void> deleteGeneFile(Session session, int projectID) async {
     SettingsService settingsService = sl<SettingsService>();
 
@@ -177,7 +199,9 @@ class FileService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentError('Project id does not exist');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     var settings = await settingsService.getSettings(session);
 
@@ -359,7 +383,7 @@ class FileService {
   /// \param session The current session.
   /// \param id The ID of the project.
   /// \returns A boolean indicating whether the project directory exists.
-  /// \throws [FileNotFoundException] if the project is not found.
+  /// \throws [FlumipFileNotFoundException] if the project is not found.
   Future<bool> _checkProjectDirectoryExists(Session session, int id) async {
     SettingsService settingsService = sl<SettingsService>();
 
@@ -373,7 +397,9 @@ class FileService {
         "Project not found for project ID: $id",
         level: LogLevel.error,
       );
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -387,7 +413,7 @@ class FileService {
   /// \param session The current session.
   /// \param projectID The ID of the project.
   /// \returns A list of [FileSystemEntity] objects representing the files in the project directory.
-  /// \throws [FileNotFoundException] if the project is not found.
+  /// \throws [FlumipFileNotFoundException] if the project is not found.
   Future<List<FileSystemEntity>> _getFileList(
     Session session,
     int projectID,
@@ -403,7 +429,9 @@ class FileService {
         "Project not found for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -481,7 +509,7 @@ class FileService {
 
   /// The directory holding a project's files.
   ///
-  /// Throws [FileNotFoundException] for an unknown project, matching what the
+  /// Throws [FlumipFileNotFoundException] for an unknown project, matching what the
   /// rest of this service does for a bad id.
   Future<Directory> projectDirectory(Session session, int projectID) async {
     final project = await Project.db.findById(session, projectID);
@@ -490,7 +518,9 @@ class FileService {
         "Project not found for project ID: $projectID",
         level: LogLevel.error,
       );
-      throw FileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     final settings = await sl<SettingsService>().getSettings(session);
     return Directory('${settings.projectDir}/${project.folderName}');

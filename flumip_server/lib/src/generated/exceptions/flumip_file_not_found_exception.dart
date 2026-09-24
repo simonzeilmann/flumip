@@ -18,7 +18,7 @@ abstract class FlumipFileNotFoundException
         _is.SerializableModel,
         _is.ProtocolSerialization {
   FlumipFileNotFoundException._({String? message})
-    : message = message ?? 'The specified file was not found.';
+    : message = message ?? 'This file is not on the server.';
 
   factory FlumipFileNotFoundException({String? message}) =
       _FlumipFileNotFoundExceptionImpl;

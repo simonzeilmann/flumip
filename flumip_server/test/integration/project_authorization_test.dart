@@ -3,7 +3,6 @@ import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';
 
@@ -605,15 +604,21 @@ void main() {
     group('what the guard must not change', () {
       test('a missing project still reports not-found, not access denied', () async {
         // The guard sits in front of the operation and must not rewrite the error
-        // that operation reports for an unrelated failure. FileEndpoint answers a
-        // bad id with Serverpod's FileNotFoundException and the app catches the
-        // two separately.
+        // that operation reports for an unrelated failure — a missing project is
+        // not an access problem, and saying so would send somebody looking for a
+        // permission they were never denied.
+        //
+        // ⚠️ Both are FlumipFileNotFoundException now. FileEndpoint used to
+        // answer a bad id with Serverpod's own FileNotFoundException, which
+        // `serverpod_client` does not ship — so the app could not decode it and
+        // the user got a deserialization complaint instead of the sentence the
+        // server wrote.
         await enforceSso(session);
         final bob = await signIn('bob@uni.example');
 
         await expectLater(
           endpoints.file.showMipsProgress(bob.builder, -1),
-          throwsA(isA<FileNotFoundException>()),
+          throwsA(isA<FlumipFileNotFoundException>()),
         );
         await expectLater(
           endpoints.project.getProject(bob.builder, -1),

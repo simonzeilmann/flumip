@@ -18,7 +18,7 @@ abstract class GeneExtractionException
         _is.SerializableModel,
         _is.ProtocolSerialization {
   GeneExtractionException._({String? message, int? errorCode})
-    : message = message ?? 'Bed File Could not be created',
+    : message = message ?? 'The BED file could not be created.',
       errorCode = errorCode ?? 1000;
 
   factory GeneExtractionException({String? message, int? errorCode}) =

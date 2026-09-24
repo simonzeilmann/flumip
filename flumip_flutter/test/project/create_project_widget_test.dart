@@ -90,7 +90,7 @@ void main() {
 
     expect(created, isNull);
     expect(h.calls, isEmpty);
-    expect(find.text('Project name is required'), findsOneWidget);
+    expect(find.text('A project needs a name.'), findsOneWidget);
   });
 
   testWidgets('cancelling calls back without creating anything', (

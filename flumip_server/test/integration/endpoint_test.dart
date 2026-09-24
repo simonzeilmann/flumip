@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:test/test.dart';
 
 import '../support/fake_process_runner.dart';
@@ -34,7 +33,7 @@ void main() {
     test('options: getProjectOptions rethrows for a missing id', () async {
       expect(
         () => endpoints.options.getProjectOptions(sessionBuilder, -1),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['integration']);
 
@@ -68,7 +67,7 @@ void main() {
     test('genome: getGenome rethrows for a missing id', () async {
       expect(
         () => endpoints.genome.getGenome(sessionBuilder, -1),
-        throwsMessage('Genome not found'),
+        throwsMessage('This genome no longer exists.'),
       );
     }, tags: ['integration']);
 
@@ -104,7 +103,7 @@ void main() {
     test('project: getProject rethrows for a missing id', () async {
       expect(
         () => endpoints.project.getProject(sessionBuilder, -1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['integration']);
 
@@ -113,7 +112,7 @@ void main() {
       final project = await seedProject(session, options: 1); // no genome
       expect(
         () => endpoints.mipgen.createBedFile(sessionBuilder, project.id!),
-        throwsMessage('No genome found in project'),
+        throwsMessage('This project has no genome yet.'),
       );
     }, tags: ['integration']);
 
@@ -121,7 +120,7 @@ void main() {
     test('file: showMipsProgress rethrows for a missing project', () async {
       expect(
         () => endpoints.file.showMipsProgress(sessionBuilder, -1),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['integration']);
 
@@ -181,7 +180,7 @@ void main() {
       );
       expect(
         () => endpoints.options.getProjectOptions(sessionBuilder, inserted.id!),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['integration']);
 
@@ -377,7 +376,7 @@ void main() {
       expect(
         () =>
             endpoints.settings.updateSettings(sessionBuilder, 'wrong', current),
-        throwsMessage('Invalid password'),
+        throwsMessage('This password is not correct.'),
       );
     }, tags: ['integration']);
 
@@ -388,7 +387,7 @@ void main() {
           'wrong',
           'someone@example.com',
         ),
-        throwsMessage('Invalid password'),
+        throwsMessage('This password is not correct.'),
       );
     }, tags: ['integration']);
 

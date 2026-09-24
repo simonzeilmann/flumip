@@ -65,7 +65,9 @@ class GenomeService {
     var genome = await Genome.db.findById(session, id);
     if (genome == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(
+        message: 'This genome no longer exists.',
+      );
     }
     session.log("Genome retrieved with ID: $id", level: LogLevel.info);
     return genome;
@@ -90,7 +92,9 @@ class GenomeService {
     var genomeToUpdate = await Genome.db.findById(session, id);
     if (genomeToUpdate == null) {
       session.log("Genome not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(
+        message: 'This genome no longer exists.',
+      );
     }
     await Genome.db.updateRow(session, genome);
     session.log("Genome updated with ID: $id", level: LogLevel.info);
@@ -107,8 +111,18 @@ class GenomeService {
     var categoryFolder = Directory(settings.genomeDir);
 
     if (!await categoryFolder.exists()) {
-      session.log('Genome folder not found', level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Genome folder not found');
+      session.log(
+        'Genome directory not found: ${settings.genomeDir}',
+        level: LogLevel.error,
+      );
+      // The path stays in the log rather than the message: an ordinary user
+      // sees this one too, it means nothing to them, and it is the first thing
+      // the administrator will look at anyway.
+      throw FlumipFileNotFoundException(
+        message:
+            'The genome library is not set up on this server. Ask your '
+            'administrator to check the genome directory in Settings.',
+      );
     }
 
     for (var category in categoryFolder.listSync().whereType<Directory>()) {
@@ -242,7 +256,12 @@ class GenomeService {
         genome.refPath = genomeFile.path;
       } else if (genomeFile is Directory) {
         if (genomeFile.path.endsWith("fa")) {
-          genome.fastaPath = _getFilePath(genomeFile, ".fa");
+          genome.fastaPath = _getFilePath(
+            session,
+            genomeFile,
+            ".fa",
+            genome.name,
+          );
           if (_containsFaIndexFiles(
             Directory(genomeFile.path).listSync().toString(),
           )) {
@@ -331,17 +350,39 @@ class GenomeService {
 
   /// Gets the file path with the specified extension from a directory.
   ///
+  /// ⚠️ The refusal names the **genome**, not [dir]. This used to report
+  /// `No ".fa" file found in /opt/flumip/data/genomes/…/fa`, and a scan is
+  /// started from the genome tab by anybody — so a server filesystem path went
+  /// to a user who can do nothing with it. The path is logged instead, which is
+  /// where the administrator who can fix it will look.
+  ///
+  /// \param session The current session, for the log.
   /// \param dir The directory to search in.
   /// \param extension The file extension to look for.
+  /// \param genomeName The genome this directory belongs to.
   /// \returns The file path with the specified extension.
-  String _getFilePath(Directory dir, String extension) {
+  String _getFilePath(
+    Session session,
+    Directory dir,
+    String extension,
+    String genomeName,
+  ) {
     return dir
         .listSync()
         .firstWhere(
           (file) => file.path.endsWith(extension),
-          orElse: () => throw FlumipFileNotFoundException(
-            message: 'No "$extension" file found in ${dir.path}',
-          ),
+          orElse: () {
+            session.log(
+              'No "$extension" file found in ${dir.path}',
+              level: LogLevel.error,
+            );
+            throw FlumipFileNotFoundException(
+              message:
+                  'The genome "$genomeName" has no "$extension" file where one '
+                  'is expected. Ask your administrator to check the genome '
+                  'library.',
+            );
+          },
         )
         .path;
   }
@@ -355,30 +396,44 @@ class GenomeService {
 
     session.log("Indexing Fasta for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
+    // ⚠️ Four states, four sentences. These were four bare `ArgumentError()`s
+    // with no message at all, which Serverpod cannot serialize — the browser got
+    // "Internal Server Error" and the reason stayed in the log.
     if (genome == null) {
       session.log(
         "Invalid genome state for indexing with ID: $id",
         level: LogLevel.error,
       );
-      throw ArgumentError();
+      throw ArgumentException(message: 'This genome no longer exists.');
     }
     if (genome.indexed) {
       session.log("Genome already indexed with ID: $id", level: LogLevel.error);
-      throw ArgumentError();
+      throw ArgumentException(
+        message:
+            'The genome "${genome.name}" is already indexed. Remove the index '
+            'first if you want to build it again.',
+      );
     }
     if (genome.indexing) {
       session.log(
         "Genome already indexing with ID: $id",
         level: LogLevel.error,
       );
-      throw ArgumentError();
+      throw ArgumentException(
+        message: 'The genome "${genome.name}" is already being indexed.',
+      );
     }
     if (genome.fastaPath == null) {
       session.log(
         "Genome has no FASTA file with ID: $id",
         level: LogLevel.error,
       );
-      throw ArgumentError();
+      throw ArgumentException(
+        message:
+            'The genome "${genome.name}" has no sequence file on this server, '
+            'so there is nothing to index. Ask your administrator to re-scan '
+            'the genome library.',
+      );
     }
 
     await sl<ProcessRunner>().start(
@@ -480,12 +535,35 @@ class GenomeService {
   Future<void> deleteFastaIndex(Session session, int id) async {
     session.log("Deleting index for genome with ID: $id", level: LogLevel.info);
     var genome = await Genome.db.findById(session, id);
-    if (genome == null || !genome.indexed || genome.indexing) {
+    // Split apart for the same reason as `indexFasta` above: one bare
+    // `ArgumentError()` covering three states reached the user as
+    // "Internal Server Error", and the three have different answers.
+    if (genome == null) {
       session.log(
-        "Invalid genome state for deleting index with ID: $id",
+        "Genome not found for deleting index with ID: $id",
         level: LogLevel.error,
       );
-      throw ArgumentError();
+      throw ArgumentException(message: 'This genome no longer exists.');
+    }
+    if (genome.indexing) {
+      session.log(
+        "Genome still indexing, cannot delete index with ID: $id",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message:
+            'The genome "${genome.name}" is still being indexed. Wait for it '
+            'to finish before removing the index.',
+      );
+    }
+    if (!genome.indexed) {
+      session.log(
+        "Genome is not indexed, nothing to delete with ID: $id",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'The genome "${genome.name}" has no index to remove.',
+      );
     }
 
     var faFiles = Directory("${genome.path!}/fa");
@@ -513,7 +591,9 @@ class GenomeService {
     var snp = await Snp.db.findById(session, id);
     if (snp == null) {
       session.log("SNP not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'SNP not found');
+      throw FlumipFileNotFoundException(
+        message: 'This SNP set no longer exists.',
+      );
     }
     session.log("SNP retrieved with ID: $id", level: LogLevel.info);
     return snp;
@@ -550,7 +630,9 @@ class GenomeService {
     var genome = await Genome.db.findById(session, genomeId);
     if (genome == null) {
       session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Genome not found');
+      throw FlumipFileNotFoundException(
+        message: 'This genome no longer exists.',
+      );
     }
     // ⚠️ Ordered, and this is a bug fix rather than tidiness. Without an
     // `orderBy` Postgres returns heap order, and an UPDATE rewrites the row at
