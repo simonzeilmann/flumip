@@ -64,10 +64,29 @@ class ProjectService {
       throw ArgumentException(message: 'A project needs a name.');
     }
 
+    // ⚠️ The directory is made **before** the row is inserted, and the order is
+    // the whole point. It used to run last, after the insert and after the
+    // cleanup call was scheduled, so anything that went wrong in `create()`
+    // left a project row and a scheduled future call behind — a broken project
+    // in everybody's list, and `deleteProject` then failing on the folder that
+    // was never there.
+    //
+    // Failing here now leaves nothing at all. Failing *after* here leaves an
+    // empty directory, which nothing lists and the next create ignores.
+    //
+    // `recursive: true` because the non-recursive form throws
+    // PathNotFoundException when `projectDir` itself is absent — which is the
+    // ordinary state of a fresh install that has not had a project yet.
+    final folderName = Uuid().v7();
+    final settings = await SettingsService().getSettings(session);
+    await Directory(
+      "${settings.projectDir}/$folderName",
+    ).create(recursive: true);
+
     var projectRow = Project(
       name: projectName,
       description: desc,
-      folderName: Uuid().v7(),
+      folderName: folderName,
       options: options.id!,
       // Null while single sign-on is off, which is what keeps every project on a
       // no-auth install unowned and therefore shared. Stamping is done here
@@ -79,8 +98,6 @@ class ProjectService {
     );
     var project = await Project.db.insertRow(session, projectRow);
 
-    var settings = await SettingsService().getSettings(session);
-
     // Scheduled whether or not demo mode is on, because the flag is read again
     // when the call fires — so switching demo mode on later still sweeps
     // projects created before it.
@@ -88,7 +105,6 @@ class ProjectService {
         .callWithDelay(demoRetention(settings), identifier: project.folderName)
         .demoModeCleanup
         .run(project);
-    await Directory("${settings.projectDir}/${project.folderName}").create();
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
     return project;
   }

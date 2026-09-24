@@ -28,7 +28,6 @@ Snp snpFixture({int id = 9, String name = 'dbSNP common'}) => Snp(
   vcfPath: '/opt/flumip/data/custom_snp/user/$id/set.vcf.gz',
   tbiPath: '/opt/flumip/data/custom_snp/user/$id/set.vcf.gz.tbi',
   folder: '/opt/flumip/data/custom_snp/user/$id',
-  active: true,
   custom: true,
   private: false,
   status: SnpImportStatus.ready,

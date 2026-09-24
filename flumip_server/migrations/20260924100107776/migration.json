@@ -1,0 +1,48 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "snp",
+        "schema": "public",
+        "addColumns": [],
+        "deleteColumns": [
+          "active"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"active\" of table \"snp\" will be dropped.",
+            "table": "snp",
+            "columns": [
+              "active"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"active\" of table \"snp\" will be dropped.",
+      "table": "snp",
+      "columns": [
+        "active"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}

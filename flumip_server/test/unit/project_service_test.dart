@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:flumip_server/service_locator.dart';
-import 'package:flumip_server/src/generated/project_options.dart';
-import 'package:flumip_server/src/generated/snp_import_status.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:test/test.dart';
@@ -47,6 +46,48 @@ void main() {
       },
       tags: ['unit'],
     );
+    test('createProject makes the project directory', () async {
+      final settings = await SettingsService().getSettings(session);
+      final project = await projectService.createProject(
+        session,
+        'withfolder',
+        ProjectOptions(id: 1),
+      );
+
+      expect(
+        Directory('${settings.projectDir}/${project.folderName}').existsSync(),
+        isTrue,
+      );
+    }, tags: ['unit']);
+
+    test('⚠️ a directory it cannot make leaves no project behind', () async {
+      // The order this pins. The directory used to be made *last*, after the
+      // row was inserted and the cleanup future call scheduled, so anything
+      // that went wrong in `create()` left a project nobody could use sitting
+      // in everybody's list — and `deleteProject` then failed on the folder
+      // that had never been there.
+      //
+      // A file where the directory should go is the cheapest way to make
+      // `create()` fail for a reason that is not "the parent is missing",
+      // which `recursive: true` now handles on its own.
+      final base = createTempDir('projsvc-blocked');
+      final blocker = File('${base.path}/blocked')..writeAsStringSync('x');
+      await overrideSettingsDirs(session, projectDir: blocker.path);
+
+      final before = await Project.db.find(session);
+      await expectLater(
+        () => projectService.createProject(
+          session,
+          'doomed',
+          ProjectOptions(id: 1),
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      final after = await Project.db.find(session);
+      expect(after.length, before.length, reason: 'an orphan row was stored');
+    }, tags: ['unit']);
+
     test('empty project name should throw an exception', () async {
       expect(
         () => projectService.createProject(session, "", ProjectOptions(id: 1)),

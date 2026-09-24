@@ -53,7 +53,6 @@ Snp snpFixture({
   vcfPath: '/opt/flumip/data/custom_snp/set.vcf.gz',
   tbiPath: '/opt/flumip/data/custom_snp/set.vcf.gz.tbi',
   folder: '/opt/flumip/data/custom_snp',
-  active: true,
   custom: true,
   private: false,
   status: status,

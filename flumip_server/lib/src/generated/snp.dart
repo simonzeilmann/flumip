@@ -36,7 +36,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
     required this.vcfPath,
     required this.tbiPath,
     required this.folder,
-    required this.active,
     bool? private,
     int? size,
     this.genome,
@@ -67,7 +66,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
     required String vcfPath,
     required String tbiPath,
     required String folder,
-    required bool active,
     bool? private,
     int? size,
     int? genome,
@@ -91,7 +89,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
       vcfPath: jsonSerialization['vcfPath'] as String,
       tbiPath: jsonSerialization['tbiPath'] as String,
       folder: jsonSerialization['folder'] as String,
-      active: _is.BoolJsonExtension.fromJson(jsonSerialization['active']),
       private: jsonSerialization['private'] == null
           ? null
           : _is.BoolJsonExtension.fromJson(jsonSerialization['private']),
@@ -138,12 +135,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
   String tbiPath;
 
   String folder;
-
-  /// Written true by the scanner since the beginning and read by nothing. Left
-  /// alone on purpose: [status] is the flag that actually decides whether an SNP
-  /// can be used, and dropping a column earns migration risk for no behaviour
-  /// change.
-  bool active;
 
   /// Visible only to [owner] and to administrators. The share toggle clears it.
   ///
@@ -215,7 +206,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
     String? vcfPath,
     String? tbiPath,
     String? folder,
-    bool? active,
     bool? private,
     int? size,
     int? genome,
@@ -240,7 +230,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
       'vcfPath': vcfPath,
       'tbiPath': tbiPath,
       'folder': folder,
-      'active': active,
       'private': private,
       'size': size,
       if (genome != null) 'genome': genome,
@@ -267,7 +256,6 @@ abstract class Snp implements _is.TableRow<int?>, _is.ProtocolSerialization {
       'vcfPath': vcfPath,
       'tbiPath': tbiPath,
       'folder': folder,
-      'active': active,
       'private': private,
       'size': size,
       if (genome != null) 'genome': genome,
@@ -322,7 +310,6 @@ class _SnpImpl extends Snp {
     required String vcfPath,
     required String tbiPath,
     required String folder,
-    required bool active,
     bool? private,
     int? size,
     int? genome,
@@ -343,7 +330,6 @@ class _SnpImpl extends Snp {
          vcfPath: vcfPath,
          tbiPath: tbiPath,
          folder: folder,
-         active: active,
          private: private,
          size: size,
          genome: genome,
@@ -370,7 +356,6 @@ class _SnpImpl extends Snp {
     String? vcfPath,
     String? tbiPath,
     String? folder,
-    bool? active,
     bool? private,
     int? size,
     Object? genome = _Undefined,
@@ -392,7 +377,6 @@ class _SnpImpl extends Snp {
       vcfPath: vcfPath ?? this.vcfPath,
       tbiPath: tbiPath ?? this.tbiPath,
       folder: folder ?? this.folder,
-      active: active ?? this.active,
       private: private ?? this.private,
       size: size ?? this.size,
       genome: genome is int? ? genome : this.genome,
@@ -429,9 +413,6 @@ class SnpUpdateTable extends _is.UpdateTable<SnpTable> {
 
   _is.ColumnValue<String, String> folder(String value) =>
       _is.ColumnValue(table.folder, value);
-
-  _is.ColumnValue<bool, bool> active(bool value) =>
-      _is.ColumnValue(table.active, value);
 
   _is.ColumnValue<bool, bool> private(bool value) =>
       _is.ColumnValue(table.private, value);
@@ -482,7 +463,6 @@ class SnpTable extends _is.Table<int?> {
     vcfPath = _is.ColumnString('vcfPath', this);
     tbiPath = _is.ColumnString('tbiPath', this);
     folder = _is.ColumnString('folder', this);
-    active = _is.ColumnBool('active', this);
     private = _is.ColumnBool('private', this, hasDefault: true);
     size = _is.ColumnInt('size', this, hasDefault: true);
     genome = _is.ColumnInt('genome', this);
@@ -514,12 +494,6 @@ class SnpTable extends _is.Table<int?> {
   late final _is.ColumnString tbiPath;
 
   late final _is.ColumnString folder;
-
-  /// Written true by the scanner since the beginning and read by nothing. Left
-  /// alone on purpose: [status] is the flag that actually decides whether an SNP
-  /// can be used, and dropping a column earns migration risk for no behaviour
-  /// change.
-  late final _is.ColumnBool active;
 
   /// Visible only to [owner] and to administrators. The share toggle clears it.
   ///
@@ -586,7 +560,6 @@ class SnpTable extends _is.Table<int?> {
     vcfPath,
     tbiPath,
     folder,
-    active,
     private,
     size,
     genome,

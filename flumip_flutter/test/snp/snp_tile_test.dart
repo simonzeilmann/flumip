@@ -23,7 +23,6 @@ Snp snpFixture({
   sourceVcfUrl: sourceVcfUrl,
   tbiPath: '/opt/flumip/data/custom_snp/user/42/set.vcf.gz.tbi',
   folder: '/opt/flumip/data/custom_snp/user/42',
-  active: true,
   custom: custom,
   private: private,
   status: status,

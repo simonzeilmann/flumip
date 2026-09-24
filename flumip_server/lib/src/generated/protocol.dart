@@ -27,7 +27,6 @@ import 'auth_flow.dart' as _iopq1986;
 import 'auth_session.dart' as _i1cqtl3u;
 import 'auth_user_dto.dart' as _i9fqmmja;
 import 'custom_snp_request_dto.dart' as _i50r13ns;
-import 'exceptions.dart' as _ifprdzfb;
 import 'exceptions/argument_exception.dart' as _ix5u8j9t;
 import 'exceptions/flumip_file_not_found_exception.dart' as _iua77lfj;
 import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _il9ya82w;
@@ -53,7 +52,6 @@ export 'auth_flow.dart';
 export 'auth_session.dart';
 export 'auth_user_dto.dart';
 export 'custom_snp_request_dto.dart';
-export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
@@ -1260,12 +1258,6 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'String',
         ),
         _isp.ColumnDefinition(
-          name: 'active',
-          columnType: _isp.ColumnType.boolean,
-          isNullable: false,
-          dartType: 'bool',
-        ),
-        _isp.ColumnDefinition(
           name: 'private',
           columnType: _isp.ColumnType.boolean,
           isNullable: false,
@@ -1465,9 +1457,6 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _i50r13ns.CustomSnpRequestDto) {
       return _i50r13ns.CustomSnpRequestDto.fromJson(data) as T;
     }
-    if (t == _ifprdzfb.GeneExtractionException) {
-      return _ifprdzfb.GeneExtractionException.fromJson(data) as T;
-    }
     if (t == _il9ya82w.BedCreationException) {
       return _il9ya82w.BedCreationException.fromJson(data) as T;
     }
@@ -1545,12 +1534,6 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_i50r13ns.CustomSnpRequestDto?>()) {
       return (data != null
               ? _i50r13ns.CustomSnpRequestDto.fromJson(data)
-              : null)
-          as T;
-    }
-    if (t == _is.getType<_ifprdzfb.GeneExtractionException?>()) {
-      return (data != null
-              ? _ifprdzfb.GeneExtractionException.fromJson(data)
               : null)
           as T;
     }
@@ -1691,7 +1674,6 @@ class Protocol extends _is.DatabaseSerializationManager {
       _i1cqtl3u.AuthSession => 'AuthSession',
       _i9fqmmja.AuthUserDto => 'AuthUserDto',
       _i50r13ns.CustomSnpRequestDto => 'CustomSnpRequestDto',
-      _ifprdzfb.GeneExtractionException => 'GeneExtractionException',
       _il9ya82w.BedCreationException => 'BedCreationException',
       _ix5u8j9t.ArgumentException => 'ArgumentException',
       _iua77lfj.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
@@ -1738,8 +1720,6 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'AuthUserDto';
       case _i50r13ns.CustomSnpRequestDto():
         return 'CustomSnpRequestDto';
-      case _ifprdzfb.GeneExtractionException():
-        return 'GeneExtractionException';
       case _il9ya82w.BedCreationException():
         return 'BedCreationException';
       case _ix5u8j9t.ArgumentException():
@@ -1810,9 +1790,6 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'CustomSnpRequestDto') {
       return deserialize<_i50r13ns.CustomSnpRequestDto>(data['data']);
-    }
-    if (dataClassName == 'GeneExtractionException') {
-      return deserialize<_ifprdzfb.GeneExtractionException>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
       return deserialize<_il9ya82w.BedCreationException>(data['data']);

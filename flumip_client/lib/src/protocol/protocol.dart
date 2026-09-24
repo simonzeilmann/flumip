@@ -23,7 +23,6 @@ import 'auth_admin_status_dto.dart' as _ilu62sh8;
 import 'auth_config_dto.dart' as _i3pxz8st;
 import 'auth_user_dto.dart' as _i9fqmmja;
 import 'custom_snp_request_dto.dart' as _i50r13ns;
-import 'exceptions.dart' as _ifprdzfb;
 import 'exceptions/argument_exception.dart' as _ix5u8j9t;
 import 'exceptions/flumip_file_not_found_exception.dart' as _iua77lfj;
 import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _il9ya82w;
@@ -45,7 +44,6 @@ export 'auth_admin_status_dto.dart';
 export 'auth_config_dto.dart';
 export 'auth_user_dto.dart';
 export 'custom_snp_request_dto.dart';
-export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
@@ -107,9 +105,6 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _i50r13ns.CustomSnpRequestDto) {
       return _i50r13ns.CustomSnpRequestDto.fromJson(data) as T;
-    }
-    if (t == _ifprdzfb.GeneExtractionException) {
-      return _ifprdzfb.GeneExtractionException.fromJson(data) as T;
     }
     if (t == _il9ya82w.BedCreationException) {
       return _il9ya82w.BedCreationException.fromJson(data) as T;
@@ -176,12 +171,6 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_i50r13ns.CustomSnpRequestDto?>()) {
       return (data != null
               ? _i50r13ns.CustomSnpRequestDto.fromJson(data)
-              : null)
-          as T;
-    }
-    if (t == _isc.getType<_ifprdzfb.GeneExtractionException?>()) {
-      return (data != null
-              ? _ifprdzfb.GeneExtractionException.fromJson(data)
               : null)
           as T;
     }
@@ -313,7 +302,6 @@ class Protocol extends _isc.SerializationManager {
       _i3pxz8st.AuthConfigDto => 'AuthConfigDto',
       _i9fqmmja.AuthUserDto => 'AuthUserDto',
       _i50r13ns.CustomSnpRequestDto => 'CustomSnpRequestDto',
-      _ifprdzfb.GeneExtractionException => 'GeneExtractionException',
       _il9ya82w.BedCreationException => 'BedCreationException',
       _ix5u8j9t.ArgumentException => 'ArgumentException',
       _iua77lfj.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
@@ -353,8 +341,6 @@ class Protocol extends _isc.SerializationManager {
         return 'AuthUserDto';
       case _i50r13ns.CustomSnpRequestDto():
         return 'CustomSnpRequestDto';
-      case _ifprdzfb.GeneExtractionException():
-        return 'GeneExtractionException';
       case _il9ya82w.BedCreationException():
         return 'BedCreationException';
       case _ix5u8j9t.ArgumentException():
@@ -410,9 +396,6 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'CustomSnpRequestDto') {
       return deserialize<_i50r13ns.CustomSnpRequestDto>(data['data']);
-    }
-    if (dataClassName == 'GeneExtractionException') {
-      return deserialize<_ifprdzfb.GeneExtractionException>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
       return deserialize<_il9ya82w.BedCreationException>(data['data']);
