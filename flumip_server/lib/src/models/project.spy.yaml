@@ -13,7 +13,6 @@ fields:
   ### whose SNP was deleted fails loudly instead of quietly designing different
   ### MIPs.
   snp: int?, relation(parent=snp, onDelete=SetNull)
-  tags: List<String>?
   created: DateTime, default=now
   ### The FlumipUser who created the project, or null.
   ###

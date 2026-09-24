@@ -607,12 +607,6 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'int?',
         ),
         _isp.ColumnDefinition(
-          name: 'tags',
-          columnType: _isp.ColumnType.json,
-          isNullable: true,
-          dartType: 'List<String>?',
-        ),
-        _isp.ColumnDefinition(
           name: 'created',
           columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
