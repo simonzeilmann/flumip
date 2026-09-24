@@ -323,7 +323,6 @@ class SnpService {
             vcfPath: found.vcf!.path,
             tbiPath: found.tbi!.path,
             folder: snpDir.path,
-            active: true,
             private: false,
             custom: true,
             genome: genome.id,
