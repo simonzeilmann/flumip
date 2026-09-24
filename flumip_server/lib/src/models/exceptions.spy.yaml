@@ -1,4 +1,0 @@
-exception: GeneExtractionException
-fields:
-  message: String, default = "The BED file could not be created."
-  errorCode: int, default = 1000
