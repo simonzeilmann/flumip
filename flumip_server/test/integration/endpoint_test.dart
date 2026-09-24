@@ -335,7 +335,6 @@ void main() {
           smtpFrom: 'rt@flumip.local',
           startTLS: false,
           loginRequired: false,
-          settingsPassword: 'changeme',
           oidcIssuer: 'https://rt.example/realms/rt',
           oidcClientId: 'rt-client',
           oidcScopes: 'openid email',
@@ -354,8 +353,17 @@ void main() {
           sessionBuilder,
           'changeme',
         );
-        final expected = updated.toJson()..remove('id');
-        final actual = again.toJson()..remove('id');
+        // ⚠️ settingsPassword is dropped from both sides, not compared. It is
+        // serverOnly and written only by setSettingsPassword, so it is
+        // deliberately *not* client-editable — which is what this test is
+        // about. Leaving it in would compare a hash against whatever the fresh
+        // object happened to carry.
+        final expected = updated.toJson()
+          ..remove('id')
+          ..remove('settingsPassword');
+        final actual = again.toJson()
+          ..remove('id')
+          ..remove('settingsPassword');
         expect(actual, expected);
       },
       tags: ['integration'],

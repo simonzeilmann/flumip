@@ -1152,9 +1152,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         _isp.ColumnDefinition(
           name: 'settingsPassword',
           columnType: _isp.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'changeme\'',
+          isNullable: true,
+          dartType: 'String?',
         ),
         _isp.ColumnDefinition(
           name: 'oidcIssuer',

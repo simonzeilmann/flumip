@@ -662,6 +662,37 @@ class EndpointSettings extends _isc.EndpointRef {
         'password': password,
       });
 
+  /// Changes the settings password, which is stored hashed and never sent back.
+  ///
+  /// Write-only for the same reason as [setSmtpPassword] and
+  /// [setOidcClientSecret] — an ordinary field is serialized on every
+  /// `getSettings` — but with one difference that matters: an empty
+  /// [newPassword] is **refused**, not treated as "clear it". See
+  /// `SettingsService.setSettingsPassword`.
+  ///
+  /// ⚠️ Authenticated with the *old* password (or an admin session). The caller
+  /// must then start using the new one for subsequent calls; nothing about this
+  /// endpoint's result does that for it.
+  ///
+  /// \param session The current session.
+  /// \param password The current settings password, or null for an admin session.
+  /// \param newPassword The replacement. Must not be empty.
+  _ida.Future<void> setSettingsPassword(String? password, String newPassword) =>
+      caller.callServerEndpoint<void>('settings', 'setSettingsPassword', {
+        'password': password,
+        'newPassword': newPassword,
+      });
+
+  /// Whether the settings password is still the shipped default.
+  ///
+  /// Hashing removed the only thing that used to make that visible — the
+  /// password sitting readable in its own box — so the tab asks instead and
+  /// warns. See `SettingsService.settingsPasswordIsDefault`.
+  _ida.Future<bool> settingsPasswordIsDefault(String? password) =>
+      caller.callServerEndpoint<bool>('settings', 'settingsPasswordIsDefault', {
+        'password': password,
+      });
+
   /// Everything the settings tab needs to show about the SSO setup that is not
   /// itself a stored setting.
   ///

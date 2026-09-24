@@ -36,7 +36,6 @@ abstract class Settings
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
@@ -72,7 +71,6 @@ abstract class Settings
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme',
        oidcIssuer = oidcIssuer ?? '',
        oidcClientId = oidcClientId ?? '',
        oidcScopes = oidcScopes ?? 'openid email profile',
@@ -103,7 +101,6 @@ abstract class Settings
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
@@ -147,7 +144,6 @@ abstract class Settings
       loginRequired: jsonSerialization['loginRequired'] == null
           ? null
           : _isc.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
-      settingsPassword: jsonSerialization['settingsPassword'] as String?,
       oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
       oidcClientId: jsonSerialization['oidcClientId'] as String?,
       oidcScopes: jsonSerialization['oidcScopes'] as String?,
@@ -210,8 +206,6 @@ abstract class Settings
 
   bool loginRequired;
 
-  String settingsPassword;
-
   String oidcIssuer;
 
   String oidcClientId;
@@ -251,7 +245,6 @@ abstract class Settings
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
@@ -285,7 +278,6 @@ abstract class Settings
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
-      'settingsPassword': settingsPassword,
       'oidcIssuer': oidcIssuer,
       'oidcClientId': oidcClientId,
       'oidcScopes': oidcScopes,
@@ -321,7 +313,6 @@ abstract class Settings
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
-      'settingsPassword': settingsPassword,
       'oidcIssuer': oidcIssuer,
       'oidcClientId': oidcClientId,
       'oidcScopes': oidcScopes,
@@ -363,7 +354,6 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
@@ -393,7 +383,6 @@ class _SettingsImpl extends Settings {
          smtpFrom: smtpFrom,
          startTLS: startTLS,
          loginRequired: loginRequired,
-         settingsPassword: settingsPassword,
          oidcIssuer: oidcIssuer,
          oidcClientId: oidcClientId,
          oidcScopes: oidcScopes,
@@ -429,7 +418,6 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
@@ -464,7 +452,6 @@ class _SettingsImpl extends Settings {
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
-      settingsPassword: settingsPassword ?? this.settingsPassword,
       oidcIssuer: oidcIssuer ?? this.oidcIssuer,
       oidcClientId: oidcClientId ?? this.oidcClientId,
       oidcScopes: oidcScopes ?? this.oidcScopes,

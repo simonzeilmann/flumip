@@ -1,9 +1,19 @@
+import 'dart:convert';
+
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/password_hash.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
+
+/// What a brand-new install's settings password is, before anybody changes it.
+///
+/// Stored hashed like any other, so this constant is the only place the word
+/// appears — `settingsPasswordIsDefault` is what tells the settings tab to nag
+/// about it.
+const defaultSettingsPassword = 'changeme';
 
 /// How long a project survives on a demo install.
 ///
@@ -43,8 +53,8 @@ class SettingsService {
     String? password,
   ) async {
     var settings = await getSettings(session);
-    if (!_isAdmin(session, settings, password)) {
-      throw ArgumentException(message: 'Invalid password');
+    if (!await _isAdmin(session, settings, password)) {
+      throw ArgumentException(message: 'This password is not correct.');
     }
     return settings;
   }
@@ -82,7 +92,15 @@ class SettingsService {
   /// every settings call into a 500. An unavailable runtime means "not
   /// enforcing", which keeps the password working — the safe direction, since
   /// the alternative is a server nobody can configure.
-  bool _isAdmin(Session session, Settings settings, String? password) {
+  ///
+  /// ⚠️ **An admin session short-circuits before any hashing happens.** That is
+  /// worth keeping: verifying a PBKDF2 hash costs a few hundred milliseconds by
+  /// design, and a signed-in administrator never supplies a password at all.
+  Future<bool> _isAdmin(
+    Session session,
+    Settings settings,
+    String? password,
+  ) async {
     if (session.authenticated?.scopes.contains(adminScope) ?? false) {
       return true;
     }
@@ -97,7 +115,41 @@ class SettingsService {
     }
     if (enforcing) return false;
 
-    return password != null && password == settings.settingsPassword;
+    if (password == null) return false;
+    final stored = settings.settingsPassword;
+    if (stored == null || stored.isEmpty) return false;
+
+    if (looksLikePasswordHash(stored)) {
+      return verifyPassword(password, stored);
+    }
+
+    // Everything below is the one-way door out of plaintext.
+    //
+    // An install created before hashing still has its password sitting in the
+    // column as typed. It has to keep working — this is the credential that gets
+    // an administrator back into a server whose identity provider is broken, and
+    // silently invalidating it on upgrade would be a lockout delivered by
+    // deployment. So it is accepted once, and the accepting is what replaces it.
+    //
+    // ⚠️ The upgrade writes only this column. `updateRow` would otherwise write
+    // every field of the row we happen to be holding, and this runs inside a
+    // *read* — a settings save landing concurrently would be silently rolled
+    // back to whatever this session loaded.
+    if (!constantTimeEquals(utf8.encode(password), utf8.encode(stored))) {
+      return false;
+    }
+
+    settings.settingsPassword = hashPassword(password);
+    await Settings.db.updateRow(
+      session,
+      settings,
+      columns: (t) => [t.settingsPassword],
+    );
+    session.log(
+      "Replaced the plaintext settings password with a hash",
+      level: LogLevel.info,
+    );
+    return true;
   }
 
   /// Ensures exactly one settings row exists, without ever discarding it.
@@ -118,7 +170,15 @@ class SettingsService {
 
     if (settings.isEmpty) {
       session.log("No settings found, creating defaults", level: LogLevel.info);
-      await Settings.db.insertRow(session, Settings());
+      // ⚠️ The settings password is seeded here rather than as a model default,
+      // because a hash cannot be written into the yaml. A fresh install with a
+      // null column would have no break-glass credential at all, so — with
+      // single sign-on off, which is the default — nobody could open the
+      // settings tab to configure the server they just installed.
+      await Settings.db.insertRow(
+        session,
+        Settings(settingsPassword: hashPassword(defaultSettingsPassword)),
+      );
       return;
     }
 
@@ -179,7 +239,6 @@ class SettingsService {
       ..smtpFrom = settings.smtpFrom
       ..startTLS = settings.startTLS
       ..loginRequired = settings.loginRequired
-      ..settingsPassword = settings.settingsPassword
       ..oidcIssuer = settings.oidcIssuer
       ..oidcClientId = settings.oidcClientId
       ..oidcScopes = settings.oidcScopes
@@ -190,7 +249,59 @@ class SettingsService {
     // oidcClientSecret is deliberately absent: it is serverOnly, so it arrives
     // as null from the client and is written only by setOidcClientSecret.
 
+    // settingsPassword is deliberately absent, alongside oidcClientSecret: it is
+    // serverOnly, arrives as null from the client, and is written only by
+    // setSettingsPassword.
+
     await Settings.db.updateRow(session, stored);
     session.log("Settings updated successfully", level: LogLevel.info);
+  }
+
+  /// Replaces the settings password, which is stored hashed.
+  ///
+  /// ⚠️ **An empty password is refused rather than stored**, unlike the SMTP
+  /// password and the OIDC client secret, where empty means "clear it". Those
+  /// two are optional; this one is the way back into a server whose identity
+  /// provider has broken. Clearing it would leave an install with single sign-on
+  /// off and no way to reach its own settings, recoverable only by editing the
+  /// database directly.
+  ///
+  /// \throws [ArgumentException] if [newPassword] is empty or only whitespace.
+  Future<void> setSettingsPassword(Session session, String newPassword) async {
+    if (newPassword.trim().isEmpty) {
+      throw ArgumentException(
+        message:
+            'The settings password cannot be blank. Type the password you '
+            'want to use, or leave the box empty to keep the current one.',
+      );
+    }
+
+    final settings = await getSettings(session);
+    settings.settingsPassword = hashPassword(newPassword);
+    await Settings.db.updateRow(
+      session,
+      settings,
+      columns: (t) => [t.settingsPassword],
+    );
+    session.log("Settings password changed", level: LogLevel.info);
+  }
+
+  /// Whether the settings password is still `changeme`.
+  ///
+  /// The settings tab used to show the password in a box, so "this install is
+  /// still on the shipped default" was visible by reading it. Hashing takes that
+  /// away, and saying nothing would leave the default quietly in place on every
+  /// install that never got round to changing it — so the tab asks instead.
+  ///
+  /// Nothing is leaked by answering: only an administrator can get this far.
+  Future<bool> settingsPasswordIsDefault(Session session) async {
+    final stored = (await getSettings(session)).settingsPassword;
+    if (stored == null || stored.isEmpty) return false;
+    // A row that predates hashing still holds the password as typed, and it is
+    // just as much the default when it says so in plaintext.
+    if (!looksLikePasswordHash(stored)) {
+      return stored == defaultSettingsPassword;
+    }
+    return verifyPassword(defaultSettingsPassword, stored);
   }
 }

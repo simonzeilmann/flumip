@@ -46,7 +46,22 @@ fields:
   smtpFrom: String, default="flumip@yourdomain.com"
   startTLS: bool, default=true
   loginRequired: bool, default=false
-  settingsPassword: String, default="changeme"
+  # The break-glass administrator credential, stored as a PBKDF2 hash and never
+  # sent to the browser. It used to be plaintext *and* serialized on every
+  # `getSettings`, so it travelled to whoever had the settings screen open and
+  # sat readable in the database besides. Written only through
+  # SettingsEndpoint.setSettingsPassword, same shape as smtpPassword and
+  # oidcClientSecret.
+  #
+  # Nullable because serverOnly fields must be: the client cannot supply one, so
+  # it deserializes as null on the way in. SettingsService.updateSettings leaves
+  # it out of the merge, which is what stops an unrelated save from blanking it.
+  #
+  # ⚠️ The default is no longer here, because it can no longer be a literal —
+  # `changeme` has to be hashed before it is stored. SettingsService seeds it
+  # when it creates the settings row. A row that predates hashing still holds its
+  # plaintext, which the first successful sign-in replaces with a hash.
+  settingsPassword: String?, scope=serverOnly
   # OpenID Connect single sign-on. Off by default: running with no
   # authentication at all is the standard deployment. See docs/authentication.md.
   # Any of these can be overridden by an environment variable, in which case the

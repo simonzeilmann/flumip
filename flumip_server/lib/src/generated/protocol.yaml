@@ -53,6 +53,8 @@ settings:
   - setOidcClientSecret:
   - setSmtpPassword:
   - smtpPasswordConfigured:
+  - setSettingsPassword:
+  - settingsPasswordIsDefault:
   - getAuthAdminStatus:
   - sendTestMail:
 snp:

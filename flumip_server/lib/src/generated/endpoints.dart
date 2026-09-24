@@ -778,6 +778,41 @@ class Endpoints extends _is.EndpointDispatch {
               (endpoints['settings'] as _ivmxe84z.SettingsEndpoint)
                   .smtpPasswordConfigured(session, params['password']),
         ),
+        'setSettingsPassword': _is.MethodConnector(
+          name: 'setSettingsPassword',
+          params: {
+            'password': _is.ParameterDescription(
+              name: 'password',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+            'newPassword': _is.ParameterDescription(
+              name: 'newPassword',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _ivmxe84z.SettingsEndpoint)
+                  .setSettingsPassword(
+                    session,
+                    params['password'],
+                    params['newPassword'],
+                  ),
+        ),
+        'settingsPasswordIsDefault': _is.MethodConnector(
+          name: 'settingsPasswordIsDefault',
+          params: {
+            'password': _is.ParameterDescription(
+              name: 'password',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['settings'] as _ivmxe84z.SettingsEndpoint)
+                  .settingsPasswordIsDefault(session, params['password']),
+        ),
         'getAuthAdminStatus': _is.MethodConnector(
           name: 'getAuthAdminStatus',
           params: {
