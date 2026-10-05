@@ -39,8 +39,8 @@ class AuthController extends ChangeNotifier {
   /// Builds the controller the running app uses.
   ///
   /// [siteUrl] is the origin the app was served from, which is also the web
-  /// server's — see `api_config.dart`. The `/auth/*` routes are there, not on the
-  /// API origin, because that is where the session cookie lives.
+  /// server's — see `api_config.dart`. The `/auth/*` routes are there because
+  /// that is where the session cookie lives.
   ///
   /// [navigate] performs a full-page navigation. It is supplied by the caller
   /// rather than done here so that this library imports nothing web-only and the

@@ -1,6 +1,7 @@
 {
   // Local development configurations. See flumip_server/config/development.yaml
-  // for the ports: API 8080, Insights 8081, web 8082.
+  // for the ports: web 8082 (which also answers the API under /api), plus the
+  // internal API 8080 and Insights 8081 that Serverpod always starts.
   //
   // The backend needs the development database before it will start:
   //
@@ -124,7 +125,7 @@
     {
       // Hot reload and breakpoints. The web port is pinned so the URL is stable
       // across runs; lib/api_config.dart recognises a localhost page on a port
-      // like this as a dev run and targets the API on 8080.
+      // like this as a dev run and targets the API at localhost:8082/api.
       "name": "Frontend (debug)",
       "type": "dart",
       "request": "launch",

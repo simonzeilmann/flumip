@@ -1,10 +1,12 @@
 ### A short-lived bearer token minted from an AuthSession cookie.
 ###
-### The API server is on a different origin than the app, and Serverpod's
-### browser client sends no cookies (`withCredentials` is false and the server
-### replies `Access-Control-Allow-Origin: *`), so API calls have to authenticate
-### with an `Authorization` header instead. `/auth/session` mints one of these
-### from the cookie and the app keeps it in memory only.
+### API calls authenticate with an `Authorization` header, not the session
+### cookie. The API is same-origin with the app (the web server answers it under
+### `/api`), so the browser does send the cookie along — but Serverpod's cookie
+### authentication is not configured and ignores it. That is deliberate: a header
+### is never attached by the browser on its own, so no other site can make a
+### signed-in browser call the API. `/auth/session` mints one of these from the
+### cookie and the app keeps it in memory only.
 ###
 ### Why a separate table rather than a `tokenHash` column on AuthSession: two
 ### browser tabs both call `/auth/session`, and a single column would mean the

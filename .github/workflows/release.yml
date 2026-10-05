@@ -3,10 +3,11 @@ name: Release build
 # Publishes the build tarball that deployment/setup-flumip.sh downloads by
 # default (https://github.com/<repo>/releases/latest/download/flumip-build.tar.gz).
 #
-# Unlike the staging/production pipelines this build is host-agnostic: it does
-# NOT pass --dart-define=API_URL or SITE_URL, so the frontend derives both from
-# the page origin at runtime (see flumip_flutter/lib/api_config.dart). That is
-# what lets one tarball be installed on any machine.
+# Like the staging/production pipelines, this build is host-agnostic: the
+# frontend derives its API and site URLs from the page origin at runtime (see
+# flumip_flutter/lib/api_config.dart), and the web server answers the API under
+# /api on its own port. That is what lets one tarball be installed on any
+# machine, behind any reverse proxy.
 #
 # Single sign-on is configured at runtime — in the Settings tab or through the
 # environment file the systemd units read (see docs/authentication.md) — so it

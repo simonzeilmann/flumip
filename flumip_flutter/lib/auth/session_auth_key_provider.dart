@@ -5,11 +5,11 @@ import 'package:serverpod_client/serverpod_client.dart';
 /// ## Why the token is fetched rather than stored
 ///
 /// The durable credential is an `HttpOnly` cookie on the web server's origin,
-/// which this code deliberately cannot read. The API server is a *different*
-/// origin and Serverpod's browser client sends no cookies, so API calls need an
-/// `Authorization` header instead. `/auth/session` is the bridge: same origin as
-/// the app, so the browser attaches the cookie automatically, and it answers with
-/// a short-lived bearer.
+/// which this code deliberately cannot read. API calls authenticate with an
+/// `Authorization` header instead — a credential the browser never attaches on
+/// its own, so no other site can spend it (see `AuthApiToken` on the server).
+/// `/auth/session` is the bridge: same origin as the app, so the browser attaches
+/// the cookie automatically, and it answers with a short-lived bearer.
 ///
 /// The bearer lives in [_token] and nowhere else — never `localStorage`, never a
 /// URL. A page reload starts from the cookie again, so there is no long-lived

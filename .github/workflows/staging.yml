@@ -50,7 +50,7 @@ jobs:
 
       - name: Build and inject frontend
         run: |
-          cd flumip_flutter && flutter build web --debug --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=API_URL=${{ vars.STAGING_API_URL }} --dart-define=SITE_TITLE=${{ vars.STAGING_TITLE }} --dart-define=SITE_URL=${{ vars.STAGING_URL }} --output ../flumip_server/web/app
+          cd flumip_flutter && flutter build web --debug --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=SITE_TITLE=${{ vars.STAGING_TITLE }} --output ../flumip_server/web/app
 
       - name: Build server
         run: |
