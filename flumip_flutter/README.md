@@ -1,15 +1,7 @@
 # flumip_flutter
 
-A new Flutter project with Serverpod.
+The FLUMIP web app, written in Flutter. In every install it is built into
+`../flumip_server/web/app` and served by the server.
 
-## Getting Started
-
-This project is a starting point for a Flutter application that is using
-Serverpod.
-
-A great starting point for learning Serverpod is our documentation site at:
-[https://docs.serverpod.dev](https://docs.serverpod.dev).
-
-To run the project, first make sure that the server is running, then do:
-
-    flutter run
+See [Development](../README.md#development) in the top-level README for building
+and testing it.

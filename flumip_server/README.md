@@ -1,15 +1,8 @@
 # flumip_server
 
-This is the starting point for your Serverpod server.
+The FLUMIP backend, built on [Serverpod](https://serverpod.dev) 4. It serves the
+API, the Flutter web app (from `web/app`), downloads, sign-in and UCSC tracks,
+and drives MIPGEN.
 
-To run your server, you first need to start Postgres and Redis. It's easiest to do with Docker.
-
-    docker compose up --build --detach
-
-Then you can start the Serverpod server.
-
-    dart bin/main.dart
-
-When you are finished, you can shut down Serverpod with `Ctrl-C`, then stop Postgres and Redis.
-
-    docker compose stop
+See [Development](../README.md#development) in the top-level README for running,
+testing and changing it.

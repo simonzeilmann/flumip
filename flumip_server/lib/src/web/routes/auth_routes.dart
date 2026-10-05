@@ -21,9 +21,9 @@ const authCookieName = 'flumip_auth';
 /// for a short-lived bearer at [AuthSessionRoute].
 ///
 /// This works because the app is always same-origin with the web server — every
-/// build is published into `web/app` and served by `FlutterRoute`. Only the *API*
-/// server is on a different origin, and that is why API calls use an
-/// `Authorization` header rather than the cookie.
+/// build is published into `web/app` and served by `FlutterRoute`, and the API
+/// is answered there too, under `/api`. API calls nonetheless authenticate with
+/// an `Authorization` header rather than the cookie; see `AuthApiToken` for why.
 
 /// Reads the session cookie from a request, tolerating a malformed header.
 ///

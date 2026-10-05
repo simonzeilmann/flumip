@@ -6,6 +6,7 @@ import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+import 'package:flumip_server/src/web/routes/api_route.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
 import 'package:flumip_server/src/web/routes/download.dart';
 import 'package:flumip_server/src/web/routes/snp_upload.dart';
@@ -89,11 +90,21 @@ void run(List<String> args) async {
 
   // The sign-in flow runs on the web server, which is the origin the app itself
   // is served from — so the session cookie is set and read where the browser
-  // actually is. The API server is a different origin and uses a bearer header.
+  // actually is. API calls authenticate with a short-lived bearer minted from
+  // that cookie at /auth/session, not with the cookie itself.
   pod.webServer.addRoute(AuthLoginRoute(), '/auth/login');
   pod.webServer.addRoute(AuthCallbackRoute(), '/auth/callback');
   pod.webServer.addRoute(AuthSessionRoute(), '/auth/session');
   pod.webServer.addRoute(AuthLogoutRoute(), '/auth/logout');
+
+  // The API, under /api on the web port, so an install is one origin and a
+  // TLS-terminating proxy needs a single upstream. Every build calls it here;
+  // the API port itself is internal. Must be built before pod.start() — see
+  // ApiRoute.
+  pod.webServer.addRoute(
+    ApiRoute(ApiRoute.forServer(pod.server)),
+    '${ApiRoute.prefix}/**',
+  );
 
   final authRuntime = sl<AuthRuntime>();
 

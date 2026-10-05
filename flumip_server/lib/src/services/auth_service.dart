@@ -70,7 +70,8 @@ class AuthService {
   /// How long an API bearer stays valid.
   ///
   /// Short because it is trivially re-minted from the cookie, and because it is
-  /// the credential that travels in a header to a different origin.
+  /// the credential script can see — it lives in the app's memory, unlike the
+  /// `HttpOnly` cookie.
   static const apiTokenLifetime = Duration(minutes: 30);
 
   AuthRuntime get _runtime => sl<AuthRuntime>();

@@ -28,12 +28,11 @@ import 'package:serverpod/serverpod.dart';
 /// arrive, with a progress bar it drew itself.
 ///
 /// It is **same-origin with the app**, so the browser sends the session cookie
-/// without being asked. API calls cannot do this — Serverpod's browser client
-/// sends no cookies and the server replies `Access-Control-Allow-Origin: *`,
-/// which is why they authenticate with a bearer header instead. A plain `<a
-/// download>` or `window.open` carries no header, so a bearer-authenticated
-/// download would have to be fetched into memory by JavaScript first, which is
-/// exactly the thing being avoided.
+/// without being asked. API calls authenticate with a bearer header instead
+/// (see `AuthApiToken` for why), and a plain `<a download>` or `window.open`
+/// carries no header, so a bearer-authenticated download would have to be
+/// fetched into memory by JavaScript first, which is exactly the thing being
+/// avoided.
 ///
 /// ## Authorization
 ///

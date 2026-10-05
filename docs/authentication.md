@@ -22,7 +22,8 @@ projects you already have.
 
 What it still does not do is anything finer-grained than that: no roles beyond
 administrator, no sharing a project with a named colleague, no per-project
-permissions. Departments are half-built — see the authorization document.
+permissions. Projects can also be shared by department, using a group claim
+from your provider — see the authorization document.
 
 ## The redirect URI, which is where most setups go wrong
 
@@ -156,6 +157,7 @@ saves a value that silently does nothing.
 | `FLUMIP_OIDC_CLIENT_SECRET` | Client secret |
 | `FLUMIP_OIDC_ALLOWED_DOMAINS` | Allowed email domains |
 | `FLUMIP_OIDC_ADMIN_EMAILS` | Administrator addresses |
+| `FLUMIP_OIDC_DEPARTMENT_CLAIM` | Department claim; see [authorization.md](authorization.md#departments) |
 | `FLUMIP_PUBLIC_URL` | Public URL |
 | `FLUMIP_AUTH_STRICT` | See "Why sign-in might not be enforced" |
 
@@ -331,9 +333,10 @@ can read it. It is `SameSite=Lax` because it has to survive the cross-site
 redirect back from your provider, and `Secure` only when the public scheme is
 `https`, because a `Secure` cookie on a plain-HTTP install is silently discarded.
 
-The API server is a different origin and Serverpod's browser client sends no
-cookies, so API calls carry a bearer token instead, in an `Authorization: Bearer`
-header. (Not `Basic`, which Serverpod offers for its own `id:hash` auth keys:
+API calls — answered by the same server under `/api` — do not authenticate with
+the cookie. They carry a bearer token instead, in an `Authorization: Bearer`
+header, which the browser never attaches on its own, so no other site can make a
+signed-in browser call the API. (Not `Basic`, which Serverpod offers for its own `id:hash` auth keys:
 relic splits a decoded `Basic` value on a colon, so an opaque token without one is
 rejected with a 400 before FLUMIP's own code runs.) That bearer is short-lived
 (30 minutes), held only in memory, and re-minted from the cookie as needed. Signing
