@@ -54,7 +54,7 @@ Future<Calls> pumpPanel(
   WidgetTester tester,
   Project project, {
   bool notificationsAvailable = false,
-  bool deleteExcessFiles = false,
+  bool deleteExcessFiles = true,
   MipgenProgress progress = const MipgenProgress.empty(),
 }) async {
   final calls = Calls();
@@ -148,7 +148,7 @@ void main() {
       final calls = await pumpPanel(tester, ready());
 
       await tester.tap(find.text('Delete intermediate files'));
-      expect(calls.deleteExcess, isTrue);
+      expect(calls.deleteExcess, isFalse);
     });
 
     testWidgets('no mail switch when the install has mail off', (tester) async {

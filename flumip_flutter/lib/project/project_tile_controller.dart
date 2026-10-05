@@ -56,7 +56,10 @@ class ProjectTileController extends ChangeNotifier {
 
   Project _project;
   bool _expanded;
-  bool _deleteExcessFiles = false;
+  // On by default: the intermediates (`.sai`, `.fq`) are bwa's working files,
+  // nothing a user downloads or a track reads, and they are most of a project's
+  // size. Keeping them is the exception, for debugging a design.
+  bool _deleteExcessFiles = true;
   ProjectOptions _options = ProjectOptions();
 
   /// The project's genome, or null while it is still being fetched.
