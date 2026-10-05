@@ -11,23 +11,31 @@ class Principal {
   /// project check — that is what makes an unowned-project cleanup possible.
   final bool isAdmin;
 
-  /// Always null today.
+  /// The groups the identity provider reported at this session's sign-in.
   ///
-  /// No department claim is collected from the identity provider, so nothing can
-  /// populate this. It exists because [projectIsAccessible] takes departments
-  /// into account, and building that clause now means switching it on later is a
-  /// change to sign-in plus a Settings field — not a change to every call site
-  /// that guards a project. See `docs/authorization.md`.
-  final int? departmentId;
+  /// **A list, because people are in several.** `groups` is an array at every
+  /// provider that sends one, and modelling it as a single value would mean
+  /// picking one arbitrarily and calling the others wrong.
+  ///
+  /// Empty whenever `Settings.oidcDepartmentClaim` is unset, which is the
+  /// default — so the department clause below stays inert on an install that
+  /// has not asked for it. Values are compared verbatim; they are the
+  /// provider's strings, not ids.
+  final List<String> departments;
 
-  const Principal({this.userId, this.isAdmin = false, this.departmentId});
+  const Principal({
+    this.userId,
+    this.isAdmin = false,
+    this.departments = const [],
+  });
 
   /// Nobody. What every request carries while single sign-on is switched off.
   static const Principal anonymous = Principal();
 
   @override
   String toString() =>
-      'Principal(userId: $userId, isAdmin: $isAdmin, department: $departmentId)';
+      'Principal(userId: $userId, isAdmin: $isAdmin, '
+      'departments: ${departments.join('|')})';
 }
 
 /// Whether [principal] may see and change a project owned by [owner] and
@@ -53,7 +61,7 @@ bool projectIsAccessible({
   required bool enforcing,
   required Principal principal,
   required int? owner,
-  required int? department,
+  required String? department,
 }) {
   if (!enforcing) return true;
   if (principal.isAdmin) return true;
@@ -63,16 +71,18 @@ bool projectIsAccessible({
   if (userId == null) return false;
   if (owner == userId) return true;
 
-  // Both sides must be present. Comparing two nulls would quietly hand every
-  // department-less project to every department-less user — which is all of them
-  // — and turn the whole rule into "anyone may touch anything". The nullness of
-  // the caller's department is what keeps this clause inert until a claim is
-  // actually wired up, so the guard is doing real work rather than being
-  // defensive.
-  final callerDepartment = principal.departmentId;
-  if (callerDepartment != null &&
-      department != null &&
-      callerDepartment == department) {
+  // ⚠️ Both sides must be present, and the emptiness check is doing real work
+  // rather than being defensive. A project with no department must not be
+  // handed to a caller with no departments — that describes every project and
+  // every caller on an install with no claim configured, and would turn the
+  // whole rule into "anyone may touch anything".
+  //
+  // Compared verbatim, including case: these are the provider's own strings on
+  // both sides, and folding case would make `Cardiology` and `cardiology` the
+  // same department at a provider that considers them different.
+  if (department != null &&
+      department.isNotEmpty &&
+      principal.departments.contains(department)) {
     return true;
   }
 

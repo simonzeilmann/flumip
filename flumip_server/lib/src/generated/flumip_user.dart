@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:flumip_server/src/generated/protocol.dart' as _ijyeyqvr;
 import 'package:serverpod/serverpod.dart' as _is;
 
 /// An identity that has signed in through the configured OIDC provider.
@@ -29,6 +30,7 @@ abstract class FlumipUser
     required this.subject,
     required this.issuer,
     String? displayName,
+    this.departments,
     DateTime? created,
     DateTime? lastLogin,
   }) : displayName = displayName ?? '',
@@ -41,6 +43,7 @@ abstract class FlumipUser
     required String subject,
     required String issuer,
     String? displayName,
+    List<String>? departments,
     DateTime? created,
     DateTime? lastLogin,
   }) = _FlumipUserImpl;
@@ -52,6 +55,11 @@ abstract class FlumipUser
       subject: jsonSerialization['subject'] as String,
       issuer: jsonSerialization['issuer'] as String,
       displayName: jsonSerialization['displayName'] as String?,
+      departments: jsonSerialization['departments'] == null
+          ? null
+          : _ijyeyqvr.Protocol().deserialize<List<String>>(
+              jsonSerialization['departments'],
+            ),
       created: jsonSerialization['created'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -76,6 +84,14 @@ abstract class FlumipUser
 
   String displayName;
 
+  /// The groups the identity provider reported at the last sign-in.
+  ///
+  /// Null on every row that predates this, and on every install where
+  /// `Settings.oidcDepartmentClaim` is empty. Refreshed on each sign-in, so a
+  /// change in the provider takes effect the next time somebody signs in —
+  /// the same rule `AuthSession.isAdmin` already follows.
+  List<String>? departments;
+
   DateTime created;
 
   DateTime lastLogin;
@@ -92,6 +108,7 @@ abstract class FlumipUser
     String? subject,
     String? issuer,
     String? displayName,
+    List<String>? departments,
     DateTime? created,
     DateTime? lastLogin,
   });
@@ -104,6 +121,7 @@ abstract class FlumipUser
       'subject': subject,
       'issuer': issuer,
       'displayName': displayName,
+      if (departments != null) 'departments': departments?.toJson(),
       'created': created.toJson(),
       'lastLogin': lastLogin.toJson(),
     };
@@ -151,6 +169,7 @@ class _FlumipUserImpl extends FlumipUser {
     required String subject,
     required String issuer,
     String? displayName,
+    List<String>? departments,
     DateTime? created,
     DateTime? lastLogin,
   }) : super._(
@@ -159,6 +178,7 @@ class _FlumipUserImpl extends FlumipUser {
          subject: subject,
          issuer: issuer,
          displayName: displayName,
+         departments: departments,
          created: created,
          lastLogin: lastLogin,
        );
@@ -173,6 +193,7 @@ class _FlumipUserImpl extends FlumipUser {
     String? subject,
     String? issuer,
     String? displayName,
+    Object? departments = _Undefined,
     DateTime? created,
     DateTime? lastLogin,
   }) {
@@ -182,6 +203,9 @@ class _FlumipUserImpl extends FlumipUser {
       subject: subject ?? this.subject,
       issuer: issuer ?? this.issuer,
       displayName: displayName ?? this.displayName,
+      departments: departments is List<String>?
+          ? departments
+          : this.departments?.map((e0) => e0).toList(),
       created: created ?? this.created,
       lastLogin: lastLogin ?? this.lastLogin,
     );
@@ -203,6 +227,10 @@ class FlumipUserUpdateTable extends _is.UpdateTable<FlumipUserTable> {
   _is.ColumnValue<String, String> displayName(String value) =>
       _is.ColumnValue(table.displayName, value);
 
+  _is.ColumnValue<List<String>, List<String>> departments(
+    List<String>? value,
+  ) => _is.ColumnValue(table.departments, value);
+
   _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
       _is.ColumnValue(table.created, value);
 
@@ -217,6 +245,7 @@ class FlumipUserTable extends _is.Table<int?> {
     subject = _is.ColumnString('subject', this);
     issuer = _is.ColumnString('issuer', this);
     displayName = _is.ColumnString('displayName', this, hasDefault: true);
+    departments = _is.ColumnSerializable<List<String>>('departments', this);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     lastLogin = _is.ColumnDateTime('lastLogin', this, hasDefault: true);
   }
@@ -231,6 +260,14 @@ class FlumipUserTable extends _is.Table<int?> {
 
   late final _is.ColumnString displayName;
 
+  /// The groups the identity provider reported at the last sign-in.
+  ///
+  /// Null on every row that predates this, and on every install where
+  /// `Settings.oidcDepartmentClaim` is empty. Refreshed on each sign-in, so a
+  /// change in the provider takes effect the next time somebody signs in —
+  /// the same rule `AuthSession.isAdmin` already follows.
+  late final _is.ColumnSerializable<List<String>> departments;
+
   late final _is.ColumnDateTime created;
 
   late final _is.ColumnDateTime lastLogin;
@@ -242,6 +279,7 @@ class FlumipUserTable extends _is.Table<int?> {
     subject,
     issuer,
     displayName,
+    departments,
     created,
     lastLogin,
   ];

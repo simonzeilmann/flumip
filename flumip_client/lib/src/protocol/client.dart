@@ -496,6 +496,41 @@ class EndpointProject extends EndpointFlumip {
         {},
       );
 
+  /// Moves a project into a department, or out of every department with null.
+  ///
+  /// ⚠️ **Not admin-gated, unlike [setProjectOwner]** — the owner of a project
+  /// decides which of *their own* groups it belongs to, and the service refuses
+  /// a department the caller is not in. Requiring an admin would put a lab
+  /// administrator in the loop for something the person who made the project
+  /// already knows the answer to.
+  ///
+  /// \param session The current session.
+  /// \param id The project.
+  /// \param department The group name, or null to remove it.
+  _ida.Future<void> setProjectDepartment(int id, String? department) =>
+      caller.callServerEndpoint<void>('project', 'setProjectDepartment', {
+        'id': id,
+        'department': department,
+      });
+
+  /// The departments the caller may put a project into.
+  ///
+  /// Their own groups, as the identity provider reported them at sign-in.
+  /// **Empty when no department claim is configured**, which is the default —
+  /// the app hides the control entirely in that case rather than offering a
+  /// picker with nothing in it.
+  ///
+  /// An administrator additionally gets every department already in use, so
+  /// that they can tidy up after a group is renamed without being a member of
+  /// it.
+  ///
+  /// Leaks nothing an ordinary caller did not already tell us: these are the
+  /// groups the provider put in their own token.
+  ///
+  /// \param session The current session.
+  _ida.Future<List<String>> assignableDepartments() => caller
+      .callServerEndpoint<List<String>>('project', 'assignableDepartments', {});
+
   /// Whether an administrator has switched mail on for this install.
   ///
   /// The per-project notification switch is meaningless without it, so the app

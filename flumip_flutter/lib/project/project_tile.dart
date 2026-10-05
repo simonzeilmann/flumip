@@ -9,6 +9,7 @@ import '../services.dart';
 import '../ui/responsive_row.dart';
 import '../ui/theme.dart';
 import 'genome_picker_dialog.dart';
+import 'department_picker.dart';
 import 'owner_picker.dart';
 import 'project_inputs.dart';
 import 'project_options_view.dart';
@@ -40,6 +41,8 @@ class ProjectTile extends StatefulWidget {
     this.notificationsAvailable = false,
     this.assignableOwners,
     this.onOwnerChanged,
+    this.assignableDepartments = const [],
+    this.onDepartmentChanged,
     this.initiallyExpanded = false,
     this.controller,
   });
@@ -64,6 +67,17 @@ class ProjectTile extends StatefulWidget {
 
   /// Called with the new owner's id, or null to release the project to unowned.
   final void Function(int? ownerId)? onOwnerChanged;
+
+  /// The groups this caller may put the project into.
+  ///
+  /// Empty on an install with no department claim configured, which is the
+  /// default — the picker is then absent rather than empty. A plain list rather
+  /// than a nullable one, unlike [assignableOwners]: there is no third state to
+  /// distinguish here, because everybody who can see the tile can set this.
+  final List<String> assignableDepartments;
+
+  /// Called with the new department, or null to take the project out of one.
+  final void Function(String? department)? onDepartmentChanged;
 
   /// Opens without a click: a project that has just been created, or one a search
   /// result revealed.
@@ -251,6 +265,12 @@ class _ProjectTileState extends State<ProjectTile> {
                 owners: widget.assignableOwners!,
                 ownerId: project.owner,
                 onChanged: (id) => widget.onOwnerChanged?.call(id),
+              ),
+            if (widget.assignableDepartments.isNotEmpty)
+              DepartmentPicker(
+                departments: widget.assignableDepartments,
+                department: project.department,
+                onChanged: (name) => widget.onDepartmentChanged?.call(name),
               ),
             Padding(
               // ⚠️ A bottom inset, not just horizontal. The columns used to run

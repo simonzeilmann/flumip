@@ -48,11 +48,18 @@ void main() {
     });
 
     test('accepts an audience array', () {
+      // `aud` is a string or an array (RFC 7519 §4.1.3). Getting only the
+      // string case right is a common way to break against providers that
+      // always send an array.
+      //
+      // ⚠️ This used to assert that validation passed as well. It no longer
+      // does without an `azp` — see the azp group below. Several audiences and
+      // no way to tell which client the token was for is exactly the case
+      // OIDC Core §3.1.3.7 item 4 asks about.
       final parsed = IdTokenClaims.parse(
         unsignedJwt(claims(audience: ['flumip', 'another-client'])),
       );
       expect(parsed.audiences, ['flumip', 'another-client']);
-      expect(() => validate(parsed), returnsNormally);
     });
 
     test('handles every base64url padding length', () {
@@ -240,6 +247,117 @@ void main() {
         ),
         throwsA(isA<FormatException>()),
       );
+    });
+  });
+
+  group('azp — OpenID Connect Core §3.1.3.7 items 4 and 5', () {
+    // ⚠️ `aud` containing our client id is not enough on its own. A provider may
+    // issue a token to client A and list client B as an extra audience, so
+    // without azp a token minted for a different client of the same provider is
+    // accepted here.
+    test('a token issued to another client is refused', () {
+      final parsed = IdTokenClaims.parse(
+        unsignedJwt(
+          claims(
+            audience: ['flumip', 'other-client'],
+            extra: {'azp': 'other-client'},
+          ),
+        ),
+      );
+      expect(
+        () => validate(parsed),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('issued to "other-client"'),
+          ),
+        ),
+      );
+    });
+
+    test('several audiences and no azp is refused', () {
+      final parsed = IdTokenClaims.parse(
+        unsignedJwt(claims(audience: ['flumip', 'other-client'])),
+      );
+      expect(
+        () => validate(parsed),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('no "azp"'),
+          ),
+        ),
+      );
+    });
+
+    test('several audiences with our azp is accepted', () {
+      final parsed = IdTokenClaims.parse(
+        unsignedJwt(
+          claims(audience: ['flumip', 'other'], extra: {'azp': 'flumip'}),
+        ),
+      );
+      expect(() => validate(parsed), returnsNormally);
+      expect(parsed.authorizedParty, 'flumip');
+    });
+
+    test('a single audience and no azp is the ordinary case', () {
+      // Item 4 only asks for azp when there are several audiences. Requiring it
+      // always would refuse most providers.
+      final parsed = IdTokenClaims.parse(unsignedJwt(claims()));
+      expect(() => validate(parsed), returnsNormally);
+      expect(parsed.authorizedParty, isNull);
+    });
+
+    test('a single audience with a wrong azp is still refused', () {
+      final parsed = IdTokenClaims.parse(
+        unsignedJwt(claims(extra: {'azp': 'somebody-else'})),
+      );
+      expect(() => validate(parsed), throwsA(isA<FormatException>()));
+    });
+  });
+
+  group('the payload is kept for reading a configured claim', () {
+    // Which claim carries group membership is a per-provider setting, so it
+    // cannot be a field on IdTokenClaims — there is no standard name for it.
+    test('carries claims this class has no field for', () {
+      final parsed = IdTokenClaims.parse(
+        unsignedJwt(
+          claims(
+            extra: {
+              'groups': ['cardiology'],
+              'realm_access': {
+                'roles': ['research'],
+              },
+            },
+          ),
+        ),
+      );
+      expect(parsed.payload['groups'], ['cardiology']);
+      expect(parsed.payload['realm_access'], {
+        'roles': ['research'],
+      });
+    });
+  });
+
+  group('email_verified', () {
+    test('is read when present, and null when the provider omits it', () {
+      expect(
+        IdTokenClaims.parse(
+          unsignedJwt(claims(extra: {'email_verified': true})),
+        ).emailVerified,
+        isTrue,
+      );
+      expect(
+        IdTokenClaims.parse(
+          unsignedJwt(claims(extra: {'email_verified': false})),
+        ).emailVerified,
+        isFalse,
+      );
+      // ⚠️ Null is not false. AuthService treats the two differently: an
+      // explicit false is refused, an absent claim is allowed and logged.
+      expect(IdTokenClaims.parse(unsignedJwt(claims())).emailVerified, isNull);
     });
   });
 }

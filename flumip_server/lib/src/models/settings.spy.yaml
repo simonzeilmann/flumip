@@ -81,6 +81,19 @@ fields:
   oidcAllowedEmailDomains: String, default=""
   # Comma-separated. These addresses get the `admin` scope.
   oidcAdminEmails: String, default=""
+  # Which claim carries group or department membership, e.g. `groups`,
+  # `realm_access.roles`, `department`. Dot-separated to reach a nested claim.
+  #
+  # ⚠️ Empty by default, and empty means **departments are not used at all** —
+  # nothing is collected and `projectIsAccessible` behaves exactly as it did
+  # before this existed. That is deliberate: defaulting to `groups` would
+  # silently start widening project access on upgrade for every install whose
+  # provider already sends one.
+  #
+  # There is no standard claim for this. OpenID Connect Core §5.1 defines twenty
+  # standard claims and none of them describe organisational membership, so the
+  # name has to come from whoever configured the provider. See lib/src/auth/claims.dart.
+  oidcDepartmentClaim: String, default=""
   # Public origin of this install, e.g. "https://flumip.uni.example". Needed
   # when a reverse proxy terminates TLS, because the server otherwise derives
   # the redirect URI from its own scheme, host and port.

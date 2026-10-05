@@ -622,6 +622,35 @@ class Endpoints extends _is.EndpointDispatch {
               (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
                   .assignableOwners(session),
         ),
+        'setProjectDepartment': _is.MethodConnector(
+          name: 'setProjectDepartment',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'department': _is.ParameterDescription(
+              name: 'department',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .setProjectDepartment(
+                    session,
+                    params['id'],
+                    params['department'],
+                  ),
+        ),
+        'assignableDepartments': _is.MethodConnector(
+          name: 'assignableDepartments',
+          params: {},
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .assignableDepartments(session),
+        ),
         'notificationsAvailable': _is.MethodConnector(
           name: 'notificationsAvailable',
           params: {},

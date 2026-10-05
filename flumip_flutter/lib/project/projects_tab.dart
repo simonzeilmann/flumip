@@ -129,6 +129,9 @@ class _ProjectsTabState extends State<ProjectsTab> {
                     onDelete: () => _controller.delete(project.id!),
                     notificationsAvailable: _controller.notificationsAvailable,
                     assignableOwners: _controller.assignableOwners,
+                    assignableDepartments: _controller.assignableDepartments,
+                    onDepartmentChanged: (department) =>
+                        _controller.setDepartment(project.id!, department),
                     onOwnerChanged: (ownerId) =>
                         _controller.setOwner(project.id!, ownerId),
                   );

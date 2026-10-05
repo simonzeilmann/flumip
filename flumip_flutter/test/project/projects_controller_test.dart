@@ -42,6 +42,8 @@ class Harness {
   Object? loadThrows;
   Object? deleteThrows;
   Object? ownerThrows;
+  Object? departmentThrows;
+  List<String> assignableDepartments = const [];
   Object? notificationsThrows;
   Object? ownersThrows;
 
@@ -62,6 +64,14 @@ class Harness {
     setOwner: (id, ownerId) async {
       calls.add('owner $id -> $ownerId');
       if (ownerThrows != null) throw ownerThrows!;
+    },
+    setDepartment: (id, department) async {
+      calls.add('department $id -> $department');
+      if (departmentThrows != null) throw departmentThrows!;
+    },
+    loadAssignableDepartments: () async {
+      calls.add('departments?');
+      return assignableDepartments;
     },
     loadNotificationsAvailable: () async {
       calls.add('notifications');

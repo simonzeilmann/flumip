@@ -57,7 +57,7 @@ abstract class Project
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
@@ -85,7 +85,7 @@ abstract class Project
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
-      department: jsonSerialization['department'] as int?,
+      department: jsonSerialization['department'] as String?,
       trackToken: jsonSerialization['trackToken'] as String?,
       genes: jsonSerialization['genes'] == null
           ? null
@@ -160,11 +160,22 @@ abstract class Project
   /// can then reassign.
   int? owner;
 
-  /// Reserved. Nothing sets this, because no department claim is collected from
-  /// the identity provider. `projectIsAccessible` reads it, but the clause
-  /// cannot match while the caller's department is always null. Wiring it means
-  /// adding a claim name to Settings — see docs/authorization.md.
-  int? department;
+  /// The group this project belongs to, as the identity provider spells it.
+  ///
+  /// A **String**, not an id: it holds a claim value verbatim (`cardiology`,
+  /// `realm_access.roles` entry, whatever the provider sends) and there is no
+  /// table of departments to point at. It was `int?` while nothing could set
+  /// it, which is exactly the shape a claim value cannot take.
+  ///
+  /// Null means "no department", which is every project created before this
+  /// and every project on an install with no department claim configured.
+  /// `projectIsAccessible` treats null as "owner and admins only" — a
+  /// department only ever *widens* access, never narrows it.
+  ///
+  /// Set through `ProjectEndpoint.setProjectDepartment`, by the owner or an
+  /// admin. Stamped automatically at creation when the creator belongs to
+  /// exactly one group, because then there is nothing to choose.
+  String? department;
 
   /// Unguessable token for the public `/ucsc_track/<token>` URL.
   ///
@@ -225,7 +236,7 @@ abstract class Project
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
@@ -335,7 +346,7 @@ class _ProjectImpl extends Project {
     int? snp,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     String? trackToken,
     List<String>? genes,
     bool? bedFileCreated,
@@ -411,7 +422,7 @@ class _ProjectImpl extends Project {
       snp: snp is int? ? snp : this.snp,
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
-      department: department is int? ? department : this.department,
+      department: department is String? ? department : this.department,
       trackToken: trackToken is String? ? trackToken : this.trackToken,
       genes: genes is List<String>?
           ? genes
@@ -455,7 +466,7 @@ class ProjectUpdateTable extends _is.UpdateTable<ProjectTable> {
   _is.ColumnValue<int, int> owner(int? value) =>
       _is.ColumnValue(table.owner, value);
 
-  _is.ColumnValue<int, int> department(int? value) =>
+  _is.ColumnValue<String, String> department(String? value) =>
       _is.ColumnValue(table.department, value);
 
   _is.ColumnValue<String, String> trackToken(String? value) =>
@@ -508,7 +519,7 @@ class ProjectTable extends _is.Table<int?> {
     snp = _is.ColumnInt('snp', this);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     owner = _is.ColumnInt('owner', this);
-    department = _is.ColumnInt('department', this);
+    department = _is.ColumnString('department', this);
     trackToken = _is.ColumnString('trackToken', this);
     genes = _is.ColumnSerializable<List<String>>('genes', this);
     bedFileCreated = _is.ColumnBool('bedFileCreated', this, hasDefault: true);
@@ -561,11 +572,22 @@ class ProjectTable extends _is.Table<int?> {
   /// can then reassign.
   late final _is.ColumnInt owner;
 
-  /// Reserved. Nothing sets this, because no department claim is collected from
-  /// the identity provider. `projectIsAccessible` reads it, but the clause
-  /// cannot match while the caller's department is always null. Wiring it means
-  /// adding a claim name to Settings — see docs/authorization.md.
-  late final _is.ColumnInt department;
+  /// The group this project belongs to, as the identity provider spells it.
+  ///
+  /// A **String**, not an id: it holds a claim value verbatim (`cardiology`,
+  /// `realm_access.roles` entry, whatever the provider sends) and there is no
+  /// table of departments to point at. It was `int?` while nothing could set
+  /// it, which is exactly the shape a claim value cannot take.
+  ///
+  /// Null means "no department", which is every project created before this
+  /// and every project on an install with no department claim configured.
+  /// `projectIsAccessible` treats null as "owner and admins only" — a
+  /// department only ever *widens* access, never narrows it.
+  ///
+  /// Set through `ProjectEndpoint.setProjectDepartment`, by the owner or an
+  /// admin. Stamped automatically at creation when the creator belongs to
+  /// exactly one group, because then there is nothing to choose.
+  late final _is.ColumnString department;
 
   /// Unguessable token for the public `/ucsc_track/<token>` URL.
   ///

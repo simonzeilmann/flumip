@@ -45,6 +45,7 @@ abstract class Settings
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
        demoModeRetentionHours = demoModeRetentionHours ?? 168,
@@ -80,6 +81,7 @@ abstract class Settings
        oidcButtonLabel = oidcButtonLabel ?? 'Sign in with SSO',
        oidcAllowedEmailDomains = oidcAllowedEmailDomains ?? '',
        oidcAdminEmails = oidcAdminEmails ?? '',
+       oidcDepartmentClaim = oidcDepartmentClaim ?? '',
        authPublicUrl = authPublicUrl ?? '';
 
   factory Settings({
@@ -113,6 +115,7 @@ abstract class Settings
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) = _SettingsImpl;
 
@@ -160,6 +163,7 @@ abstract class Settings
       oidcAllowedEmailDomains:
           jsonSerialization['oidcAllowedEmailDomains'] as String?,
       oidcAdminEmails: jsonSerialization['oidcAdminEmails'] as String?,
+      oidcDepartmentClaim: jsonSerialization['oidcDepartmentClaim'] as String?,
       authPublicUrl: jsonSerialization['authPublicUrl'] as String?,
     );
   }
@@ -235,6 +239,8 @@ abstract class Settings
 
   String oidcAdminEmails;
 
+  String oidcDepartmentClaim;
+
   String authPublicUrl;
 
   @override
@@ -274,6 +280,7 @@ abstract class Settings
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   });
   @override
@@ -310,6 +317,7 @@ abstract class Settings
       'oidcButtonLabel': oidcButtonLabel,
       'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
       'oidcAdminEmails': oidcAdminEmails,
+      'oidcDepartmentClaim': oidcDepartmentClaim,
       'authPublicUrl': authPublicUrl,
     };
   }
@@ -345,6 +353,7 @@ abstract class Settings
       'oidcButtonLabel': oidcButtonLabel,
       'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
       'oidcAdminEmails': oidcAdminEmails,
+      'oidcDepartmentClaim': oidcDepartmentClaim,
       'authPublicUrl': authPublicUrl,
     };
   }
@@ -411,6 +420,7 @@ class _SettingsImpl extends Settings {
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) : super._(
          id: id,
@@ -443,6 +453,7 @@ class _SettingsImpl extends Settings {
          oidcButtonLabel: oidcButtonLabel,
          oidcAllowedEmailDomains: oidcAllowedEmailDomains,
          oidcAdminEmails: oidcAdminEmails,
+         oidcDepartmentClaim: oidcDepartmentClaim,
          authPublicUrl: authPublicUrl,
        );
 
@@ -481,6 +492,7 @@ class _SettingsImpl extends Settings {
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) {
     return Settings(
@@ -523,6 +535,7 @@ class _SettingsImpl extends Settings {
       oidcAllowedEmailDomains:
           oidcAllowedEmailDomains ?? this.oidcAllowedEmailDomains,
       oidcAdminEmails: oidcAdminEmails ?? this.oidcAdminEmails,
+      oidcDepartmentClaim: oidcDepartmentClaim ?? this.oidcDepartmentClaim,
       authPublicUrl: authPublicUrl ?? this.authPublicUrl,
     );
   }
@@ -619,6 +632,9 @@ class SettingsUpdateTable extends _is.UpdateTable<SettingsTable> {
   _is.ColumnValue<String, String> oidcAdminEmails(String value) =>
       _is.ColumnValue(table.oidcAdminEmails, value);
 
+  _is.ColumnValue<String, String> oidcDepartmentClaim(String value) =>
+      _is.ColumnValue(table.oidcDepartmentClaim, value);
+
   _is.ColumnValue<String, String> authPublicUrl(String value) =>
       _is.ColumnValue(table.authPublicUrl, value);
 }
@@ -695,6 +711,11 @@ class SettingsTable extends _is.Table<int?> {
       this,
       hasDefault: true,
     );
+    oidcDepartmentClaim = _is.ColumnString(
+      'oidcDepartmentClaim',
+      this,
+      hasDefault: true,
+    );
     authPublicUrl = _is.ColumnString('authPublicUrl', this, hasDefault: true);
   }
 
@@ -764,6 +785,8 @@ class SettingsTable extends _is.Table<int?> {
 
   late final _is.ColumnString oidcAdminEmails;
 
+  late final _is.ColumnString oidcDepartmentClaim;
+
   late final _is.ColumnString authPublicUrl;
 
   @override
@@ -798,6 +821,7 @@ class SettingsTable extends _is.Table<int?> {
     oidcButtonLabel,
     oidcAllowedEmailDomains,
     oidcAdminEmails,
+    oidcDepartmentClaim,
     authPublicUrl,
   ];
 }
