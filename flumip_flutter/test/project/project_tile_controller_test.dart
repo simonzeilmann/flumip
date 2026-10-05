@@ -367,16 +367,27 @@ void main() {
       expect(h.messages.single, 'No exons for XYZ');
     });
 
-    test('the disk-space switch is carried into the run', () async {
+    test('intermediate files are deleted unless asked otherwise', () async {
       final h = Harness();
       addTearDown(h.controller.dispose);
-      h.controller.setDeleteExcessFiles(true);
+      expect(h.controller.deleteExcessFiles, isTrue);
 
       await h.controller.generateMips();
       await pumpEventQueue();
 
       expect(h.calls.first, 'generate 1 delete=true');
       expect(h.messages, contains('MIPs generation started successfully'));
+    });
+
+    test('switching the deletion off is carried into the run', () async {
+      final h = Harness();
+      addTearDown(h.controller.dispose);
+      h.controller.setDeleteExcessFiles(false);
+
+      await h.controller.generateMips();
+      await pumpEventQueue();
+
+      expect(h.calls.first, 'generate 1 delete=false');
     });
 
     test('a refused run says why and starts nothing', () async {
