@@ -1,12 +1,9 @@
-# This is the configuration file for your local development environment. By
-# default, it runs a single server on port 8080. To set up your server, you will
-# need to add the name of the database you are connecting to and the user name.
-# The password for the database is stored in the config/passwords.yaml.
-#
-# When running your server locally, the server ports are the same as the public
-# facing ports.
+# Configuration for local development. Open the app at http://localhost:8082;
+# that web port also answers the API under /api. The database password is in
+# config/passwords.yaml, which you create yourself (see the top-level README).
 
-# Configuration for the main API server.
+# The API server. Serverpod always starts it, but nothing reaches it directly:
+# the app and a `flutter run` both call the API through the web port.
 apiServer:
   port: 8080
   publicHost: localhost

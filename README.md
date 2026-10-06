@@ -14,6 +14,7 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 - [Installing and operating a server](#installing-and-operating-a-server) — requirements, the two install scripts, HTTPS, updates, backups
 - [Configuration](#configuration) — the Settings tab, email, single sign-on
 - [Development](#development) — building, running and testing from source
+- [License](#license) — MIT for FLUMIP; MIPGEN has its own terms
 
 ---
 
@@ -456,3 +457,23 @@ cd flumip_server && dart format $(find lib bin test -name '*.dart' -not -path 'l
 
   Keep the tag in step with `version:` in `flumip_flutter/pubspec.yaml`, which is
   what the app reports about itself.
+
+---
+
+## License
+
+FLUMIP is released under the [MIT License](LICENSE).
+
+**MIPGEN is not covered by it.** FLUMIP runs MIPGEN as a separate program and
+contains none of its code, but it cannot design anything without it, and
+MIPGEN has its own licence from the University of Washington. That licence
+allows use, copying and modification **only for non-commercial academic and
+research activities**, permits distribution only within your own organisation,
+and refers every other use to license@uw.edu. `setup-mipgen.sh` downloads
+MIPGEN, its bundled libraries (libsvm, Boost) and the reference data onto your
+server; read `/opt/flumip/MIPGEN/LICENSE.txt` and make sure your use of the
+installation falls within those terms.
+
+The reference genomes, gene annotations and dbSNP files the setup script fetches
+come from UCSC and NCBI under their own terms of use.
+
