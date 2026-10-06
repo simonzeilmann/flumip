@@ -1,0 +1,69 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "settings",
+        "schema": "public",
+        "addColumns": [],
+        "deleteColumns": [
+          "ucscTrackGenerator",
+          "binCreationScript"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"ucscTrackGenerator\" of table \"settings\" will be dropped.",
+            "table": "settings",
+            "columns": [
+              "ucscTrackGenerator"
+            ],
+            "destrucive": true
+          },
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"binCreationScript\" of table \"settings\" will be dropped.",
+            "table": "settings",
+            "columns": [
+              "binCreationScript"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"ucscTrackGenerator\" of table \"settings\" will be dropped.",
+      "table": "settings",
+      "columns": [
+        "ucscTrackGenerator"
+      ],
+      "destrucive": true
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"binCreationScript\" of table \"settings\" will be dropped.",
+      "table": "settings",
+      "columns": [
+        "binCreationScript"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}

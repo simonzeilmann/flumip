@@ -63,8 +63,8 @@ final fakeProcess = FakeProcessRunner();
 
 void main() {
   withServerpod('MailService.sendTestMail', (sessionBuilder, endpoints) {
-    // The mipgen trigger group runs _generateUCSCTrack, so stub the process
-    // runner too rather than invoking a real `python`.
+    // The mipgen trigger group finalizes a run, so stub the process runner too
+    // rather than invoking real tools.
     setup(processRunner: fakeProcess, mailSender: fake);
     setUp(fake.reset);
     var session = sessionBuilder.build();
@@ -424,11 +424,7 @@ void main() {
 
     Future<Project> prepare({required bool withProgress}) async {
       final base = createTempDir('mailtrigger');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        ucscTrackGenerator: 'ucsc-gen',
-      );
+      await overrideSettingsDirs(session, projectDir: base.path);
       await overrideMailSettings(
         session,
         mailActive: true,

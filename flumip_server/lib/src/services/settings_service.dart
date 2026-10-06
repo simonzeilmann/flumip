@@ -228,8 +228,6 @@ class SettingsService {
       ..toolsDir = settings.toolsDir
       ..mipgenExecutable = settings.mipgenExecutable
       ..exonExtractScript = settings.exonExtractScript
-      ..ucscTrackGenerator = settings.ucscTrackGenerator
-      ..binCreationScript = settings.binCreationScript
       ..bigGenePredToGenePredExecutable =
           settings.bigGenePredToGenePredExecutable
       ..mailActive = settings.mailActive

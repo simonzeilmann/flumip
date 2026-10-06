@@ -26,8 +26,6 @@ fields:
   toolsDir: String, default="/opt/flumip/tools"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"
   exonExtractScript: String, default="/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh"
-  ucscTrackGenerator: String, default="/opt/flumip/MIPGEN/tools/generate_ucsc_track.py"
-  binCreationScript: String, default="/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py"
   bigGenePredToGenePredExecutable: String, default="/opt/flumip/tools/bigGenePredToGenePred"
   mailActive: bool, default=false
   smtpServer: String, default=""

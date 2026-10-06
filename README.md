@@ -1,7 +1,7 @@
 # FLUMIP
 
 FLUMIP is a web application for designing **molecular inversion probes (MIPs)**.
-It puts a browser front end on [MIPGEN](https://github.com/simonzeilmann/MIPGEN):
+It puts a browser front end on [MIPGEN](https://github.com/shendurelab/MIPGEN):
 you pick a reference genome, list the genes you want to capture, optionally mask
 known SNPs, and FLUMIP runs MIPGEN on the server, shows its progress, and hands
 you the probe designs as downloads and as a UCSC Genome Browser track.
@@ -171,7 +171,11 @@ produced, and offers:
 once, then again whenever you want another genome:
 
 - installs the bioinformatics tools with `apt`;
-- clones MIPGEN into `/opt/flumip/MIPGEN`;
+- clones MIPGEN, unmodified and pinned to a known commit, into
+  `/opt/flumip/MIPGEN`, and builds it;
+- installs FLUMIP's two helpers into `/opt/flumip/tools`: `mipgen-trf`, which
+  lets MIPGEN accept the Tandem Repeats Finder that Ubuntu ships, and
+  `add_bins_to_refgene.py`, which builds the hs1 gene annotations;
 - creates `/opt/flumip/{data/genomes,data/custom_snp,projects,tools}`;
 - downloads the reference data for the genomes you name (with `--download`);
 - gives the service user (default `www-data`, `--service-user` to change) write
@@ -473,6 +477,12 @@ and refers every other use to license@uw.edu. `setup-mipgen.sh` downloads
 MIPGEN, its bundled libraries (libsvm, Boost) and the reference data onto your
 server; read `/opt/flumip/MIPGEN/LICENSE.txt` and make sure your use of the
 installation falls within those terms.
+
+The script installs MIPGEN exactly as its authors publish it. FLUMIP does not
+patch it or ship a modified copy. What FLUMIP needed done differently lives in
+FLUMIP's own code under the MIT licence: the UCSC track is built by the server
+rather than by MIPGEN's Python script, and the TRF check is satisfied by the
+`deployment/mipgen-trf` wrapper.
 
 The reference genomes, gene annotations and dbSNP files the setup script fetches
 come from UCSC and NCBI under their own terms of use.

@@ -127,17 +127,10 @@ class AdminSettingsForm extends StatelessWidget {
         minChildWidth: 280,
         children: [
           _path(form.exonExtractScript, 'Exon extract script'),
-          _path(form.ucscTrackGenerator, 'UCSC track generator'),
-        ],
-      ),
-      ResponsiveRow(
-        minChildWidth: 280,
-        children: [
           _path(
             form.bigGenePredToGenePred,
             'BigGenePred to GenePred executable',
           ),
-          _path(form.binCreationScript, 'Bin creation script'),
         ],
       ),
     ],

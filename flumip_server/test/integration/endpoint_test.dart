@@ -324,8 +324,6 @@ void main() {
           toolsDir: '/rt/tools',
           mipgenExecutable: '/rt/mipgen',
           exonExtractScript: '/rt/exons.sh',
-          ucscTrackGenerator: '/rt/track.py',
-          binCreationScript: '/rt/bins.py',
           bigGenePredToGenePredExecutable: '/rt/bgp',
           mailActive: true,
           smtpServer: 'smtp.rt.example',

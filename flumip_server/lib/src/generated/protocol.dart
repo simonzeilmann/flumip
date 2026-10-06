@@ -1084,20 +1084,6 @@ class Protocol extends _is.DatabaseSerializationManager {
               '\'/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh\'',
         ),
         _isp.ColumnDefinition(
-          name: 'ucscTrackGenerator',
-          columnType: _isp.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'/opt/flumip/MIPGEN/tools/generate_ucsc_track.py\'',
-        ),
-        _isp.ColumnDefinition(
-          name: 'binCreationScript',
-          columnType: _isp.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py\'',
-        ),
-        _isp.ColumnDefinition(
           name: 'bigGenePredToGenePredExecutable',
           columnType: _isp.ColumnType.text,
           isNullable: false,
