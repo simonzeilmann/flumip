@@ -68,12 +68,10 @@ class DownloadRoute extends Route {
     // any of them would let somebody enumerate projects, or test whether a file
     // exists in one that is not theirs.
     //
-    // It is 403 because **FlutterRoute swallows 404s**: it installs a fallback
-    // that answers any 404 with `index.html` and a 200, so a refused download
-    // would arrive as the app's own HTML under the requested file name. The
-    // bytes were never at risk — the refusal happens first — but the client
-    // could not tell a failure from a file, and would "download" a copy of the
-    // page. Any status other than 404 passes through untouched.
+    // It was made 403 rather than 404 because FlutterRoute used to swallow every
+    // 404 on the server and answer it with `index.html` and a 200. AppRoute
+    // fixed that, so a 404 would now arrive intact, but there is no reason to
+    // change a status clients already handle.
     final refused = Response.forbidden(
       body: Body.fromString('File not available'),
     );
