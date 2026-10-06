@@ -4,6 +4,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/ucsc_track.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';
 
@@ -11,6 +12,7 @@ import '../support/matchers.dart';
 
 import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_process_runner.dart';
+import '../support/mipgen_output.dart';
 import '../support/seed.dart';
 import '../support/temp_dir.dart';
 
@@ -94,7 +96,7 @@ void main() {
       final p = await prepare(withGenome: false, genes: ['BRCA1']);
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('No genome found in project'),
+        throwsMessage('This project has no genome yet.'),
       );
     }, tags: ['unit']);
 
@@ -104,7 +106,7 @@ void main() {
         final p = await prepare(refPath: null, genes: ['BRCA1']);
         expect(
           () => mipgenService.createBedFile(session, p.id),
-          throwsMessage('No reference path found in genome'),
+          throwsMessage('has no gene annotation file'),
         );
       },
       tags: ['unit'],
@@ -114,16 +116,28 @@ void main() {
       final p = await prepare();
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('No genes found in project'),
+        throwsMessage('This project has no genes yet.'),
       );
     }, tags: ['unit']);
 
-    test('createBedFile throws when the exon script fails', () async {
+    // ⚠️ Two tests, because these used to be one message for two causes — and
+    // the shared wording sent whoever read it off checking gene symbols when
+    // the real problem was a path in Settings.
+    test('createBedFile blames the script when the script fails', () async {
       final p = await prepare(genes: ['BRCA1']);
       fake.stubRun('exon-script', exitCode: 1, stdout: '');
       expect(
         () => mipgenService.createBedFile(session, p.id),
-        throwsMessage('The supplied genes cannot be found'),
+        throwsMessage('The gene lookup did not run'),
+      );
+    }, tags: ['unit']);
+
+    test('createBedFile blames the genes when nothing matched', () async {
+      final p = await prepare(genes: ['BRCA1']);
+      fake.stubRun('exon-script', exitCode: 0, stdout: '');
+      expect(
+        () => mipgenService.createBedFile(session, p.id),
+        throwsMessage('None of these genes were found'),
       );
     }, tags: ['unit']);
   });
@@ -171,6 +185,74 @@ void main() {
       expect(reloaded.active, isTrue);
     }, tags: ['unit']);
 
+    /// A project with TRF switched on, ready to run, with the tools directory
+    /// at [toolsDir].
+    Future<Project> seedTrfProject(String toolsDir) async {
+      final base = createTempDir('trf');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+        toolsDir: toolsDir,
+      );
+      final options = await ProjectOptions.db.insertRow(
+        session,
+        ProjectOptions(armLengths: '', trf: true),
+      );
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
+      return seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+      );
+    }
+
+    test('generateMips hands mipgen the TRF wrapper, not trf', () async {
+      // Upstream mipgen rejects the trf that Ubuntu ships; the wrapper is what
+      // makes it acceptable without modifying mipgen.
+      final tools = createTempDir('tools');
+      File('${tools.path}/mipgen-trf').writeAsStringSync('#!/bin/sh\n');
+      final project = await seedTrfProject(tools.path);
+      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen\n');
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final args = fake.startCalls
+          .firstWhere((c) => c.executable == 'mipgen-exe')
+          .arguments;
+      expect(args[args.indexOf('-trf') + 1], '${tools.path}/mipgen-trf');
+    }, tags: ['unit']);
+
+    test(
+      'generateMips refuses TRF in words when the wrapper is missing',
+      () async {
+        final project = await seedTrfProject(createTempDir('tools').path);
+
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsA(
+            isA<FlumipFileNotFoundException>().having(
+              (e) => e.message,
+              'message',
+              contains('setup-mipgen.sh'),
+            ),
+          ),
+        );
+        expect(
+          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+          isEmpty,
+        );
+      },
+      tags: ['unit'],
+    );
+
     test('generateMips refuses a project with no genome, in words', () async {
       // It used to dereference project.genome! and reach the user as a 500,
       // while createBedFile checked the very same thing properly.
@@ -186,7 +268,7 @@ void main() {
       expect(
         () =>
             NoScheduleMipgenService().generateMips(session, project.id!, false),
-        throwsMessage('No genome found in project'),
+        throwsMessage('This project has no genome yet.'),
       );
     }, tags: ['unit']);
 
@@ -248,7 +330,7 @@ void main() {
       expect(
         () =>
             NoScheduleMipgenService().generateMips(session, project.id!, false),
-        throwsMessage('No fasta path found in genome'),
+        throwsMessage('has no sequence file'),
       );
     }, tags: ['unit']);
 
@@ -344,63 +426,59 @@ void main() {
       tags: ['unit'],
     );
 
-    test(
-      'generateMips refuses to run when the chosen SNP is not ready',
-      () async {
-        // ⚠️ A behaviour change, and the point of it. The old code simply left
-        // `-snp_file` off the command line when the paths were empty, so the run
-        // went ahead and produced a perfectly plausible set of MIPs designed
-        // without the masking the user asked for — with nothing in the result to
-        // say so. Now that an SNP can fail to import or be deleted out from under
-        // a project, that is reachable in normal use.
-        final base = createTempDir('genmips');
-        await overrideSettingsDirs(
-          session,
-          projectDir: base.path,
-          mipgenExecutable: 'mipgen-exe',
-        );
-        final options = await seedOptions(session);
-        final genome = await seedGenome(
-          session,
-          name: 'hg38',
-          fastaPath: '/data/hg38.fa',
-        );
-        final snp = await seedSnp(
-          session,
-          name: 'broken panel',
-          genome: genome.id,
-          custom: true,
-          status: SnpImportStatus.failed,
-          vcfPath: '',
-          tbiPath: '',
-        );
-        final project = await seedProject(
-          session,
-          name: 'demo',
-          options: options.id!,
-          folderName: 'proj',
-          genome: genome.id,
-          snp: snp.id,
-        );
-        Directory('${base.path}/proj').createSync(recursive: true);
+    test('generateMips refuses to run when the chosen SNP is not ready', () async {
+      // ⚠️ A behaviour change, and the point of it. The old code simply left
+      // `-snp_file` off the command line when the paths were empty, so the run
+      // went ahead and produced a perfectly plausible set of MIPs designed
+      // without the masking the user asked for — with nothing in the result to
+      // say so. Now that an SNP can fail to import or be deleted out from under
+      // a project, that is reachable in normal use.
+      final base = createTempDir('genmips');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      final options = await seedOptions(session);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      final snp = await seedSnp(
+        session,
+        name: 'broken panel',
+        genome: genome.id,
+        custom: true,
+        status: SnpImportStatus.failed,
+        vcfPath: '',
+        tbiPath: '',
+      );
+      final project = await seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+        snp: snp.id,
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
 
-        await expectLater(
-          NoScheduleMipgenService().generateMips(session, project.id!, false),
-          throwsA(
-            isA<ArgumentException>().having(
-              (e) => e.message,
-              'message',
-              contains('broken panel'),
-            ),
+      await expectLater(
+        NoScheduleMipgenService().generateMips(session, project.id!, false),
+        throwsA(
+          isA<ArgumentException>().having(
+            (e) => e.message,
+            'message',
+            contains('broken panel'),
           ),
-        );
-        expect(
-          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
-          isEmpty,
-        );
-      },
-      tags: ['unit'],
-    );
+        ),
+      );
+      expect(
+        fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+        isEmpty,
+      );
+    }, tags: ['unit']);
   });
 
   withServerpod('MipgenService.mipgenIsFinished', (sessionBuilder, endpoints) {
@@ -408,13 +486,21 @@ void main() {
     var session = sessionBuilder.build();
     final mipgenService = sl<MipgenService>();
 
-    Future<({int id, String dir})> prepare({required bool withProgress}) async {
+    /// Seeds an active project and, when asked, the output of a run.
+    ///
+    /// ⚠️ `withProgress: true` writes a *complete* run: a progress file that
+    /// reaches mipgen's own completion marker and a design whose rows all carry
+    /// their twenty fields. It used to write the single line `done`, which is
+    /// what a run cut short leaves behind — so every test here that meant
+    /// "finished successfully" was in fact asserting success on the exact
+    /// output [MipgenService.designProblem] now refuses.
+    Future<({int id, String dir})> prepare({
+      required bool withProgress,
+      String? progress,
+      String? pickedMips,
+    }) async {
       final base = createTempDir('finish');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        ucscTrackGenerator: 'ucsc-gen',
-      );
+      await overrideSettingsDirs(session, projectDir: base.path);
       final project = await seedProject(
         session,
         name: 'demo',
@@ -427,7 +513,12 @@ void main() {
       final dir = '${base.path}/proj';
       Directory(dir).createSync(recursive: true);
       if (withProgress) {
-        File('$dir/run.progress.txt').writeAsStringSync('done\n');
+        File(
+          '$dir/run.progress.txt',
+        ).writeAsStringSync(progress ?? completeProgress);
+        File(
+          '$dir/demo.$pickedMipsSuffix',
+        ).writeAsStringSync(pickedMips ?? completeDesign);
       }
       return (id: project.id!, dir: dir);
     }
@@ -490,7 +581,6 @@ void main() {
 
     test('finalizes successfully and generates the UCSC track', () async {
       final p = await prepare(withProgress: true);
-      fake.stubRun('python', exitCode: 0);
       await mipgenService.mipgenIsFinished(
         session,
         await ProjectService().getProject(session, p.id),
@@ -500,8 +590,11 @@ void main() {
       expect(project.active, isFalse);
       expect(project.pid, 0);
       expect(project.completedIn, isNotNull);
-      // The UCSC track generator was invoked via python.
-      expect(fake.lastFor('python'), isNotNull);
+      // The UCSC track was written beside the design.
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isTrue,
+      );
     }, tags: ['unit']);
 
     test('a failed UCSC track is a warning, not a failed project', () async {
@@ -511,7 +604,8 @@ void main() {
       // file generated *after* them. Reporting that as a failed run sends people
       // looking for results they already have.
       final p = await prepare(withProgress: true);
-      fake.runError = Exception('python blew up');
+      // A directory where the track file should go makes writing it fail.
+      Directory('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').createSync();
 
       await mipgenService.mipgenIsFinished(
         session,
@@ -523,7 +617,7 @@ void main() {
       expect(project.pid, 0);
       expect(project.error, isEmpty);
       expect(project.warning, contains('UCSC track'));
-      expect(project.warning, contains('python blew up'));
+      expect(project.warning, contains('Cannot open file'));
       // Still a completed run.
       expect(project.completedIn, isNotNull);
     }, tags: ['unit']);
@@ -542,6 +636,75 @@ void main() {
       expect(project.pid, 0);
       expect(project.error, contains('MIP generation failed'));
       expect(project.warning, isEmpty);
+    }, tags: ['unit']);
+
+    test('a design cut short is a failed project, not a complete one', () async {
+      // ⚠️ The bug this check exists for. Everything here says success by the
+      // old test — mipgen is gone, a progress file is there and reaches its own
+      // completion marker — and the design is still missing a field off its
+      // last row, because the run was killed while writing it.
+      final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.active, isFalse);
+      expect(project.pid, 0);
+      expect(project.error, contains('should not be used'));
+      // Says which row, so the file can be opened at the same place.
+      expect(project.error, contains('row 3'));
+      // ⚠️ And it says what to do about it. The tile and the email show this
+      // string and nothing else, so a diagnosis with no next step strands the
+      // reader.
+      expect(project.error, contains('Generate the MIPs again'));
+      expect(project.error, contains(mipgenLogName));
+      // ⚠️ And it is a *failure*, not a warning about the track. Reporting this
+      // as "the MIPs were designed, but the UCSC track could not be built" is
+      // exactly how an incomplete design went unnoticed.
+      expect(project.warning, isEmpty);
+    }, tags: ['unit']);
+
+    test('an incomplete design gets no UCSC track', () async {
+      // No point, and worse than no point: the track would be built from the
+      // same truncated file, so it fails too and its complaint is what people
+      // see instead of the real one.
+      final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isFalse,
+      );
+    }, tags: ['unit']);
+
+    test('a run that stopped before picking is a failed project', () async {
+      // The other ending: the file mipgen wrote is intact as far as it goes,
+      // and only its progress file shows it never reached the end.
+      final p = await prepare(
+        withProgress: true,
+        progress: interruptedProgress,
+      );
+
+      await mipgenService.mipgenIsFinished(
+        session,
+        await ProjectService().getProject(session, p.id),
+      );
+
+      final project = await ProjectService().getProject(session, p.id);
+      expect(project.active, isFalse);
+      expect(project.error, contains('interrupted before it finished'));
+      expect(project.error, contains('Generate the MIPs again'));
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isFalse,
+      );
     }, tags: ['unit']);
   });
 }

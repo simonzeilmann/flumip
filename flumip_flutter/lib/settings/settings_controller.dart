@@ -37,30 +37,19 @@ enum SettingsView {
 /// the write half only mean anything together — see the warnings there.
 class SettingsController extends ChangeNotifier {
   SettingsController({
-    required Future<UserSettingsDto> Function() loadAccess,
-    required Future<Settings> Function(String password) loadSettings,
-    required Future<void> Function(String password, Settings settings)
-    saveSettings,
-    required Future<void> Function(String password, String smtpPassword)
-    setSmtpPassword,
-    required Future<void> Function(String password, String secret)
-    setOidcClientSecret,
-    required Future<bool> Function(String password) smtpPasswordConfigured,
-    required Future<AuthAdminStatusDto> Function(String password)
-    loadAuthStatus,
-    required Future<void> Function(String password, String to) sendTestMail,
-    required void Function() signOut,
-    Listenable? auth,
-  }) : _loadAccess = loadAccess,
-       _loadSettings = loadSettings,
-       _saveSettings = saveSettings,
-       _setSmtpPassword = setSmtpPassword,
-       _setOidcClientSecret = setOidcClientSecret,
-       _smtpPasswordConfigured = smtpPasswordConfigured,
-       _loadAuthStatus = loadAuthStatus,
-       _sendTestMail = sendTestMail,
-       _signOut = signOut,
-       _auth = auth {
+    required this._loadAccess,
+    required this._loadSettings,
+    required this._saveSettings,
+    required this._setSmtpPassword,
+    required this._setOidcClientSecret,
+    required this._setSettingsPassword,
+    required this._smtpPasswordConfigured,
+    required this._settingsPasswordIsDefault,
+    required this._loadAuthStatus,
+    required this._sendTestMail,
+    required this._signOut,
+    this._auth,
+  }) {
     // ⚠️ Asked again whenever sign-in state changes, not just once.
     //
     // TabBarView builds all three tabs when the app starts, so the first answer
@@ -78,7 +67,10 @@ class SettingsController extends ChangeNotifier {
   _setSmtpPassword;
   final Future<void> Function(String password, String secret)
   _setOidcClientSecret;
+  final Future<void> Function(String password, String newPassword)
+  _setSettingsPassword;
   final Future<bool> Function(String password) _smtpPasswordConfigured;
+  final Future<bool> Function(String password) _settingsPasswordIsDefault;
   final Future<AuthAdminStatusDto> Function(String password) _loadAuthStatus;
   final Future<void> Function(String password, String to) _sendTestMail;
   final void Function() _signOut;
@@ -93,6 +85,7 @@ class SettingsController extends ChangeNotifier {
   Settings? _settings;
   AuthAdminStatusDto? _authStatus;
   bool _smtpConfigured = false;
+  bool _passwordIsDefault = false;
   String? _errorMessage;
   bool _disposed = false;
 
@@ -101,6 +94,13 @@ class SettingsController extends ChangeNotifier {
   Settings? get settings => _settings;
   AuthAdminStatusDto? get authStatus => _authStatus;
   bool get smtpPasswordConfigured => _smtpConfigured;
+
+  /// Whether the settings password is still the shipped `changeme`.
+  ///
+  /// The tab warns when it is. Nothing used to warn, because the password was
+  /// visible in its own box and an administrator could see for themselves; now
+  /// that only a hash is stored, this is what replaces that.
+  bool get settingsPasswordIsDefault => _passwordIsDefault;
   String? get errorMessage => _errorMessage;
 
   /// One-off reports — the tab turns these into snack bars.
@@ -151,11 +151,14 @@ class SettingsController extends ChangeNotifier {
       _notify();
       await _refreshAuthStatus();
       await _refreshSmtpPasswordStatus();
-    } on ArgumentException catch (e) {
-      _errorMessage = e.message;
-      _notify();
+      await _refreshSettingsPasswordStatus();
     } catch (e) {
-      _errorMessage = '$e';
+      // ⚠️ `describeError`, never `'$e'`. A typed Serverpod exception stringifies
+      // as `ArgumentException(message: …)` — the class name, the wrapper and the
+      // sentence the server wrote, all shown to whoever typed the password. This
+      // tab was the last place still doing that; the rest of the app has gone
+      // through `describeError` since the project banners were written.
+      _errorMessage = describeError(e);
       _notify();
     }
   }
@@ -187,6 +190,23 @@ class SettingsController extends ChangeNotifier {
         form.oidcClientSecret.clear();
       }
 
+      // ⚠️ Before the settings save, not after, and for two reasons.
+      //
+      // The credential this whole method authenticates with is
+      // `form.password.text`, so the moment the server accepts a new one this
+      // has to move over — the settings save immediately below is the first
+      // thing that would otherwise present a password that no longer works.
+      //
+      // And the save has an early return: turning sign-in off ends every
+      // session, including this one, and gives up on everything after it.
+      // Changing the password at the end would mean an administrator who did
+      // both in one save silently got only one.
+      if (form.newPassword.text.isNotEmpty) {
+        await _setSettingsPassword(form.password.text, form.newPassword.text);
+        form.password.text = form.newPassword.text;
+        form.newPassword.clear();
+      }
+
       // Captured before the save, because that is what makes this a transition
       // rather than just a value.
       final wasRequiringLogin = _settings!.loginRequired;
@@ -207,16 +227,14 @@ class SettingsController extends ChangeNotifier {
 
       _errorMessage = null;
       _settings = updated;
-      // The password may have just been changed; keep the one we authenticate
-      // with in sync so subsequent saves and test mails still work.
-      form.password.text = updated.settingsPassword;
       _notify();
 
       await _refreshAuthStatus();
       await _refreshSmtpPasswordStatus();
+      await _refreshSettingsPasswordStatus();
       _say('Settings updated successfully');
     } catch (e) {
-      _errorMessage = '$e';
+      _errorMessage = describeError(e);
       _notify();
     }
   }
@@ -224,7 +242,7 @@ class SettingsController extends ChangeNotifier {
   Future<void> sendTestMail() async {
     final to = form.testMail.text.trim();
     if (to.isEmpty) {
-      _errorMessage = 'Enter a recipient address for the test email';
+      _errorMessage = 'Enter an address to send the test email to.';
       _notify();
       return;
     }
@@ -234,7 +252,7 @@ class SettingsController extends ChangeNotifier {
       _notify();
       _say('Test email sent to $to');
     } catch (e) {
-      _errorMessage = '$e';
+      _errorMessage = describeError(e);
       _notify();
     }
   }
@@ -261,6 +279,17 @@ class SettingsController extends ChangeNotifier {
       // Not knowing is not the same as knowing there is none, but the only cost
       // of guessing low here is slightly more cautious wording.
       _smtpConfigured = false;
+    }
+    _notify();
+  }
+
+  Future<void> _refreshSettingsPasswordStatus() async {
+    try {
+      _passwordIsDefault = await _settingsPasswordIsDefault(form.password.text);
+    } catch (_) {
+      // Failing quiet, the same way as the SMTP status: a warning nobody can act
+      // on because the call behind it failed is worse than no warning.
+      _passwordIsDefault = false;
     }
     _notify();
   }

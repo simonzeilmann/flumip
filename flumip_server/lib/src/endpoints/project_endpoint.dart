@@ -26,7 +26,12 @@ class ProjectEndpoint extends FlumipEndpoint {
   ]) async {
     session.log("Creating project with name: $name", level: LogLevel.info);
     try {
-      return projectService.createProject(session, name, options, description);
+      return await projectService.createProject(
+        session,
+        name,
+        options,
+        description,
+      );
     } catch (e) {
       session.log(
         "Error creating project with name: $name",
@@ -45,7 +50,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Deleting project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.deleteProject(session, id);
+      return await projectService.deleteProject(session, id);
     } catch (e) {
       session.log(
         "Error deleting project with ID: $id",
@@ -66,7 +71,7 @@ class ProjectEndpoint extends FlumipEndpoint {
       // Filtered, not all of them. Foreign projects are dropped here rather than
       // refused on open, so a user simply never sees work that is not theirs and
       // ProjectAccessDeniedException stays a thing only a hand-built request can hit.
-      return authz.visibleProjects(session);
+      return await authz.visibleProjects(session);
     } catch (e) {
       session.log(
         "Error retrieving all projects",
@@ -86,7 +91,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Retrieving project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.getProject(session, id);
+      return await projectService.getProject(session, id);
     } catch (e) {
       session.log(
         "Error retrieving project with ID: $id",
@@ -106,7 +111,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Adding gene to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.addGeneToProject(session, id, gene);
+      return await projectService.addGeneToProject(session, id, gene);
     } catch (e) {
       session.log(
         "Error adding gene to project with ID: $id",
@@ -133,7 +138,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, id);
-      return projectService.removeGeneFromProject(session, id, gene);
+      return await projectService.removeGeneFromProject(session, id, gene);
     } catch (e) {
       session.log(
         "Error removing gene from project with ID: $id",
@@ -157,7 +162,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Adding genes to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.addGenesToProject(session, id, genes);
+      return await projectService.addGenesToProject(session, id, genes);
     } catch (e) {
       session.log(
         "Error adding genes to project with ID: $id",
@@ -177,7 +182,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Setting gene to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.setGenomeById(session, id, genomeId);
+      return await projectService.setGenomeById(session, id, genomeId);
     } catch (e) {
       session.log(
         "Error setting gene to project with ID: $id",
@@ -204,7 +209,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, id);
-      return projectService.setEmailNotification(session, id, enabled);
+      return await projectService.setEmailNotification(session, id, enabled);
     } catch (e) {
       session.log(
         "Error setting email notification for project with ID: $id",
@@ -275,6 +280,71 @@ class ProjectEndpoint extends FlumipEndpoint {
     }
   }
 
+  /// Moves a project into a department, or out of every department with null.
+  ///
+  /// ⚠️ **Not admin-gated, unlike [setProjectOwner]** — the owner of a project
+  /// decides which of *their own* groups it belongs to, and the service refuses
+  /// a department the caller is not in. Requiring an admin would put a lab
+  /// administrator in the loop for something the person who made the project
+  /// already knows the answer to.
+  ///
+  /// \param session The current session.
+  /// \param id The project.
+  /// \param department The group name, or null to remove it.
+  Future<void> setProjectDepartment(
+    Session session,
+    int id,
+    String? department,
+  ) async {
+    session.log(
+      "Setting department of project $id to ${department ?? 'none'}",
+      level: LogLevel.info,
+    );
+    try {
+      await requireProject(session, id);
+      return await projectService.setDepartment(session, id, department);
+    } on ArgumentException {
+      rethrow;
+    } on ProjectAccessDeniedException {
+      rethrow;
+    } catch (e) {
+      session.log(
+        "Error setting department of project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// The departments the caller may put a project into.
+  ///
+  /// Their own groups, as the identity provider reported them at sign-in.
+  /// **Empty when no department claim is configured**, which is the default —
+  /// the app hides the control entirely in that case rather than offering a
+  /// picker with nothing in it.
+  ///
+  /// An administrator additionally gets every department already in use, so
+  /// that they can tidy up after a group is renamed without being a member of
+  /// it.
+  ///
+  /// Leaks nothing an ordinary caller did not already tell us: these are the
+  /// groups the provider put in their own token.
+  ///
+  /// \param session The current session.
+  Future<List<String>> assignableDepartments(Session session) async {
+    try {
+      return await projectService.assignableDepartments(session);
+    } catch (e) {
+      session.log(
+        "Error listing assignable departments",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
   /// Whether an administrator has switched mail on for this install.
   ///
   /// The per-project notification switch is meaningless without it, so the app
@@ -300,7 +370,7 @@ class ProjectEndpoint extends FlumipEndpoint {
     session.log("Setting snp to project with ID: $id", level: LogLevel.info);
     try {
       await requireProject(session, id);
-      return projectService.setSnpById(session, id, snpId);
+      return await projectService.setSnpById(session, id, snpId);
     } catch (e) {
       session.log(
         "Error setting snp to project with ID: $id",

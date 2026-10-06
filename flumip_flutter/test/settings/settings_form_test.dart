@@ -17,7 +17,6 @@ Settings settingsFixture({
   bool loginRequired = true,
   bool demoMode = true,
   int demoModeRetentionHours = 72,
-  String settingsPassword = 'hunter2',
   String oidcIssuer = 'https://id.example',
 }) => Settings(
   id: id,
@@ -29,9 +28,7 @@ Settings settingsFixture({
   toolsDir: '/opt/flumip/tools',
   mipgenExecutable: '/opt/flumip/MIPGEN/mipgen',
   exonExtractScript: '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
-  ucscTrackGenerator: '/opt/flumip/MIPGEN/tools/generate_ucsc_track.pl',
   bigGenePredToGenePredExecutable: '/opt/flumip/tools/bigGenePredToGenePred',
-  binCreationScript: '/opt/flumip/tools/make_bins.sh',
   mailActive: mailActive,
   smtpServer: 'smtp.example',
   smtpPort: smtpPort,
@@ -39,7 +36,6 @@ Settings settingsFixture({
   smtpFrom: 'flumip@example',
   startTLS: startTLS,
   loginRequired: loginRequired,
-  settingsPassword: settingsPassword,
   demoMode: demoMode,
   demoModeRetentionHours: demoModeRetentionHours,
   oidcIssuer: oidcIssuer,
@@ -135,20 +131,20 @@ void main() {
       // authenticates with. A load that reset it would sign the admin out of
       // their own settings the moment the settings arrived.
       form.password.text = 'typed at the gate';
-      form.load(settingsFixture(settingsPassword: 'stored'));
+      form.load(settingsFixture());
 
       expect(form.password.text, 'typed at the gate');
     });
 
-    test('⚠️ the new-password field is round-tripped, not write-only', () {
-      // Unlike the two secrets. The current value is loaded in and sent back
-      // verbatim, so emptying the box sets an empty password — which is why its
-      // helper text must not say "leave empty to keep it".
-      form.load(settingsFixture(settingsPassword: 'stored'));
-      expect(form.newPassword.text, 'stored');
+    test('⚠️ the new-password field is write-only', () {
+      // Like the two secrets, and unlike how this field used to work: the server
+      // stores only a hash, so there is nothing to load and an empty box has to
+      // mean "keep the current password". A load must clear anything half-typed
+      // rather than leave it to be sent on the next save.
+      form.newPassword.text = 'half typed';
+      form.load(settingsFixture());
 
-      form.newPassword.text = '';
-      expect(form.toSettings(id: 1).settingsPassword, isEmpty);
+      expect(form.newPassword.text, isEmpty);
     });
   });
 

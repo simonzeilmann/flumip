@@ -66,7 +66,7 @@ class SettingsEndpoint extends Endpoint {
   Future<Settings> getSettings(Session session, String? password) async {
     session.log("Retrieving settings", level: LogLevel.info);
     try {
-      return settingsService.getSettingsExternal(session, password);
+      return await settingsService.getSettingsExternal(session, password);
     } on ArgumentException {
       rethrow;
     } catch (e) {
@@ -215,6 +215,55 @@ class SettingsEndpoint extends Endpoint {
     await settingsService.requireAdmin(session, password);
     final settings = await settingsService.getSettings(session);
     return settings.smtpPassword?.isNotEmpty ?? false;
+  }
+
+  /// Changes the settings password, which is stored hashed and never sent back.
+  ///
+  /// Write-only for the same reason as [setSmtpPassword] and
+  /// [setOidcClientSecret] — an ordinary field is serialized on every
+  /// `getSettings` — but with one difference that matters: an empty
+  /// [newPassword] is **refused**, not treated as "clear it". See
+  /// `SettingsService.setSettingsPassword`.
+  ///
+  /// ⚠️ Authenticated with the *old* password (or an admin session). The caller
+  /// must then start using the new one for subsequent calls; nothing about this
+  /// endpoint's result does that for it.
+  ///
+  /// \param session The current session.
+  /// \param password The current settings password, or null for an admin session.
+  /// \param newPassword The replacement. Must not be empty.
+  Future<void> setSettingsPassword(
+    Session session,
+    String? password,
+    String newPassword,
+  ) async {
+    session.log("Changing the settings password", level: LogLevel.info);
+    try {
+      await settingsService.requireAdmin(session, password);
+      await settingsService.setSettingsPassword(session, newPassword);
+    } on ArgumentException {
+      rethrow;
+    } catch (e) {
+      session.log(
+        "Error changing the settings password",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Whether the settings password is still the shipped default.
+  ///
+  /// Hashing removed the only thing that used to make that visible — the
+  /// password sitting readable in its own box — so the tab asks instead and
+  /// warns. See `SettingsService.settingsPasswordIsDefault`.
+  Future<bool> settingsPasswordIsDefault(
+    Session session,
+    String? password,
+  ) async {
+    await settingsService.requireAdmin(session, password);
+    return settingsService.settingsPasswordIsDefault(session);
   }
 
   /// Everything the settings tab needs to show about the SSO setup that is not

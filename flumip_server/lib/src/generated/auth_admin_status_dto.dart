@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:flumip_server/src/generated/protocol.dart' as _i2;
+import 'package:flumip_server/src/generated/protocol.dart' as _ijyeyqvr;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// Everything the settings tab needs to show about the SSO setup that is not
 /// itself a setting. No table — transport only.
@@ -26,7 +26,7 @@ import 'package:flumip_server/src/generated/protocol.dart' as _i2;
 /// taken over, so the tab can render them read-only instead of letting an admin
 /// save a value that silently has no effect.
 abstract class AuthAdminStatusDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   AuthAdminStatusDto._({
     bool? enabled,
     bool? enforcing,
@@ -59,22 +59,22 @@ abstract class AuthAdminStatusDto
     return AuthAdminStatusDto(
       enabled: jsonSerialization['enabled'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
       enforcing: jsonSerialization['enforcing'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['enforcing']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['enforcing']),
       secretConfigured: jsonSerialization['secretConfigured'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _is.BoolJsonExtension.fromJson(
               jsonSerialization['secretConfigured'],
             ),
-      envOverrides: _i2.Protocol().deserialize<List<String>>(
+      envOverrides: _ijyeyqvr.Protocol().deserialize<List<String>>(
         jsonSerialization['envOverrides'],
       ),
       redirectUri: jsonSerialization['redirectUri'] as String?,
       discoveryOk: jsonSerialization['discoveryOk'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['discoveryOk']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['discoveryOk']),
       discoveryError: jsonSerialization['discoveryError'] as String?,
       authorizationEndpoint:
           jsonSerialization['authorizationEndpoint'] as String?,
@@ -102,7 +102,7 @@ abstract class AuthAdminStatusDto
 
   /// Returns a shallow copy of this [AuthAdminStatusDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   AuthAdminStatusDto copyWith({
     bool? enabled,
     bool? enforcing,
@@ -150,7 +150,7 @@ abstract class AuthAdminStatusDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -181,7 +181,7 @@ class _AuthAdminStatusDtoImpl extends AuthAdminStatusDto {
 
   /// Returns a shallow copy of this [AuthAdminStatusDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   AuthAdminStatusDto copyWith({
     bool? enabled,

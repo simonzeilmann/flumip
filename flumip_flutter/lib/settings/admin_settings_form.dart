@@ -24,6 +24,7 @@ class AdminSettingsForm extends StatelessWidget {
     required this.form,
     required this.authStatus,
     required this.smtpPasswordConfigured,
+    required this.settingsPasswordIsDefault,
     required this.onChanged,
     required this.onTestConnection,
     required this.onSendTestMail,
@@ -42,6 +43,13 @@ class AdminSettingsForm extends StatelessWidget {
   /// indistinguishable from no password at all — and an admin would retype one
   /// every time they touched an unrelated setting.
   final bool smtpPasswordConfigured;
+
+  /// Whether the settings password is still the shipped `changeme`.
+  ///
+  /// Drives the warning under the password box. It has to be told, for the same
+  /// reason as [smtpPasswordConfigured]: only a hash is stored, so the form
+  /// cannot see the password and work it out.
+  final bool settingsPasswordIsDefault;
 
   final VoidCallback onChanged;
   final VoidCallback onTestConnection;
@@ -119,17 +127,10 @@ class AdminSettingsForm extends StatelessWidget {
         minChildWidth: 280,
         children: [
           _path(form.exonExtractScript, 'Exon extract script'),
-          _path(form.ucscTrackGenerator, 'UCSC track generator'),
-        ],
-      ),
-      ResponsiveRow(
-        minChildWidth: 280,
-        children: [
           _path(
             form.bigGenePredToGenePred,
             'BigGenePred to GenePred executable',
           ),
-          _path(form.binCreationScript, 'Bin creation script'),
         ],
       ),
     ],
@@ -276,6 +277,7 @@ class AdminSettingsForm extends StatelessWidget {
           publicUrlController: form.authPublicUrl,
           allowedDomainsController: form.oidcAllowedDomains,
           adminEmailsController: form.oidcAdminEmails,
+          departmentClaimController: form.oidcDepartmentClaim,
           scopesController: form.oidcScopes,
           buttonLabelController: form.oidcButtonLabel,
           status: authStatus,
@@ -292,22 +294,48 @@ class AdminSettingsForm extends StatelessWidget {
   FormSection _security(BuildContext context) => FormSection(
     title: 'Security',
     children: [
+      // ⚠️ Write-only, like the two secrets above. The save path reads `.text`,
+      // sends it and clears it, so an empty field means "keep the current
+      // password". The server stores only a hash and has nothing to show here.
       TextField(
         controller: form.newPassword,
         obscureText: true,
         enableSuggestions: false,
         autocorrect: false,
-        // ⚠️ Not a write-only field, unlike the two secrets above: the current
-        // value is loaded into it and sent back verbatim on save. So the helper
-        // must not say "leave empty to keep it" — emptying it sets an empty
-        // password.
         decoration: const InputDecoration(
           labelText: 'Settings password',
+          helperMaxLines: 3,
           helperText:
-              'Opens this tab on an install without sign-in. '
-              'Editing it here changes it when you save.',
+              'Opens this tab on an install without sign-in. Type here to '
+              'change it; leave empty to keep the current one.',
         ),
       ),
+      // Shown instead of the password itself, which used to make this obvious
+      // simply by sitting in the box above.
+      if (settingsPasswordIsDefault)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'This install still uses the default settings password. '
+                  'Anyone who knows it can configure this server.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       SwitchListTile(
         value: form.demoMode,
         title: const Text('Demo mode'),

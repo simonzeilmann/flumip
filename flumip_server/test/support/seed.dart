@@ -43,7 +43,6 @@ Future<Snp> seedSnp(
   String vcfPath = '/tmp/snp.vcf.gz',
   String tbiPath = '/tmp/snp.vcf.gz.tbi',
   String folder = '/tmp/snp',
-  bool active = true,
   bool private = false,
   int? genome,
   int? owner,
@@ -63,7 +62,6 @@ Future<Snp> seedSnp(
       vcfPath: vcfPath,
       tbiPath: tbiPath,
       folder: folder,
-      active: active,
       private: private,
       genome: genome,
       owner: owner,
@@ -165,7 +163,7 @@ Future<Settings> overrideSettingsDirs(
   String? customSnpDir,
   String? exonExtractScript,
   String? mipgenExecutable,
-  String? ucscTrackGenerator,
+  String? toolsDir,
 }) async {
   final settings = await SettingsService().getSettings(session);
   if (baseDir != null) settings.baseDir = baseDir;
@@ -174,9 +172,7 @@ Future<Settings> overrideSettingsDirs(
   if (customSnpDir != null) settings.customSnpDir = customSnpDir;
   if (exonExtractScript != null) settings.exonExtractScript = exonExtractScript;
   if (mipgenExecutable != null) settings.mipgenExecutable = mipgenExecutable;
-  if (ucscTrackGenerator != null) {
-    settings.ucscTrackGenerator = ucscTrackGenerator;
-  }
+  if (toolsDir != null) settings.toolsDir = toolsDir;
   await SettingsService().updateSettings(session, settings);
   return settings;
 }

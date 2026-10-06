@@ -3,10 +3,11 @@ name: Release build
 # Publishes the build tarball that deployment/setup-flumip.sh downloads by
 # default (https://github.com/<repo>/releases/latest/download/flumip-build.tar.gz).
 #
-# Unlike the staging/production pipelines this build is host-agnostic: it does
-# NOT pass --dart-define=API_URL or SITE_URL, so the frontend derives both from
-# the page origin at runtime (see flumip_flutter/lib/api_config.dart). That is
-# what lets one tarball be installed on any machine.
+# Like the staging/production pipelines, this build is host-agnostic: the
+# frontend derives its API and site URLs from the page origin at runtime (see
+# flumip_flutter/lib/api_config.dart), and the web server answers the API under
+# /api on its own port. That is what lets one tarball be installed on any
+# machine, behind any reverse proxy.
 #
 # Single sign-on is configured at runtime — in the Settings tab or through the
 # environment file the systemd units read (see docs/authentication.md) — so it
@@ -38,6 +39,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
       - name: Get dependencies
         run: |
@@ -66,11 +68,21 @@ jobs:
         run: |
           cd flumip_server
           mkdir app
-          dart compile exe bin/main.dart -o app/server
+          # `dart build cli`, not `dart compile exe`. Serverpod 4 pulls in
+          # sqlite3 (transitively, via serverpod_database), which ships a
+          # native build hook; `dart compile exe` does not run build hooks, so
+          # the binary it produces is missing its native libraries and dies at
+          # runtime. `dart build cli` emits build/bundle/bin/main alongside
+          # build/bundle/lib/, and the executable resolves those libraries
+          # relative to itself — so the bundle directory has to travel intact.
+          dart build cli --target bin/main.dart --output build
+          cp -r build/bundle app/bundle
           cp -r config app/config
           cp -r migrations app/migrations
           cp -r web app/web
           cp -r ../deployment app/deployment
+          # MIT requires the notice to travel with every copy, and this is one.
+          cp ../LICENSE app/LICENSE
 
       - name: Pack build
         run: |
@@ -83,8 +95,8 @@ jobs:
           fi
           tar -czf flumip-build.tar.gz -C app .
           sha256sum flumip-build.tar.gz > flumip-build.tar.gz.sha256
-          # setup-flumip.sh rejects an archive without a top-level server binary.
-          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)server$'
+          # setup-flumip.sh rejects an archive without the bundled executable.
+          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)bundle/bin/main$'
 
       - name: Upload artifact (manual runs)
         if: github.ref_type != 'tag'

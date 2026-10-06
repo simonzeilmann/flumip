@@ -106,7 +106,9 @@ class ProjectRunPanel extends StatelessWidget {
         SwitchListTile(
           value: deleteExcessFiles,
           title: const Text('Delete intermediate files'),
-          subtitle: const Text('Saves a lot of disk space.'),
+          subtitle: const Text(
+            'Saves a lot of disk space. Turn off to keep them for debugging.',
+          ),
           contentPadding: EdgeInsets.zero,
           onChanged: onDeleteExcessFilesChanged,
         ),

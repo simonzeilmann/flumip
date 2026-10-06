@@ -20,7 +20,7 @@ class MipgenEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return mipgenService.createBedFile(session, projectID);
+      return await mipgenService.createBedFile(session, projectID);
     } on BedCreationException {
       rethrow;
     } on ArgumentException {
@@ -51,7 +51,11 @@ class MipgenEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return mipgenService.generateMips(session, projectID, deleteExcessFiles);
+      return await mipgenService.generateMips(
+        session,
+        projectID,
+        deleteExcessFiles,
+      );
     } on ArgumentException {
       rethrow;
     } on FileNotFoundException {

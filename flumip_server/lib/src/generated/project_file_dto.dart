@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// One downloadable file in a project's directory. No table — transport only.
 ///
@@ -23,16 +23,11 @@ import 'package:serverpod/serverpod.dart' as _i1;
 /// the `/download/...` web route, which can send a file far larger than a
 /// serialised endpoint response should ever hold.
 abstract class ProjectFileDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  ProjectFileDto._({
-    required this.name,
-    required this.sizeBytes,
-  });
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  ProjectFileDto._({required this.name, required this.sizeBytes});
 
-  factory ProjectFileDto({
-    required String name,
-    required int sizeBytes,
-  }) = _ProjectFileDtoImpl;
+  factory ProjectFileDto({required String name, required int sizeBytes}) =
+      _ProjectFileDtoImpl;
 
   factory ProjectFileDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return ProjectFileDto(
@@ -47,11 +42,8 @@ abstract class ProjectFileDto
 
   /// Returns a shallow copy of this [ProjectFileDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  ProjectFileDto copyWith({
-    String? name,
-    int? sizeBytes,
-  });
+  @_is.useResult
+  ProjectFileDto copyWith({String? name, int? sizeBytes});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -72,27 +64,19 @@ abstract class ProjectFileDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _ProjectFileDtoImpl extends ProjectFileDto {
-  _ProjectFileDtoImpl({
-    required String name,
-    required int sizeBytes,
-  }) : super._(
-         name: name,
-         sizeBytes: sizeBytes,
-       );
+  _ProjectFileDtoImpl({required String name, required int sizeBytes})
+    : super._(name: name, sizeBytes: sizeBytes);
 
   /// Returns a shallow copy of this [ProjectFileDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  ProjectFileDto copyWith({
-    String? name,
-    int? sizeBytes,
-  }) {
+  ProjectFileDto copyWith({String? name, int? sizeBytes}) {
     return ProjectFileDto(
       name: name ?? this.name,
       sizeBytes: sizeBytes ?? this.sizeBytes,

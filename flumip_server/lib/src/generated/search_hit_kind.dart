@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// Which of the three things a search hit is. No table.
 ///
@@ -19,7 +19,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 ///
 /// `serialized: byName` for the same reason `SnpImportStatus` uses it: reordering
 /// these values must not silently repoint traffic already on the wire.
-enum SearchHitKind implements _i1.SerializableModel {
+enum SearchHitKind implements _is.SerializableModel {
   /// A row of the projects tab.
   project,
 

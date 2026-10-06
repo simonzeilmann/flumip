@@ -16,7 +16,6 @@ String describeError(Object error) {
   if (error is FlumipFileNotFoundException) return error.message;
   if (error is ArgumentException) return error.message;
   if (error is BedCreationException) return error.message;
-  if (error is GeneExtractionException) return error.message;
   return '$error';
 }
 

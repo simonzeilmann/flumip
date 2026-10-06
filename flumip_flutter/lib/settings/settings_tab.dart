@@ -85,6 +85,7 @@ class _SettingsTabState extends State<SettingsTab> {
           form: _controller.form,
           authStatus: _controller.authStatus,
           smtpPasswordConfigured: _controller.smtpPasswordConfigured,
+          settingsPasswordIsDefault: _controller.settingsPasswordIsDefault,
           onChanged: () => setState(() {}),
           onTestConnection: _controller.refreshAuthStatus,
           onSendTestMail: _controller.sendTestMail,

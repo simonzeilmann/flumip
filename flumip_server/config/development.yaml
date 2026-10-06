@@ -1,12 +1,9 @@
-# This is the configuration file for your local development environment. By
-# default, it runs a single server on port 8080. To set up your server, you will
-# need to add the name of the database you are connecting to and the user name.
-# The password for the database is stored in the config/passwords.yaml.
-#
-# When running your server locally, the server ports are the same as the public
-# facing ports.
+# Configuration for local development. Open the app at http://localhost:8082;
+# that web port also answers the API under /api. The database password is in
+# config/passwords.yaml, which you create yourself (see the top-level README).
 
-# Configuration for the main API server.
+# The API server. Serverpod always starts it, but nothing reaches it directly:
+# the app and a `flutter run` both call the API through the web port.
 apiServer:
   port: 8080
   publicHost: localhost
@@ -28,6 +25,13 @@ webServer:
   publicScheme: http
 
 # This is the database setup for your server.
+#
+# `name: postgres` — the default database — is deliberate, not a placeholder
+# left over from `serverpod create`. It is where the dev schema is, and
+# docker-compose.yaml no longer creates a separate `flumip` database to suggest
+# otherwise. Renaming it would mean re-applying all migrations to an empty
+# database and re-running "Collect genomes" and "Collect" to rebuild the genome
+# and SNP rows from disk.
 database:
   host: localhost
   port: 8090
@@ -39,3 +43,14 @@ redis:
   enabled: false
   host: localhost
   port: 8091
+
+# The largest request body the **API** server will accept, in bytes. This is the
+# framework default stated explicitly, not a change.
+#
+# ⚠️ It applies to the API server only. The web server's routes read their own
+# bodies, so `SnpUploadRoute` — where the request body *is* a multi-gigabyte VCF
+# streamed to disk — is not bounded by this. Its cap is
+# `SnpService.maxImportBytes`, enforced via `request.read(maxLength:)`. Changing
+# this number will not let larger SNP sets be uploaded, and lowering it will not
+# stop them.
+maxRequestSize: 524288

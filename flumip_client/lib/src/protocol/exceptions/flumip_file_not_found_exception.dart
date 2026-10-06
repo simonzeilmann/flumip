@@ -10,12 +10,15 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 abstract class FlumipFileNotFoundException
-    implements _i1.SerializableException, _i1.SerializableModel {
+    implements
+        _isc.SerializableException,
+        _isc.SerializableModel,
+        _isc.ProtocolSerialization {
   FlumipFileNotFoundException._({String? message})
-    : message = message ?? 'The specified file was not found.';
+    : message = message ?? 'This file is not on the server.';
 
   factory FlumipFileNotFoundException({String? message}) =
       _FlumipFileNotFoundExceptionImpl;
@@ -32,14 +35,16 @@ abstract class FlumipFileNotFoundException
 
   /// Returns a shallow copy of this [FlumipFileNotFoundException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   FlumipFileNotFoundException copyWith({String? message});
   @override
   Map<String, dynamic> toJson() {
-    return {
-      '__className__': 'FlumipFileNotFoundException',
-      'message': message,
-    };
+    return {'__className__': 'FlumipFileNotFoundException', 'message': message};
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {'__className__': 'FlumipFileNotFoundException', 'message': message};
   }
 
   @override
@@ -54,7 +59,7 @@ class _FlumipFileNotFoundExceptionImpl extends FlumipFileNotFoundException {
 
   /// Returns a shallow copy of this [FlumipFileNotFoundException]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   FlumipFileNotFoundException copyWith({String? message}) {
     return FlumipFileNotFoundException(message: message ?? this.message);

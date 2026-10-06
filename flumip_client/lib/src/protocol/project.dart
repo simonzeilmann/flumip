@@ -10,17 +10,17 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2kzrgg5;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Project implements _i1.SerializableModel {
+abstract class Project
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Project._({
     this.id,
     required this.name,
     String? description,
     this.genome,
     this.snp,
-    this.tags,
     DateTime? created,
     this.owner,
     this.department,
@@ -51,10 +51,9 @@ abstract class Project implements _i1.SerializableModel {
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -75,45 +74,44 @@ abstract class Project implements _i1.SerializableModel {
       description: jsonSerialization['description'] as String?,
       genome: jsonSerialization['genome'] as int?,
       snp: jsonSerialization['snp'] as int?,
-      tags: jsonSerialization['tags'] == null
-          ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['tags']),
       created: jsonSerialization['created'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
-      department: jsonSerialization['department'] as int?,
+      department: jsonSerialization['department'] as String?,
       genes: jsonSerialization['genes'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(
+          : _i2kzrgg5.Protocol().deserialize<List<String>>(
               jsonSerialization['genes'],
             ),
       bedFileCreated: jsonSerialization['bedFileCreated'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['bedFileCreated']),
+          : _isc.BoolJsonExtension.fromJson(
+              jsonSerialization['bedFileCreated'],
+            ),
       active: jsonSerialization['active'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['active']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['active']),
       size: jsonSerialization['size'] as int?,
       emailNotification: jsonSerialization['emailNotification'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['emailNotification'],
             ),
       options: jsonSerialization['options'] as int,
       started: jsonSerialization['started'] == null
           ? null
-          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['started']),
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['started']),
       completedIn: jsonSerialization['completedIn'] == null
           ? null
-          : _i1.DurationJsonExtension.fromJson(
+          : _isc.DurationJsonExtension.fromJson(
               jsonSerialization['completedIn'],
             ),
       error: jsonSerialization['error'] as String?,
       warning: jsonSerialization['warning'] as String?,
       cleanup: jsonSerialization['cleanup'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['cleanup']),
     );
   }
 
@@ -137,8 +135,6 @@ abstract class Project implements _i1.SerializableModel {
   /// MIPs.
   int? snp;
 
-  List<String>? tags;
-
   DateTime created;
 
   /// The FlumipUser who created the project, or null.
@@ -153,11 +149,22 @@ abstract class Project implements _i1.SerializableModel {
   /// can then reassign.
   int? owner;
 
-  /// Reserved. Nothing sets this, because no department claim is collected from
-  /// the identity provider. `projectIsAccessible` reads it, but the clause
-  /// cannot match while the caller's department is always null. Wiring it means
-  /// adding a claim name to Settings — see docs/authorization.md.
-  int? department;
+  /// The group this project belongs to, as the identity provider spells it.
+  ///
+  /// A **String**, not an id: it holds a claim value verbatim (`cardiology`,
+  /// `realm_access.roles` entry, whatever the provider sends) and there is no
+  /// table of departments to point at. It was `int?` while nothing could set
+  /// it, which is exactly the shape a claim value cannot take.
+  ///
+  /// Null means "no department", which is every project created before this
+  /// and every project on an install with no department claim configured.
+  /// `projectIsAccessible` treats null as "owner and admins only" — a
+  /// department only ever *widens* access, never narrows it.
+  ///
+  /// Set through `ProjectEndpoint.setProjectDepartment`, by the owner or an
+  /// admin. Stamped automatically at creation when the creator belongs to
+  /// exactly one group, because then there is nothing to choose.
+  String? department;
 
   List<String>? genes;
 
@@ -194,17 +201,16 @@ abstract class Project implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Project copyWith({
     int? id,
     String? name,
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -226,7 +232,32 @@ abstract class Project implements _i1.SerializableModel {
       'description': description,
       if (genome != null) 'genome': genome,
       if (snp != null) 'snp': snp,
-      if (tags != null) 'tags': tags?.toJson(),
+      'created': created.toJson(),
+      if (owner != null) 'owner': owner,
+      if (department != null) 'department': department,
+      if (genes != null) 'genes': genes?.toJson(),
+      'bedFileCreated': bedFileCreated,
+      'active': active,
+      'size': size,
+      'emailNotification': emailNotification,
+      'options': options,
+      if (started != null) 'started': started?.toJson(),
+      if (completedIn != null) 'completedIn': completedIn?.toJson(),
+      'error': error,
+      'warning': warning,
+      'cleanup': cleanup,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Project',
+      if (id != null) 'id': id,
+      'name': name,
+      'description': description,
+      if (genome != null) 'genome': genome,
+      if (snp != null) 'snp': snp,
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
@@ -246,7 +277,7 @@ abstract class Project implements _i1.SerializableModel {
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -259,10 +290,9 @@ class _ProjectImpl extends Project {
     String? description,
     int? genome,
     int? snp,
-    List<String>? tags,
     DateTime? created,
     int? owner,
-    int? department,
+    String? department,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -280,7 +310,6 @@ class _ProjectImpl extends Project {
          description: description,
          genome: genome,
          snp: snp,
-         tags: tags,
          created: created,
          owner: owner,
          department: department,
@@ -299,7 +328,7 @@ class _ProjectImpl extends Project {
 
   /// Returns a shallow copy of this [Project]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Project copyWith({
     Object? id = _Undefined,
@@ -307,7 +336,6 @@ class _ProjectImpl extends Project {
     String? description,
     Object? genome = _Undefined,
     Object? snp = _Undefined,
-    Object? tags = _Undefined,
     DateTime? created,
     Object? owner = _Undefined,
     Object? department = _Undefined,
@@ -329,10 +357,9 @@ class _ProjectImpl extends Project {
       description: description ?? this.description,
       genome: genome is int? ? genome : this.genome,
       snp: snp is int? ? snp : this.snp,
-      tags: tags is List<String>? ? tags : this.tags?.map((e0) => e0).toList(),
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
-      department: department is int? ? department : this.department,
+      department: department is String? ? department : this.department,
       genes: genes is List<String>?
           ? genes
           : this.genes?.map((e0) => e0).toList(),

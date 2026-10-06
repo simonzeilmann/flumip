@@ -13,7 +13,6 @@ fields:
   ### whose SNP was deleted fails loudly instead of quietly designing different
   ### MIPs.
   snp: int?, relation(parent=snp, onDelete=SetNull)
-  tags: List<String>?
   created: DateTime, default=now
   ### The FlumipUser who created the project, or null.
   ###
@@ -26,11 +25,22 @@ fields:
   ### the data they produced. The project falls back to unowned, which an admin
   ### can then reassign.
   owner: int?, relation(parent=flumip_user, onDelete=SetNull)
-  ### Reserved. Nothing sets this, because no department claim is collected from
-  ### the identity provider. `projectIsAccessible` reads it, but the clause
-  ### cannot match while the caller's department is always null. Wiring it means
-  ### adding a claim name to Settings — see docs/authorization.md.
-  department: int?
+  ### The group this project belongs to, as the identity provider spells it.
+  ###
+  ### A **String**, not an id: it holds a claim value verbatim (`cardiology`,
+  ### `realm_access.roles` entry, whatever the provider sends) and there is no
+  ### table of departments to point at. It was `int?` while nothing could set
+  ### it, which is exactly the shape a claim value cannot take.
+  ###
+  ### Null means "no department", which is every project created before this
+  ### and every project on an install with no department claim configured.
+  ### `projectIsAccessible` treats null as "owner and admins only" — a
+  ### department only ever *widens* access, never narrows it.
+  ###
+  ### Set through `ProjectEndpoint.setProjectDepartment`, by the owner or an
+  ### admin. Stamped automatically at creation when the creator belongs to
+  ### exactly one group, because then there is nothing to choose.
+  department: String?
   ### Unguessable token for the public `/ucsc_track/<token>` URL.
   ###
   ### serverOnly, and handed out only by `FileEndpoint.getUcscTrackToken` after

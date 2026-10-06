@@ -39,9 +39,19 @@ class GeneEditor extends StatefulWidget {
 class _GeneEditorState extends State<GeneEditor> {
   final _controller = TextEditingController();
 
+  /// ⚠️ Held so [_submit] can hand focus straight back to the field.
+  ///
+  /// Genes are added several at a time — that is the normal way to fill a panel
+  /// — and both ways of adding one used to end with the cursor somewhere else:
+  /// Flutter unfocuses on `TextInputAction.done`, and clicking the button moves
+  /// focus to the button. So every gene after the first needed the field
+  /// clicked again.
+  final _focus = FocusNode();
+
   @override
   void dispose() {
     _controller.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -49,9 +59,13 @@ class _GeneEditorState extends State<GeneEditor> {
     final gene = value.trim();
     // Was unguarded, so pressing the button with an empty box sent an empty gene
     // name to the server and produced a failure for no reason.
-    if (gene.isEmpty) return;
-    widget.onAdd(gene);
-    _controller.clear();
+    //
+    // Focus still goes back: an empty box is where somebody is about to type.
+    if (gene.isNotEmpty) {
+      widget.onAdd(gene);
+      _controller.clear();
+    }
+    _focus.requestFocus();
   }
 
   @override
@@ -94,6 +108,7 @@ class _GeneEditorState extends State<GeneEditor> {
               Expanded(
                 child: TextField(
                   controller: _controller,
+                  focusNode: _focus,
                   decoration: const InputDecoration(
                     labelText: 'Add a gene',
                     hintText: 'e.g. BRCA1',

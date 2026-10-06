@@ -41,9 +41,7 @@ class SettingsForm {
   final toolsDir = TextEditingController();
   final mipgenExecutable = TextEditingController();
   final exonExtractScript = TextEditingController();
-  final ucscTrackGenerator = TextEditingController();
   final bigGenePredToGenePred = TextEditingController();
-  final binCreationScript = TextEditingController();
 
   final smtpServer = TextEditingController();
   final smtpPort = TextEditingController();
@@ -56,8 +54,14 @@ class SettingsForm {
   /// Not a setting — the recipient for the "send test email" button.
   final testMail = TextEditingController();
 
-  /// ⚠️ **Not** write-only, unlike the two secrets. The current value is loaded
-  /// into it and sent back verbatim, so emptying it sets an empty password.
+  /// ⚠️ Write-only, like [smtpPassword] and [oidcClientSecret]. Never filled by
+  /// [load]; cleared by the caller after sending, so an empty field means "keep
+  /// the current password".
+  ///
+  /// It used to be loaded with the stored password and sent back verbatim on
+  /// every save — which is what made the password readable in the browser, and
+  /// meant clearing the box set an empty password. The server now stores only a
+  /// hash and has nothing to load here.
   final newPassword = TextEditingController();
 
   final demoRetentionHours = TextEditingController();
@@ -73,6 +77,7 @@ class SettingsForm {
   final oidcButtonLabel = TextEditingController();
   final oidcAllowedDomains = TextEditingController();
   final oidcAdminEmails = TextEditingController();
+  final oidcDepartmentClaim = TextEditingController();
   final authPublicUrl = TextEditingController();
 
   bool mailActive = false;
@@ -90,14 +95,11 @@ class SettingsForm {
     toolsDir.text = settings.toolsDir;
     mipgenExecutable.text = settings.mipgenExecutable;
     exonExtractScript.text = settings.exonExtractScript;
-    ucscTrackGenerator.text = settings.ucscTrackGenerator;
     bigGenePredToGenePred.text = settings.bigGenePredToGenePredExecutable;
-    binCreationScript.text = settings.binCreationScript;
     smtpServer.text = settings.smtpServer;
     smtpPort.text = '${settings.smtpPort}';
     smtpUser.text = settings.smtpUser;
     smtpFrom.text = settings.smtpFrom;
-    newPassword.text = settings.settingsPassword;
     demoRetentionHours.text = '${settings.demoModeRetentionHours}';
     oidcIssuer.text = settings.oidcIssuer;
     oidcClientId.text = settings.oidcClientId;
@@ -105,6 +107,7 @@ class SettingsForm {
     oidcButtonLabel.text = settings.oidcButtonLabel;
     oidcAllowedDomains.text = settings.oidcAllowedEmailDomains;
     oidcAdminEmails.text = settings.oidcAdminEmails;
+    oidcDepartmentClaim.text = settings.oidcDepartmentClaim;
     authPublicUrl.text = settings.authPublicUrl;
 
     mailActive = settings.mailActive;
@@ -112,11 +115,12 @@ class SettingsForm {
     loginRequired = settings.loginRequired;
     demoMode = settings.demoMode;
 
-    // ⚠️ Cleared, never populated. The server does not send either secret back,
-    // so leaving a stale value here would offer to re-send something this
+    // ⚠️ Cleared, never populated. The server does not send any of these three
+    // back, so leaving a stale value here would offer to re-send something this
     // browser cannot know.
     smtpPassword.clear();
     oidcClientSecret.clear();
+    newPassword.clear();
   }
 
   /// What the form currently says, as the object the server stores.
@@ -134,9 +138,7 @@ class SettingsForm {
     toolsDir: toolsDir.text,
     mipgenExecutable: mipgenExecutable.text,
     exonExtractScript: exonExtractScript.text,
-    ucscTrackGenerator: ucscTrackGenerator.text,
     bigGenePredToGenePredExecutable: bigGenePredToGenePred.text,
-    binCreationScript: binCreationScript.text,
     mailActive: mailActive,
     smtpServer: smtpServer.text,
     smtpPort: int.tryParse(smtpPort.text) ?? 25,
@@ -144,7 +146,6 @@ class SettingsForm {
     smtpFrom: smtpFrom.text,
     startTLS: startTLS,
     loginRequired: loginRequired,
-    settingsPassword: newPassword.text,
     demoMode: demoMode,
     // The server clamps this to 1..8760, so a nonsense entry becomes the nearest
     // sane value rather than being rejected.
@@ -158,6 +159,7 @@ class SettingsForm {
     oidcButtonLabel: oidcButtonLabel.text.trim(),
     oidcAllowedEmailDomains: oidcAllowedDomains.text.trim(),
     oidcAdminEmails: oidcAdminEmails.text.trim(),
+    oidcDepartmentClaim: oidcDepartmentClaim.text.trim(),
     authPublicUrl: authPublicUrl.text.trim(),
   );
 
@@ -172,9 +174,7 @@ class SettingsForm {
       toolsDir,
       mipgenExecutable,
       exonExtractScript,
-      ucscTrackGenerator,
       bigGenePredToGenePred,
-      binCreationScript,
       smtpServer,
       smtpPort,
       smtpUser,
@@ -190,6 +190,7 @@ class SettingsForm {
       oidcButtonLabel,
       oidcAllowedDomains,
       oidcAdminEmails,
+      oidcDepartmentClaim,
       authPublicUrl,
     ]) {
       controller.dispose();

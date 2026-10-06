@@ -6,6 +6,8 @@ import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+import 'package:flumip_server/src/web/routes/api_route.dart';
+import 'package:flumip_server/src/web/routes/app_route.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
 import 'package:flumip_server/src/web/routes/download.dart';
 import 'package:flumip_server/src/web/routes/snp_upload.dart';
@@ -46,31 +48,34 @@ void run(List<String> args) async {
     print('Warning: Flutter web app not found at ${flutterAppDir.path}');
     print('Build your Flutter app and copy it to web/app/');
   } else {
-    // ⚠️ In development, serve the app with no caching at all.
+    // The app is served with no caching, in every run mode.
     //
-    // FlutterRoute's default caches everything except a short list
-    // (index.html, flutter_bootstrap.js, …) for a **day**, and `main.dart.js`
-    // — which is the entire app — is not on that list and is referenced with no
-    // version query. So after a rebuild a browser that has visited before keeps
-    // running the *old* app for up to 24 hours.
+    // Up to Serverpod 3 this was a development-only override, because
+    // FlutterRoute's default cached everything outside a short list
+    // (index.html, flutter_bootstrap.js, …) for a **day** — and `main.dart.js`,
+    // which is the entire app, is not on that list and is referenced with no
+    // version query. So after a rebuild a browser that had visited before kept
+    // running the *old* app for up to 24 hours. That is invisible and actively
+    // misleading: the UI behaves as it did before the change, which reads as
+    // "the fix did not work" rather than as a stale asset. It cost a full
+    // debugging round already.
     //
-    // That is invisible and actively misleading: the UI simply behaves as it did
-    // before the change, which reads as "the fix did not work" rather than as a
-    // stale asset. It cost a full debugging round already. A hard reload also
-    // fixes it, but relying on remembering that is how the same hour gets spent
-    // twice.
+    // Serverpod 4 makes `private, no-cache` the default for all Flutter assets,
+    // so the override is gone and production gets the same treatment. That is
+    // the right trade here — this is an internal tool where a deploy landing
+    // correctly matters more than re-fetching the bundle — but it *is* a change:
+    // production no longer caches `main.dart.js` for a day. If that bandwidth
+    // ever matters, set `SERVERPOD_WEB_SERVER_FLUTTER_CACHE_CONTROL` in the
+    // unit's EnvironmentFile rather than reinstating a branch here; caching then
+    // becomes a deploy-time decision instead of a compiled-in one.
     //
-    // Production keeps the caching default, where it is worth having and where
-    // the app changes only on deploy.
-    final isDevelopment = pod.runMode == ServerpodRunMode.development;
-    pod.webServer.addRoute(
-      isDevelopment
-          ? FlutterRoute(
-              flutterAppDir,
-              cacheControlFactory: StaticRoute.privateNoCache(),
-            )
-          : FlutterRoute(flutterAppDir),
-    );
+    // ⚠️ This is only half of the staleness problem. The service worker sits in
+    // front of the HTTP cache and can keep an old build alive regardless — see
+    // "The service worker is ON" in HANDOFF.md.
+    //
+    // AppRoute, not FlutterRoute directly: FlutterRoute's index.html fallback
+    // would otherwise swallow every other route's 404. See AppRoute.
+    pod.webServer.addRoute(AppRoute(flutterAppDir));
   }
 
   // Keyed on the project's track token, not its id: the route is unauthenticated
@@ -89,11 +94,21 @@ void run(List<String> args) async {
 
   // The sign-in flow runs on the web server, which is the origin the app itself
   // is served from — so the session cookie is set and read where the browser
-  // actually is. The API server is a different origin and uses a bearer header.
+  // actually is. API calls authenticate with a short-lived bearer minted from
+  // that cookie at /auth/session, not with the cookie itself.
   pod.webServer.addRoute(AuthLoginRoute(), '/auth/login');
   pod.webServer.addRoute(AuthCallbackRoute(), '/auth/callback');
   pod.webServer.addRoute(AuthSessionRoute(), '/auth/session');
   pod.webServer.addRoute(AuthLogoutRoute(), '/auth/logout');
+
+  // The API, under /api on the web port, so an install is one origin and a
+  // TLS-terminating proxy needs a single upstream. Every build calls it here;
+  // the API port itself is internal. Must be built before pod.start() — see
+  // ApiRoute.
+  pod.webServer.addRoute(
+    ApiRoute(ApiRoute.forServer(pod.server)),
+    '${ApiRoute.prefix}/**',
+  );
 
   final authRuntime = sl<AuthRuntime>();
 
@@ -105,7 +120,7 @@ void run(List<String> args) async {
   // applied inside start() — so this read fails and the configuration falls back
   // to the environment alone. refresh() is total and handles that itself; the
   // refresh after start() picks up the stored settings.
-  await _withSession(pod, authRuntime.refresh);
+  await pod.withSession(authRuntime.refresh, enableLogging: false);
 
   // Start the server.
   await pod.start();
@@ -113,7 +128,7 @@ void run(List<String> args) async {
   // Re-read now that any migrations have been applied, then keep it current. The
   // periodic refresh doubles as the self-heal for "the identity provider was
   // unreachable at boot", and prunes expired sessions on the same tick.
-  await _withSession(pod, authRuntime.refresh);
+  await pod.withSession(authRuntime.refresh, enableLogging: false);
   authRuntime.startPeriodicRefresh(pod);
 
   // Reconcile the SNP tree once the database is migrated. This is what heals an
@@ -126,7 +141,7 @@ void run(List<String> args) async {
   // `collectGenomes` — which also calls it — walks the whole genome tree with a
   // recursive size count, and that is hundreds of gigabytes of stat calls for
   // data that changes only when somebody puts a file there.
-  await _withSession(pod, (session) async {
+  await pod.withSession(enableLogging: false, (session) async {
     try {
       await sl<SnpService>().collectCustomSnps(session);
     } catch (e, stackTrace) {
@@ -143,15 +158,8 @@ void run(List<String> args) async {
   });
 }
 
-/// Runs [action] with a short-lived internal session, always closing it.
-Future<void> _withSession(
-  Serverpod pod,
-  Future<void> Function(Session session) action,
-) async {
-  final session = await pod.createSession(enableLogging: false);
-  try {
-    await action(session);
-  } finally {
-    await session.close();
-  }
-}
+// The hand-rolled `_withSession` helper that used to live here is gone:
+// Serverpod 4 provides `Serverpod.withSession`, which does the same thing and
+// additionally attaches the error and stack trace to the session when the
+// callback throws, so a failure at startup reaches the logs instead of being
+// swallowed by a bare `finally`.

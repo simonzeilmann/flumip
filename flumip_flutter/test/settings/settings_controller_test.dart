@@ -24,19 +24,26 @@ AuthAdminStatusDto statusFixture() => AuthAdminStatusDto(
 );
 
 class Harness {
-  Harness({this.access, this.settings, this.smtpConfigured = true}) {
+  Harness({
+    this.access,
+    this.settings,
+    this.smtpConfigured = true,
+    this.passwordIsDefault = false,
+  }) {
     _build();
   }
 
   UserSettingsDto? access;
   Settings? settings;
   bool smtpConfigured;
+  bool passwordIsDefault;
 
   Object? accessThrows;
   Object? loadThrows;
   Object? saveThrows;
   Object? smtpSecretThrows;
   Object? oidcSecretThrows;
+  Object? settingsPasswordThrows;
   Object? testMailThrows;
   Object? authStatusThrows;
 
@@ -71,9 +78,17 @@ class Harness {
         calls.add('oidcSecret "$secret"');
         if (oidcSecretThrows != null) throw oidcSecretThrows!;
       },
+      setSettingsPassword: (password, newPassword) async {
+        calls.add('settingsPassword "$password" -> "$newPassword"');
+        if (settingsPasswordThrows != null) throw settingsPasswordThrows!;
+      },
       smtpPasswordConfigured: (password) async {
         calls.add('smtpConfigured?');
         return smtpConfigured;
+      },
+      settingsPasswordIsDefault: (password) async {
+        calls.add('passwordIsDefault?');
+        return passwordIsDefault;
       },
       loadAuthStatus: (password) async {
         calls.add('authStatus');
@@ -307,19 +322,152 @@ void main() {
     test('reports success and keeps the credential in step', () async {
       // The password may have just been changed; the one we authenticate with
       // has to follow, or every later save and test mail is refused.
-      final h = Harness(
-        access: accessFixture(isAdmin: true),
-        settings: settingsFixture(settingsPassword: 'old'),
+      final h = Harness(access: accessFixture(isAdmin: true));
+      addTearDown(h.controller.dispose);
+      await h.controller.load();
+      h.controller.form.password.text = 'old';
+      h.controller.form.newPassword.text = 'brand-new';
+
+      await h.controller.save();
+      await pumpEventQueue();
+
+      expect(
+        h.calls,
+        contains('settingsPassword "old" -> "brand-new"'),
+        reason: 'the change is authenticated with the password being replaced',
       );
+      expect(h.controller.form.password.text, 'brand-new');
+      expect(h.messages, contains('Settings updated successfully'));
+    });
+
+    test('⚠️ the new-password box is write-only and clears itself', () async {
+      // An empty box means "keep the current password". If it kept its text,
+      // the next unrelated save would set the password again — harmless here,
+      // and not harmless at all once somebody types into it by accident.
+      final h = Harness(access: accessFixture(isAdmin: true));
       addTearDown(h.controller.dispose);
       await h.controller.load();
       h.controller.form.newPassword.text = 'brand-new';
 
       await h.controller.save();
       await pumpEventQueue();
+      expect(h.controller.form.newPassword.text, isEmpty);
 
-      expect(h.controller.form.password.text, 'brand-new');
-      expect(h.messages, contains('Settings updated successfully'));
+      h.calls.clear();
+      await h.controller.save();
+      await pumpEventQueue();
+      expect(h.calls.where((c) => c.startsWith('settingsPassword')), isEmpty);
+    });
+
+    test('an untouched password box changes nothing', () async {
+      final h = Harness(access: accessFixture(isAdmin: true));
+      addTearDown(h.controller.dispose);
+      await h.controller.load();
+      h.controller.form.password.text = 'unchanged';
+
+      await h.controller.save();
+      await pumpEventQueue();
+
+      expect(h.calls.where((c) => c.startsWith('settingsPassword')), isEmpty);
+      expect(h.controller.form.password.text, 'unchanged');
+    });
+
+    test('⚠️ the password changes before the settings are saved', () async {
+      // Order is load-bearing: the settings save authenticates with
+      // `form.password`, so a change applied afterwards would have the save
+      // presenting a password the server had just replaced.
+      final h = Harness(access: accessFixture(isAdmin: true));
+      addTearDown(h.controller.dispose);
+      await h.controller.load();
+      h.calls.clear();
+      h.controller.form.password.text = 'old';
+      h.controller.form.newPassword.text = 'brand-new';
+
+      await h.controller.save();
+      await pumpEventQueue();
+
+      final changed = h.calls.indexWhere(
+        (c) => c.startsWith('settingsPassword'),
+      );
+      final saved = h.calls.indexWhere((c) => c.startsWith('save '));
+      expect(changed, isNonNegative);
+      expect(saved, greaterThan(changed));
+      expect(h.calls[saved], contains('"brand-new"'));
+    });
+
+    test(
+      '⚠️ switching sign-in off in the same save still changes the password',
+      () async {
+        // That branch ends every session and returns early, abandoning
+        // everything after it. A password change queued behind it would be
+        // dropped in silence.
+        final h = Harness(
+          access: accessFixture(isAdmin: true),
+          settings: settingsFixture(loginRequired: true),
+        );
+        addTearDown(h.controller.dispose);
+        await h.controller.load();
+        h.controller.form.loginRequired = false;
+        h.controller.form.newPassword.text = 'brand-new';
+
+        await h.controller.save();
+        await pumpEventQueue();
+
+        expect(h.signedOut, isTrue);
+        expect(
+          h.calls.where((c) => c.startsWith('settingsPassword')),
+          isNotEmpty,
+        );
+      },
+    );
+
+    test('reports that the password is still the shipped default', () async {
+      // Hashing took away the only thing that used to make this visible: the
+      // password sitting readable in its own box.
+      final h = Harness(
+        access: accessFixture(isAdmin: true),
+        passwordIsDefault: true,
+      );
+      addTearDown(h.controller.dispose);
+
+      await h.controller.load();
+      await pumpEventQueue();
+
+      expect(h.controller.settingsPasswordIsDefault, isTrue);
+    });
+
+    test('a failed default-password check warns about nothing', () async {
+      // A warning nobody can act on, because the call behind it failed, is worse
+      // than no warning.
+      final h = Harness(access: accessFixture(isAdmin: true));
+      addTearDown(h.controller.dispose);
+
+      await h.controller.load();
+      await pumpEventQueue();
+
+      expect(h.controller.settingsPasswordIsDefault, isFalse);
+    });
+
+    test('⚠️ a server refusal is shown as its sentence, not its class', () async {
+      // The bug this pins: every other controller goes through `describeError`,
+      // this one interpolated the exception. A typed Serverpod exception
+      // stringifies as `ArgumentException(message: …)`, so whoever typed the
+      // password was shown the class name and the wrapper along with it.
+      final h = Harness(access: accessFixture(isAdmin: true))
+        ..saveThrows = ArgumentException(
+          message: 'The settings password cannot be blank.',
+        );
+      addTearDown(h.controller.dispose);
+      await h.controller.load();
+
+      await h.controller.save();
+      await pumpEventQueue();
+
+      expect(
+        h.controller.errorMessage,
+        'The settings password cannot be blank.',
+      );
+      expect(h.controller.errorMessage, isNot(contains('ArgumentException')));
     });
 
     test('a refusal is shown and nothing is claimed', () async {
@@ -359,7 +507,7 @@ void main() {
       await h.controller.sendTestMail();
 
       expect(h.calls, isEmpty);
-      expect(h.controller.errorMessage, contains('Enter a recipient'));
+      expect(h.controller.errorMessage, contains('Enter an address'));
     });
   });
 

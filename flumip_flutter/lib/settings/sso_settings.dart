@@ -28,6 +28,7 @@ class SsoSettings extends StatelessWidget {
     required this.publicUrlController,
     required this.allowedDomainsController,
     required this.adminEmailsController,
+    required this.departmentClaimController,
     required this.scopesController,
     required this.buttonLabelController,
     required this.status,
@@ -40,6 +41,7 @@ class SsoSettings extends StatelessWidget {
   final TextEditingController publicUrlController;
   final TextEditingController allowedDomainsController;
   final TextEditingController adminEmailsController;
+  final TextEditingController departmentClaimController;
   final TextEditingController scopesController;
   final TextEditingController buttonLabelController;
 
@@ -114,6 +116,20 @@ class SsoSettings extends StatelessWidget {
               'Comma-separated. These accounts can open this settings '
               'tab without the password.',
         ),
+        _oidcField(
+          controller: departmentClaimController,
+          label: 'Department claim',
+          envName: 'FLUMIP_OIDC_DEPARTMENT_CLAIM',
+          hintText: 'groups',
+          helperMaxLines: 5,
+          helperText:
+              'Which claim carries group membership. Empty means departments '
+              'are not used and project access is decided by owner alone.\n'
+              'Okta, Auth0, Entra ID: groups · Keycloak: realm_access.roles · '
+              'LDAP-backed: department or ou. Use dots for a nested claim.\n'
+              'A project in a department is visible to everyone in it, so this '
+              'widens access — it never takes any away.',
+        ),
         ResponsiveRow(
           minChildWidth: 280,
           children: [
@@ -181,6 +197,7 @@ class SsoSettings extends StatelessWidget {
     required String envName,
     String? hintText,
     String? helperText,
+    int helperMaxLines = 3,
   }) {
     final overridden = _overriddenByEnv(envName);
     return TextField(
@@ -193,7 +210,7 @@ class SsoSettings extends StatelessWidget {
         helperText: overridden
             ? 'Set by $envName in the environment'
             : helperText,
-        helperMaxLines: 3,
+        helperMaxLines: helperMaxLines,
         suffixIcon: overridden
             ? const Tooltip(
                 message:

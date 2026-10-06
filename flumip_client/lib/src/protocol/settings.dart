@@ -10,9 +10,10 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
-abstract class Settings implements _i1.SerializableModel {
+abstract class Settings
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   Settings._({
     this.id,
     bool? demoMode,
@@ -25,8 +26,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -35,13 +34,13 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
        demoModeRetentionHours = demoModeRetentionHours ?? 168,
@@ -55,12 +54,6 @@ abstract class Settings implements _i1.SerializableModel {
        exonExtractScript =
            exonExtractScript ??
            '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
-       ucscTrackGenerator =
-           ucscTrackGenerator ??
-           '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
-       binCreationScript =
-           binCreationScript ??
-           '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
        bigGenePredToGenePredExecutable =
            bigGenePredToGenePredExecutable ??
            '/opt/flumip/tools/bigGenePredToGenePred',
@@ -71,13 +64,13 @@ abstract class Settings implements _i1.SerializableModel {
        smtpFrom = smtpFrom ?? 'flumip@yourdomain.com',
        startTLS = startTLS ?? true,
        loginRequired = loginRequired ?? false,
-       settingsPassword = settingsPassword ?? 'changeme',
        oidcIssuer = oidcIssuer ?? '',
        oidcClientId = oidcClientId ?? '',
        oidcScopes = oidcScopes ?? 'openid email profile',
        oidcButtonLabel = oidcButtonLabel ?? 'Sign in with SSO',
        oidcAllowedEmailDomains = oidcAllowedEmailDomains ?? '',
        oidcAdminEmails = oidcAdminEmails ?? '',
+       oidcDepartmentClaim = oidcDepartmentClaim ?? '',
        authPublicUrl = authPublicUrl ?? '';
 
   factory Settings({
@@ -92,8 +85,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -102,13 +93,13 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) = _SettingsImpl;
 
@@ -117,7 +108,7 @@ abstract class Settings implements _i1.SerializableModel {
       id: jsonSerialization['id'] as int?,
       demoMode: jsonSerialization['demoMode'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
       demoModeRetentionHours:
           jsonSerialization['demoModeRetentionHours'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
@@ -129,24 +120,21 @@ abstract class Settings implements _i1.SerializableModel {
       toolsDir: jsonSerialization['toolsDir'] as String?,
       mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
       exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
-      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String?,
-      binCreationScript: jsonSerialization['binCreationScript'] as String?,
       bigGenePredToGenePredExecutable:
           jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
       mailActive: jsonSerialization['mailActive'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['mailActive']),
       smtpServer: jsonSerialization['smtpServer'] as String?,
       smtpPort: jsonSerialization['smtpPort'] as int?,
       smtpUser: jsonSerialization['smtpUser'] as String?,
       smtpFrom: jsonSerialization['smtpFrom'] as String?,
       startTLS: jsonSerialization['startTLS'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['startTLS']),
       loginRequired: jsonSerialization['loginRequired'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
-      settingsPassword: jsonSerialization['settingsPassword'] as String?,
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['loginRequired']),
       oidcIssuer: jsonSerialization['oidcIssuer'] as String?,
       oidcClientId: jsonSerialization['oidcClientId'] as String?,
       oidcScopes: jsonSerialization['oidcScopes'] as String?,
@@ -154,6 +142,7 @@ abstract class Settings implements _i1.SerializableModel {
       oidcAllowedEmailDomains:
           jsonSerialization['oidcAllowedEmailDomains'] as String?,
       oidcAdminEmails: jsonSerialization['oidcAdminEmails'] as String?,
+      oidcDepartmentClaim: jsonSerialization['oidcDepartmentClaim'] as String?,
       authPublicUrl: jsonSerialization['authPublicUrl'] as String?,
     );
   }
@@ -189,10 +178,6 @@ abstract class Settings implements _i1.SerializableModel {
 
   String exonExtractScript;
 
-  String ucscTrackGenerator;
-
-  String binCreationScript;
-
   String bigGenePredToGenePredExecutable;
 
   bool mailActive;
@@ -209,8 +194,6 @@ abstract class Settings implements _i1.SerializableModel {
 
   bool loginRequired;
 
-  String settingsPassword;
-
   String oidcIssuer;
 
   String oidcClientId;
@@ -223,11 +206,13 @@ abstract class Settings implements _i1.SerializableModel {
 
   String oidcAdminEmails;
 
+  String oidcDepartmentClaim;
+
   String authPublicUrl;
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   Settings copyWith({
     int? id,
     bool? demoMode,
@@ -240,8 +225,6 @@ abstract class Settings implements _i1.SerializableModel {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -250,13 +233,13 @@ abstract class Settings implements _i1.SerializableModel {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   });
   @override
@@ -274,8 +257,6 @@ abstract class Settings implements _i1.SerializableModel {
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
-      'ucscTrackGenerator': ucscTrackGenerator,
-      'binCreationScript': binCreationScript,
       'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
       'mailActive': mailActive,
       'smtpServer': smtpServer,
@@ -284,20 +265,54 @@ abstract class Settings implements _i1.SerializableModel {
       'smtpFrom': smtpFrom,
       'startTLS': startTLS,
       'loginRequired': loginRequired,
-      'settingsPassword': settingsPassword,
       'oidcIssuer': oidcIssuer,
       'oidcClientId': oidcClientId,
       'oidcScopes': oidcScopes,
       'oidcButtonLabel': oidcButtonLabel,
       'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
       'oidcAdminEmails': oidcAdminEmails,
+      'oidcDepartmentClaim': oidcDepartmentClaim,
+      'authPublicUrl': authPublicUrl,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'Settings',
+      if (id != null) 'id': id,
+      'demoMode': demoMode,
+      'demoModeRetentionHours': demoModeRetentionHours,
+      'baseDir': baseDir,
+      'projectDir': projectDir,
+      'genomeDir': genomeDir,
+      'customSnpDir': customSnpDir,
+      'snpSourceAllowedHosts': snpSourceAllowedHosts,
+      'toolsDir': toolsDir,
+      'mipgenExecutable': mipgenExecutable,
+      'exonExtractScript': exonExtractScript,
+      'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
+      'mailActive': mailActive,
+      'smtpServer': smtpServer,
+      'smtpPort': smtpPort,
+      'smtpUser': smtpUser,
+      'smtpFrom': smtpFrom,
+      'startTLS': startTLS,
+      'loginRequired': loginRequired,
+      'oidcIssuer': oidcIssuer,
+      'oidcClientId': oidcClientId,
+      'oidcScopes': oidcScopes,
+      'oidcButtonLabel': oidcButtonLabel,
+      'oidcAllowedEmailDomains': oidcAllowedEmailDomains,
+      'oidcAdminEmails': oidcAdminEmails,
+      'oidcDepartmentClaim': oidcDepartmentClaim,
       'authPublicUrl': authPublicUrl,
     };
   }
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -316,8 +331,6 @@ class _SettingsImpl extends Settings {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -326,13 +339,13 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) : super._(
          id: id,
@@ -346,8 +359,6 @@ class _SettingsImpl extends Settings {
          toolsDir: toolsDir,
          mipgenExecutable: mipgenExecutable,
          exonExtractScript: exonExtractScript,
-         ucscTrackGenerator: ucscTrackGenerator,
-         binCreationScript: binCreationScript,
          bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
          mailActive: mailActive,
          smtpServer: smtpServer,
@@ -356,19 +367,19 @@ class _SettingsImpl extends Settings {
          smtpFrom: smtpFrom,
          startTLS: startTLS,
          loginRequired: loginRequired,
-         settingsPassword: settingsPassword,
          oidcIssuer: oidcIssuer,
          oidcClientId: oidcClientId,
          oidcScopes: oidcScopes,
          oidcButtonLabel: oidcButtonLabel,
          oidcAllowedEmailDomains: oidcAllowedEmailDomains,
          oidcAdminEmails: oidcAdminEmails,
+         oidcDepartmentClaim: oidcDepartmentClaim,
          authPublicUrl: authPublicUrl,
        );
 
   /// Returns a shallow copy of this [Settings]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   Settings copyWith({
     Object? id = _Undefined,
@@ -382,8 +393,6 @@ class _SettingsImpl extends Settings {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -392,13 +401,13 @@ class _SettingsImpl extends Settings {
     String? smtpFrom,
     bool? startTLS,
     bool? loginRequired,
-    String? settingsPassword,
     String? oidcIssuer,
     String? oidcClientId,
     String? oidcScopes,
     String? oidcButtonLabel,
     String? oidcAllowedEmailDomains,
     String? oidcAdminEmails,
+    String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) {
     return Settings(
@@ -415,8 +424,6 @@ class _SettingsImpl extends Settings {
       toolsDir: toolsDir ?? this.toolsDir,
       mipgenExecutable: mipgenExecutable ?? this.mipgenExecutable,
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
-      ucscTrackGenerator: ucscTrackGenerator ?? this.ucscTrackGenerator,
-      binCreationScript: binCreationScript ?? this.binCreationScript,
       bigGenePredToGenePredExecutable:
           bigGenePredToGenePredExecutable ??
           this.bigGenePredToGenePredExecutable,
@@ -427,7 +434,6 @@ class _SettingsImpl extends Settings {
       smtpFrom: smtpFrom ?? this.smtpFrom,
       startTLS: startTLS ?? this.startTLS,
       loginRequired: loginRequired ?? this.loginRequired,
-      settingsPassword: settingsPassword ?? this.settingsPassword,
       oidcIssuer: oidcIssuer ?? this.oidcIssuer,
       oidcClientId: oidcClientId ?? this.oidcClientId,
       oidcScopes: oidcScopes ?? this.oidcScopes,
@@ -435,6 +441,7 @@ class _SettingsImpl extends Settings {
       oidcAllowedEmailDomains:
           oidcAllowedEmailDomains ?? this.oidcAllowedEmailDomains,
       oidcAdminEmails: oidcAdminEmails ?? this.oidcAdminEmails,
+      oidcDepartmentClaim: oidcDepartmentClaim ?? this.oidcDepartmentClaim,
       authPublicUrl: authPublicUrl ?? this.authPublicUrl,
     );
   }

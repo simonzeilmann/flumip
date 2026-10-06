@@ -5,6 +5,8 @@ import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../error_text.dart';
+
 /// Where the app is with respect to signing in.
 enum AuthState {
   /// Before [AuthController.bootstrap] has finished.
@@ -29,18 +31,16 @@ enum AuthState {
 /// `test/auth/auth_controller_test.dart`.
 class AuthController extends ChangeNotifier {
   AuthController({
-    required Future<AuthConfigSnapshot> Function() fetchConfig,
-    required Future<SessionTokenResponse?> Function() fetchSession,
-    required void Function(String url) navigate,
-  }) : _fetchConfig = fetchConfig,
-       _fetchSession = fetchSession,
-       _navigate = navigate;
+    required this._fetchConfig,
+    required this._fetchSession,
+    required this._navigate,
+  });
 
   /// Builds the controller the running app uses.
   ///
   /// [siteUrl] is the origin the app was served from, which is also the web
-  /// server's — see `api_config.dart`. The `/auth/*` routes are there, not on the
-  /// API origin, because that is where the session cookie lives.
+  /// server's — see `api_config.dart`. The `/auth/*` routes are there because
+  /// that is where the session cookie lives.
   ///
   /// [navigate] performs a full-page navigation. It is supplied by the caller
   /// rather than done here so that this library imports nothing web-only and the
@@ -123,7 +123,7 @@ class AuthController extends ChangeNotifier {
       await _authKeyProvider!.refreshAuthKey(force: true);
       _set(AuthState.signedIn);
     } catch (e) {
-      _errorMessage = '$e';
+      _errorMessage = describeError(e);
       _set(AuthState.disabled);
     }
   }

@@ -21,11 +21,6 @@ fields:
   vcfPath: String
   tbiPath: String
   folder: String
-  ### Written true by the scanner since the beginning and read by nothing. Left
-  ### alone on purpose: [status] is the flag that actually decides whether an SNP
-  ### can be used, and dropping a column earns migration risk for no behaviour
-  ### change.
-  active: bool
   ### Visible only to [owner] and to administrators. The share toggle clears it.
   ###
   ### See `snpIsAccessible`, and note that the rule differs from

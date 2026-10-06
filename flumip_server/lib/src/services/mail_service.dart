@@ -26,13 +26,19 @@ class MailService {
 
     if (to.isEmpty) {
       session.log('No recipient supplied for test mail', level: LogLevel.error);
-      throw ArgumentException(message: 'No recipient supplied');
+      throw ArgumentException(
+        message: 'Enter an address to send the test email to.',
+      );
     }
 
     final settings = await settingsService.getSettings(session);
     if (settings.smtpServer.isEmpty) {
       session.log('No SMTP server configured', level: LogLevel.error);
-      throw ArgumentException(message: 'No SMTP server configured');
+      throw ArgumentException(
+        message:
+            'No SMTP server is configured. Fill in the mail settings and '
+            'save them before sending a test email.',
+      );
     }
 
     session.log('Sending test mail to $to', level: LogLevel.info);

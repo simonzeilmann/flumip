@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
+import 'package:flumip_client/src/protocol/protocol.dart' as _i2kzrgg5;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// Everything the settings tab needs to show about the SSO setup that is not
 /// itself a setting. No table — transport only.
@@ -25,7 +25,8 @@ import 'package:flumip_client/src/protocol/protocol.dart' as _i2;
 /// the browser. [envOverrides] names the fields an environment variable has
 /// taken over, so the tab can render them read-only instead of letting an admin
 /// save a value that silently has no effect.
-abstract class AuthAdminStatusDto implements _i1.SerializableModel {
+abstract class AuthAdminStatusDto
+    implements _isc.SerializableModel, _isc.ProtocolSerialization {
   AuthAdminStatusDto._({
     bool? enabled,
     bool? enforcing,
@@ -58,22 +59,22 @@ abstract class AuthAdminStatusDto implements _i1.SerializableModel {
     return AuthAdminStatusDto(
       enabled: jsonSerialization['enabled'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
       enforcing: jsonSerialization['enforcing'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['enforcing']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['enforcing']),
       secretConfigured: jsonSerialization['secretConfigured'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _isc.BoolJsonExtension.fromJson(
               jsonSerialization['secretConfigured'],
             ),
-      envOverrides: _i2.Protocol().deserialize<List<String>>(
+      envOverrides: _i2kzrgg5.Protocol().deserialize<List<String>>(
         jsonSerialization['envOverrides'],
       ),
       redirectUri: jsonSerialization['redirectUri'] as String?,
       discoveryOk: jsonSerialization['discoveryOk'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['discoveryOk']),
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['discoveryOk']),
       discoveryError: jsonSerialization['discoveryError'] as String?,
       authorizationEndpoint:
           jsonSerialization['authorizationEndpoint'] as String?,
@@ -101,7 +102,7 @@ abstract class AuthAdminStatusDto implements _i1.SerializableModel {
 
   /// Returns a shallow copy of this [AuthAdminStatusDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   AuthAdminStatusDto copyWith({
     bool? enabled,
     bool? enforcing,
@@ -131,8 +132,25 @@ abstract class AuthAdminStatusDto implements _i1.SerializableModel {
   }
 
   @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'AuthAdminStatusDto',
+      'enabled': enabled,
+      'enforcing': enforcing,
+      'secretConfigured': secretConfigured,
+      'envOverrides': envOverrides.toJson(),
+      'redirectUri': redirectUri,
+      'discoveryOk': discoveryOk,
+      if (discoveryError != null) 'discoveryError': discoveryError,
+      if (authorizationEndpoint != null)
+        'authorizationEndpoint': authorizationEndpoint,
+      if (tokenEndpoint != null) 'tokenEndpoint': tokenEndpoint,
+    };
+  }
+
+  @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _isc.SerializationManager.encode(this);
   }
 }
 
@@ -163,7 +181,7 @@ class _AuthAdminStatusDtoImpl extends AuthAdminStatusDto {
 
   /// Returns a shallow copy of this [AuthAdminStatusDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_isc.useResult
   @override
   AuthAdminStatusDto copyWith({
     bool? enabled,

@@ -16,6 +16,7 @@ abstract final class AuthEnv {
   static const clientSecret = 'FLUMIP_OIDC_CLIENT_SECRET';
   static const adminEmails = 'FLUMIP_OIDC_ADMIN_EMAILS';
   static const allowedDomains = 'FLUMIP_OIDC_ALLOWED_DOMAINS';
+  static const departmentClaim = 'FLUMIP_OIDC_DEPARTMENT_CLAIM';
   static const publicUrl = 'FLUMIP_PUBLIC_URL';
   static const strict = 'FLUMIP_AUTH_STRICT';
 }
@@ -35,6 +36,7 @@ class AuthConfig {
     required this.buttonLabel,
     required this.allowedDomains,
     required this.adminEmails,
+    this.departmentClaim = '',
     required this.redirectUri,
     required this.appOrigin,
     required this.cookieSecure,
@@ -82,6 +84,18 @@ class AuthConfig {
 
   /// Lower-cased email addresses granted the `admin` scope.
   final List<String> adminEmails;
+
+  /// The claim carrying group membership, e.g. `groups` or
+  /// `realm_access.roles`. Dot-separated for a nested claim.
+  ///
+  /// Empty means departments are switched off entirely: nothing is collected at
+  /// sign-in and `projectIsAccessible`'s department clause can never match. That
+  /// is the default, so an install that has not asked for this behaves exactly
+  /// as it did before the feature existed.
+  final String departmentClaim;
+
+  /// Whether this install collects group membership at all.
+  bool get usesDepartments => departmentClaim.isNotEmpty;
 
   /// The absolute callback URL registered with the provider.
   final String redirectUri;
@@ -213,6 +227,10 @@ class AuthConfig {
       buttonLabel: _orDefault(settings?.oidcButtonLabel, 'Sign in with SSO'),
       allowedDomains: allowedDomains,
       adminEmails: adminEmails,
+      departmentClaim: pick(
+        AuthEnv.departmentClaim,
+        settings?.oidcDepartmentClaim ?? '',
+      ).trim(),
       redirectUri: origin.isEmpty ? '' : '$origin/auth/callback',
       appOrigin: origin,
       cookieSecure: origin.startsWith('https://'),

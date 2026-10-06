@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
-import 'package:serverpod/protocol.dart';
 import 'package:test/test.dart';
 
 import '../support/fake_process_runner.dart';
@@ -19,32 +18,24 @@ void main() {
     var session = sessionBuilder.build();
 
     // --- OptionsEndpoint ----------------------------------------------------
-    test(
-      'options: insert then get round-trips through the endpoint',
-      () async {
-        final inserted = await endpoints.options.insertProjectOptions(
-          sessionBuilder,
-          ProjectOptions()..silentMode = true,
-        );
-        final got = await endpoints.options.getProjectOptions(
-          sessionBuilder,
-          inserted.id!,
-        );
-        expect(got.silentMode, isTrue);
-      },
-      tags: ['integration'],
-    );
+    test('options: insert then get round-trips through the endpoint', () async {
+      final inserted = await endpoints.options.insertProjectOptions(
+        sessionBuilder,
+        ProjectOptions()..silentMode = true,
+      );
+      final got = await endpoints.options.getProjectOptions(
+        sessionBuilder,
+        inserted.id!,
+      );
+      expect(got.silentMode, isTrue);
+    }, tags: ['integration']);
 
-    test(
-      'options: getProjectOptions rethrows for a missing id',
-      () async {
-        expect(
-          () => endpoints.options.getProjectOptions(sessionBuilder, -1),
-          throwsA(isA<FileNotFoundException>()),
-        );
-      },
-      tags: ['integration'],
-    );
+    test('options: getProjectOptions rethrows for a missing id', () async {
+      expect(
+        () => endpoints.options.getProjectOptions(sessionBuilder, -1),
+        throwsA(isA<FlumipFileNotFoundException>()),
+      );
+    }, tags: ['integration']);
 
     // --- SettingsEndpoint (password-gated) ----------------------------------
     test(
@@ -59,16 +50,12 @@ void main() {
       tags: ['integration'],
     );
 
-    test(
-      'settings: getSettings rethrows for an invalid password',
-      () async {
-        expect(
-          () => endpoints.settings.getSettings(sessionBuilder, 'wrong'),
-          throwsA(isA<Exception>()),
-        );
-      },
-      tags: ['integration'],
-    );
+    test('settings: getSettings rethrows for an invalid password', () async {
+      expect(
+        () => endpoints.settings.getSettings(sessionBuilder, 'wrong'),
+        throwsA(isA<Exception>()),
+      );
+    }, tags: ['integration']);
 
     // --- GenomeEndpoint -----------------------------------------------------
     test('genome: getGenome returns a seeded genome', () async {
@@ -80,7 +67,7 @@ void main() {
     test('genome: getGenome rethrows for a missing id', () async {
       expect(
         () => endpoints.genome.getGenome(sessionBuilder, -1),
-        throwsMessage('Genome not found'),
+        throwsMessage('This genome no longer exists.'),
       );
     }, tags: ['integration']);
 
@@ -98,56 +85,44 @@ void main() {
     );
 
     // --- ProjectEndpoint ----------------------------------------------------
-    test(
-      'project: createProject creates the row and its directory',
-      () async {
-        final base = createTempDirLocal();
-        await overrideSettingsDirs(session, projectDir: base.path);
-        final project = await endpoints.project.createProject(
-          sessionBuilder,
-          'int_test',
-          ProjectOptions(id: 1),
-        );
-        expect(project.id, greaterThan(0));
-        expect(
-          Directory('${base.path}/${project.folderName}').existsSync(),
-          isTrue,
-        );
-      },
-      tags: ['integration'],
-    );
+    test('project: createProject creates the row and its directory', () async {
+      final base = createTempDirLocal();
+      await overrideSettingsDirs(session, projectDir: base.path);
+      final project = await endpoints.project.createProject(
+        sessionBuilder,
+        'int_test',
+        ProjectOptions(id: 1),
+      );
+      expect(project.id, greaterThan(0));
+      expect(
+        Directory('${base.path}/${project.folderName}').existsSync(),
+        isTrue,
+      );
+    }, tags: ['integration']);
 
     test('project: getProject rethrows for a missing id', () async {
       expect(
         () => endpoints.project.getProject(sessionBuilder, -1),
-        throwsMessage('Project not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['integration']);
 
     // --- MipgenEndpoint (error wrapper) -------------------------------------
-    test(
-      'mipgen: createBedFile rethrows the service ArgumentError',
-      () async {
-        final project = await seedProject(session, options: 1); // no genome
-        expect(
-          () => endpoints.mipgen.createBedFile(sessionBuilder, project.id!),
-          throwsMessage('No genome found in project'),
-        );
-      },
-      tags: ['integration'],
-    );
+    test('mipgen: createBedFile rethrows the service ArgumentError', () async {
+      final project = await seedProject(session, options: 1); // no genome
+      expect(
+        () => endpoints.mipgen.createBedFile(sessionBuilder, project.id!),
+        throwsMessage('This project has no genome yet.'),
+      );
+    }, tags: ['integration']);
 
     // --- FileEndpoint (error wrapper) ---------------------------------------
-    test(
-      'file: showMipsProgress rethrows for a missing project',
-      () async {
-        expect(
-          () => endpoints.file.showMipsProgress(sessionBuilder, -1),
-          throwsA(isA<FileNotFoundException>()),
-        );
-      },
-      tags: ['integration'],
-    );
+    test('file: showMipsProgress rethrows for a missing project', () async {
+      expect(
+        () => endpoints.file.showMipsProgress(sessionBuilder, -1),
+        throwsA(isA<FlumipFileNotFoundException>()),
+      );
+    }, tags: ['integration']);
 
     // --- More project delegations ------------------------------------------
     test('project: getProjects returns seeded projects', () async {
@@ -205,7 +180,7 @@ void main() {
       );
       expect(
         () => endpoints.options.getProjectOptions(sessionBuilder, inserted.id!),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['integration']);
 
@@ -349,8 +324,6 @@ void main() {
           toolsDir: '/rt/tools',
           mipgenExecutable: '/rt/mipgen',
           exonExtractScript: '/rt/exons.sh',
-          ucscTrackGenerator: '/rt/track.py',
-          binCreationScript: '/rt/bins.py',
           bigGenePredToGenePredExecutable: '/rt/bgp',
           mailActive: true,
           smtpServer: 'smtp.rt.example',
@@ -359,7 +332,6 @@ void main() {
           smtpFrom: 'rt@flumip.local',
           startTLS: false,
           loginRequired: false,
-          settingsPassword: 'changeme',
           oidcIssuer: 'https://rt.example/realms/rt',
           oidcClientId: 'rt-client',
           oidcScopes: 'openid email',
@@ -378,31 +350,33 @@ void main() {
           sessionBuilder,
           'changeme',
         );
-        final expected = updated.toJson()..remove('id');
-        final actual = again.toJson()..remove('id');
+        // ⚠️ settingsPassword is dropped from both sides, not compared. It is
+        // serverOnly and written only by setSettingsPassword, so it is
+        // deliberately *not* client-editable — which is what this test is
+        // about. Leaving it in would compare a hash against whatever the fresh
+        // object happened to carry.
+        final expected = updated.toJson()
+          ..remove('id')
+          ..remove('settingsPassword');
+        final actual = again.toJson()
+          ..remove('id')
+          ..remove('settingsPassword');
         expect(actual, expected);
       },
       tags: ['integration'],
     );
 
-    test(
-      'settings: updateSettings rejects an invalid password',
-      () async {
-        final current = await endpoints.settings.getSettings(
-          sessionBuilder,
-          'changeme',
-        );
-        expect(
-          () => endpoints.settings.updateSettings(
-            sessionBuilder,
-            'wrong',
-            current,
-          ),
-          throwsMessage('Invalid password'),
-        );
-      },
-      tags: ['integration'],
-    );
+    test('settings: updateSettings rejects an invalid password', () async {
+      final current = await endpoints.settings.getSettings(
+        sessionBuilder,
+        'changeme',
+      );
+      expect(
+        () =>
+            endpoints.settings.updateSettings(sessionBuilder, 'wrong', current),
+        throwsMessage('This password is not correct.'),
+      );
+    }, tags: ['integration']);
 
     test('settings: sendTestMail rejects an invalid password', () async {
       expect(
@@ -411,7 +385,7 @@ void main() {
           'wrong',
           'someone@example.com',
         ),
-        throwsMessage('Invalid password'),
+        throwsMessage('This password is not correct.'),
       );
     }, tags: ['integration']);
 

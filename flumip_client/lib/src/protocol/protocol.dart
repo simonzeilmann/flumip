@@ -8,43 +8,42 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
+// ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'auth_admin_status_dto.dart' as _i2;
-import 'auth_config_dto.dart' as _i3;
-import 'auth_user_dto.dart' as _i4;
-import 'custom_snp_request_dto.dart' as _i5;
-import 'exceptions.dart' as _i6;
-import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _i7;
-import 'exceptions/argument_exception.dart' as _i8;
-import 'exceptions/flumip_file_not_found_exception.dart' as _i9;
-import 'exceptions/project_access_denied_exception.dart' as _i10;
-import 'flumip_user_dto.dart' as _i11;
-import 'genome.dart' as _i12;
-import 'project.dart' as _i13;
-import 'project_file_dto.dart' as _i14;
-import 'project_options.dart' as _i15;
-import 'score_method.dart' as _i16;
-import 'search_hit_dto.dart' as _i17;
-import 'search_hit_kind.dart' as _i18;
-import 'settings.dart' as _i19;
-import 'snp.dart' as _i20;
-import 'snp_import_status.dart' as _i21;
-import 'snp_usage_dto.dart' as _i22;
-import 'user_settings_dto.dart' as _i23;
-import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i24;
-import 'package:flumip_client/src/protocol/genome.dart' as _i25;
-import 'package:flumip_client/src/protocol/snp.dart' as _i26;
-import 'package:flumip_client/src/protocol/project.dart' as _i27;
-import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i28;
-import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i29;
-import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _i30;
+import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i15z9m0g;
+import 'package:flumip_client/src/protocol/genome.dart' as _ixuye8o9;
+import 'package:flumip_client/src/protocol/project.dart' as _iqi8mkqf;
+import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i5l1g0eo;
+import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i8y6t52d;
+import 'package:flumip_client/src/protocol/snp.dart' as _iumnx4id;
+import 'package:flumip_client/src/protocol/snp_usage_dto.dart' as _idqeum9a;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'auth_admin_status_dto.dart' as _ilu62sh8;
+import 'auth_config_dto.dart' as _i3pxz8st;
+import 'auth_user_dto.dart' as _i9fqmmja;
+import 'custom_snp_request_dto.dart' as _i50r13ns;
+import 'exceptions/argument_exception.dart' as _ix5u8j9t;
+import 'exceptions/flumip_file_not_found_exception.dart' as _iua77lfj;
+import 'exceptions/GenomeExceptions/bed_creation_exception.dart' as _il9ya82w;
+import 'exceptions/project_access_denied_exception.dart' as _iq9wx7jy;
+import 'flumip_user_dto.dart' as _im3lr0ct;
+import 'genome.dart' as _ik3s3pjn;
+import 'project.dart' as _ifiazq2p;
+import 'project_file_dto.dart' as _ip1wvjxo;
+import 'project_options.dart' as _i4kq7s26;
+import 'score_method.dart' as _iootg8bv;
+import 'search_hit_dto.dart' as _iy8r37ur;
+import 'search_hit_kind.dart' as _ia4xis23;
+import 'settings.dart' as _ibmr8d9c;
+import 'snp.dart' as _ip0fcn2o;
+import 'snp_import_status.dart' as _iq9n7xnd;
+import 'snp_usage_dto.dart' as _i8stnodc;
+import 'user_settings_dto.dart' as _igo562ik;
 export 'auth_admin_status_dto.dart';
 export 'auth_config_dto.dart';
 export 'auth_user_dto.dart';
 export 'custom_snp_request_dto.dart';
-export 'exceptions.dart';
 export 'exceptions/GenomeExceptions/bed_creation_exception.dart';
 export 'exceptions/argument_exception.dart';
 export 'exceptions/flumip_file_not_found_exception.dart';
@@ -64,7 +63,7 @@ export 'snp_usage_dto.dart';
 export 'user_settings_dto.dart';
 export 'client.dart';
 
-class Protocol extends _i1.SerializationManager {
+class Protocol extends _isc.SerializationManager {
   Protocol._();
 
   factory Protocol() => _instance;
@@ -78,10 +77,7 @@ class Protocol extends _i1.SerializationManager {
   }
 
   @override
-  T deserialize<T>(
-    dynamic data, [
-    Type? t,
-  ]) {
+  T deserialize<T>(dynamic data, [Type? t]) {
     t ??= T;
 
     final dataClassName = getClassNameFromObjectJson(data);
@@ -91,158 +87,164 @@ class Protocol extends _i1.SerializationManager {
           'className': dataClassName,
           'data': data,
         });
-      } on FormatException catch (_) {
+      } on _isc.DeserializationClassNameNotFoundException catch (_) {
         // If the className is not recognized (e.g., older client receiving
         // data with a new subtype), fall back to deserializing without the
         // className, using the expected type T.
       }
     }
 
-    if (t == _i2.AuthAdminStatusDto) {
-      return _i2.AuthAdminStatusDto.fromJson(data) as T;
+    if (t == _ilu62sh8.AuthAdminStatusDto) {
+      return _ilu62sh8.AuthAdminStatusDto.fromJson(data) as T;
     }
-    if (t == _i3.AuthConfigDto) {
-      return _i3.AuthConfigDto.fromJson(data) as T;
+    if (t == _i3pxz8st.AuthConfigDto) {
+      return _i3pxz8st.AuthConfigDto.fromJson(data) as T;
     }
-    if (t == _i4.AuthUserDto) {
-      return _i4.AuthUserDto.fromJson(data) as T;
+    if (t == _i9fqmmja.AuthUserDto) {
+      return _i9fqmmja.AuthUserDto.fromJson(data) as T;
     }
-    if (t == _i5.CustomSnpRequestDto) {
-      return _i5.CustomSnpRequestDto.fromJson(data) as T;
+    if (t == _i50r13ns.CustomSnpRequestDto) {
+      return _i50r13ns.CustomSnpRequestDto.fromJson(data) as T;
     }
-    if (t == _i6.GeneExtractionException) {
-      return _i6.GeneExtractionException.fromJson(data) as T;
+    if (t == _il9ya82w.BedCreationException) {
+      return _il9ya82w.BedCreationException.fromJson(data) as T;
     }
-    if (t == _i7.BedCreationException) {
-      return _i7.BedCreationException.fromJson(data) as T;
+    if (t == _ix5u8j9t.ArgumentException) {
+      return _ix5u8j9t.ArgumentException.fromJson(data) as T;
     }
-    if (t == _i8.ArgumentException) {
-      return _i8.ArgumentException.fromJson(data) as T;
+    if (t == _iua77lfj.FlumipFileNotFoundException) {
+      return _iua77lfj.FlumipFileNotFoundException.fromJson(data) as T;
     }
-    if (t == _i9.FlumipFileNotFoundException) {
-      return _i9.FlumipFileNotFoundException.fromJson(data) as T;
+    if (t == _iq9wx7jy.ProjectAccessDeniedException) {
+      return _iq9wx7jy.ProjectAccessDeniedException.fromJson(data) as T;
     }
-    if (t == _i10.ProjectAccessDeniedException) {
-      return _i10.ProjectAccessDeniedException.fromJson(data) as T;
+    if (t == _im3lr0ct.FlumipUserDto) {
+      return _im3lr0ct.FlumipUserDto.fromJson(data) as T;
     }
-    if (t == _i11.FlumipUserDto) {
-      return _i11.FlumipUserDto.fromJson(data) as T;
+    if (t == _ik3s3pjn.Genome) {
+      return _ik3s3pjn.Genome.fromJson(data) as T;
     }
-    if (t == _i12.Genome) {
-      return _i12.Genome.fromJson(data) as T;
+    if (t == _ifiazq2p.Project) {
+      return _ifiazq2p.Project.fromJson(data) as T;
     }
-    if (t == _i13.Project) {
-      return _i13.Project.fromJson(data) as T;
+    if (t == _ip1wvjxo.ProjectFileDto) {
+      return _ip1wvjxo.ProjectFileDto.fromJson(data) as T;
     }
-    if (t == _i14.ProjectFileDto) {
-      return _i14.ProjectFileDto.fromJson(data) as T;
+    if (t == _i4kq7s26.ProjectOptions) {
+      return _i4kq7s26.ProjectOptions.fromJson(data) as T;
     }
-    if (t == _i15.ProjectOptions) {
-      return _i15.ProjectOptions.fromJson(data) as T;
+    if (t == _iootg8bv.ScoreMethod) {
+      return _iootg8bv.ScoreMethod.fromJson(data) as T;
     }
-    if (t == _i16.ScoreMethod) {
-      return _i16.ScoreMethod.fromJson(data) as T;
+    if (t == _iy8r37ur.SearchHitDto) {
+      return _iy8r37ur.SearchHitDto.fromJson(data) as T;
     }
-    if (t == _i17.SearchHitDto) {
-      return _i17.SearchHitDto.fromJson(data) as T;
+    if (t == _ia4xis23.SearchHitKind) {
+      return _ia4xis23.SearchHitKind.fromJson(data) as T;
     }
-    if (t == _i18.SearchHitKind) {
-      return _i18.SearchHitKind.fromJson(data) as T;
+    if (t == _ibmr8d9c.Settings) {
+      return _ibmr8d9c.Settings.fromJson(data) as T;
     }
-    if (t == _i19.Settings) {
-      return _i19.Settings.fromJson(data) as T;
+    if (t == _ip0fcn2o.Snp) {
+      return _ip0fcn2o.Snp.fromJson(data) as T;
     }
-    if (t == _i20.Snp) {
-      return _i20.Snp.fromJson(data) as T;
+    if (t == _iq9n7xnd.SnpImportStatus) {
+      return _iq9n7xnd.SnpImportStatus.fromJson(data) as T;
     }
-    if (t == _i21.SnpImportStatus) {
-      return _i21.SnpImportStatus.fromJson(data) as T;
+    if (t == _i8stnodc.SnpUsageDto) {
+      return _i8stnodc.SnpUsageDto.fromJson(data) as T;
     }
-    if (t == _i22.SnpUsageDto) {
-      return _i22.SnpUsageDto.fromJson(data) as T;
+    if (t == _igo562ik.UserSettingsDto) {
+      return _igo562ik.UserSettingsDto.fromJson(data) as T;
     }
-    if (t == _i23.UserSettingsDto) {
-      return _i23.UserSettingsDto.fromJson(data) as T;
-    }
-    if (t == _i1.getType<_i2.AuthAdminStatusDto?>()) {
-      return (data != null ? _i2.AuthAdminStatusDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i3.AuthConfigDto?>()) {
-      return (data != null ? _i3.AuthConfigDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i4.AuthUserDto?>()) {
-      return (data != null ? _i4.AuthUserDto.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i5.CustomSnpRequestDto?>()) {
-      return (data != null ? _i5.CustomSnpRequestDto.fromJson(data) : null)
+    if (t == _isc.getType<_ilu62sh8.AuthAdminStatusDto?>()) {
+      return (data != null ? _ilu62sh8.AuthAdminStatusDto.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i6.GeneExtractionException?>()) {
-      return (data != null ? _i6.GeneExtractionException.fromJson(data) : null)
+    if (t == _isc.getType<_i3pxz8st.AuthConfigDto?>()) {
+      return (data != null ? _i3pxz8st.AuthConfigDto.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i7.BedCreationException?>()) {
-      return (data != null ? _i7.BedCreationException.fromJson(data) : null)
-          as T;
+    if (t == _isc.getType<_i9fqmmja.AuthUserDto?>()) {
+      return (data != null ? _i9fqmmja.AuthUserDto.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.ArgumentException?>()) {
-      return (data != null ? _i8.ArgumentException.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i9.FlumipFileNotFoundException?>()) {
+    if (t == _isc.getType<_i50r13ns.CustomSnpRequestDto?>()) {
       return (data != null
-              ? _i9.FlumipFileNotFoundException.fromJson(data)
+              ? _i50r13ns.CustomSnpRequestDto.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i10.ProjectAccessDeniedException?>()) {
+    if (t == _isc.getType<_il9ya82w.BedCreationException?>()) {
       return (data != null
-              ? _i10.ProjectAccessDeniedException.fromJson(data)
+              ? _il9ya82w.BedCreationException.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i11.FlumipUserDto?>()) {
-      return (data != null ? _i11.FlumipUserDto.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ix5u8j9t.ArgumentException?>()) {
+      return (data != null ? _ix5u8j9t.ArgumentException.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i12.Genome?>()) {
-      return (data != null ? _i12.Genome.fromJson(data) : null) as T;
+    if (t == _isc.getType<_iua77lfj.FlumipFileNotFoundException?>()) {
+      return (data != null
+              ? _iua77lfj.FlumipFileNotFoundException.fromJson(data)
+              : null)
+          as T;
     }
-    if (t == _i1.getType<_i13.Project?>()) {
-      return (data != null ? _i13.Project.fromJson(data) : null) as T;
+    if (t == _isc.getType<_iq9wx7jy.ProjectAccessDeniedException?>()) {
+      return (data != null
+              ? _iq9wx7jy.ProjectAccessDeniedException.fromJson(data)
+              : null)
+          as T;
     }
-    if (t == _i1.getType<_i14.ProjectFileDto?>()) {
-      return (data != null ? _i14.ProjectFileDto.fromJson(data) : null) as T;
+    if (t == _isc.getType<_im3lr0ct.FlumipUserDto?>()) {
+      return (data != null ? _im3lr0ct.FlumipUserDto.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i15.ProjectOptions?>()) {
-      return (data != null ? _i15.ProjectOptions.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ik3s3pjn.Genome?>()) {
+      return (data != null ? _ik3s3pjn.Genome.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i16.ScoreMethod?>()) {
-      return (data != null ? _i16.ScoreMethod.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ifiazq2p.Project?>()) {
+      return (data != null ? _ifiazq2p.Project.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i17.SearchHitDto?>()) {
-      return (data != null ? _i17.SearchHitDto.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ip1wvjxo.ProjectFileDto?>()) {
+      return (data != null ? _ip1wvjxo.ProjectFileDto.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i18.SearchHitKind?>()) {
-      return (data != null ? _i18.SearchHitKind.fromJson(data) : null) as T;
+    if (t == _isc.getType<_i4kq7s26.ProjectOptions?>()) {
+      return (data != null ? _i4kq7s26.ProjectOptions.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i19.Settings?>()) {
-      return (data != null ? _i19.Settings.fromJson(data) : null) as T;
+    if (t == _isc.getType<_iootg8bv.ScoreMethod?>()) {
+      return (data != null ? _iootg8bv.ScoreMethod.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i20.Snp?>()) {
-      return (data != null ? _i20.Snp.fromJson(data) : null) as T;
+    if (t == _isc.getType<_iy8r37ur.SearchHitDto?>()) {
+      return (data != null ? _iy8r37ur.SearchHitDto.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i21.SnpImportStatus?>()) {
-      return (data != null ? _i21.SnpImportStatus.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ia4xis23.SearchHitKind?>()) {
+      return (data != null ? _ia4xis23.SearchHitKind.fromJson(data) : null)
+          as T;
     }
-    if (t == _i1.getType<_i22.SnpUsageDto?>()) {
-      return (data != null ? _i22.SnpUsageDto.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ibmr8d9c.Settings?>()) {
+      return (data != null ? _ibmr8d9c.Settings.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i23.UserSettingsDto?>()) {
-      return (data != null ? _i23.UserSettingsDto.fromJson(data) : null) as T;
+    if (t == _isc.getType<_ip0fcn2o.Snp?>()) {
+      return (data != null ? _ip0fcn2o.Snp.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_iq9n7xnd.SnpImportStatus?>()) {
+      return (data != null ? _iq9n7xnd.SnpImportStatus.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_i8stnodc.SnpUsageDto?>()) {
+      return (data != null ? _i8stnodc.SnpUsageDto.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_igo562ik.UserSettingsDto?>()) {
+      return (data != null ? _igo562ik.UserSettingsDto.fromJson(data) : null)
+          as T;
     }
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == _i1.getType<List<String>?>()) {
+    if (t == _isc.getType<List<String>?>()) {
       return (data != null
               ? (data as List).map((e) => deserialize<String>(e)).toList()
               : null)
@@ -251,38 +253,43 @@ class Protocol extends _i1.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
-    if (t == List<_i24.ProjectFileDto>) {
+    if (t == List<_i5l1g0eo.ProjectFileDto>) {
       return (data as List)
-              .map((e) => deserialize<_i24.ProjectFileDto>(e))
+              .map((e) => deserialize<_i5l1g0eo.ProjectFileDto>(e))
               .toList()
           as T;
     }
-    if (t == List<_i25.Genome>) {
-      return (data as List).map((e) => deserialize<_i25.Genome>(e)).toList()
-          as T;
-    }
-    if (t == List<_i26.Snp>) {
-      return (data as List).map((e) => deserialize<_i26.Snp>(e)).toList() as T;
-    }
-    if (t == List<_i27.Project>) {
-      return (data as List).map((e) => deserialize<_i27.Project>(e)).toList()
-          as T;
-    }
-    if (t == List<_i28.FlumipUserDto>) {
+    if (t == List<_ixuye8o9.Genome>) {
       return (data as List)
-              .map((e) => deserialize<_i28.FlumipUserDto>(e))
+              .map((e) => deserialize<_ixuye8o9.Genome>(e))
               .toList()
           as T;
     }
-    if (t == List<_i29.SearchHitDto>) {
+    if (t == List<_iumnx4id.Snp>) {
+      return (data as List).map((e) => deserialize<_iumnx4id.Snp>(e)).toList()
+          as T;
+    }
+    if (t == List<_iqi8mkqf.Project>) {
       return (data as List)
-              .map((e) => deserialize<_i29.SearchHitDto>(e))
+              .map((e) => deserialize<_iqi8mkqf.Project>(e))
               .toList()
           as T;
     }
-    if (t == List<_i30.SnpUsageDto>) {
+    if (t == List<_i15z9m0g.FlumipUserDto>) {
       return (data as List)
-              .map((e) => deserialize<_i30.SnpUsageDto>(e))
+              .map((e) => deserialize<_i15z9m0g.FlumipUserDto>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i8y6t52d.SearchHitDto>) {
+      return (data as List)
+              .map((e) => deserialize<_i8y6t52d.SearchHitDto>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_idqeum9a.SnpUsageDto>) {
+      return (data as List)
+              .map((e) => deserialize<_idqeum9a.SnpUsageDto>(e))
               .toList()
           as T;
     }
@@ -291,28 +298,27 @@ class Protocol extends _i1.SerializationManager {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i2.AuthAdminStatusDto => 'AuthAdminStatusDto',
-      _i3.AuthConfigDto => 'AuthConfigDto',
-      _i4.AuthUserDto => 'AuthUserDto',
-      _i5.CustomSnpRequestDto => 'CustomSnpRequestDto',
-      _i6.GeneExtractionException => 'GeneExtractionException',
-      _i7.BedCreationException => 'BedCreationException',
-      _i8.ArgumentException => 'ArgumentException',
-      _i9.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
-      _i10.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
-      _i11.FlumipUserDto => 'FlumipUserDto',
-      _i12.Genome => 'Genome',
-      _i13.Project => 'Project',
-      _i14.ProjectFileDto => 'ProjectFileDto',
-      _i15.ProjectOptions => 'ProjectOptions',
-      _i16.ScoreMethod => 'ScoreMethod',
-      _i17.SearchHitDto => 'SearchHitDto',
-      _i18.SearchHitKind => 'SearchHitKind',
-      _i19.Settings => 'Settings',
-      _i20.Snp => 'Snp',
-      _i21.SnpImportStatus => 'SnpImportStatus',
-      _i22.SnpUsageDto => 'SnpUsageDto',
-      _i23.UserSettingsDto => 'UserSettingsDto',
+      _ilu62sh8.AuthAdminStatusDto => 'AuthAdminStatusDto',
+      _i3pxz8st.AuthConfigDto => 'AuthConfigDto',
+      _i9fqmmja.AuthUserDto => 'AuthUserDto',
+      _i50r13ns.CustomSnpRequestDto => 'CustomSnpRequestDto',
+      _il9ya82w.BedCreationException => 'BedCreationException',
+      _ix5u8j9t.ArgumentException => 'ArgumentException',
+      _iua77lfj.FlumipFileNotFoundException => 'FlumipFileNotFoundException',
+      _iq9wx7jy.ProjectAccessDeniedException => 'ProjectAccessDeniedException',
+      _im3lr0ct.FlumipUserDto => 'FlumipUserDto',
+      _ik3s3pjn.Genome => 'Genome',
+      _ifiazq2p.Project => 'Project',
+      _ip1wvjxo.ProjectFileDto => 'ProjectFileDto',
+      _i4kq7s26.ProjectOptions => 'ProjectOptions',
+      _iootg8bv.ScoreMethod => 'ScoreMethod',
+      _iy8r37ur.SearchHitDto => 'SearchHitDto',
+      _ia4xis23.SearchHitKind => 'SearchHitKind',
+      _ibmr8d9c.Settings => 'Settings',
+      _ip0fcn2o.Snp => 'Snp',
+      _iq9n7xnd.SnpImportStatus => 'SnpImportStatus',
+      _i8stnodc.SnpUsageDto => 'SnpUsageDto',
+      _igo562ik.UserSettingsDto => 'UserSettingsDto',
       _ => null,
     };
   }
@@ -327,49 +333,47 @@ class Protocol extends _i1.SerializationManager {
     }
 
     switch (data) {
-      case _i2.AuthAdminStatusDto():
+      case _ilu62sh8.AuthAdminStatusDto():
         return 'AuthAdminStatusDto';
-      case _i3.AuthConfigDto():
+      case _i3pxz8st.AuthConfigDto():
         return 'AuthConfigDto';
-      case _i4.AuthUserDto():
+      case _i9fqmmja.AuthUserDto():
         return 'AuthUserDto';
-      case _i5.CustomSnpRequestDto():
+      case _i50r13ns.CustomSnpRequestDto():
         return 'CustomSnpRequestDto';
-      case _i6.GeneExtractionException():
-        return 'GeneExtractionException';
-      case _i7.BedCreationException():
+      case _il9ya82w.BedCreationException():
         return 'BedCreationException';
-      case _i8.ArgumentException():
+      case _ix5u8j9t.ArgumentException():
         return 'ArgumentException';
-      case _i9.FlumipFileNotFoundException():
+      case _iua77lfj.FlumipFileNotFoundException():
         return 'FlumipFileNotFoundException';
-      case _i10.ProjectAccessDeniedException():
+      case _iq9wx7jy.ProjectAccessDeniedException():
         return 'ProjectAccessDeniedException';
-      case _i11.FlumipUserDto():
+      case _im3lr0ct.FlumipUserDto():
         return 'FlumipUserDto';
-      case _i12.Genome():
+      case _ik3s3pjn.Genome():
         return 'Genome';
-      case _i13.Project():
+      case _ifiazq2p.Project():
         return 'Project';
-      case _i14.ProjectFileDto():
+      case _ip1wvjxo.ProjectFileDto():
         return 'ProjectFileDto';
-      case _i15.ProjectOptions():
+      case _i4kq7s26.ProjectOptions():
         return 'ProjectOptions';
-      case _i16.ScoreMethod():
+      case _iootg8bv.ScoreMethod():
         return 'ScoreMethod';
-      case _i17.SearchHitDto():
+      case _iy8r37ur.SearchHitDto():
         return 'SearchHitDto';
-      case _i18.SearchHitKind():
+      case _ia4xis23.SearchHitKind():
         return 'SearchHitKind';
-      case _i19.Settings():
+      case _ibmr8d9c.Settings():
         return 'Settings';
-      case _i20.Snp():
+      case _ip0fcn2o.Snp():
         return 'Snp';
-      case _i21.SnpImportStatus():
+      case _iq9n7xnd.SnpImportStatus():
         return 'SnpImportStatus';
-      case _i22.SnpUsageDto():
+      case _i8stnodc.SnpUsageDto():
         return 'SnpUsageDto';
-      case _i23.UserSettingsDto():
+      case _igo562ik.UserSettingsDto():
         return 'UserSettingsDto';
     }
     return null;
@@ -382,73 +386,73 @@ class Protocol extends _i1.SerializationManager {
       return super.deserializeByClassName(data);
     }
     if (dataClassName == 'AuthAdminStatusDto') {
-      return deserialize<_i2.AuthAdminStatusDto>(data['data']);
+      return deserialize<_ilu62sh8.AuthAdminStatusDto>(data['data']);
     }
     if (dataClassName == 'AuthConfigDto') {
-      return deserialize<_i3.AuthConfigDto>(data['data']);
+      return deserialize<_i3pxz8st.AuthConfigDto>(data['data']);
     }
     if (dataClassName == 'AuthUserDto') {
-      return deserialize<_i4.AuthUserDto>(data['data']);
+      return deserialize<_i9fqmmja.AuthUserDto>(data['data']);
     }
     if (dataClassName == 'CustomSnpRequestDto') {
-      return deserialize<_i5.CustomSnpRequestDto>(data['data']);
-    }
-    if (dataClassName == 'GeneExtractionException') {
-      return deserialize<_i6.GeneExtractionException>(data['data']);
+      return deserialize<_i50r13ns.CustomSnpRequestDto>(data['data']);
     }
     if (dataClassName == 'BedCreationException') {
-      return deserialize<_i7.BedCreationException>(data['data']);
+      return deserialize<_il9ya82w.BedCreationException>(data['data']);
     }
     if (dataClassName == 'ArgumentException') {
-      return deserialize<_i8.ArgumentException>(data['data']);
+      return deserialize<_ix5u8j9t.ArgumentException>(data['data']);
     }
     if (dataClassName == 'FlumipFileNotFoundException') {
-      return deserialize<_i9.FlumipFileNotFoundException>(data['data']);
+      return deserialize<_iua77lfj.FlumipFileNotFoundException>(data['data']);
     }
     if (dataClassName == 'ProjectAccessDeniedException') {
-      return deserialize<_i10.ProjectAccessDeniedException>(data['data']);
+      return deserialize<_iq9wx7jy.ProjectAccessDeniedException>(data['data']);
     }
     if (dataClassName == 'FlumipUserDto') {
-      return deserialize<_i11.FlumipUserDto>(data['data']);
+      return deserialize<_im3lr0ct.FlumipUserDto>(data['data']);
     }
     if (dataClassName == 'Genome') {
-      return deserialize<_i12.Genome>(data['data']);
+      return deserialize<_ik3s3pjn.Genome>(data['data']);
     }
     if (dataClassName == 'Project') {
-      return deserialize<_i13.Project>(data['data']);
+      return deserialize<_ifiazq2p.Project>(data['data']);
     }
     if (dataClassName == 'ProjectFileDto') {
-      return deserialize<_i14.ProjectFileDto>(data['data']);
+      return deserialize<_ip1wvjxo.ProjectFileDto>(data['data']);
     }
     if (dataClassName == 'ProjectOptions') {
-      return deserialize<_i15.ProjectOptions>(data['data']);
+      return deserialize<_i4kq7s26.ProjectOptions>(data['data']);
     }
     if (dataClassName == 'ScoreMethod') {
-      return deserialize<_i16.ScoreMethod>(data['data']);
+      return deserialize<_iootg8bv.ScoreMethod>(data['data']);
     }
     if (dataClassName == 'SearchHitDto') {
-      return deserialize<_i17.SearchHitDto>(data['data']);
+      return deserialize<_iy8r37ur.SearchHitDto>(data['data']);
     }
     if (dataClassName == 'SearchHitKind') {
-      return deserialize<_i18.SearchHitKind>(data['data']);
+      return deserialize<_ia4xis23.SearchHitKind>(data['data']);
     }
     if (dataClassName == 'Settings') {
-      return deserialize<_i19.Settings>(data['data']);
+      return deserialize<_ibmr8d9c.Settings>(data['data']);
     }
     if (dataClassName == 'Snp') {
-      return deserialize<_i20.Snp>(data['data']);
+      return deserialize<_ip0fcn2o.Snp>(data['data']);
     }
     if (dataClassName == 'SnpImportStatus') {
-      return deserialize<_i21.SnpImportStatus>(data['data']);
+      return deserialize<_iq9n7xnd.SnpImportStatus>(data['data']);
     }
     if (dataClassName == 'SnpUsageDto') {
-      return deserialize<_i22.SnpUsageDto>(data['data']);
+      return deserialize<_i8stnodc.SnpUsageDto>(data['data']);
     }
     if (dataClassName == 'UserSettingsDto') {
-      return deserialize<_i23.UserSettingsDto>(data['data']);
+      return deserialize<_igo562ik.UserSettingsDto>(data['data']);
     }
     return super.deserializeByClassName(data);
   }
+
+  @override
+  String getModuleName() => 'flumip';
 
   /// Maps any `Record`s known to this [Protocol] to their JSON representation
   ///

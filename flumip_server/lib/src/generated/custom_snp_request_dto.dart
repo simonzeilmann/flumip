@@ -10,8 +10,8 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
-import 'package:flumip_server/src/generated/protocol.dart' as _i2;
+import 'package:flumip_server/src/generated/protocol.dart' as _ijyeyqvr;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// What the app sends to add a custom SNP, whether by upload or by URL. No table.
 ///
@@ -19,7 +19,7 @@ import 'package:flumip_server/src/generated/protocol.dart' as _i2;
 /// the `/snp_upload/...` web route, and a URL import is fetched by the server.
 /// This carries only the description of what is being added.
 abstract class CustomSnpRequestDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
+    implements _is.SerializableModel, _is.ProtocolSerialization {
   CustomSnpRequestDto._({
     required this.name,
     String? description,
@@ -44,10 +44,12 @@ abstract class CustomSnpRequestDto
       genomeId: jsonSerialization['genomeId'] as int,
       private: jsonSerialization['private'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['private']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['private']),
       urls: jsonSerialization['urls'] == null
           ? null
-          : _i2.Protocol().deserialize<List<String>>(jsonSerialization['urls']),
+          : _ijyeyqvr.Protocol().deserialize<List<String>>(
+              jsonSerialization['urls'],
+            ),
     );
   }
 
@@ -69,7 +71,7 @@ abstract class CustomSnpRequestDto
 
   /// Returns a shallow copy of this [CustomSnpRequestDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   CustomSnpRequestDto copyWith({
     String? name,
     String? description,
@@ -103,7 +105,7 @@ abstract class CustomSnpRequestDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
@@ -126,7 +128,7 @@ class _CustomSnpRequestDtoImpl extends CustomSnpRequestDto {
 
   /// Returns a shallow copy of this [CustomSnpRequestDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
   CustomSnpRequestDto copyWith({
     String? name,

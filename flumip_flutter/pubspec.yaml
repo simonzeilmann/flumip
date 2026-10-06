@@ -18,13 +18,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.7.0
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
-  flutter: '>=3.19.0'
+  sdk: '^3.12.2'
+  flutter: '>=3.44.4'
 
 dependencies:
   flutter:
     sdk: flutter
-  serverpod_flutter: 3.4.11
+  serverpod_flutter: 4.0.1
   flumip_client:
     path: ../flumip_client
 
@@ -34,7 +34,7 @@ dependencies:
   http: ^1.6.0
   # Used directly for the auth key provider types; comes in via flumip_client
   # but this package imports it, so declare it.
-  serverpod_client: 3.4.11
+  serverpod_client: 4.0.1
   intl: ^0.20.3
   url_launcher: ^6.1.10
 

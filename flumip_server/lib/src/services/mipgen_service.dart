@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/future_calls.dart';
@@ -10,6 +11,7 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
+import 'package:flumip_server/src/services/ucsc_track.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
@@ -23,9 +25,52 @@ const mipgenLogName = 'mipgen.log';
 
 /// How long a helper tool gets before it is treated as wedged.
 ///
-/// The exon-extraction script and the UCSC track generator both read a gene
-/// list and write a file; minutes, not hours.
+/// The exon-extraction script reads a gene list and writes a file; minutes,
+/// not hours.
 const helperToolTimeout = Duration(minutes: 15);
+
+/// The suffix mipgen gives the design itself, after the project name.
+const pickedMipsSuffix = 'picked_mips.txt';
+
+/// How many tab-separated fields a row of the design carries.
+///
+/// The number is mipgen's, not ours: its header names twenty columns,
+/// `>mip_key` first and `mip_name` last, and every data row matches. It is also
+/// exactly where the UCSC track reads the MIP name — the last field — which is
+/// why a row a single field short was enough to crash MIPGEN's track script.
+const pickedMipsFieldCount = 20;
+
+/// mipgen's own statement, in its progress file, that it finished picking.
+///
+/// Written once all four output files are closed, so a progress file without it
+/// describes a run that stopped somewhere earlier
+/// (`mipgen.cpp`: `PROGRESS << "mip picking complete:\n" ...`).
+const mipPickingCompleteMarker = 'mip picking complete:';
+
+/// Whether mipgen said, in its own progress file, that it got to the end.
+///
+/// ⚠️ Anywhere in the file, not at the end of it. mipgen appends a
+/// `WARNING: There are N gaps in covering supplied regions` after this marker
+/// whenever a design has gaps, which is common — so testing the last line would
+/// call most healthy runs unfinished.
+bool progressSaysComplete(Iterable<String> progress) =>
+    progress.any((line) => line.contains(mipPickingCompleteMarker));
+
+/// Whether [line] is a row of the design that was cut short.
+///
+/// Blank lines are not rows: mipgen's last write ends in a newline, so a
+/// trailing empty line is what a *complete* file looks like. The header is
+/// measured like any other row, because it carries the same twenty fields.
+bool isShortPickedMipsRow(String line) =>
+    line.trim().isNotEmpty && line.split('\t').length < pickedMipsFieldCount;
+
+/// Where mipgen writes the design for [project].
+///
+/// One definition, because two things read it — the completeness check and the
+/// UCSC track writer — and a path built twice is a path that drifts.
+String pickedMipsPathOf(Settings settings, Project project) =>
+    '${settings.projectDir}/${project.folderName}/'
+    '${project.name}.$pickedMipsSuffix';
 
 class MipgenService {
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
@@ -53,14 +98,16 @@ class MipgenService {
         "Project ID does not exist: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'Project id does not exist');
+      throw ArgumentException(message: 'This project no longer exists.');
     }
     if (project.genome == null) {
       session.log(
         "No genome found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genome found in project');
+      throw ArgumentException(
+        message: 'This project has no genome yet. Choose one first.',
+      );
     }
     var genome = await genomeService.getGenome(session, project.genome!);
     if (genome.refPath == null || genome.refPath!.isEmpty) {
@@ -68,14 +115,21 @@ class MipgenService {
         "No reference path found in genome ID: ${project.genome}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No reference path found in genome');
+      throw ArgumentException(
+        message:
+            'The genome "${genome.name}" has no gene annotation file on this '
+            'server, so the target regions cannot be worked out. Ask your '
+            'administrator to re-scan the genome library.',
+      );
     }
     if (project.genes == null || project.genes!.isEmpty) {
       session.log(
         "No genes found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genes found in project');
+      throw ArgumentException(
+        message: 'This project has no genes yet. Add at least one first.',
+      );
     }
 
     var settings = await settingsService.getSettings(session);
@@ -107,13 +161,33 @@ class MipgenService {
       timeout: helperToolTimeout,
     );
 
-    if (process.exitCode != 0 || process.stdout == "") {
+    // ⚠️ Two failures, two messages. These used to share one — "Error: The
+    // supplied genes cannot be found" — which is right for an empty result and
+    // simply wrong for a script that never ran, and sent whoever read it off
+    // checking gene symbols when the actual problem was a path in Settings.
+    if (process.exitCode != 0) {
       session.log(
-        "Failed to extract genes for project ID: $projectID",
+        "Exon extract script failed for project ID: $projectID "
+        "(exit ${process.exitCode})",
         level: LogLevel.error,
       );
       throw BedCreationException(
-        message: 'Error: The supplied genes cannot be found',
+        message:
+            'The gene lookup did not run. Ask your administrator to check the '
+            'exon extract script in Settings.',
+      );
+    }
+
+    if (process.stdout == "") {
+      session.log(
+        "No genes matched for project ID: $projectID",
+        level: LogLevel.error,
+      );
+      throw BedCreationException(
+        message:
+            'None of these genes were found in the annotation for '
+            '"${genome.name}". Check the spelling, and that they are symbols '
+            'this genome build uses.',
       );
     }
 
@@ -164,7 +238,9 @@ class MipgenService {
         "No genome found in project ID: $projectID",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'No genome found in project');
+      throw ArgumentException(
+        message: 'This project has no genome yet. Choose one first.',
+      );
     }
 
     var genome = await genomeService.getGenome(session, project.genome!);
@@ -174,7 +250,9 @@ class MipgenService {
         level: LogLevel.error,
       );
       throw FlumipFileNotFoundException(
-        message: 'No fasta path found in genome',
+        message:
+            'The genome "${genome.name}" has no sequence file on this server. '
+            'Ask your administrator to re-scan the genome library.',
       );
     }
     Snp? snp;
@@ -203,6 +281,24 @@ class MipgenService {
               '(${snp.status.name}). Pick another one, or none, and try again.',
         );
       }
+    }
+
+    // MIPGEN is given FLUMIP's wrapper rather than trf itself (see
+    // deployment/mipgen-trf for why). Checked here because when it is missing,
+    // all MIPGEN says is "unable to tile sequences due to circumstance 3".
+    final trfWrapper = "${settings.toolsDir}/mipgen-trf";
+    if (options.trf == true && !await File(trfWrapper).exists()) {
+      session.log(
+        "Refusing to run project ${project.id}: TRF is on and $trfWrapper "
+        "does not exist.",
+        level: LogLevel.error,
+      );
+      throw FlumipFileNotFoundException(
+        message:
+            'Tandem Repeats Finder is switched on, but its helper '
+            '$trfWrapper is not installed. Ask your administrator to run '
+            'setup-mipgen.sh again, or switch TRF off for this project.',
+      );
     }
 
     List<String> arg = [
@@ -242,7 +338,7 @@ class MipgenService {
       "-max_arm_copy_product",
       options.maxArmCopyProduct.toString(),
       "-trf",
-      options.trf == true ? "trf" : "off",
+      options.trf == true ? trfWrapper : "off",
       if (options.genomeDir != null) ...["-genome_dir", options.genomeDir!],
       "-feature_flank",
       options.featureFlank.toString(),
@@ -361,6 +457,100 @@ class MipgenService {
     }
   }
 
+  /// Why a run that looks finished cannot be trusted, or null when it can.
+  ///
+  /// ⚠️ **Something has to check this, and nothing did.** A project whose
+  /// design was cut short was marked **Complete**: mipgen had written *a*
+  /// progress file, and a non-empty progress file was the entire success test.
+  /// The only symptom was a confusing message about the UCSC *track* — while
+  /// the design itself, the thing the project exists to produce, was
+  /// incomplete. A truncated design presented as a finished one is worse than a
+  /// failed run, because nobody goes looking.
+  ///
+  /// ⚠️ **Its output is the only evidence there is.** Nothing here ever sees
+  /// mipgen's exit code: it is started detached and polled with
+  /// `ps -p <pid>` ([ProcessService.checkIfMipgenProcessIsRunning]), so a run
+  /// that was killed and one that returned 0 look identical from outside. That
+  /// is why this reads the files rather than a status.
+  ///
+  /// Two things are checked, and they catch different endings:
+  ///
+  /// 1. mipgen's own completion marker in the progress file — it stopped early.
+  /// 2. the field count of every row of the design — it was cut short mid-write.
+  ///
+  /// ⚠️ **`bwa copy number analysis finished` is *not* a third check**, though
+  /// it looks like the obvious one when bwa is what died. mipgen's `find_copy`
+  /// calls `system()` twice and ignores both return codes, then prints that
+  /// line unconditionally — so it is written just the same when bwa was killed
+  /// and its `.sam` came back empty. It records that mipgen reached the step,
+  /// never that the step worked.
+  ///
+  /// Follows [SnpService.vcfProblem]: null when there is nothing wrong,
+  /// otherwise one sentence a person can act on.
+  ///
+  /// ⚠️ **Written for whoever clicked Generate, not for whoever maintains the
+  /// server.** These strings are the whole of what reaches the project tile and
+  /// the failure email, and the person reading them is running a MIP design,
+  /// not debugging mipgen. So each one says what happened, what it means for
+  /// their results, and — via the caller — what to do next; none of them
+  /// mentions progress files, markers or field layouts, which name nothing the
+  /// reader can act on. The caller logs the same sentence server-side, so the
+  /// specific check that fired is still recoverable.
+  ///
+  /// ⚠️ The project tile prefixes these with `The design failed: `, and the
+  /// email shows them on their own. They have to read correctly both ways —
+  /// which is why none of them starts by repeating that it failed.
+  ///
+  /// ⚠️ **And none of them guesses at a cause.** An earlier version ended "on
+  /// this server that is most often the machine running out of memory", which
+  /// was this box's history dressed up as a general fact: FLUMIP runs on hosts
+  /// nobody here has seen, "this server" means nothing to somebody using a web
+  /// app, and an administrator gains nothing from a guess. What was actually
+  /// interrupted is in `$mipgenLogName`, which the advice points at.
+  Future<String?> designProblem(File pickedMips, List<String> progress) async {
+    final name = pickedMips.uri.pathSegments.last;
+
+    if (!progressSaysComplete(progress)) {
+      return 'MIP generation was interrupted before it finished designing the '
+          'MIPs, so the results are incomplete and should not be used.';
+    }
+
+    if (!await pickedMips.exists()) {
+      return 'MIP generation reported that it had finished, but its results '
+          'file ($name) is missing from this project, so there are no MIPs to '
+          'use.';
+    }
+
+    // Streamed, not read whole: this is the largest file a project produces,
+    // and the answer is known at the first short row.
+    var row = 0;
+    // ⚠️ `allowMalformed`, so a stray byte cannot make *this* the thing that
+    // fails a good run. The file is fixed-format ASCII, so it should never
+    // matter — and a completeness check that throws on its own input would be a
+    // worse bug than the one it exists to catch.
+    final lines = pickedMips
+        .openRead()
+        .transform(const Utf8Decoder(allowMalformed: true))
+        .transform(const LineSplitter());
+    await for (final line in lines) {
+      if (line.trim().isEmpty) continue;
+      row++;
+      if (isShortPickedMipsRow(line)) {
+        return 'MIP generation was interrupted while writing its results, so '
+            'they are incomplete and should not be used: $name breaks off '
+            'part-way through row $row, which has ${line.split('\t').length} of '
+            'the $pickedMipsFieldCount values a MIP needs.';
+      }
+    }
+
+    if (row == 0) {
+      return 'MIP generation produced no results at all — its results file '
+          '($name) is empty.';
+    }
+
+    return null;
+  }
+
   /// Schedules a delayed future call that polls the MIP generation progress for
   /// [project]. Used both to start polling and to reschedule the next check.
   Future<void> scheduleMipgenProgressCheck(
@@ -394,7 +584,7 @@ class MipgenService {
         "Project ID does not exist: ${projectModel.id}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'Project id does not exist');
+      throw ArgumentException(message: 'This project no longer exists.');
     }
 
     if (project.cleanup) {
@@ -432,29 +622,52 @@ class MipgenService {
           project.completedIn = DateTime.now().difference(project.started!);
         }
 
-        // ⚠️ Its own try, and that is the whole point. The MIPs are on disk by
-        // now — this is decoration on top of a run that succeeded. It used to
-        // sit inside the outer catch, so a UCSC track that could not be written
-        // set `project.error` and the interface reported "MIP generation
-        // failed" for a project whose MIPs had designed perfectly well.
-        try {
-          await _generateUCSCTrack(session, project);
-        } catch (e, stackTrace) {
-          session.log(
-            "Could not generate the UCSC track for project ID: ${project.id}",
-            level: LogLevel.warning,
-            exception: e,
-            stackTrace: stackTrace,
-          );
-          project.warning =
-              "The MIPs were designed, but the UCSC track could not be built: "
-              "${_short(e)}";
-        }
-
-        session.log(
-          "MIP generation finished for project ID: ${project.id}",
-          level: LogLevel.info,
+        // ⚠️ A progress file is not a finished design. Ask [designProblem]
+        // before calling this a success — a run cut short leaves one behind
+        // just as a completed run does, and until this check existed the
+        // difference was invisible until somebody read their results.
+        final problem = await designProblem(
+          File(pickedMipsPathOf(settings, project)),
+          progress,
         );
+        if (problem != null) {
+          session.log(
+            "MIP generation did not complete for project ID: ${project.id}: "
+            "$problem",
+            level: LogLevel.error,
+          );
+          // ⚠️ The advice lives here, once, rather than in each message:
+          // it is the same whichever check fired, because all four mean the
+          // run broke rather than the input being wrong.
+          project.error =
+              "$problem Generate the MIPs again; if it fails the same way, "
+              "send $mipgenLogName from this project's files to your "
+              "administrator.";
+        } else {
+          // ⚠️ Its own try, and that is the whole point. The MIPs are on disk by
+          // now — this is decoration on top of a run that succeeded. It used to
+          // sit inside the outer catch, so a UCSC track that could not be written
+          // set `project.error` and the interface reported "MIP generation
+          // failed" for a project whose MIPs had designed perfectly well.
+          try {
+            await _generateUCSCTrack(session, project);
+          } catch (e, stackTrace) {
+            session.log(
+              "Could not generate the UCSC track for project ID: ${project.id}",
+              level: LogLevel.warning,
+              exception: e,
+              stackTrace: stackTrace,
+            );
+            project.warning =
+                "The MIPs were designed, but the UCSC track could not be built: "
+                "${_short(e)}";
+          }
+
+          session.log(
+            "MIP generation finished for project ID: ${project.id}",
+            level: LogLevel.info,
+          );
+        }
       }
     } catch (e, stackTrace) {
       session.log(
@@ -487,47 +700,17 @@ class MipgenService {
     }
   }
 
-  /// Generates a UCSC track for the specified project.
+  /// Writes the UCSC track for [project]'s design, in-process.
   ///
-  /// \param session The current session.
-  /// \param project The project for which to generate the UCSC track.
-  /// \returns A future that completes when the UCSC track generation process is finished.
+  /// Throws if it cannot be written or the design was incomplete; the caller
+  /// turns that into a warning, because the MIPs themselves are fine.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
-    SettingsService settingsService = sl<SettingsService>();
-
-    var settings = await settingsService.getSettings(session);
-    var projectDir = "${settings.projectDir}/${project.folderName}";
-
-    List<String> arg = [];
-    arg.add(settings.ucscTrackGenerator);
-    arg.add("$projectDir/${project.name}.picked_mips.txt");
-    arg.add("${project.name}_ucsc_track");
-
+    var settings = await sl<SettingsService>().getSettings(session);
+    final pickedMips = pickedMipsPathOf(settings, project);
     session.log(
-      "Starting UCSC track generation process with arguments: $arg",
+      "Writing UCSC track for project ID: ${project.id} from $pickedMips",
       level: LogLevel.info,
     );
-    var process = await sl<ProcessRunner>().run(
-      "python",
-      arg,
-      workingDirectory: projectDir,
-      runInShell: true,
-      timeout: helperToolTimeout,
-    );
-
-    if (process.exitCode != 0) {
-      // ⚠️ Recorded, not merely logged. The track is an optional extra, so this
-      // must not fail the run — but a project whose track silently never
-      // appeared, with the reason only in the server log, is how somebody
-      // spends an afternoon wondering where their UCSC link went.
-      final reason = firstLineOf(process.stderr.toString());
-      session.log(
-        "UCSC track generation failed for project ID: ${project.id}: $reason",
-        level: LogLevel.error,
-      );
-      project.error = project.error.isEmpty
-          ? 'The MIPs were generated, but the UCSC track was not: $reason'
-          : project.error;
-    }
+    await writeUcscTrack(pickedMips, "${project.name}_ucsc_track");
   }
 }

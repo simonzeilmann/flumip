@@ -10,13 +10,13 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 /// Where an SNP's bytes are in their journey. Only `ready` is usable by mipgen.
 ///
 /// `ready` is the default so that every row predating custom SNPs — every global
 /// one the scanner found — is immediately usable without a data migration.
-enum SnpImportStatus implements _i1.SerializableModel {
+enum SnpImportStatus implements _isc.SerializableModel {
   /// The row and its directory exist, the bytes do not. An upload that was
   /// announced but never sent, or a download not yet picked up.
   pending,

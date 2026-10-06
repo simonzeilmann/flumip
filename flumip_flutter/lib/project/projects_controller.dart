@@ -21,20 +21,16 @@ import 'project_state.dart';
 /// made the tab testable.
 class ProjectsController extends ChangeNotifier {
   ProjectsController({
-    required Future<List<Project>> Function() loadProjects,
-    required Future<void> Function(int projectId) deleteProject,
-    required Future<void> Function(int projectId, int? ownerId) setOwner,
-    required Future<bool> Function() loadNotificationsAvailable,
-    required Future<List<FlumipUserDto>> Function() loadAssignableOwners,
-    required bool Function() isAdmin,
-    Listenable? auth,
-  }) : _loadProjects = loadProjects,
-       _deleteProject = deleteProject,
-       _setOwner = setOwner,
-       _loadNotificationsAvailable = loadNotificationsAvailable,
-       _loadAssignableOwners = loadAssignableOwners,
-       _isAdmin = isAdmin,
-       _auth = auth {
+    required this._loadProjects,
+    required this._deleteProject,
+    required this._setOwner,
+    required this._setDepartment,
+    required this._loadAssignableDepartments,
+    required this._loadNotificationsAvailable,
+    required this._loadAssignableOwners,
+    required this._isAdmin,
+    this._auth,
+  }) {
     // Who may reassign a project changes with sign-in state, and `TabBarView`
     // builds this tab before the bearer token exists — the same reason
     // AccessController listens.
@@ -44,6 +40,8 @@ class ProjectsController extends ChangeNotifier {
   final Future<List<Project>> Function() _loadProjects;
   final Future<void> Function(int projectId) _deleteProject;
   final Future<void> Function(int projectId, int? ownerId) _setOwner;
+  final Future<void> Function(int projectId, String? department) _setDepartment;
+  final Future<List<String>> Function() _loadAssignableDepartments;
   final Future<bool> Function() _loadNotificationsAvailable;
   final Future<List<FlumipUserDto>> Function() _loadAssignableOwners;
   final bool Function() _isAdmin;
@@ -53,6 +51,7 @@ class ProjectsController extends ChangeNotifier {
   String? _errorMessage;
   bool _notificationsAvailable = false;
   List<FlumipUserDto>? _assignableOwners;
+  List<String> _assignableDepartments = const [];
   int? _openProjectId;
   bool _disposed = false;
   Timer? _timer;
@@ -84,6 +83,10 @@ class ProjectsController extends ChangeNotifier {
   /// hides the picker entirely, an empty list means "an install with no users".
   List<FlumipUserDto>? get assignableOwners => _assignableOwners;
 
+  /// The groups a project can be put into, or empty when this install does not
+  /// collect them — which is the default, and hides the picker entirely.
+  List<String> get assignableDepartments => _assignableDepartments;
+
   /// The project to open without a click: one just created, or one [reveal]ed by
   /// a search result.
   int? get openProjectId => _openProjectId;
@@ -98,6 +101,7 @@ class ProjectsController extends ChangeNotifier {
       refresh(),
       _refreshNotificationsAvailable(),
       _refreshAssignableOwners(),
+      _refreshAssignableDepartments(),
     ]);
   }
 
@@ -198,8 +202,25 @@ class ProjectsController extends ChangeNotifier {
     }
   }
 
+  /// Loads the groups this caller may use.
+  ///
+  /// ⚠️ Called for **everyone**, not only administrators, unlike
+  /// [_refreshAssignableOwners]: the endpoint answers an ordinary user with
+  /// their own groups, which is exactly what the picker offers them. It
+  /// answers an empty list when no claim is configured, and an empty list is
+  /// what hides the control.
+  Future<void> _refreshAssignableDepartments() async {
+    try {
+      _assignableDepartments = await _loadAssignableDepartments();
+      _notify();
+    } catch (_) {
+      // Leaves the picker out; the projects themselves are unaffected.
+    }
+  }
+
   void _onAuthChanged() {
     _refreshAssignableOwners();
+    _refreshAssignableDepartments();
   }
 
   /// Hands [projectId] to [ownerId], or to nobody when null.
@@ -207,6 +228,20 @@ class ProjectsController extends ChangeNotifier {
     try {
       await _setOwner(projectId, ownerId);
       await refresh();
+    } catch (e) {
+      _errorMessage = describeError(e);
+      _notify();
+    }
+  }
+
+  /// Moves [projectId] into [department], or out of every department with null.
+  Future<void> setDepartment(int projectId, String? department) async {
+    try {
+      await _setDepartment(projectId, department);
+      await refresh();
+      // A project moving into a department the caller had not used before makes
+      // that department offerable on every other tile.
+      await _refreshAssignableDepartments();
     } catch (e) {
       _errorMessage = describeError(e);
       _notify();

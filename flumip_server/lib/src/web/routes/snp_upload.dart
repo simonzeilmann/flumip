@@ -66,17 +66,18 @@ class SnpUploadRoute extends Route {
     // row not accepting files, a file already there. Anything more specific would
     // let somebody enumerate SNP ids or probe what is already uploaded.
     //
-    // And it is 403 rather than 404 because **FlutterRoute swallows 404s**: it
-    // answers any of them with `index.html` and a 200, so a refusal would arrive
-    // looking like success. Same reasoning as `download.dart`.
+    // 403 rather than 404 for a historical reason; see `download.dart`.
     final refused = Response.forbidden(
       body: Body.fromString('Upload not accepted'),
     );
 
     final snpId = int.tryParse(request.pathParameters.get(_snpParam));
-    final fileName = Uri.decodeComponent(
-      request.pathParameters.get(_fileParam),
-    );
+    // Not `Uri.decodeComponent` — Relic has already decoded it, and decoding a
+    // second time throws on any raw non-ASCII character. See the longer note in
+    // `download.dart`. Accepted names are ASCII-only anyway, so the effect here
+    // was narrower: a name with an accent came back as a 500 instead of taking
+    // its place among the uniform 403s.
+    final fileName = request.pathParameters.get(_fileParam);
     if (snpId == null) return refused;
 
     final snp = await Snp.db.findById(session, snpId);
@@ -197,9 +198,10 @@ class SnpUploadRoute extends Route {
         level: LogLevel.info,
       );
 
-      // ⚠️ A JSON body, not an empty 200. FlutterRoute answers an unmatched path
-      // with index.html and a 200, so the client cannot tell a real success from
-      // the app's own HTML unless the answer says something only this route says.
+      // ⚠️ A JSON body, not an empty 200. A path this route does not match (a
+      // missing file name, say) falls through to the app and gets index.html
+      // with a 200, so the client cannot tell a real success from the app's own
+      // HTML unless the answer says something only this route says.
       return Response.ok(
         body: Body.fromString(
           '{"ok":true,"bytes":$written}',

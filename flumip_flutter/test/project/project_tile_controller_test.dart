@@ -28,7 +28,6 @@ Snp snpFixture({int id = 9, String name = 'dbSNP common'}) => Snp(
   vcfPath: '/opt/flumip/data/custom_snp/user/$id/set.vcf.gz',
   tbiPath: '/opt/flumip/data/custom_snp/user/$id/set.vcf.gz.tbi',
   folder: '/opt/flumip/data/custom_snp/user/$id',
-  active: true,
   custom: true,
   private: false,
   status: SnpImportStatus.ready,
@@ -368,10 +367,10 @@ void main() {
       expect(h.messages.single, 'No exons for XYZ');
     });
 
-    test('the disk-space switch is carried into the run', () async {
+    test('intermediate files are deleted unless asked otherwise', () async {
       final h = Harness();
       addTearDown(h.controller.dispose);
-      h.controller.setDeleteExcessFiles(true);
+      expect(h.controller.deleteExcessFiles, isTrue);
 
       await h.controller.generateMips();
       await pumpEventQueue();
@@ -380,17 +379,28 @@ void main() {
       expect(h.messages, contains('MIPs generation started successfully'));
     });
 
+    test('switching the deletion off is carried into the run', () async {
+      final h = Harness();
+      addTearDown(h.controller.dispose);
+      h.controller.setDeleteExcessFiles(false);
+
+      await h.controller.generateMips();
+      await pumpEventQueue();
+
+      expect(h.calls.first, 'generate 1 delete=false');
+    });
+
     test('a refused run says why and starts nothing', () async {
       final h = Harness()
         ..actionThrows = ArgumentException(
-          message: 'That SNP set is not ready',
+          message: 'This SNP set is not ready',
         );
       addTearDown(h.controller.dispose);
 
       await h.controller.generateMips();
       await pumpEventQueue();
 
-      expect(h.messages.single, 'That SNP set is not ready');
+      expect(h.messages.single, 'This SNP set is not ready');
     });
   });
 

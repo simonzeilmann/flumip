@@ -10,7 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// The settings the calling user may see, and whether they may administer.
 ///
@@ -31,26 +31,22 @@ import 'package:serverpod/serverpod.dart' as _i1;
 ///
 /// No table — transport only.
 abstract class UserSettingsDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  UserSettingsDto._({
-    bool? isAdmin,
-    bool? passwordAccepted,
-  }) : isAdmin = isAdmin ?? false,
-       passwordAccepted = passwordAccepted ?? true;
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  UserSettingsDto._({bool? isAdmin, bool? passwordAccepted})
+    : isAdmin = isAdmin ?? false,
+      passwordAccepted = passwordAccepted ?? true;
 
-  factory UserSettingsDto({
-    bool? isAdmin,
-    bool? passwordAccepted,
-  }) = _UserSettingsDtoImpl;
+  factory UserSettingsDto({bool? isAdmin, bool? passwordAccepted}) =
+      _UserSettingsDtoImpl;
 
   factory UserSettingsDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return UserSettingsDto(
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
       passwordAccepted: jsonSerialization['passwordAccepted'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(
+          : _is.BoolJsonExtension.fromJson(
               jsonSerialization['passwordAccepted'],
             ),
     );
@@ -73,11 +69,8 @@ abstract class UserSettingsDto
 
   /// Returns a shallow copy of this [UserSettingsDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  UserSettingsDto copyWith({
-    bool? isAdmin,
-    bool? passwordAccepted,
-  });
+  @_is.useResult
+  UserSettingsDto copyWith({bool? isAdmin, bool? passwordAccepted});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -98,27 +91,19 @@ abstract class UserSettingsDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _UserSettingsDtoImpl extends UserSettingsDto {
-  _UserSettingsDtoImpl({
-    bool? isAdmin,
-    bool? passwordAccepted,
-  }) : super._(
-         isAdmin: isAdmin,
-         passwordAccepted: passwordAccepted,
-       );
+  _UserSettingsDtoImpl({bool? isAdmin, bool? passwordAccepted})
+    : super._(isAdmin: isAdmin, passwordAccepted: passwordAccepted);
 
   /// Returns a shallow copy of this [UserSettingsDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  UserSettingsDto copyWith({
-    bool? isAdmin,
-    bool? passwordAccepted,
-  }) {
+  UserSettingsDto copyWith({bool? isAdmin, bool? passwordAccepted}) {
     return UserSettingsDto(
       isAdmin: isAdmin ?? this.isAdmin,
       passwordAccepted: passwordAccepted ?? this.passwordAccepted,

@@ -29,12 +29,16 @@ void main() {
       expect(genome.name, 'hs1');
     }, tags: ['unit']);
 
-    test('getGenome throws FileNotFoundException for a missing id', () async {
-      expect(
-        () => genomeService.getGenome(session, -1),
-        throwsMessage('Genome not found'),
-      );
-    }, tags: ['unit']);
+    test(
+      'getGenome throws FlumipFileNotFoundException for a missing id',
+      () async {
+        expect(
+          () => genomeService.getGenome(session, -1),
+          throwsMessage('This genome no longer exists.'),
+        );
+      },
+      tags: ['unit'],
+    );
 
     test('getGenomeCategories returns the distinct categories', () async {
       await seedGenome(session, name: 'a', category: 'human');
@@ -60,12 +64,12 @@ void main() {
     }, tags: ['unit']);
 
     test(
-      'updateGenome throws FileNotFoundException for a missing id',
+      'updateGenome throws FlumipFileNotFoundException for a missing id',
       () async {
         final ghost = Genome(id: 9999, name: 'ghost');
         expect(
           () => genomeService.updateGenome(session, 9999, ghost),
-          throwsMessage('Genome not found'),
+          throwsMessage('This genome no longer exists.'),
         );
       },
       tags: ['unit'],
@@ -89,12 +93,16 @@ void main() {
       expect(snp.name, 'common');
     }, tags: ['unit']);
 
-    test('getSnp throws FileNotFoundException for a missing id', () async {
-      expect(
-        () => genomeService.getSnp(session, -1),
-        throwsMessage('SNP not found'),
-      );
-    }, tags: ['unit']);
+    test(
+      'getSnp throws FlumipFileNotFoundException for a missing id',
+      () async {
+        expect(
+          () => genomeService.getSnp(session, -1),
+          throwsMessage('This SNP set no longer exists.'),
+        );
+      },
+      tags: ['unit'],
+    );
 
     test(
       'getAllSnpForGenome returns the SNPs pointing at the genome',
@@ -142,7 +150,7 @@ void main() {
     test('getAllSnpForGenome throws for a missing genome', () async {
       expect(
         () => genomeService.getAllSnpForGenome(session, -1),
-        throwsMessage('Genome not found'),
+        throwsMessage('This genome no longer exists.'),
       );
     }, tags: ['unit']);
   });

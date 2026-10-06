@@ -15,22 +15,15 @@ import '../poll.dart';
 /// things in this tab that were subtle and untested.
 class GenomeController extends ChangeNotifier {
   GenomeController({
-    required Future<List<String>> Function() loadCategories,
-    required Future<List<Genome>> Function(String category) loadGenomes,
-    required Future<Genome> Function(int genomeId) loadGenome,
-    required Future<void> Function(int genomeId) indexGenome,
-    required Future<void> Function(int genomeId) deleteIndex,
-    required Future<void> Function(int genomeId, Genome genome) updateGenome,
-    required Future<void> Function() scanForGenomes,
-    required Future<void> Function() recheckSnpSets,
-  }) : _loadCategories = loadCategories,
-       _loadGenomes = loadGenomes,
-       _loadGenome = loadGenome,
-       _indexGenome = indexGenome,
-       _deleteIndex = deleteIndex,
-       _updateGenome = updateGenome,
-       _scanForGenomes = scanForGenomes,
-       _recheckSnpSets = recheckSnpSets;
+    required this._loadCategories,
+    required this._loadGenomes,
+    required this._loadGenome,
+    required this._indexGenome,
+    required this._deleteIndex,
+    required this._updateGenome,
+    required this._scanForGenomes,
+    required this._recheckSnpSets,
+  });
 
   final Future<List<String>> Function() _loadCategories;
   final Future<List<Genome>> Function(String category) _loadGenomes;

@@ -22,7 +22,8 @@ projects you already have.
 
 What it still does not do is anything finer-grained than that: no roles beyond
 administrator, no sharing a project with a named colleague, no per-project
-permissions. Departments are half-built — see the authorization document.
+permissions. Projects can also be shared by department, using a group claim
+from your provider — see the authorization document.
 
 ## The redirect URI, which is where most setups go wrong
 
@@ -156,6 +157,7 @@ saves a value that silently does nothing.
 | `FLUMIP_OIDC_CLIENT_SECRET` | Client secret |
 | `FLUMIP_OIDC_ALLOWED_DOMAINS` | Allowed email domains |
 | `FLUMIP_OIDC_ADMIN_EMAILS` | Administrator addresses |
+| `FLUMIP_OIDC_DEPARTMENT_CLAIM` | Department claim; see [authorization.md](authorization.md#departments) |
 | `FLUMIP_PUBLIC_URL` | Public URL |
 | `FLUMIP_AUTH_STRICT` | See "Why sign-in might not be enforced" |
 
@@ -237,6 +239,43 @@ PostgreSQL, not in memory. A deploy or restart does not disturb anyone.
 so the app is no longer same-origin with the server and the session cookie is not
 sent. Build into `flumip_server/web/app` and open the server's web port instead.
 
+## What this server checks in an ID token
+
+Everything OpenID Connect Core §3.1.3.7 asks of a client in the authorization
+code flow, except the signature — and that exception is the spec's own:
+
+| Check | Where |
+| --- | --- |
+| `iss` matches the configured issuer | §3.1.3.7 item 1 |
+| `aud` contains this client id | items 3 |
+| **`azp` equals this client id when present, and is required when `aud` names several** | items 4 and 5 |
+| `exp` has not passed, with five minutes of clock skew | item 9 |
+| `nonce` matches the one sent with the request | item 11 |
+| `sub` is present and non-empty | §2 |
+
+⚠️ **The signature is not verified, deliberately.** §3.1.3.7 item 6 allows it:
+the token arrives by direct TLS-authenticated communication with the token
+endpoint, so TLS already establishes that the bytes came from the provider. The
+precondition is structural — `IdTokenClaims.parse` has exactly one caller, the
+`/auth/callback` route, acting on a body it just received. **Never add an
+endpoint that accepts an ID token from a client.**
+
+### email_verified
+
+`email` decides two things here: the domain allowlist, and who gets the
+administrator scope. Core §5.7 warns that the claim is neither guaranteed unique
+nor guaranteed verified, so:
+
+- **`email_verified: false` is refused.** At a provider that lets an account
+  assert an address it does not own, accepting it would hand out the admin scope
+  for the price of typing somebody else's address.
+- **An absent claim is accepted**, because it is optional and plenty of
+  providers omit it. It is logged when this install decides access by address,
+  which is the only case where it matters.
+
+Identity itself is keyed on `iss` + `sub`, never on the address — so a changed
+email moves with the account rather than creating a second one.
+
 ## If you are locked out
 
 In order of preference:
@@ -267,6 +306,14 @@ In order of preference:
 
    Change that password again immediately afterwards.
 
+   ⚠️ **That column holds a PBKDF2 hash, not the password** — and the statement
+   above still works anyway. A value that is not a hash is read as a password
+   left there by an install that predates hashing: it is accepted once, and
+   accepting it is what replaces it with a hash of itself. So writing a plaintext
+   password in is a supported way back in, and the next sign-in tidies up after
+   you. Nothing can read the real password out of that column, including this
+   server.
+
 ## How it works, briefly
 
 The whole OpenID Connect exchange runs on FLUMIP's *web* server, which is the
@@ -286,9 +333,10 @@ can read it. It is `SameSite=Lax` because it has to survive the cross-site
 redirect back from your provider, and `Secure` only when the public scheme is
 `https`, because a `Secure` cookie on a plain-HTTP install is silently discarded.
 
-The API server is a different origin and Serverpod's browser client sends no
-cookies, so API calls carry a bearer token instead, in an `Authorization: Bearer`
-header. (Not `Basic`, which Serverpod offers for its own `id:hash` auth keys:
+API calls — answered by the same server under `/api` — do not authenticate with
+the cookie. They carry a bearer token instead, in an `Authorization: Bearer`
+header, which the browser never attaches on its own, so no other site can make a
+signed-in browser call the API. (Not `Basic`, which Serverpod offers for its own `id:hash` auth keys:
 relic splits a decoded `Basic` value on a colon, so an opaque token without one is
 rejected with a 400 before FLUMIP's own code runs.) That bearer is short-lived
 (30 minutes), held only in memory, and re-minted from the cookie as needed. Signing

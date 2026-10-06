@@ -1,48 +1,43 @@
-// Tests for the API URL resolution used by release builds.
+// Tests for the API URL resolution every build uses.
 //
-// Release tarballs are built without --dart-define=API_URL, so the client has
-// to work out the API address from the page origin at runtime. These tests pin
-// the port mapping that makes one prebuilt bundle usable on any host.
+// No build knows its hostname, so the client works out the API address from
+// the page origin at runtime. The web server answers API calls under /api
+// itself, so that address is always the page's own origin — which is what lets
+// one bundle work on any host, directly or behind a reverse proxy.
 
 import 'package:flumip_flutter/api_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('apiUrlFor', () {
-    test('maps the production web port to the production API port', () {
+    test('calls /api on the production web port itself', () {
       expect(
         apiUrlFor(Uri.parse('http://mips.example.org:9082/')),
-        'http://mips.example.org:9080/',
+        'http://mips.example.org:9082/api/',
       );
     });
 
-    test('maps the staging web port to the staging API port', () {
+    test('calls /api on the staging web port itself', () {
       expect(
         apiUrlFor(Uri.parse('http://mips.example.org:8092/')),
-        'http://mips.example.org:8090/',
+        'http://mips.example.org:8092/api/',
       );
     });
 
-    test('preserves the host when serving from localhost', () {
-      expect(
-        apiUrlFor(Uri.parse('http://localhost:9082/')),
-        'http://localhost:9080/',
-      );
-    });
-
-    test('keeps the scheme so an https page reaches an https API', () {
-      expect(
-        apiUrlFor(Uri.parse('https://mips.example.org:9082/')),
-        'https://mips.example.org:9080/',
-      );
-    });
-
-    test('falls back to the page port for a same-origin reverse proxy', () {
-      // Port 443 is not a known web server port, so the API is assumed to be
-      // proxied on the same origin rather than shifted to another port.
+    test('stays on the page origin behind a TLS-terminating proxy', () {
+      // The case the old 9082 -> 9080 port mapping could not serve: on 443
+      // there is no second port to map to, and a proxy should need only one
+      // upstream.
       expect(
         apiUrlFor(Uri.parse('https://mips.example.org/')),
-        'https://mips.example.org/',
+        'https://mips.example.org/api/',
+      );
+    });
+
+    test('keeps a non-standard proxy port', () {
+      expect(
+        apiUrlFor(Uri.parse('https://mips.example.org:8443/')),
+        'https://mips.example.org:8443/api/',
       );
     });
 
@@ -56,18 +51,29 @@ void main() {
       );
     });
 
-    test('still maps a known web port on localhost, for a local install', () {
+    test('treats a known web port on localhost as an install', () {
       // setup-flumip.sh defaults to --host localhost, which must keep working.
       expect(
         apiUrlFor(Uri.parse('http://localhost:9082/')),
-        'http://localhost:9080/',
+        'http://localhost:9082/api/',
       );
     });
+
+    test(
+      'treats localhost behind a proxy on the default port as an install',
+      () {
+        // No `flutter run` ever serves on 80 or 443.
+        expect(
+          apiUrlFor(Uri.parse('https://localhost/')),
+          'https://localhost/api/',
+        );
+      },
+    );
 
     test('drops any path from the page URL', () {
       expect(
         apiUrlFor(Uri.parse('http://mips.example.org:9082/projects/7')),
-        'http://mips.example.org:9080/',
+        'http://mips.example.org:9082/api/',
       );
     });
   });
@@ -107,16 +113,20 @@ void main() {
   group('resolveApiUrl', () {
     test('uses the development fallback off the web', () {
       // Unit tests run on the VM, where there is no page origin to derive from.
-      // CI's deploy builds pass --dart-define=API_URL, which takes precedence
-      // over both branches; that path cannot be exercised from a test.
-      expect(apiUrlOverride, isEmpty);
       expect(resolveApiUrl(), developmentApiUrl);
+    });
+  });
+
+  group('developmentApiUrl', () {
+    test('is the development web port, which answers the API under /api', () {
+      // Nothing talks to the API port directly any more; a local `flutter run`
+      // goes through the web server like every install does.
+      expect(developmentApiUrl, '$developmentSiteUrl$apiPath');
     });
   });
 
   group('resolveSiteUrl', () {
     test('uses the development fallback off the web', () {
-      expect(siteUrlOverride, isEmpty);
       expect(resolveSiteUrl(), developmentSiteUrl);
     });
   });

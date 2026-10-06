@@ -101,7 +101,9 @@ class SnpEndpoint extends FlumipEndpoint {
       }
       final genome = await Genome.db.findById(session, request.genomeId);
       if (genome == null) {
-        throw FlumipFileNotFoundException(message: 'Genome not found');
+        throw FlumipFileNotFoundException(
+          message: 'This genome no longer exists.',
+        );
       }
 
       final snp = await Snp.db.insertRow(
@@ -112,7 +114,6 @@ class SnpEndpoint extends FlumipEndpoint {
           vcfPath: '',
           tbiPath: '',
           folder: '',
-          active: true,
           private: request.private,
           custom: true,
           genome: genome.id,
@@ -171,7 +172,7 @@ class SnpEndpoint extends FlumipEndpoint {
       if (snp.status != SnpImportStatus.pending &&
           snp.status != SnpImportStatus.failed) {
         throw ArgumentException(
-          message: 'That SNP set is no longer waiting for files.',
+          message: 'This SNP set is no longer waiting for files.',
         );
       }
       await snpService.deleteSnp(session, snp);
@@ -209,7 +210,9 @@ class SnpEndpoint extends FlumipEndpoint {
 
       final genome = await Genome.db.findById(session, request.genomeId);
       if (genome == null) {
-        throw FlumipFileNotFoundException(message: 'Genome not found');
+        throw FlumipFileNotFoundException(
+          message: 'This genome no longer exists.',
+        );
       }
 
       final (vcfUrl, tbiUrl) = await _validateSourceUrls(
@@ -226,7 +229,6 @@ class SnpEndpoint extends FlumipEndpoint {
           vcfPath: '',
           tbiPath: '',
           folder: '',
-          active: true,
           private: request.private,
           custom: true,
           genome: genome.id,
@@ -268,7 +270,7 @@ class SnpEndpoint extends FlumipEndpoint {
       final snp = await _writableCustom(session, snpId);
       if (snp.status == SnpImportStatus.downloading ||
           snp.status == SnpImportStatus.indexing) {
-        throw ArgumentException(message: 'That import is already running.');
+        throw ArgumentException(message: 'This import is already running.');
       }
 
       // Re-validate: the allowlist may have been tightened, or the host may now
@@ -353,7 +355,7 @@ class SnpEndpoint extends FlumipEndpoint {
     for (final url in [vcfUrl, ?tbiUrl]) {
       final parsed = Uri.tryParse(url);
       if (parsed == null) {
-        throw ArgumentException(message: 'That is not a valid address.');
+        throw ArgumentException(message: 'This is not a valid web address.');
       }
       final refusal = snpSourceUrlRejection(
         parsed,
@@ -437,7 +439,7 @@ class SnpEndpoint extends FlumipEndpoint {
     try {
       final snp = await _requireSnp(session, snpId);
       await authz.requireSnpAccess(session, snp);
-      return snpService.snpUsage(session, snpId);
+      return await snpService.snpUsage(session, snpId);
     } catch (e) {
       session.log(
         'Error reading usage of SNP $snpId',
@@ -549,7 +551,9 @@ class SnpEndpoint extends FlumipEndpoint {
   Future<Snp> _requireSnp(Session session, int snpId) async {
     final snp = await Snp.db.findById(session, snpId);
     if (snp == null) {
-      throw FlumipFileNotFoundException(message: 'SNP not found');
+      throw FlumipFileNotFoundException(
+        message: 'This SNP set no longer exists.',
+      );
     }
     return snp;
   }

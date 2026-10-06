@@ -41,14 +41,37 @@ jobs:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
+      # ⚠️ Pinned, not bare `stable`. Serverpod 4 requires Flutter >=3.44.4, and
+      # an unpinned SDK means the formatter and analyzer drift under the repo
+      # between runs. Keep this in step with the sdk constraints in the three
+      # pubspec.yaml files.
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
-      # Before `pub get`, because formatting is syntactic and needs no packages —
-      # so a reflow-only failure comes back in seconds rather than after a
-      # dependency resolve.
+      - name: Get dependencies
+        run: |
+          cd flumip_server && flutter pub get
+          cd ../flumip_flutter && flutter pub get
+
+      # ⚠️ **After `pub get`, and it has to be.** This used to run first, on the
+      # reasoning that formatting is syntactic and needs no packages, so a
+      # reflow-only failure came back in seconds. That reasoning is wrong:
+      # `dart format` takes the language version from the resolved package
+      # config, and without `.dart_tool` it falls back to a different one and
+      # applies different line-splitting rules. It also cannot read
+      # `analysis_options.yaml` at all, and says so
+      # ("Package resolution error when reading ..."). The unresolved formatter
+      # disagreed with the resolved one about 14 files in flumip_flutter and 20
+      # in flumip_server — so the check was comparing against a configuration no
+      # developer runs.
+      #
+      # It passed for as long as it did by luck. Raising the sdk constraint to
+      # `^3.12.2` for Serverpod 4 moved the resolved language version and the
+      # two stopped agreeing. An explicit `--page-width` does not fix it; the
+      # difference is the language version, not the width.
       #
       # ⚠️ Generated code is excluded, and has to be. `serverpod generate` does
       # not emit `dart format` output, so formatting `lib/src/generated` or the
@@ -56,10 +79,13 @@ jobs:
       # check red on a commit nobody wrote. `flumip_client` is generated in its
       # entirety and is therefore not checked at all.
       #
-      # ⚠️ The formatter comes from whatever `stable` resolves to on the day. A
-      # Dart release that changes formatting will fail this on untouched code;
-      # the fix is to run the two commands below and commit the result, which is
-      # exactly what this check exists to keep small.
+      # The Flutter version is pinned above, so the formatter and the analyzer
+      # are the same ones every developer runs locally — which is the other half
+      # of making this check mean something. On bare `channel: stable` a Dart
+      # release could change formatting, or add a diagnostic, and turn every
+      # pipeline red on code nobody had touched; that is exactly how
+      # `unawaited_return_in_try_block` arrived with Dart 3.13. Bump the pin
+      # deliberately, run the two commands below, and commit the result.
       - name: Check formatting
         run: |
           cd flumip_flutter
@@ -71,24 +97,27 @@ jobs:
               -not -path 'test/integration/test_tools/*'
           )
 
-      - name: Get dependencies
-        run: |
-          cd flumip_server && flutter pub get
-          cd ../flumip_flutter && flutter pub get
-
       - name: Analyze code
         run: |
-          # dart analyze, not flutter analyze, for the server package: the two
-          # deliberate deprecated_member_use infos in project_service.dart
-          # (DemoModeCleanup stays on the legacy future-call API) are non-fatal
-          # to dart analyze but fail flutter analyze. Mirrored by the "Lint"
-          # task in .vscode/tasks.json.
+          # dart analyze, not flutter analyze, for the server package: it is a
+          # plain Dart package with no Flutter dependency, so dart analyze is
+          # the matching tool and needs no Flutter SDK resolution. Mirrored by
+          # the "Lint" task in .vscode/tasks.json.
+          #
+          # This used to be justified by "two deliberate deprecated_member_use
+          # infos in project_service.dart, non-fatal to dart analyze but fatal
+          # to flutter analyze". That stopped being true once DemoModeCleanup
+          # moved to the generated future-call API, and the claim outlived it in
+          # three places. Both analyzers are clean now; keep them clean.
           cd flumip_server && dart analyze
           cd ../flumip_flutter && flutter analyze
 
+      # `dart build cli`, not `dart compile exe`: Serverpod 4 brings in a
+      # transitive sqlite3 with a native build hook, which `dart compile exe`
+      # cannot bundle. Writes into the already-gitignored build/ directory.
       - name: Build
         run: |
-          cd flumip_server && dart compile exe bin/main.dart
+          cd flumip_server && dart build cli --target bin/main.dart --output build
           cd ../flumip_flutter && flutter build web ${{ inputs.web_build_args }}
 
   unit-tests:
@@ -128,6 +157,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
       - name: Get dependencies
         run: |
@@ -161,6 +191,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
       - name: Get dependencies
         run: cd flumip_flutter && flutter pub get

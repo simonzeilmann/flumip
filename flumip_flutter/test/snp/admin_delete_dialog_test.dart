@@ -16,7 +16,6 @@ Snp snpFixture({String name = 'dbSNP common', bool custom = false}) => Snp(
   vcfPath: '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz',
   tbiPath: '/opt/flumip/data/genomes/human/hg38/snp/common/common.vcf.gz.tbi',
   folder: '/opt/flumip/data/genomes/human/hg38/snp/common',
-  active: true,
   custom: custom,
   created: DateTime(2026, 1, 1),
 );

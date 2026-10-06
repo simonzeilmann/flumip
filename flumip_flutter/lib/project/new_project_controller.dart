@@ -15,18 +15,10 @@ import 'project_options_form.dart';
 /// should not come back.
 class NewProjectController extends ChangeNotifier {
   NewProjectController({
-    required Future<ProjectOptions> Function() loadDefaultOptions,
-    required Future<ProjectOptions> Function(ProjectOptions options)
-    insertOptions,
-    required Future<Project> Function(
-      String name,
-      ProjectOptions options,
-      String description,
-    )
-    createProject,
-  }) : _loadDefaultOptions = loadDefaultOptions,
-       _insertOptions = insertOptions,
-       _createProject = createProject;
+    required this._loadDefaultOptions,
+    required this._insertOptions,
+    required this._createProject,
+  });
 
   final Future<ProjectOptions> Function() _loadDefaultOptions;
   final Future<ProjectOptions> Function(ProjectOptions options) _insertOptions;
@@ -77,7 +69,9 @@ class NewProjectController extends ChangeNotifier {
   /// the navigation decision with the widget.
   Future<Project?> create() async {
     if (name.text.isEmpty) {
-      _errorMessage = 'Project name is required';
+      // The server's own wording for the same refusal, so the guard reads as
+      // the same rule rather than a second, differently-worded one.
+      _errorMessage = 'A project needs a name.';
       _notify();
       return null;
     }

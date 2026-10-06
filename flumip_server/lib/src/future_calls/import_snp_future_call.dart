@@ -20,6 +20,10 @@ import 'package:serverpod/serverpod.dart';
 /// `SnpService.collectCustomSnps`' reconcile pass, which is the only thing that
 /// can notice an import whose process died mid-flight — it has no way to write a
 /// terminal state for itself.
+/// Safe to run more than once under Serverpod 4's at-least-once delivery, and
+/// the pattern the two progress polls were changed to follow:
+/// [SnpService.runImport] reloads the row by id rather than trusting the
+/// serialised argument, gates on `status == pending`, and never throws.
 class ImportSnpFutureCall extends FutureCall<Snp> {
   Future<void> run(Session session, Snp object) async {
     await sl<SnpService>().runImport(session, object.id!);

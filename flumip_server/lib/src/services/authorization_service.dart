@@ -64,7 +64,16 @@ class AuthorizationService {
       }
 
       final authSession = await _authSession(session, authSessionId);
-      return Principal(userId: authSession?.userId, isAdmin: isAdmin);
+      return Principal(
+        userId: authSession?.userId,
+        isAdmin: isAdmin,
+        // Read off the session row rather than the user, which is why it is
+        // denormalised there: this call already has the row in hand, and going
+        // to `flumip_user` for it would double the queries on every guarded
+        // request. The cost is that changing somebody's groups in the provider
+        // takes effect at their next sign-in — the same rule `isAdmin` follows.
+        departments: authSession?.departments ?? const [],
+      );
     } catch (e, stackTrace) {
       session.log(
         'Resolving the principal failed; treating the request as anonymous.',
@@ -83,12 +92,18 @@ class AuthorizationService {
   /// produced.
   ///
   /// The first version of this threw [FlumipFileNotFoundException] for an unknown
-  /// id, which seemed tidier and was wrong: `FileEndpoint.showMipsProgress` has
-  /// always answered a bad id with Serverpod's [FileNotFoundException], the app
-  /// catches the two separately, and a guard bolted onto the front of an
+  /// id, which seemed tidier and was wrong: a guard bolted onto the front of an
   /// operation has no business changing the error that operation reports for an
   /// unrelated failure. A test caught it. Adding [ProjectAccessDeniedException] is the
-  /// entire remit.
+  /// entire remit, and that is still true.
+  ///
+  /// ⚠️ The rest of that sentence used to read "`FileEndpoint.showMipsProgress`
+  /// has always answered a bad id with Serverpod's `FileNotFoundException`, the
+  /// app catches the two separately". **The app never could.** `serverpod_client`
+  /// does not ship that class, so it arrived as a deserialization failure and
+  /// the server's message was discarded — `FileService` now throws
+  /// [FlumipFileNotFoundException] like everything else. The reasoning above
+  /// survives the correction; only the example was wrong.
   ///
   /// Costs no query at all while single sign-on is off.
   Future<void> requireProjectAccess(Session session, int projectId) async {
@@ -305,9 +320,12 @@ class AuthorizationService {
         'there are no administrators.',
         level: LogLevel.warning,
       );
+      // ⚠️ Says nothing about single sign-on. The reason this install has no
+      // administrators is a configuration fact, and the caller — who may well
+      // be an administrator everywhere else — can do nothing with it. It is in
+      // the log immediately above, which is where somebody can act on it.
       throw ProjectAccessDeniedException(
-        message:
-            'This action needs an administrator, and single sign-on is off',
+        message: 'This action is restricted to administrators.',
       );
     }
 
@@ -319,7 +337,7 @@ class AuthorizationService {
       level: LogLevel.warning,
     );
     throw ProjectAccessDeniedException(
-      message: 'This action is restricted to administrators',
+      message: 'This action is restricted to administrators.',
     );
   }
 

@@ -10,8 +10,6 @@ file:
   - showUSCSTrack:
   - getUcscTrackToken:
   - listProjectFiles:
-  - requireProject:
-  - requireProjectOptions:
 genome:
   - getGenome:
   - getAllGenomes:
@@ -23,21 +21,15 @@ genome:
   - getGenomeByCategory:
   - indexFasta:
   - deleteFastaIndex:
-  - requireProject:
-  - requireProjectOptions:
 mipgen:
   - createBedFile:
   - generateMips:
-  - requireProject:
-  - requireProjectOptions:
 options:
   - createProjectOptions:
   - insertProjectOptions:
   - getProjectOptions:
   - updateProjectOptions:
   - deleteProjectOptions:
-  - requireProject:
-  - requireProjectOptions:
 project:
   - createProject:
   - deleteProject:
@@ -50,14 +42,12 @@ project:
   - setEmailNotification:
   - setProjectOwner:
   - assignableOwners:
+  - setProjectDepartment:
+  - assignableDepartments:
   - notificationsAvailable:
   - setSnpById:
-  - requireProject:
-  - requireProjectOptions:
 search:
   - search:
-  - requireProject:
-  - requireProjectOptions:
 settings:
   - userSettings:
   - getSettings:
@@ -65,6 +55,8 @@ settings:
   - setOidcClientSecret:
   - setSmtpPassword:
   - smtpPasswordConfigured:
+  - setSettingsPassword:
+  - settingsPasswordIsDefault:
   - getAuthAdminStatus:
   - sendTestMail:
 snp:
@@ -81,5 +73,3 @@ snp:
   - deleteCustomSnp:
   - deleteSnpAsAdmin:
   - collectCustomSnps:
-  - requireProject:
-  - requireProjectOptions:

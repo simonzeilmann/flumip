@@ -17,6 +17,7 @@ Future<SettingsForm> pumpForm(
   bool loginRequired = false,
   bool demoMode = false,
   bool smtpPasswordConfigured = false,
+  bool settingsPasswordIsDefault = false,
   VoidCallback? onSendTestMail,
 }) async {
   final form = SettingsForm();
@@ -41,6 +42,7 @@ Future<SettingsForm> pumpForm(
           form: form,
           authStatus: null,
           smtpPasswordConfigured: smtpPasswordConfigured,
+          settingsPasswordIsDefault: settingsPasswordIsDefault,
           onChanged: () {},
           onTestConnection: () {},
           onSendTestMail: onSendTestMail ?? () {},
@@ -154,16 +156,40 @@ void main() {
     });
   });
 
-  testWidgets('⚠️ the settings password does not claim to be write-only', (
+  testWidgets('⚠️ the settings password is offered as write-only', (
     tester,
   ) async {
-    // Unlike the two secrets, it is round-tripped: emptying the box sets an
-    // empty password, so "leave empty to keep it" would be a lie.
+    // It used to be round-tripped — loaded with the stored password and sent
+    // back verbatim — so the helper said the opposite of this. The server now
+    // stores only a hash and has nothing to put in the box, which makes an empty
+    // box mean "keep the current password".
     final form = await pumpForm(tester);
 
-    expect(form.newPassword.text, isNotEmpty);
+    expect(form.newPassword.text, isEmpty);
     expect(
-      find.textContaining('Editing it here changes it when you save'),
+      find.textContaining('leave empty to keep the current one'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('says nothing about the password when it has been changed', (
+    tester,
+  ) async {
+    await pumpForm(tester, settingsPasswordIsDefault: false);
+
+    expect(find.textContaining('default settings password'), findsNothing);
+  });
+
+  testWidgets('⚠️ warns while the password is still the shipped default', (
+    tester,
+  ) async {
+    // The whole point of `changeme` is that it gets changed, and the only thing
+    // that used to make "it has not been" visible was the password sitting
+    // readable in the box above.
+    await pumpForm(tester, settingsPasswordIsDefault: true);
+
+    expect(
+      find.textContaining('still uses the default settings password'),
       findsOneWidget,
     );
   });

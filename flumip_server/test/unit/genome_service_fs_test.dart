@@ -63,7 +63,7 @@ void main() {
     test('indexFasta throws for a missing genome', () async {
       expect(
         () => NoScheduleGenomeService().indexFasta(session, -1),
-        throwsA(isA<ArgumentError>()),
+        throwsMessage('This genome no longer exists.'),
       );
     }, tags: ['unit']);
 
@@ -77,7 +77,7 @@ void main() {
       );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
-        throwsA(isA<ArgumentError>()),
+        throwsMessage('is already indexed'),
       );
     }, tags: ['unit']);
 
@@ -91,7 +91,7 @@ void main() {
       );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
-        throwsA(isA<ArgumentError>()),
+        throwsMessage('is already being indexed'),
       );
     }, tags: ['unit']);
 
@@ -103,7 +103,7 @@ void main() {
       );
       expect(
         () => NoScheduleGenomeService().indexFasta(session, genome.id!),
-        throwsA(isA<ArgumentError>()),
+        throwsMessage('has no sequence file on this server'),
       );
     }, tags: ['unit']);
   });
@@ -180,7 +180,7 @@ void main() {
       );
       expect(
         () => genomeService.deleteFastaIndex(session, genome.id!),
-        throwsA(isA<ArgumentError>()),
+        throwsMessage('has no index to remove'),
       );
     }, tags: ['unit']);
   });
@@ -228,7 +228,7 @@ void main() {
       await overrideSettingsDirs(session, genomeDir: '/does/not/exist/xyz');
       expect(
         () => genomeService.collectGenomes(session),
-        throwsMessage('Genome folder not found'),
+        throwsMessage('The genome library is not set up'),
       );
     }, tags: ['unit']);
   });

@@ -24,7 +24,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return fileService.deleteByproducts(session, projectID);
+      return await fileService.deleteByproducts(session, projectID);
     } catch (e) {
       session.log(
         "Error deleting byproducts for project ID: $projectID",
@@ -47,7 +47,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return fileService.showSnpMipsResult(session, projectID);
+      return await fileService.showSnpMipsResult(session, projectID);
     } catch (e) {
       session.log(
         "Error showing SNP MIPs result for project ID: $projectID",
@@ -70,7 +70,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return fileService.showMipsResult(session, projectID);
+      return await fileService.showMipsResult(session, projectID);
     } catch (e) {
       session.log(
         "Error showing MIPs result for project ID: $projectID",
@@ -93,7 +93,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return fileService.showMipsProgress(session, projectID);
+      return await fileService.showMipsProgress(session, projectID);
     } catch (e) {
       session.log(
         "Error showing MIPs progress for project ID: $projectID",
@@ -111,7 +111,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return fileService.showUSCSTrack(session, projectID);
+      return await fileService.showUSCSTrack(session, projectID);
     } catch (e) {
       session.log(
         "Error showing USCSTrack for project ID: $projectID",
@@ -138,7 +138,7 @@ class FileEndpoint extends FlumipEndpoint {
     );
     try {
       await requireProject(session, projectID);
-      return sl<ProjectService>().ensureTrackToken(session, projectID);
+      return await sl<ProjectService>().ensureTrackToken(session, projectID);
     } catch (e) {
       session.log(
         "Error getting UCSC track token for project ID: $projectID",

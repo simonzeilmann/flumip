@@ -21,9 +21,9 @@ const authCookieName = 'flumip_auth';
 /// for a short-lived bearer at [AuthSessionRoute].
 ///
 /// This works because the app is always same-origin with the web server — every
-/// build is published into `web/app` and served by `FlutterRoute`. Only the *API*
-/// server is on a different origin, and that is why API calls use an
-/// `Authorization` header rather than the cookie.
+/// build is published into `web/app` and served by `FlutterRoute`, and the API
+/// is answered there too, under `/api`. API calls nonetheless authenticate with
+/// an `Authorization` header rather than the cookie; see `AuthApiToken` for why.
 
 /// Reads the session cookie from a request, tolerating a malformed header.
 ///
@@ -43,20 +43,28 @@ Headers _cookieHeaders({
   required bool secure,
   required Duration maxAge,
 }) => Headers.build((h) {
-  h.setCookie = SetCookieHeader(
-    name: authCookieName,
-    value: value,
-    path: Uri.parse('/'),
-    httpOnly: true,
-    // Never readable from JavaScript, so an XSS in the app cannot exfiltrate
-    // the durable credential.
-    secure: secure,
-    // Lax rather than Strict: the cookie is set on the redirect back from the
-    // identity provider, which is a cross-site navigation. Strict would drop
-    // it and sign-in would silently do nothing.
-    sameSite: SameSite.lax,
-    maxAge: maxAge.inSeconds,
-  );
+  // Relic 2 split the type: `SetCookie` is one cookie, `SetCookieHeader` is the
+  // list of them the response header carries — one `Set-Cookie` line each. This
+  // must stay a single-element list; two lines would have the second parsed as a
+  // nameless cookie, and an empty list would emit no header at all, which looks
+  // exactly like a cancelled sign-in. `path` also went from `Uri` to `String`,
+  // which is what it always was — `Uri.parse('/')` was a round trip for nothing.
+  h.setCookie = SetCookieHeader([
+    SetCookie(
+      name: authCookieName,
+      value: value,
+      path: '/',
+      httpOnly: true,
+      // Never readable from JavaScript, so an XSS in the app cannot exfiltrate
+      // the durable credential.
+      secure: secure,
+      // Lax rather than Strict: the cookie is set on the redirect back from the
+      // identity provider, which is a cross-site navigation. Strict would drop
+      // it and sign-in would silently do nothing.
+      sameSite: SameSite.lax,
+      maxAge: maxAge.inSeconds,
+    ),
+  ]);
 });
 
 /// `GET /auth/login` — starts the flow and redirects to the provider.

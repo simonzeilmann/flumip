@@ -12,6 +12,7 @@ import '../integration/test_tools/serverpod_test_tools.dart';
 import '../support/fake_mail_sender.dart';
 import '../support/fake_process_runner.dart';
 import '../support/matchers.dart';
+import '../support/mipgen_output.dart';
 import '../support/seed.dart';
 import '../support/temp_dir.dart';
 
@@ -62,8 +63,8 @@ final fakeProcess = FakeProcessRunner();
 
 void main() {
   withServerpod('MailService.sendTestMail', (sessionBuilder, endpoints) {
-    // The mipgen trigger group runs _generateUCSCTrack, so stub the process
-    // runner too rather than invoking a real `python`.
+    // The mipgen trigger group finalizes a run, so stub the process runner too
+    // rather than invoking real tools.
     setup(processRunner: fakeProcess, mailSender: fake);
     setUp(fake.reset);
     var session = sessionBuilder.build();
@@ -105,7 +106,7 @@ void main() {
       await overrideMailSettings(session, smtpServer: 'smtp.example.test');
       expect(
         () => mailService.sendTestMail(session, ''),
-        throwsMessage('No recipient supplied'),
+        throwsMessage('Enter an address to send the test email to.'),
       );
     }, tags: ['unit']);
 
@@ -113,7 +114,7 @@ void main() {
       await overrideMailSettings(session, smtpServer: '');
       expect(
         () => mailService.sendTestMail(session, 'admin@example.test'),
-        throwsMessage('No SMTP server configured'),
+        throwsMessage('No SMTP server is configured'),
       );
     }, tags: ['unit']);
 
@@ -423,11 +424,7 @@ void main() {
 
     Future<Project> prepare({required bool withProgress}) async {
       final base = createTempDir('mailtrigger');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        ucscTrackGenerator: 'ucsc-gen',
-      );
+      await overrideSettingsDirs(session, projectDir: base.path);
       await overrideMailSettings(
         session,
         mailActive: true,
@@ -446,7 +443,12 @@ void main() {
       final dir = '${base.path}/proj';
       Directory(dir).createSync(recursive: true);
       if (withProgress) {
-        File('$dir/run.progress.txt').writeAsStringSync('done\n');
+        // ⚠️ A *complete* run, not just a progress file. This used to write the
+        // single line `done`, which is what an interrupted run leaves behind —
+        // so "notifies with failed=false on success" was describing a project
+        // that [MipgenService.designProblem] now, correctly, calls failed.
+        File('$dir/run.progress.txt').writeAsStringSync(completeProgress);
+        File('$dir/demo.$pickedMipsSuffix').writeAsStringSync(completeDesign);
       }
       return project;
     }

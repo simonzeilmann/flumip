@@ -2,6 +2,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_config.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/auth_tokens.dart';
+import 'package:flumip_server/src/auth/claims.dart';
 import 'package:flumip_server/src/auth/id_token.dart';
 import 'package:flumip_server/src/auth/oidc_client.dart';
 import 'package:flumip_server/src/auth/oidc_discovery.dart';
@@ -69,7 +70,8 @@ class AuthService {
   /// How long an API bearer stays valid.
   ///
   /// Short because it is trivially re-minted from the cookie, and because it is
-  /// the credential that travels in a header to a different origin.
+  /// the credential script can see — it lives in the app's memory, unlike the
+  /// `HttpOnly` cookie.
   static const apiTokenLifetime = Duration(minutes: 30);
 
   AuthRuntime get _runtime => sl<AuthRuntime>();
@@ -239,6 +241,40 @@ class AuthService {
     }
 
     email = email.toLowerCase();
+
+    // ⚠️ OpenID Connect Core §5.7: `email` is not guaranteed unique and is not
+    // guaranteed verified. Identity here is keyed on `iss` + `sub`, which is
+    // correct — but **authorization** is keyed on the address: the domain
+    // allowlist and the administrator list are both string matches on it. At a
+    // provider that lets an account assert an address it does not own, that
+    // would hand out the `admin` scope for the price of typing somebody else's
+    // email.
+    //
+    // Explicit `false` is refused. **Absent is not**: `email_verified` is
+    // optional, plenty of providers omit it entirely, and refusing those would
+    // lock out installs that are working today. Absent means "the provider did
+    // not say", and is logged so that it is at least visible.
+    if (claims.emailVerified == false) {
+      session.log(
+        'Refused sign-in for $email: the identity provider reports the address '
+        'as unverified.',
+        level: LogLevel.warning,
+      );
+      throw AuthFlowException(
+        'The identity provider has not verified the address $email, so this '
+        'server will not sign you in with it.',
+      );
+    }
+    if (claims.emailVerified == null &&
+        (config.adminEmails.isNotEmpty || config.allowedDomains.isNotEmpty)) {
+      session.log(
+        'The identity provider sent no "email_verified" claim for $email, and '
+        'this install decides access by email address. Grant the "email" scope '
+        'and check the provider emits email_verified.',
+        level: LogLevel.warning,
+      );
+    }
+
     if (!config.isEmailAllowed(email)) {
       session.log(
         'Refused sign-in for $email: not in the allowed domains '
@@ -250,12 +286,38 @@ class AuthService {
       );
     }
 
+    // Groups come from the ID token when the provider puts them there, and from
+    // userinfo when it does not — the same split as `email`, and for the same
+    // reason: which of the two carries a claim is a per-provider decision.
+    // Skipped entirely when no claim is configured, which is the default.
+    var departments = const <String>[];
+    if (config.usesDepartments) {
+      departments = claimValues(claims.payload, config.departmentClaim);
+      if (departments.isEmpty) {
+        final info = await _fetchUserinfo(
+          session,
+          discovery,
+          tokens.accessToken,
+        );
+        departments = claimValues(info, config.departmentClaim);
+      }
+      if (departments.isEmpty) {
+        session.log(
+          'No "${config.departmentClaim}" claim for $email, in the ID token or '
+          'at userinfo. Projects with a department will not be visible to them '
+          'through it.',
+          level: LogLevel.warning,
+        );
+      }
+    }
+
     final user = await _upsertUser(
       session,
       issuer: claims.issuer,
       subject: claims.subject,
       email: email,
       displayName: displayName,
+      departments: departments,
       now: now,
     );
 
@@ -267,6 +329,10 @@ class AuthService {
         cookieHash: AuthTokens.sha256Hex(cookieValue),
         email: email,
         isAdmin: config.isAdminEmail(email),
+        // Null rather than an empty list, matching FlumipUser: "not collected"
+        // and "collected, and they are in nothing" are different facts, and
+        // only the first should look like the feature being off.
+        departments: departments.isEmpty ? null : departments,
         expires: now.add(sessionLifetime),
       ),
     );
@@ -491,6 +557,7 @@ class AuthService {
     required String subject,
     required String email,
     required String displayName,
+    required List<String> departments,
     required DateTime now,
   }) async {
     final existing = await FlumipUser.db.findFirstRow(
@@ -500,7 +567,13 @@ class AuthService {
     if (existing != null) {
       existing
         ..email = email
-        ..lastLogin = now;
+        ..lastLogin = now
+        // Overwritten, not merged: the provider is the authority on who is in
+        // what, so a group somebody was removed from has to disappear here too.
+        // Null rather than an empty list when the feature is off, so "not
+        // collected" stays distinguishable from "collected, and they are in
+        // nothing".
+        ..departments = departments.isEmpty ? null : departments;
       if (displayName.isNotEmpty) existing.displayName = displayName;
       return FlumipUser.db.updateRow(session, existing);
     }
@@ -511,6 +584,7 @@ class AuthService {
         subject: subject,
         issuer: issuer,
         displayName: displayName,
+        departments: departments.isEmpty ? null : departments,
         created: now,
         lastLogin: now,
       ),

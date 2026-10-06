@@ -32,6 +32,7 @@ jobs:
         id: flutter-action
         with:
           channel: 'stable'
+          flutter-version: '3.47.5'
 
       - name: Get dependencies
         run: |
@@ -49,13 +50,21 @@ jobs:
 
       - name: Build and inject frontend
         run: |
-          cd flumip_flutter && flutter build web --release --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=API_URL=${{ vars.PRODUCTION_API_URL }} --dart-define=SITE_TITLE=${{ vars.PRODUCTION_TITLE }} --dart-define=SITE_URL=${{ vars.PRODUCTION_URL }} --output ../flumip_server/web/app
+          cd flumip_flutter && flutter build web --release --wasm --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=SITE_TITLE=${{ vars.PRODUCTION_TITLE }} --output ../flumip_server/web/app
 
       - name: Build server
         run: |
           cd flumip_server
           mkdir app
-          dart compile exe bin/main.dart -o app/server
+          # `dart build cli`, not `dart compile exe`. Serverpod 4 pulls in
+          # sqlite3 (transitively, via serverpod_database), which ships a
+          # native build hook; `dart compile exe` does not run build hooks, so
+          # the binary it produces is missing its native libraries and dies at
+          # runtime. `dart build cli` emits build/bundle/bin/main alongside
+          # build/bundle/lib/, and the executable resolves those libraries
+          # relative to itself — so the bundle directory has to travel intact.
+          dart build cli --target bin/main.dart --output build
+          cp -r build/bundle app/bundle
           cp -r config app/config
           cp -r migrations app/migrations
           cp -r web app/web

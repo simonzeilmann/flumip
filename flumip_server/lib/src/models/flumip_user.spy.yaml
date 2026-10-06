@@ -15,6 +15,13 @@ fields:
   subject: String
   issuer: String
   displayName: String, default=""
+  ### The groups the identity provider reported at the last sign-in.
+  ###
+  ### Null on every row that predates this, and on every install where
+  ### `Settings.oidcDepartmentClaim` is empty. Refreshed on each sign-in, so a
+  ### change in the provider takes effect the next time somebody signs in —
+  ### the same rule `AuthSession.isAdmin` already follows.
+  departments: List<String>?
   created: DateTime, default=now
   lastLogin: DateTime, default=now
 indexes:

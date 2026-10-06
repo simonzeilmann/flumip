@@ -42,6 +42,8 @@ class Harness {
   Object? loadThrows;
   Object? deleteThrows;
   Object? ownerThrows;
+  Object? departmentThrows;
+  List<String> assignableDepartments = const [];
   Object? notificationsThrows;
   Object? ownersThrows;
 
@@ -62,6 +64,14 @@ class Harness {
     setOwner: (id, ownerId) async {
       calls.add('owner $id -> $ownerId');
       if (ownerThrows != null) throw ownerThrows!;
+    },
+    setDepartment: (id, department) async {
+      calls.add('department $id -> $department');
+      if (departmentThrows != null) throw departmentThrows!;
+    },
+    loadAssignableDepartments: () async {
+      calls.add('departments?');
+      return assignableDepartments;
     },
     loadNotificationsAvailable: () async {
       calls.add('notifications');
@@ -158,11 +168,9 @@ void main() {
 
       final pending = h.controller.delete(1);
 
-      expect(
-        h.controller.projects!.map((p) => p.id),
-        [2],
-        reason: 'gone already, without awaiting the delete',
-      );
+      expect(h.controller.projects!.map((p) => p.id), [
+        2,
+      ], reason: 'gone already, without awaiting the delete');
       await pending;
       expect(h.controller.projects!.map((p) => p.id), [2]);
     });

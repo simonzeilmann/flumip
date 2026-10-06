@@ -196,7 +196,7 @@ void main() {
           downloader.stub(
             'https://example.org/panel.vcf.gz',
             error: SnpDownloadException(
-              'That address answered 404 (not found).',
+              'This address answered 404 (not found).',
             ),
           );
 

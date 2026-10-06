@@ -10,17 +10,14 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod/serverpod.dart' as _i1;
+import 'package:serverpod/serverpod.dart' as _is;
 
 /// The signed-in user, as shown in the app bar. No table — transport only.
 abstract class AuthUserDto
-    implements _i1.SerializableModel, _i1.ProtocolSerialization {
-  AuthUserDto._({
-    required this.email,
-    String? displayName,
-    bool? isAdmin,
-  }) : displayName = displayName ?? '',
-       isAdmin = isAdmin ?? false;
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  AuthUserDto._({required this.email, String? displayName, bool? isAdmin})
+    : displayName = displayName ?? '',
+      isAdmin = isAdmin ?? false;
 
   factory AuthUserDto({
     required String email,
@@ -34,7 +31,7 @@ abstract class AuthUserDto
       displayName: jsonSerialization['displayName'] as String?,
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
     );
   }
 
@@ -46,12 +43,8 @@ abstract class AuthUserDto
 
   /// Returns a shallow copy of this [AuthUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
-  AuthUserDto copyWith({
-    String? email,
-    String? displayName,
-    bool? isAdmin,
-  });
+  @_is.useResult
+  AuthUserDto copyWith({String? email, String? displayName, bool? isAdmin});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -74,30 +67,19 @@ abstract class AuthUserDto
 
   @override
   String toString() {
-    return _i1.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _AuthUserDtoImpl extends AuthUserDto {
-  _AuthUserDtoImpl({
-    required String email,
-    String? displayName,
-    bool? isAdmin,
-  }) : super._(
-         email: email,
-         displayName: displayName,
-         isAdmin: isAdmin,
-       );
+  _AuthUserDtoImpl({required String email, String? displayName, bool? isAdmin})
+    : super._(email: email, displayName: displayName, isAdmin: isAdmin);
 
   /// Returns a shallow copy of this [AuthUserDto]
   /// with some or all fields replaced by the given arguments.
-  @_i1.useResult
+  @_is.useResult
   @override
-  AuthUserDto copyWith({
-    String? email,
-    String? displayName,
-    bool? isAdmin,
-  }) {
+  AuthUserDto copyWith({String? email, String? displayName, bool? isAdmin}) {
     return AuthUserDto(
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,

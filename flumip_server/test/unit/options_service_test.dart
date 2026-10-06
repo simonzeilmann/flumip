@@ -1,7 +1,6 @@
 import 'package:flumip_server/service_locator.dart';
-import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:flumip_server/src/services/options_service.dart';
-import 'package:serverpod/protocol.dart';
+import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 import '../support/matchers.dart';
@@ -58,7 +57,7 @@ void main() {
         await optionsService.deleteProjectOptions(session, retOptions.id!);
         expect(
           () => optionsService.getProjectOptions(session, retOptions.id!),
-          throwsA(isA<FileNotFoundException>()),
+          throwsA(isA<FlumipFileNotFoundException>()),
         );
       },
       tags: ['unit'],
@@ -120,7 +119,7 @@ void main() {
     test('getProjectOptions throws for a missing id', () async {
       expect(
         () => optionsService.getProjectOptions(session, -1),
-        throwsA(isA<FileNotFoundException>()),
+        throwsA(isA<FlumipFileNotFoundException>()),
       );
     }, tags: ['unit']);
 
@@ -128,14 +127,14 @@ void main() {
       expect(
         () =>
             optionsService.updateProjectOptions(session, -1, ProjectOptions()),
-        throwsMessage('Project options not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
 
     test('deleteProjectOptions throws for a missing id', () async {
       expect(
         () => optionsService.deleteProjectOptions(session, -1),
-        throwsMessage('Project options not found'),
+        throwsMessage('This project no longer exists.'),
       );
     }, tags: ['unit']);
   });

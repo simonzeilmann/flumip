@@ -17,43 +17,24 @@ import 'project_state.dart';
 /// lifecycle. Its *pieces* were already covered; the state driving them was not.
 class ProjectTileController extends ChangeNotifier {
   ProjectTileController({
-    required Project project,
-    required bool expanded,
-    required Future<Project> Function(int projectId) loadProject,
-    required Future<ProjectOptions> Function(int optionsId) loadOptions,
-    required Future<Genome> Function(int genomeId) loadGenome,
-    required Future<Snp> Function(int snpId) loadSnp,
-    required Future<List<String>> Function(int projectId) loadProgress,
-    required Future<void> Function(int projectId, String gene) addGene,
-    required Future<void> Function(int projectId, String gene) removeGene,
-    required Future<void> Function(int projectId) createBedFile,
-    required Future<void> Function(int projectId, bool deleteExcessFiles)
-    generateMips,
-    required Future<List<String>> Function() loadGenomeCategories,
-    required Future<List<Genome>> Function(String category)
-    loadGenomesInCategory,
-    required Future<List<Snp>> Function(int genomeId) loadSnpsForGenome,
-    required Future<void> Function(int projectId, int genomeId) setGenome,
-    required Future<void> Function(int projectId, int? snpId) setSnp,
-    required Future<void> Function(int projectId, bool enabled)
-    setEmailNotification,
-  }) : _project = project,
-       _expanded = expanded,
-       _loadProject = loadProject,
-       _loadOptions = loadOptions,
-       _loadGenome = loadGenome,
-       _loadSnp = loadSnp,
-       _loadProgress = loadProgress,
-       _addGene = addGene,
-       _removeGene = removeGene,
-       _createBedFile = createBedFile,
-       _generateMips = generateMips,
-       _loadGenomeCategories = loadGenomeCategories,
-       _loadGenomesInCategory = loadGenomesInCategory,
-       _loadSnpsForGenome = loadSnpsForGenome,
-       _setGenome = setGenome,
-       _setSnp = setSnp,
-       _setEmailNotification = setEmailNotification;
+    required this._project,
+    required this._expanded,
+    required this._loadProject,
+    required this._loadOptions,
+    required this._loadGenome,
+    required this._loadSnp,
+    required this._loadProgress,
+    required this._addGene,
+    required this._removeGene,
+    required this._createBedFile,
+    required this._generateMips,
+    required this._loadGenomeCategories,
+    required this._loadGenomesInCategory,
+    required this._loadSnpsForGenome,
+    required this._setGenome,
+    required this._setSnp,
+    required this._setEmailNotification,
+  });
 
   final Future<Project> Function(int projectId) _loadProject;
   final Future<ProjectOptions> Function(int optionsId) _loadOptions;
@@ -75,7 +56,10 @@ class ProjectTileController extends ChangeNotifier {
 
   Project _project;
   bool _expanded;
-  bool _deleteExcessFiles = false;
+  // On by default: the intermediates (`.sai`, `.fq`) are bwa's working files,
+  // nothing a user downloads or a track reads, and they are most of a project's
+  // size. Keeping them is the exception, for debugging a design.
+  bool _deleteExcessFiles = true;
   ProjectOptions _options = ProjectOptions();
 
   /// The project's genome, or null while it is still being fetched.
@@ -248,6 +232,15 @@ class ProjectTileController extends ChangeNotifier {
       await refresh();
       _say('BED file created successfully');
     } on BedCreationException catch (e) {
+      _say(e.message);
+    } on ArgumentException catch (e) {
+      // ⚠️ Shown bare, like [generateMips] already does it. These messages are
+      // written for the person who pressed the button — "This project has no
+      // genes yet. Add at least one first." — so prefixing them with "Failed to
+      // create BED file:" reports the failure twice and buries the instruction
+      // behind a restatement of the button they just pressed.
+      _say(e.message);
+    } on FlumipFileNotFoundException catch (e) {
       _say(e.message);
     } catch (e) {
       _say('Failed to create BED file: ${describeError(e)}');

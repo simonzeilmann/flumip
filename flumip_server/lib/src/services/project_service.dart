@@ -9,6 +9,15 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'package:uuid/uuid.dart';
 
+/// What a gene symbol is allowed to look like.
+///
+/// ⚠️ Letters and numbers only, which rejects every real HGNC symbol containing
+/// a hyphen — `HLA-A`, `NKX2-1`, `MT-CO1`. That is the rule as it has always
+/// been, named here rather than repeated as a literal in two places so that
+/// widening it is one edit. Widening it is a behaviour change nobody has asked
+/// for yet; see HANDOFF.md.
+final geneSymbol = RegExp(r'^[A-Za-z0-9]+$');
+
 /// A service class for handling project-related operations.
 class ProjectService {
   ProjectService();
@@ -24,7 +33,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     session.log("Project retrieved with ID: $id", level: LogLevel.info);
     return project;
@@ -37,7 +48,7 @@ class ProjectService {
   /// \param options The [ProjectOptions] for the project.
   /// \param desc An optional description for the project.
   /// \returns The created [Project] object.
-  /// \throws [ArgumentError] if the project name is empty.
+  /// \throws [ArgumentException] if the project name is empty.
   Future<Project> createProject(
     Session session,
     String projectName,
@@ -50,13 +61,32 @@ class ProjectService {
     );
     if (projectName == '') {
       session.log("Project name cannot be empty", level: LogLevel.error);
-      throw ArgumentError('Project name cannot be empty');
+      throw ArgumentException(message: 'A project needs a name.');
     }
+
+    // ⚠️ The directory is made **before** the row is inserted, and the order is
+    // the whole point. It used to run last, after the insert and after the
+    // cleanup call was scheduled, so anything that went wrong in `create()`
+    // left a project row and a scheduled future call behind — a broken project
+    // in everybody's list, and `deleteProject` then failing on the folder that
+    // was never there.
+    //
+    // Failing here now leaves nothing at all. Failing *after* here leaves an
+    // empty directory, which nothing lists and the next create ignores.
+    //
+    // `recursive: true` because the non-recursive form throws
+    // PathNotFoundException when `projectDir` itself is absent — which is the
+    // ordinary state of a fresh install that has not had a project yet.
+    final folderName = Uuid().v7();
+    final settings = await SettingsService().getSettings(session);
+    await Directory(
+      "${settings.projectDir}/$folderName",
+    ).create(recursive: true);
 
     var projectRow = Project(
       name: projectName,
       description: desc,
-      folderName: Uuid().v7(),
+      folderName: folderName,
       options: options.id!,
       // Null while single sign-on is off, which is what keeps every project on a
       // no-auth install unowned and therefore shared. Stamping is done here
@@ -64,11 +94,15 @@ class ProjectService {
       // at the endpoint boundary, where unauthenticated future calls cannot trip
       // over them.
       owner: await authz.ownerForNewProject(session),
+      // Stamped only when the creator is in exactly one group, because then
+      // there is nothing to choose. Somebody in several gets null and picks on
+      // the tile — guessing one of them and calling it the project's would be
+      // an arbitrary decision presented as a fact, and it widens who can see
+      // the project, so getting it wrong is not free.
+      department: (await authz.principal(session)).departments.singleOrNull,
       trackToken: Uuid().v7(),
     );
     var project = await Project.db.insertRow(session, projectRow);
-
-    var settings = await SettingsService().getSettings(session);
 
     // Scheduled whether or not demo mode is on, because the flag is read again
     // when the call fires — so switching demo mode on later still sweeps
@@ -77,7 +111,6 @@ class ProjectService {
         .callWithDelay(demoRetention(settings), identifier: project.folderName)
         .demoModeCleanup
         .run(project);
-    await Directory("${settings.projectDir}/${project.folderName}").create();
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
     return project;
   }
@@ -94,7 +127,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     // Stop the run before the row goes, while the pid is still meaningful.
@@ -171,37 +206,54 @@ class ProjectService {
   /// \param gene The gene to add.
   /// \throws [FileNotFoundException] if the project is not found.
   /// \throws [Exception] if the gene already exists in the project.
-  /// \throws [ArgumentError] if the gene is empty or contains invalid characters.
+  /// \throws [ArgumentException] if the gene is empty or contains invalid characters.
   Future<void> addGeneToProject(Session session, int id, String gene) async {
     session.log("Adding gene to project with ID: $id", level: LogLevel.info);
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
-    }
-    if (project.genes != null && project.genes!.contains(gene)) {
-      session.log(
-        "Gene already exists in project with ID: $id",
-        level: LogLevel.error,
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
       );
-      throw Exception('Gene already exists in project');
     }
-    if (gene.isEmpty || gene == '') {
+    // ⚠️ Normalised *before* the duplicate check, which is the whole bug this
+    // replaced: the check read the string as typed while the list stores it
+    // upper-cased, so `contains('myh11')` never matched the `MYH11` already
+    // there. Typing a gene in lower case added it again, every time — a project
+    // in the wild had the same gene three times over, and the design would have
+    // been built from a list with it repeated.
+    final typed = gene.trim();
+    final normalised = typed.toUpperCase();
+
+    if (normalised.isEmpty) {
       session.log("Supplied gene is empty", level: LogLevel.error);
-      throw ArgumentError('Supplied gene empty');
+      throw ArgumentException(message: 'Enter a gene symbol.');
     }
-    if (RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
-      project.genes ??= [];
-      project.genes!.add(gene.toUpperCase());
-      await Project.db.updateRow(session, project);
-      session.log("Gene added to project with ID: $id", level: LogLevel.info);
-    } else {
+    if (!geneSymbol.hasMatch(normalised)) {
       session.log(
         "Gene name contains invalid characters",
         level: LogLevel.error,
       );
-      throw ArgumentError('Gene name contains invalid characters');
+      throw ArgumentException(
+        message:
+            'A gene symbol can only contain letters and numbers, so "$typed" '
+            'cannot be one.',
+      );
     }
+    if (project.genes?.contains(normalised) ?? false) {
+      session.log(
+        "Gene already exists in project with ID: $id",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: '$normalised is already on this project.',
+      );
+    }
+
+    project.genes ??= [];
+    project.genes!.add(normalised);
+    await Project.db.updateRow(session, project);
+    session.log("Gene added to project with ID: $id", level: LogLevel.info);
   }
 
   /// Removes a gene from a project.
@@ -223,11 +275,19 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     } else {
       if (project.genes == null) {
         session.log("Project does not have any genes", level: LogLevel.error);
-        throw Exception('Project does not have any genes');
+        // ⚠️ A typed exception, not a bare `Exception`. `describeError` has no
+        // case for the latter, so it reached the user as
+        // "Exception: Project does not have any genes" — the class name
+        // included.
+        throw FlumipFileNotFoundException(
+          message: 'This gene is not on this project.',
+        );
       }
       project.genes!.remove(gene);
       await Project.db.updateRow(session, project);
@@ -244,7 +304,7 @@ class ProjectService {
   /// \param id The ID of the project.
   /// \param genes The list of genes to add.
   /// \throws [FileNotFoundException] if the project is not found.
-  /// \throws [ArgumentError] if any gene is empty or contains invalid characters.
+  /// \throws [ArgumentException] if any gene is empty or contains invalid characters.
   Future<void> addGenesToProject(
     Session session,
     int id,
@@ -257,22 +317,39 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     } else {
+      // Same normalisation as [addGeneToProject], for the same reason. This
+      // replaces the whole list rather than appending, so without it a bulk
+      // write could seed mixed case that the single-gene duplicate check would
+      // then never catch.
+      final normalised = <String>[];
       for (var gene in genes) {
-        if (gene.isEmpty || gene == '') {
+        final typed = gene.trim();
+        if (typed.isEmpty) {
           session.log("Supplied gene is empty", level: LogLevel.error);
-          throw ArgumentError('Supplied gene empty');
+          throw ArgumentException(message: 'Enter a gene symbol.');
         }
-        if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(gene)) {
+        if (!geneSymbol.hasMatch(typed)) {
           session.log(
             "Gene name contains invalid characters",
             level: LogLevel.error,
           );
-          throw ArgumentError('Gene name contains invalid characters');
+          throw ArgumentException(
+            message:
+                'A gene symbol can only contain letters and numbers, so '
+                '"$typed" cannot be one.',
+          );
         }
+        final upper = typed.toUpperCase();
+        // Quietly dropped rather than refused: a list is pasted in one go, and
+        // failing the whole write over a repeat would make the caller diff it
+        // by hand.
+        if (!normalised.contains(upper)) normalised.add(upper);
       }
-      project.genes = genes;
+      project.genes = normalised;
       await Project.db.updateRow(session, project);
       session.log(
         "Multiple genes added to project with ID: $id",
@@ -295,7 +372,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     final existing = project.trackToken;
@@ -350,12 +429,16 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     var genome = await Genome.db.findById(session, geneId);
     if (genome == null) {
       session.log("Gene not found with ID: $geneId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Gene not found');
+      throw FlumipFileNotFoundException(
+        message: 'This gene is not on this project.',
+      );
     }
     project.genome = geneId;
     await Project.db.updateRow(session, project);
@@ -382,7 +465,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     if (snpId == null) {
@@ -394,7 +479,9 @@ class ProjectService {
     var snp = await Snp.db.findById(session, snpId);
     if (snp == null) {
       session.log("Snp not found with ID: $snpId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Snp not found');
+      throw FlumipFileNotFoundException(
+        message: 'This SNP set no longer exists.',
+      );
     }
     await authz.requireSnpAccess(session, snp);
 
@@ -405,7 +492,7 @@ class ProjectService {
         level: LogLevel.error,
       );
       throw ArgumentException(
-        message: 'That SNP set is for a different genome build.',
+        message: 'This SNP set is for a different genome build.',
       );
     }
 
@@ -414,7 +501,7 @@ class ProjectService {
         "Refused SNP $snpId for project $id: status is ${snp.status.name}",
         level: LogLevel.error,
       );
-      throw ArgumentException(message: 'That SNP set is not ready to use yet.');
+      throw ArgumentException(message: 'This SNP set is not ready to use yet.');
     }
 
     project.snp = snpId;
@@ -438,19 +525,89 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
 
     if (ownerId != null) {
       final user = await FlumipUser.db.findById(session, ownerId);
       if (user == null) {
         session.log("User not found with ID: $ownerId", level: LogLevel.error);
-        throw FlumipFileNotFoundException(message: 'User not found');
+        throw FlumipFileNotFoundException(
+          message: 'This user no longer exists.',
+        );
       }
     }
 
     project.owner = ownerId;
     await Project.db.updateRow(session, project);
+  }
+
+  /// Moves a project into [department], or out of every department when null.
+  ///
+  /// ⚠️ **Refuses a department the caller is not in**, unless they are an
+  /// administrator. Without that, setting a department would be a way to hand
+  /// your own project to a group you have nothing to do with — and since a
+  /// department only ever widens access, that is a way to share a project with
+  /// people who were never meant to see it.
+  ///
+  /// An administrator may set any department, because they can see every
+  /// project anyway and are the ones who tidy up after a group is renamed.
+  Future<void> setDepartment(
+    Session session,
+    int id,
+    String? department,
+  ) async {
+    var project = await Project.db.findById(session, id);
+    if (project == null) {
+      session.log("Project not found with ID: $id", level: LogLevel.error);
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
+    }
+
+    final wanted = department?.trim();
+    if (wanted != null && wanted.isNotEmpty) {
+      final who = await authz.principal(session);
+      if (!who.isAdmin && !who.departments.contains(wanted)) {
+        session.log(
+          'Refused to move project $id into "$wanted" for $who',
+          level: LogLevel.warning,
+        );
+        throw ProjectAccessDeniedException(
+          message:
+              'You are not in "$wanted", so you cannot move a project into it.',
+        );
+      }
+    }
+
+    project.department = (wanted == null || wanted.isEmpty) ? null : wanted;
+    await Project.db.updateRow(session, project);
+  }
+
+  /// The departments the caller may put a project into, sorted.
+  ///
+  /// Their own groups; an administrator also gets every department already in
+  /// use, so they can move a project out of a group that has been renamed away
+  /// without joining it first.
+  Future<List<String>> assignableDepartments(Session session) async {
+    final who = await authz.principal(session);
+    final departments = <String>{...who.departments};
+
+    if (who.isAdmin) {
+      final projects = await Project.db.find(session);
+      departments.addAll(
+        projects
+            .map((p) => p.department)
+            .whereType<String>()
+            .where((d) => d.isNotEmpty),
+      );
+    }
+
+    final sorted = departments.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return sorted;
   }
 
   /// Every user a project can be handed to, oldest account first.
@@ -479,7 +636,9 @@ class ProjectService {
     var project = await Project.db.findById(session, id);
     if (project == null) {
       session.log("Project not found with ID: $id", level: LogLevel.error);
-      throw FlumipFileNotFoundException(message: 'Project not found');
+      throw FlumipFileNotFoundException(
+        message: 'This project no longer exists.',
+      );
     }
     project.emailNotification = enabled;
     await Project.db.updateRow(session, project);

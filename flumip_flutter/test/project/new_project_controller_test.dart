@@ -109,7 +109,7 @@ void main() {
 
         expect(created, isNull);
         expect(h.calls, isEmpty);
-        expect(h.controller.errorMessage, 'Project name is required');
+        expect(h.controller.errorMessage, 'A project needs a name.');
       },
     );
 

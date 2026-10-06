@@ -45,30 +45,26 @@ void main() {
     );
 
     group('importFromUrls', () {
-      test(
-        'creates a pending row with a folder and a queued status',
-        () async {
-          final genome = await withTempTree();
+      test('creates a pending row with a folder and a queued status', () async {
+        final genome = await withTempTree();
 
-          final snp = await endpoints.snp.importFromUrls(
-            sessionBuilder,
-            request(
-              genomeId: genome.id!,
-              urls: ['https://ftp.ncbi.nlm.nih.gov/snp/x.vcf.gz'],
-            ),
-          );
+        final snp = await endpoints.snp.importFromUrls(
+          sessionBuilder,
+          request(
+            genomeId: genome.id!,
+            urls: ['https://ftp.ncbi.nlm.nih.gov/snp/x.vcf.gz'],
+          ),
+        );
 
-          expect(snp.status, SnpImportStatus.pending);
-          expect(snp.custom, isTrue);
-          expect(snp.private, isTrue, reason: 'private by default');
-          expect(snp.genome, genome.id);
-          expect(snp.sourceVcfUrl, 'https://ftp.ncbi.nlm.nih.gov/snp/x.vcf.gz');
-          // The folder is derived from the row id, so it can only be set after
-          // the insert.
-          expect(snp.folder, endsWith('/user/${snp.id}'));
-        },
-        tags: ['integration'],
-      );
+        expect(snp.status, SnpImportStatus.pending);
+        expect(snp.custom, isTrue);
+        expect(snp.private, isTrue, reason: 'private by default');
+        expect(snp.genome, genome.id);
+        expect(snp.sourceVcfUrl, 'https://ftp.ncbi.nlm.nih.gov/snp/x.vcf.gz');
+        // The folder is derived from the row id, so it can only be set after
+        // the insert.
+        expect(snp.folder, endsWith('/user/${snp.id}'));
+      }, tags: ['integration']);
 
       test('accepts a matching index address', () async {
         final genome = await withTempTree();
@@ -167,26 +163,22 @@ void main() {
         );
       }, tags: ['integration']);
 
-      test(
-        'refuses a second address that is not a .vcf.gz.tbi',
-        () async {
-          final genome = await withTempTree();
-          await expectLater(
-            endpoints.snp.importFromUrls(
-              sessionBuilder,
-              request(
-                genomeId: genome.id!,
-                urls: [
-                  'https://example.org/x.vcf.gz',
-                  'https://example.org/notes.txt',
-                ],
-              ),
+      test('refuses a second address that is not a .vcf.gz.tbi', () async {
+        final genome = await withTempTree();
+        await expectLater(
+          endpoints.snp.importFromUrls(
+            sessionBuilder,
+            request(
+              genomeId: genome.id!,
+              urls: [
+                'https://example.org/x.vcf.gz',
+                'https://example.org/notes.txt',
+              ],
             ),
-            throwsA(isA<ArgumentException>()),
-          );
-        },
-        tags: ['integration'],
-      );
+          ),
+          throwsA(isA<ArgumentException>()),
+        );
+      }, tags: ['integration']);
 
       test('refuses more than two addresses', () async {
         final genome = await withTempTree();
@@ -284,7 +276,7 @@ void main() {
             genome: genome.id,
             custom: true,
             status: SnpImportStatus.failed,
-            statusMessage: 'That address answered 404 (not found).',
+            statusMessage: 'This address answered 404 (not found).',
           );
           snp
             ..sourceVcfUrl = 'https://example.org/x.vcf.gz'
@@ -336,47 +328,39 @@ void main() {
         tags: ['integration'],
       );
 
-      test(
-        'refuses to retry an import that is already running',
-        () async {
-          final genome = await withTempTree();
-          final snp = await seedSnp(
-            session,
-            genome: genome.id,
-            custom: true,
-            status: SnpImportStatus.downloading,
-            statusUpdated: DateTime.now().toUtc(),
-          );
-          snp.sourceVcfUrl = 'https://example.org/x.vcf.gz';
-          await Snp.db.updateRow(session, snp);
+      test('refuses to retry an import that is already running', () async {
+        final genome = await withTempTree();
+        final snp = await seedSnp(
+          session,
+          genome: genome.id,
+          custom: true,
+          status: SnpImportStatus.downloading,
+          statusUpdated: DateTime.now().toUtc(),
+        );
+        snp.sourceVcfUrl = 'https://example.org/x.vcf.gz';
+        await Snp.db.updateRow(session, snp);
 
-          await expectLater(
-            endpoints.snp.retryImport(sessionBuilder, snp.id!),
-            throwsA(isA<ArgumentException>()),
-          );
-        },
-        tags: ['integration'],
-      );
+        await expectLater(
+          endpoints.snp.retryImport(sessionBuilder, snp.id!),
+          throwsA(isA<ArgumentException>()),
+        );
+      }, tags: ['integration']);
 
-      test(
-        'an upload with nothing on disk has nothing to retry',
-        () async {
-          final genome = await withTempTree();
-          final snp = await seedSnp(
-            session,
-            genome: genome.id,
-            custom: true,
-            status: SnpImportStatus.failed,
-            vcfPath: '',
-          );
+      test('an upload with nothing on disk has nothing to retry', () async {
+        final genome = await withTempTree();
+        final snp = await seedSnp(
+          session,
+          genome: genome.id,
+          custom: true,
+          status: SnpImportStatus.failed,
+          vcfPath: '',
+        );
 
-          await expectLater(
-            endpoints.snp.retryImport(sessionBuilder, snp.id!),
-            throwsA(isA<ArgumentException>()),
-          );
-        },
-        tags: ['integration'],
-      );
+        await expectLater(
+          endpoints.snp.retryImport(sessionBuilder, snp.id!),
+          throwsA(isA<ArgumentException>()),
+        );
+      }, tags: ['integration']);
 
       test('a global SNP cannot be retried', () async {
         await withTempTree();
