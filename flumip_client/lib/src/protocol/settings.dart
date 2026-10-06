@@ -26,8 +26,6 @@ abstract class Settings
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -56,12 +54,6 @@ abstract class Settings
        exonExtractScript =
            exonExtractScript ??
            '/opt/flumip/MIPGEN/tools/extract_coding_gene_exons.sh',
-       ucscTrackGenerator =
-           ucscTrackGenerator ??
-           '/opt/flumip/MIPGEN/tools/generate_ucsc_track.py',
-       binCreationScript =
-           binCreationScript ??
-           '/opt/flumip/MIPGEN/tools/add_bins_to_refgene.py',
        bigGenePredToGenePredExecutable =
            bigGenePredToGenePredExecutable ??
            '/opt/flumip/tools/bigGenePredToGenePred',
@@ -93,8 +85,6 @@ abstract class Settings
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -130,8 +120,6 @@ abstract class Settings
       toolsDir: jsonSerialization['toolsDir'] as String?,
       mipgenExecutable: jsonSerialization['mipgenExecutable'] as String?,
       exonExtractScript: jsonSerialization['exonExtractScript'] as String?,
-      ucscTrackGenerator: jsonSerialization['ucscTrackGenerator'] as String?,
-      binCreationScript: jsonSerialization['binCreationScript'] as String?,
       bigGenePredToGenePredExecutable:
           jsonSerialization['bigGenePredToGenePredExecutable'] as String?,
       mailActive: jsonSerialization['mailActive'] == null
@@ -190,10 +178,6 @@ abstract class Settings
 
   String exonExtractScript;
 
-  String ucscTrackGenerator;
-
-  String binCreationScript;
-
   String bigGenePredToGenePredExecutable;
 
   bool mailActive;
@@ -241,8 +225,6 @@ abstract class Settings
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -275,8 +257,6 @@ abstract class Settings
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
-      'ucscTrackGenerator': ucscTrackGenerator,
-      'binCreationScript': binCreationScript,
       'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
       'mailActive': mailActive,
       'smtpServer': smtpServer,
@@ -311,8 +291,6 @@ abstract class Settings
       'toolsDir': toolsDir,
       'mipgenExecutable': mipgenExecutable,
       'exonExtractScript': exonExtractScript,
-      'ucscTrackGenerator': ucscTrackGenerator,
-      'binCreationScript': binCreationScript,
       'bigGenePredToGenePredExecutable': bigGenePredToGenePredExecutable,
       'mailActive': mailActive,
       'smtpServer': smtpServer,
@@ -353,8 +331,6 @@ class _SettingsImpl extends Settings {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -383,8 +359,6 @@ class _SettingsImpl extends Settings {
          toolsDir: toolsDir,
          mipgenExecutable: mipgenExecutable,
          exonExtractScript: exonExtractScript,
-         ucscTrackGenerator: ucscTrackGenerator,
-         binCreationScript: binCreationScript,
          bigGenePredToGenePredExecutable: bigGenePredToGenePredExecutable,
          mailActive: mailActive,
          smtpServer: smtpServer,
@@ -419,8 +393,6 @@ class _SettingsImpl extends Settings {
     String? toolsDir,
     String? mipgenExecutable,
     String? exonExtractScript,
-    String? ucscTrackGenerator,
-    String? binCreationScript,
     String? bigGenePredToGenePredExecutable,
     bool? mailActive,
     String? smtpServer,
@@ -452,8 +424,6 @@ class _SettingsImpl extends Settings {
       toolsDir: toolsDir ?? this.toolsDir,
       mipgenExecutable: mipgenExecutable ?? this.mipgenExecutable,
       exonExtractScript: exonExtractScript ?? this.exonExtractScript,
-      ucscTrackGenerator: ucscTrackGenerator ?? this.ucscTrackGenerator,
-      binCreationScript: binCreationScript ?? this.binCreationScript,
       bigGenePredToGenePredExecutable:
           bigGenePredToGenePredExecutable ??
           this.bigGenePredToGenePredExecutable,

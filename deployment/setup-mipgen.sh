@@ -1,6 +1,7 @@
 #!/bin/bash
-# setup-mipgen.sh - A script to install dependencies, clone MIPGEN, set up data directories,
-# and optionally download required reference files for selected genomes.
+# setup-mipgen.sh - A script to install dependencies, clone and build upstream MIPGEN,
+# install FLUMIP's helper scripts, set up data directories, and optionally
+# download required reference files for selected genomes.
 # Supported genomes: hg18, hg19, hg38, hs1.
 #
 # The script has two modes:
@@ -30,6 +31,17 @@
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
+
+# The FLUMIP helpers that ship beside this script (deployment/ in both the
+# repository and the release tarball). Resolved now, before any `cd`.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# MIPGEN is installed exactly as its authors publish it, pinned to a known
+# commit so every install builds the same thing. Its licence does not allow
+# distributing a modified copy, so FLUMIP never patches it: what MIPGEN needs
+# adapting for (the TRF check) is handled by the mipgen-trf wrapper instead.
+MIPGEN_REPO="https://github.com/shendurelab/MIPGEN.git"
+MIPGEN_COMMIT="4d6c342"
 
 # Define colors.
 GREEN='\033[0;32m'
@@ -232,8 +244,8 @@ echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages.
-echo -e "\n${GREEN}Installing required packages: build-essential, tabix, samtools, bwa, trf, python-is-python3, acl...${NC}\n"
-sudo apt install build-essential tabix samtools bwa trf python-is-python3 acl -y
+echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, python3, acl...${NC}\n"
+sudo apt install build-essential git tabix samtools bwa trf python3 acl -y
 
 # Create the mipgen directory and clone the MIPGEN repository.
 echo -e "\n${GREEN}Creating '/opt/flumip' directory and cloning MIPGEN repository...${NC}\n"
@@ -241,9 +253,19 @@ sudo mkdir -p /opt/flumip
 sudo chown $USER:$USER /opt/flumip
 cd /opt/flumip
 if [ ! -d "MIPGEN" ]; then
-  git clone https://github.com/simonzeilmann/MIPGEN.git
+  git clone "$MIPGEN_REPO" MIPGEN
 fi
 cd MIPGEN
+
+# Earlier installs cloned a modified fork. Refuse to build on top of one rather
+# than quietly running something other than upstream MIPGEN.
+MIPGEN_ORIGIN="$(git remote get-url origin 2>/dev/null || true)"
+if [ "$MIPGEN_ORIGIN" != "$MIPGEN_REPO" ]; then
+  echo -e "${RED}/opt/flumip/MIPGEN was cloned from ${MIPGEN_ORIGIN:-an unknown source}, not ${MIPGEN_REPO}.${NC}"
+  echo -e "${RED}Remove it (rm -rf /opt/flumip/MIPGEN) and run this script again.${NC}"
+  exit 1
+fi
+git -c advice.detachedHead=false checkout -q "$MIPGEN_COMMIT"
 
 echo -e "\n${GREEN}Building MIPGEN...${NC}\n"
 make
@@ -251,8 +273,6 @@ make
 echo -e "\n${GREEN}Setting execute permissions for MIPGEN tools...${NC}\n"
 chmod +x mipgen
 chmod +x tools/extract_coding_gene_exons.sh
-chmod +x tools/generate_ucsc_track.py
-chmod +x tools/add_bins_to_refgene.py
 cd ..
 
 # Create the base directory structure.
@@ -261,6 +281,11 @@ mkdir -p /opt/flumip/data/genomes/
 mkdir -p /opt/flumip/projects
 mkdir -p /opt/flumip/tools
 mkdir -p /opt/flumip/data/custom_snp/{common,private}
+
+# FLUMIP's own helpers.
+echo -e "\n${GREEN}Installing FLUMIP helper scripts...${NC}\n"
+install -m 755 "$SCRIPT_DIR/mipgen-trf" /opt/flumip/tools/mipgen-trf
+install -m 755 "$SCRIPT_DIR/add_bins_to_refgene.py" /opt/flumip/tools/add_bins_to_refgene.py
 
 # Download and activate bigGenePredToGenePred (needed for hs1).
 echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
@@ -376,7 +401,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Generating refGene for hs1...${NC}\n"
         cd "$BASE_DIR"
         /opt/flumip/tools/bigGenePredToGenePred https://hgdownload.soe.ucsc.edu/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.bb "$BASE_DIR/refWithoutBin.txt"
-        python /opt/flumip/MIPGEN/tools/add_bins_to_refgene.py refWithoutBin.txt refGene.txt
+        python3 /opt/flumip/tools/add_bins_to_refgene.py refWithoutBin.txt refGene.txt
         rm refWithoutBin.txt
       fi
 

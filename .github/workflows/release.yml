@@ -81,6 +81,8 @@ jobs:
           cp -r migrations app/migrations
           cp -r web app/web
           cp -r ../deployment app/deployment
+          # MIT requires the notice to travel with every copy, and this is one.
+          cp ../LICENSE app/LICENSE
 
       - name: Pack build
         run: |

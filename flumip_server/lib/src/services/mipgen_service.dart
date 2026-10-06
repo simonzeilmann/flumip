@@ -11,6 +11,7 @@ import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
+import 'package:flumip_server/src/services/ucsc_track.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
@@ -24,8 +25,8 @@ const mipgenLogName = 'mipgen.log';
 
 /// How long a helper tool gets before it is treated as wedged.
 ///
-/// The exon-extraction script and the UCSC track generator both read a gene
-/// list and write a file; minutes, not hours.
+/// The exon-extraction script reads a gene list and writes a file; minutes,
+/// not hours.
 const helperToolTimeout = Duration(minutes: 15);
 
 /// The suffix mipgen gives the design itself, after the project name.
@@ -35,8 +36,8 @@ const pickedMipsSuffix = 'picked_mips.txt';
 ///
 /// The number is mipgen's, not ours: its header names twenty columns,
 /// `>mip_key` first and `mip_name` last, and every data row matches. It is also
-/// exactly where the UCSC track generator reads — `values[19]` — which is why a
-/// row a single field short was enough to crash it.
+/// exactly where the UCSC track reads the MIP name — the last field — which is
+/// why a row a single field short was enough to crash MIPGEN's track script.
 const pickedMipsFieldCount = 20;
 
 /// mipgen's own statement, in its progress file, that it finished picking.
@@ -66,7 +67,7 @@ bool isShortPickedMipsRow(String line) =>
 /// Where mipgen writes the design for [project].
 ///
 /// One definition, because two things read it — the completeness check and the
-/// UCSC track generator — and a path built twice is a path that drifts.
+/// UCSC track writer — and a path built twice is a path that drifts.
 String pickedMipsPathOf(Settings settings, Project project) =>
     '${settings.projectDir}/${project.folderName}/'
     '${project.name}.$pickedMipsSuffix';
@@ -282,6 +283,24 @@ class MipgenService {
       }
     }
 
+    // MIPGEN is given FLUMIP's wrapper rather than trf itself (see
+    // deployment/mipgen-trf for why). Checked here because when it is missing,
+    // all MIPGEN says is "unable to tile sequences due to circumstance 3".
+    final trfWrapper = "${settings.toolsDir}/mipgen-trf";
+    if (options.trf == true && !await File(trfWrapper).exists()) {
+      session.log(
+        "Refusing to run project ${project.id}: TRF is on and $trfWrapper "
+        "does not exist.",
+        level: LogLevel.error,
+      );
+      throw FlumipFileNotFoundException(
+        message:
+            'Tandem Repeats Finder is switched on, but its helper '
+            '$trfWrapper is not installed. Ask your administrator to run '
+            'setup-mipgen.sh again, or switch TRF off for this project.',
+      );
+    }
+
     List<String> arg = [
       "-regions_to_scan",
       "${settings.projectDir}/${project.folderName}/genes.bed",
@@ -319,7 +338,7 @@ class MipgenService {
       "-max_arm_copy_product",
       options.maxArmCopyProduct.toString(),
       "-trf",
-      options.trf == true ? "trf" : "off",
+      options.trf == true ? trfWrapper : "off",
       if (options.genomeDir != null) ...["-genome_dir", options.genomeDir!],
       "-feature_flank",
       options.featureFlank.toString(),
@@ -681,63 +700,17 @@ class MipgenService {
     }
   }
 
-  /// Generates a UCSC track for the specified project.
+  /// Writes the UCSC track for [project]'s design, in-process.
   ///
-  /// \param session The current session.
-  /// \param project The project for which to generate the UCSC track.
-  /// \returns A future that completes when the UCSC track generation process is finished.
+  /// Throws if it cannot be written or the design was incomplete; the caller
+  /// turns that into a warning, because the MIPs themselves are fine.
   Future<void> _generateUCSCTrack(Session session, Project project) async {
-    SettingsService settingsService = sl<SettingsService>();
-
-    var settings = await settingsService.getSettings(session);
-    var projectDir = "${settings.projectDir}/${project.folderName}";
-
-    List<String> arg = [];
-    arg.add(settings.ucscTrackGenerator);
-    arg.add(pickedMipsPathOf(settings, project));
-    arg.add("${project.name}_ucsc_track");
-
+    var settings = await sl<SettingsService>().getSettings(session);
+    final pickedMips = pickedMipsPathOf(settings, project);
     session.log(
-      "Starting UCSC track generation process with arguments: $arg",
+      "Writing UCSC track for project ID: ${project.id} from $pickedMips",
       level: LogLevel.info,
     );
-    var process = await sl<ProcessRunner>().run(
-      "python",
-      arg,
-      workingDirectory: projectDir,
-      runInShell: true,
-      timeout: helperToolTimeout,
-    );
-
-    if (process.exitCode != 0) {
-      final stderr = process.stderr.toString();
-
-      // ⚠️ The whole of stderr, on its own line, before the summary. The
-      // generator is a Python script, and a Python traceback names the cause on
-      // its *last* line — so a one-line summary is a summary, never the record.
-      // This log entry is the only place the traceback survives: the script
-      // writes nothing of its own, and the project row holds one sentence.
-      session.log(
-        "UCSC track generator (exit ${process.exitCode}) for project ID: "
-        "${project.id} wrote:\n${stderr.trim()}",
-        level: LogLevel.error,
-      );
-
-      // ⚠️ Recorded, not merely logged. The track is an optional extra, so this
-      // must not fail the run — but a project whose track silently never
-      // appeared, with the reason only in the server log, is how somebody
-      // spends an afternoon wondering where their UCSC link went.
-      //
-      // [failureLineOf], not `firstLineOf`: see the note on both. The first line
-      // of a traceback is the same string for every possible cause.
-      final reason = failureLineOf(stderr);
-      session.log(
-        "UCSC track generation failed for project ID: ${project.id}: $reason",
-        level: LogLevel.error,
-      );
-      project.error = project.error.isEmpty
-          ? 'The MIPs were generated, but the UCSC track was not: $reason'
-          : project.error;
-    }
+    await writeUcscTrack(pickedMips, "${project.name}_ucsc_track");
   }
 }

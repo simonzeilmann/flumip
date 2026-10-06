@@ -28,11 +28,10 @@ import 'package:serverpod/serverpod.dart';
 /// endpoint dispatch, authentication and error mapping the API port runs. This
 /// route strips the prefix and hands the request over in-process.
 ///
-/// ⚠️ **An unknown endpoint is not a 404 here.** `FlutterRoute` turns any 404 on
-/// the web server into the app itself (see HANDOFF.md), so `POST /api/nope/x`
-/// answers 405 and `GET` answers `index.html`, where the API port says 404.
-/// Every other status — 400 for a bad method or body, 401, 403, 500 — passes
-/// through untouched. Only version skew can produce an unknown endpoint.
+/// Every status passes through untouched, 404 for an unknown endpoint included,
+/// so `/api/x` answers exactly as `x` does on the API port. (It once answered
+/// 405 instead, while FlutterRoute's fallback swallowed every 404 on the web
+/// server; see AppRoute.)
 ///
 /// ⚠️ **Build [apiRouter] before `pod.start()`.** `Server.injectIn` treats an
 /// injection into a running server as a hot reload and re-initialises every

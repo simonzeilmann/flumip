@@ -4,6 +4,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/ucsc_track.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';
 
@@ -183,6 +184,74 @@ void main() {
       expect(reloaded.pid, 777);
       expect(reloaded.active, isTrue);
     }, tags: ['unit']);
+
+    /// A project with TRF switched on, ready to run, with the tools directory
+    /// at [toolsDir].
+    Future<Project> seedTrfProject(String toolsDir) async {
+      final base = createTempDir('trf');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+        toolsDir: toolsDir,
+      );
+      final options = await ProjectOptions.db.insertRow(
+        session,
+        ProjectOptions(armLengths: '', trf: true),
+      );
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
+      return seedProject(
+        session,
+        name: 'demo',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+      );
+    }
+
+    test('generateMips hands mipgen the TRF wrapper, not trf', () async {
+      // Upstream mipgen rejects the trf that Ubuntu ships; the wrapper is what
+      // makes it acceptable without modifying mipgen.
+      final tools = createTempDir('tools');
+      File('${tools.path}/mipgen-trf').writeAsStringSync('#!/bin/sh\n');
+      final project = await seedTrfProject(tools.path);
+      fake.stubRun('pgrep', exitCode: 0, stdout: '777 mipgen\n');
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final args = fake.startCalls
+          .firstWhere((c) => c.executable == 'mipgen-exe')
+          .arguments;
+      expect(args[args.indexOf('-trf') + 1], '${tools.path}/mipgen-trf');
+    }, tags: ['unit']);
+
+    test(
+      'generateMips refuses TRF in words when the wrapper is missing',
+      () async {
+        final project = await seedTrfProject(createTempDir('tools').path);
+
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsA(
+            isA<FlumipFileNotFoundException>().having(
+              (e) => e.message,
+              'message',
+              contains('setup-mipgen.sh'),
+            ),
+          ),
+        );
+        expect(
+          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+          isEmpty,
+        );
+      },
+      tags: ['unit'],
+    );
 
     test('generateMips refuses a project with no genome, in words', () async {
       // It used to dereference project.genome! and reach the user as a 500,
@@ -431,11 +500,7 @@ void main() {
       String? pickedMips,
     }) async {
       final base = createTempDir('finish');
-      await overrideSettingsDirs(
-        session,
-        projectDir: base.path,
-        ucscTrackGenerator: 'ucsc-gen',
-      );
+      await overrideSettingsDirs(session, projectDir: base.path);
       final project = await seedProject(
         session,
         name: 'demo',
@@ -516,7 +581,6 @@ void main() {
 
     test('finalizes successfully and generates the UCSC track', () async {
       final p = await prepare(withProgress: true);
-      fake.stubRun('python', exitCode: 0);
       await mipgenService.mipgenIsFinished(
         session,
         await ProjectService().getProject(session, p.id),
@@ -526,8 +590,11 @@ void main() {
       expect(project.active, isFalse);
       expect(project.pid, 0);
       expect(project.completedIn, isNotNull);
-      // The UCSC track generator was invoked via python.
-      expect(fake.lastFor('python'), isNotNull);
+      // The UCSC track was written beside the design.
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isTrue,
+      );
     }, tags: ['unit']);
 
     test('a failed UCSC track is a warning, not a failed project', () async {
@@ -537,7 +604,8 @@ void main() {
       // file generated *after* them. Reporting that as a failed run sends people
       // looking for results they already have.
       final p = await prepare(withProgress: true);
-      fake.runError = Exception('python blew up');
+      // A directory where the track file should go makes writing it fail.
+      Directory('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').createSync();
 
       await mipgenService.mipgenIsFinished(
         session,
@@ -549,7 +617,7 @@ void main() {
       expect(project.pid, 0);
       expect(project.error, isEmpty);
       expect(project.warning, contains('UCSC track'));
-      expect(project.warning, contains('python blew up'));
+      expect(project.warning, contains('Cannot open file'));
       // Still a completed run.
       expect(project.completedIn, isNotNull);
     }, tags: ['unit']);
@@ -576,7 +644,6 @@ void main() {
       // completion marker — and the design is still missing a field off its
       // last row, because the run was killed while writing it.
       final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
-      fake.stubRun('python', exitCode: 0);
 
       await mipgenService.mipgenIsFinished(
         session,
@@ -600,19 +667,21 @@ void main() {
       expect(project.warning, isEmpty);
     }, tags: ['unit']);
 
-    test('an incomplete design is not handed to the track generator', () async {
-      // No point, and worse than no point: the generator reads the same
-      // truncated file, so it fails too and its complaint is what people see
-      // instead of the real one.
+    test('an incomplete design gets no UCSC track', () async {
+      // No point, and worse than no point: the track would be built from the
+      // same truncated file, so it fails too and its complaint is what people
+      // see instead of the real one.
       final p = await prepare(withProgress: true, pickedMips: truncatedDesign);
-      fake.stubRun('python', exitCode: 0);
 
       await mipgenService.mipgenIsFinished(
         session,
         await ProjectService().getProject(session, p.id),
       );
 
-      expect(fake.lastFor('python'), isNull);
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isFalse,
+      );
     }, tags: ['unit']);
 
     test('a run that stopped before picking is a failed project', () async {
@@ -632,7 +701,10 @@ void main() {
       expect(project.active, isFalse);
       expect(project.error, contains('interrupted before it finished'));
       expect(project.error, contains('Generate the MIPs again'));
-      expect(fake.lastFor('python'), isNull);
+      expect(
+        File('${p.dir}/demo.$pickedMipsSuffix$ucscTrackSuffix').existsSync(),
+        isFalse,
+      );
     }, tags: ['unit']);
   });
 }

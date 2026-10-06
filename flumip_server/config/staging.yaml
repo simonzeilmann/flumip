@@ -1,12 +1,9 @@
-# This is the configuration file for your staging environment. The staging
-# environment is meant to resemble the production environment as much as
-# possible and may connect to production databases services and data. You use it
-# for final testing before deploying the production server.
+# Configuration for the staging environment, deployed by
+# .github/workflows/staging.yml. It mirrors production as closely as possible
+# and is where a change is tested before it is promoted.
 #
-# Typically, you will want to route the traffic through a load balancer
-# which adds SSL security through https. If you use Serverpod's standard
-# Terraform scripts to deploy your server, all you need to change in
-# this file is the examplepod.com domain name.
+# TLS is terminated by a reverse proxy in front of the web port; see
+# "HTTPS and the reverse proxy" in the top-level README.
 
 # The API server. Serverpod always starts it, but nothing reaches it directly:
 # the web server answers the API under /api on its own port (ApiRoute), so an
@@ -31,10 +28,7 @@ webServer:
   publicPort: 443
   publicScheme: https
 
-# This is the database setup for your servers. The default for the Google Cloud
-# Engine Terraform configuration is to connect on a private IP address.
-# If you are connecting on a public IP (e.g. on AWS or Google Cloud Run), you
-# connect on the public IP of the database e.g. database-staging.examplepod.com.
+# The PostgreSQL database. The password is in config/passwords.yaml.
 database:
   host: db.flumip-staging.simonzeilmann.com
   port: 5433
@@ -42,10 +36,8 @@ database:
   user: postgres
   requireSsl: false
 
-# This is the setup for Redis. The default for the Google Cloud Engine Terraform
-# configuration is to connect on a private IP address.
-# If you are connecting on a public IP (e.g. on AWS or Google Cloud Run), you
-# connect on the public IP of the database e.g. redis-staging.examplepod.com.
+# Redis is not used. Serverpod reads this block regardless, so it stays,
+# disabled; see "Redis: seam-ready, not enabled" in HANDOFF.md.
 redis:
   enabled: false
   host: redis.private-staging.examplepod.com

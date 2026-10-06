@@ -7,6 +7,7 @@ import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
 import 'package:flumip_server/src/web/routes/api_route.dart';
+import 'package:flumip_server/src/web/routes/app_route.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
 import 'package:flumip_server/src/web/routes/download.dart';
 import 'package:flumip_server/src/web/routes/snp_upload.dart';
@@ -71,7 +72,10 @@ void run(List<String> args) async {
     // ⚠️ This is only half of the staleness problem. The service worker sits in
     // front of the HTTP cache and can keep an old build alive regardless — see
     // "The service worker is ON" in HANDOFF.md.
-    pod.webServer.addRoute(FlutterRoute(flutterAppDir));
+    //
+    // AppRoute, not FlutterRoute directly: FlutterRoute's index.html fallback
+    // would otherwise swallow every other route's 404. See AppRoute.
+    pod.webServer.addRoute(AppRoute(flutterAppDir));
   }
 
   // Keyed on the project's track token, not its id: the route is unauthenticated

@@ -1,0 +1,18 @@
+#!/bin/sh
+# mipgen-trf - what FLUMIP passes to MIPGEN as `-trf`, in place of `trf` itself.
+#
+# Before a design, MIPGEN runs its -trf executable with no arguments and accepts
+# it only if the exit code is 255, which is what TRF 4.04 returned. The TRF that
+# Debian and Ubuntu ship (4.09) exits 1 instead, so MIPGEN rejects it with
+# "TRF directory invalid". This script answers that bare probe the way MIPGEN
+# expects and hands every real call straight to trf, so MIPGEN itself runs
+# exactly as its authors publish it.
+#
+# Installed into /opt/flumip/tools by setup-mipgen.sh.
+
+if [ $# -eq 0 ]; then
+  # Still fail the probe when trf is missing: 127 is not 255.
+  command -v trf >/dev/null 2>&1 || exit 127
+  exit 255
+fi
+exec trf "$@"

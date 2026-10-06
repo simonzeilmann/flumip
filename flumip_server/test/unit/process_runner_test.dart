@@ -164,42 +164,4 @@ void main() {
       expect(long, endsWith('…'));
     });
   });
-
-  group('failureLineOf', () {
-    // The reason this exists. A UCSC track generation failure was recorded as
-    // "Traceback (most recent call last):" and nothing else, so the cause had
-    // to be reconstructed by re-running the script by hand. This is the real
-    // stderr from that reproduction.
-    test('names the exception in a Python traceback, not the banner', () {
-      const traceback = '''
-Traceback (most recent call last):
-  File "/opt/flumip/MIPGEN/tools/generate_ucsc_track.py", line 52, in <module>
-    name = values[19] + "_%.3f" % (float(values[1]))
-           ~~~~~~^^^^
-IndexError: list index out of range
-''';
-      expect(failureLineOf(traceback), 'IndexError: list index out of range');
-      // What the old behaviour recorded: identical for every possible cause.
-      expect(firstLineOf(traceback), 'Traceback (most recent call last):');
-    });
-
-    test('is the same as the first line for single-line stderr', () {
-      const oneLine = 'bwa: command not found\n';
-      expect(failureLineOf(oneLine), firstLineOf(oneLine));
-    });
-
-    test('skips trailing blank lines', () {
-      expect(failureLineOf('context\nthe cause\n\n  \n'), 'the cause');
-    });
-
-    test('is empty for empty output', () {
-      expect(failureLineOf('   \n  '), isEmpty);
-    });
-
-    test('is bounded, because it lands in a column and on a screen', () {
-      final long = failureLineOf('context\n${'y' * 500}');
-      expect(long.length, lessThanOrEqualTo(201));
-      expect(long, endsWith('…'));
-    });
-  });
 }

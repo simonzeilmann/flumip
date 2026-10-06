@@ -41,9 +41,7 @@ class SettingsForm {
   final toolsDir = TextEditingController();
   final mipgenExecutable = TextEditingController();
   final exonExtractScript = TextEditingController();
-  final ucscTrackGenerator = TextEditingController();
   final bigGenePredToGenePred = TextEditingController();
-  final binCreationScript = TextEditingController();
 
   final smtpServer = TextEditingController();
   final smtpPort = TextEditingController();
@@ -97,9 +95,7 @@ class SettingsForm {
     toolsDir.text = settings.toolsDir;
     mipgenExecutable.text = settings.mipgenExecutable;
     exonExtractScript.text = settings.exonExtractScript;
-    ucscTrackGenerator.text = settings.ucscTrackGenerator;
     bigGenePredToGenePred.text = settings.bigGenePredToGenePredExecutable;
-    binCreationScript.text = settings.binCreationScript;
     smtpServer.text = settings.smtpServer;
     smtpPort.text = '${settings.smtpPort}';
     smtpUser.text = settings.smtpUser;
@@ -142,9 +138,7 @@ class SettingsForm {
     toolsDir: toolsDir.text,
     mipgenExecutable: mipgenExecutable.text,
     exonExtractScript: exonExtractScript.text,
-    ucscTrackGenerator: ucscTrackGenerator.text,
     bigGenePredToGenePredExecutable: bigGenePredToGenePred.text,
-    binCreationScript: binCreationScript.text,
     mailActive: mailActive,
     smtpServer: smtpServer.text,
     smtpPort: int.tryParse(smtpPort.text) ?? 25,
@@ -180,9 +174,7 @@ class SettingsForm {
       toolsDir,
       mipgenExecutable,
       exonExtractScript,
-      ucscTrackGenerator,
       bigGenePredToGenePred,
-      binCreationScript,
       smtpServer,
       smtpPort,
       smtpUser,
