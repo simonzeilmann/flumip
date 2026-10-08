@@ -244,8 +244,8 @@ echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages.
-echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, acl...${NC}\n"
-sudo apt install build-essential git tabix samtools bwa trf acl -y
+echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, acl, wget...${NC}\n"
+sudo apt install build-essential git tabix samtools bwa trf acl wget -y
 
 # Create the mipgen directory and clone the MIPGEN repository.
 echo -e "\n${GREEN}Creating '/opt/flumip' directory and cloning MIPGEN repository...${NC}\n"
@@ -291,7 +291,7 @@ rm -f /opt/flumip/tools/add_bins_to_refgene.py
 # Download and activate bigGenePredToGenePred (needed for hs1).
 echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
 cd /opt/flumip/tools
-wget -N http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
+wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
 chmod +x bigGenePredToGenePred
 
 # Download genomes if the download flag is set.

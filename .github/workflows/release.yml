@@ -15,6 +15,8 @@ name: Release build
 # make this tarball host-specific again, which is the whole thing it avoids.
 #
 # Cut a release by pushing a tag:  git tag v0.7.0 && git push origin v0.7.0
+# The tag must match `version:` in both pubspecs, or the job fails before
+# building: the footer shows the pubspec version on every other build.
 # Run it manually (workflow_dispatch) to test the job: the tarball is uploaded
 # as a workflow artifact instead of being published as a release.
 
@@ -28,8 +30,17 @@ permissions:
   contents: write
 
 jobs:
+  # The same gate every deploy pipeline has. Without it a tag publishes
+  # whatever it points at, checked or not.
+  checks:
+    uses: ./.github/workflows/checks.yml
+    with:
+      web_build_args: --release --wasm
+    secrets: inherit
+
   release:
     runs-on: ubuntu-latest
+    needs: checks
 
     steps:
       - name: Checkout code
@@ -48,11 +59,15 @@ jobs:
 
       - name: Determine version
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            # Tag is authoritative for a release; strip the leading 'v'.
-            APP_VERSION="${GITHUB_REF_NAME#v}"
-          else
-            APP_VERSION="$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')"
+          APP_VERSION="$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')"
+          SERVER_VERSION="$(grep '^version:' flumip_server/pubspec.yaml | awk '{print $2}')"
+          if [ "$APP_VERSION" != "$SERVER_VERSION" ]; then
+            echo "::error::flumip_flutter is $APP_VERSION but flumip_server is $SERVER_VERSION."
+            exit 1
+          fi
+          if [ "${{ github.ref_type }}" = "tag" ] && [ "${GITHUB_REF_NAME#v}" != "$APP_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $APP_VERSION in the pubspecs."
+            exit 1
           fi
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
@@ -117,14 +132,20 @@ jobs:
             flumip_server/flumip-build.tar.gz
             flumip_server/flumip-build.tar.gz.sha256
           body: |
-            Install or update a FLUMIP server with:
+            Install a FLUMIP server (see the README for the details):
 
             ```bash
-            # 1. dependencies, MIPGEN and reference data
-            ./setup-mipgen.sh
+            mkdir flumip && cd flumip
+            curl -fLO https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/flumip-build.tar.gz
+            tar -xzf flumip-build.tar.gz
 
-            # 2. the app itself (downloads this release)
-            ./setup-flumip.sh --host your.hostname
+            # 1. dependencies, MIPGEN and the hg38 reference data
+            ./deployment/setup-mipgen.sh --download hg38
+
+            # 2. the app itself
+            ./deployment/setup-flumip.sh --file flumip-build.tar.gz --host your.hostname --yes
             ```
 
-            Both scripts are inside `flumip-build.tar.gz` under `deployment/`.
+            To update an existing install, unpack this release into a fresh
+            directory and re-run step 2 without `--host`; add `--staging` for a
+            staging install.
