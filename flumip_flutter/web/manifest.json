@@ -1,11 +1,11 @@
 {
-    "name": "flumip_flutter",
-    "short_name": "flumip_flutter",
+    "name": "FLUMIP",
+    "short_name": "FLUMIP",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Design molecular inversion probes (MIPs) with MIPGEN in the browser.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
