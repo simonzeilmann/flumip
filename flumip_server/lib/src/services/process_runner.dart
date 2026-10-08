@@ -57,7 +57,7 @@ class ProcessTimeoutException implements Exception {
 /// Services depend on this instead of calling [Process.run] / [Process.start]
 /// directly so that tests can substitute a fake (see
 /// `test/support/fake_process_runner.dart`) and exercise process-dependent
-/// logic without the real external tools (bwa, mipgen, ps, pgrep, python, ...).
+/// logic without the real external tools (bwa, mipgen, ps, pgrep, ...).
 abstract class ProcessRunner {
   /// Runs [executable] to completion and returns its [ProcessResult].
   ///
