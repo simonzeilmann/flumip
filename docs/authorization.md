@@ -46,16 +46,18 @@ it generates exactly one kind of support request. Nothing disappears here.
 The practical consequence is that **switching sign-in on does not retroactively
 partition existing work.** Isolation begins with the projects created afterwards,
 and the unowned set only ever shrinks. If you need the old projects partitioned
-too, an administrator has to assign owners:
+too, an administrator assigns owners: expand the project's tile and pick the
+owner from the **Owner** list, which offers everybody who has signed in at least
+once. **Unowned — shared with everyone** releases a project again. Only
+administrators see that list; an owner cannot give a project away.
+
+For many projects at once, the same change in SQL:
 
 ```sql
 -- Find the flumip_user id for the person, then claim their projects.
 SELECT id, email FROM flumip_user ORDER BY id;
 UPDATE project SET "owner" = <user id> WHERE id IN (<project ids>);
 ```
-
-There is no user interface for reassigning ownership. That is a genuine gap, not
-an oversight of this document.
 
 ## What happens when a user is deleted
 
@@ -101,11 +103,11 @@ not asked for this behaves exactly as it did before the feature existed.
 - A new project is stamped with the creator's department **only when they are in
   exactly one group**. With several there is nothing to choose from, so it is
   left unset and they pick on the project tile.
-- The owner — not just an administrator — sets a project's department, from
-  their own groups. The server refuses a group the caller is not in, because
-  otherwise this would be a way to share a project with people who were never
-  meant to see it. An administrator may set any department in use, so that a
-  renamed group can be tidied up.
+- Anyone who can open a project — not just an administrator — sets its
+  department, from their own groups. The server refuses a group the caller is
+  not in, because otherwise this would be a way to share a project with people
+  who were never meant to see it. An administrator may set any department, and
+  is offered every one already in use, so that a renamed group can be tidied up.
 
 ⚠️ **A department only ever widens access.** A project with no department is
 visible to its owner and to administrators, exactly as before. Switching this on
@@ -139,8 +141,8 @@ Two things follow:
 - **Treat that URL as a shared secret.** Anyone who has it can read that one
   project's BED track — nothing else, but that much. It is safe to paste into
   UCSC; it is not safe to post in a public issue tracker.
-- **To rotate it**, clear the token; the next time the owner opens UCSC a new one
-  is minted and the old URL stops working.
+- **To rotate it**, clear the token; the next time anyone with access to the
+  project opens UCSC a new one is minted and the old URL stops working.
 
   ```sql
   UPDATE project SET "trackToken" = NULL WHERE id = <project id>;
@@ -149,6 +151,23 @@ Two things follow:
 Anything you pasted into UCSC from a version before this change will have stopped
 working, because those URLs used the project id. Re-open the project and use the
 button again.
+
+## Custom SNP sets
+
+Custom SNP sets follow their own, stricter rule. Whoever adds one owns it, and
+the **Share with everyone on this server** box decides who else sees it:
+
+- **Shared** sets are visible to everybody and usable in any project, but only
+  their owner and administrators can change or delete them.
+- **Private** sets are visible to their owner and to administrators only.
+- The SNP sets found by **Scan for new genomes** have no owner. Everybody sees
+  them, and only administrators can delete them.
+
+Unlike a project, a private set whose owner has been deleted is **not** opened up
+to everyone: it stays private, and only administrators can reach it. Nothing
+predates this rule, so there was no existing work to keep visible.
+
+With sign-in off, as everywhere else, everybody can see and change everything.
 
 ## Administrators
 
@@ -159,8 +178,14 @@ administrative until it expires or they sign out.
 
 ### Removing someone's access immediately
 
-Use the application's own sign-out. That drops the cached credential in the same
-step, so the change takes effect on the person's very next request.
+There is no button to sign somebody else out. The application's own sign-out
+ends only the caller's session; it drops the cached credential in the same step,
+so it takes effect on the very next request.
+
+To end everybody's sessions at once, switch **Settings → Sign-in → Require
+sign-in** off and save, then on again. Switching it off ends every session,
+**your own included**, and everybody signs in afresh, picking up the current
+admin list and department claims as they do.
 
 **Deleting rows in SQL does not have the same effect**, and this is worth knowing
 before you rely on it in an emergency. Deleting from `auth_session` does remove
@@ -172,10 +197,12 @@ minutes**.
 
 So, in order of preference:
 
-1. Have the person sign out, or sign them out from the application.
-2. If you must act out of band and cannot wait up to 30 minutes, restart the
-   service — the cache is in memory and does not survive it. Sessions themselves
-   live in Postgres, so a restart does *not* sign everybody else out.
+1. Have the person sign out, or switch **Require sign-in** off and on again,
+   which signs everybody out.
+2. If you must act out of band and cannot wait up to 30 minutes, delete their
+   rows from `auth_session` and restart the service — the cache is in memory and
+   does not survive it. Sessions themselves live in Postgres, so a restart does
+   *not* sign everybody else out.
 3. `DELETE FROM auth_session ...` alone is fine when a delay is acceptable.
 
 ## Troubleshooting
