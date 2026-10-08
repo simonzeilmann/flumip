@@ -13,7 +13,10 @@
 #   6. installs and starts the systemd unit
 #
 # Re-running is safe: an existing database and its generated passwords are
-# reused, so it doubles as an updater.
+# reused, and the choices made on the first run (hostname, database, service
+# user) are remembered in /etc/flumip/setup_<env>.conf, so it doubles as an
+# updater. Pass --staging again to update a staging install; any other switch
+# given on a re-run replaces the remembered value.
 #
 # The script has two modes, like setup-mipgen.sh:
 #   * Interactive      - run with no switches on a terminal and you are prompted
@@ -28,7 +31,7 @@
 #   --prod, --production    Install the production environment (default).
 #   --staging               Install the staging environment instead.
 #   --host HOST             Public hostname clients reach this server on
-#                           (default: localhost).
+#                           (default: the previous run's, else localhost).
 #   --url URL               Download the build tarball from URL.
 #   --file FILE             Use a local build tarball.
 #   --release TAG           Install a specific release tag (default: latest).
@@ -38,18 +41,23 @@
 #   --db-port PORT          Database port (default: 5432 prod / 5433 staging).
 #   --db-name NAME          Database name (default: flumip_<env>).
 #   --db-user USER          Database user (default: postgres).
-#   --service-user USER     Owner of the install dir (default: www-data).
+#   --service-user USER     User the service runs as, and owner of the install
+#                           dir (default: www-data).
 #   --no-migrations         Do not apply database migrations.
 #   --no-restart            Install files/unit but do not (re)start the service.
 #   -i, --interactive       Force interactive prompts even if switches are given.
 #   -y, --yes               Never prompt; use defaults/switches (for automation).
 #   -h, --help              Show this help and exit.
 #
+# With --db existing, the database password is prompted for on a terminal, or
+# read from the FLUMIP_DB_PASSWORD environment variable with --yes. It is kept
+# off the command line so it never shows up in `ps` or the shell history.
+#
 # Examples:
 #   ./setup-flumip.sh                                  # interactive install
 #   ./setup-flumip.sh --yes --host mips.example.org     # scripted install
 #   ./setup-flumip.sh --staging --file ./flumip-build.tar.gz
-#   ./setup-flumip.sh --db existing --db-host 10.0.0.5 --yes
+#   FLUMIP_DB_PASSWORD=... ./setup-flumip.sh --db existing --db-host 10.0.0.5 --yes
 #
 # TLS is out of scope: the server listens on plain HTTP and the script prints
 # reverse-proxy instructions at the end.
@@ -78,12 +86,14 @@ PUBLIC_HOST=""
 BUILD_URL=""
 BUILD_FILE=""
 RELEASE_TAG="latest"
-DB_MODE="docker"
+# Left empty here so that a re-run can tell a switch from a default and fill
+# the gap from the previous run's choices; the defaults are applied below.
+DB_MODE=""
 DB_HOST=""
 DB_PORT=""
 DB_NAME=""
-DB_USER="postgres"
-SERVICE_USER="www-data"
+DB_USER=""
+SERVICE_USER=""
 MIGRATIONS=true
 RESTART=true
 
@@ -218,26 +228,54 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
   else
     ENV_NAME="staging"
   fi
+fi
 
-  PUBLIC_HOST="$(prompt_value "Public hostname clients will use" "localhost")"
-  SERVICE_USER="$(prompt_value "Service user" "$SERVICE_USER")"
+ENV_NAME="${ENV_NAME:-production}"
+SECRETS_FILE="$SECRETS_DIR/passwords_${ENV_NAME}.yaml"
+CHOICES_FILE="$SECRETS_DIR/setup_${ENV_NAME}.conf"
 
-  if prompt_yes_no "Provision a PostgreSQL container with Docker?" "y"; then
+# --- Remembered choices -----------------------------------------------------
+
+# A re-run without switches must not quietly reset the install: the generated
+# config is rewritten every time, so a forgotten --host would put localhost
+# into the redirect URI single sign-on depends on, and a forgotten --db
+# existing would start a container next to the real database. Each value the
+# previous run settled on fills in whatever this run was not told.
+# $SECRETS_DIR is only traversable by root and the service user, hence sudo.
+if sudo test -f "$CHOICES_FILE"; then
+  echo -e "${GREEN}Using the choices remembered in $CHOICES_FILE${NC}"
+  while IFS='=' read -r key value; do
+    case "$key" in
+      PUBLIC_HOST|DB_MODE|DB_HOST|DB_PORT|DB_NAME|DB_USER|SERVICE_USER)
+        [[ -n "${!key}" ]] || printf -v "$key" '%s' "$value" ;;
+    esac
+  done < <(sudo cat "$CHOICES_FILE")
+fi
+
+if [[ "$INTERACTIVE" == "yes" ]]; then
+  PUBLIC_HOST="$(prompt_value "Public hostname clients will use" "${PUBLIC_HOST:-localhost}")"
+  SERVICE_USER="$(prompt_value "Service user" "${SERVICE_USER:-www-data}")"
+
+  if prompt_yes_no "Provision a PostgreSQL container with Docker?" \
+      "$([[ "$DB_MODE" == "existing" ]] && echo n || echo y)"; then
     DB_MODE="docker"
   else
     DB_MODE="existing"
-    DB_HOST="$(prompt_value "Database host" "localhost")"
-    DB_PORT="$(prompt_value "Database port" "5432")"
-    DB_USER="$(prompt_value "Database user" "$DB_USER")"
+    DB_HOST="$(prompt_value "Database host" "${DB_HOST:-localhost}")"
+    DB_PORT="$(prompt_value "Database port" "${DB_PORT:-5432}")"
+    DB_NAME="$(prompt_value "Database name" "${DB_NAME:-flumip_${ENV_NAME}}")"
+    DB_USER="$(prompt_value "Database user" "${DB_USER:-postgres}")"
   fi
 fi
 
 # --- Defaults ---------------------------------------------------------------
 
-ENV_NAME="${ENV_NAME:-production}"
 PUBLIC_HOST="${PUBLIC_HOST:-localhost}"
+SERVICE_USER="${SERVICE_USER:-www-data}"
+DB_MODE="${DB_MODE:-docker}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_NAME="${DB_NAME:-flumip_${ENV_NAME}}"
+DB_USER="${DB_USER:-postgres}"
 
 # Serverpod listens on different ports per environment (see config/*.yaml), so
 # production and staging can coexist on one machine.
@@ -257,7 +295,6 @@ DB_VOLUME="flumip_${ENV_NAME}_data"
 TARGET="/var/www/flumip_${ENV_NAME}"
 UNIT="flumip_${ENV_NAME}.service"
 UNIT_SRC="$SCRIPT_DIR/$UNIT"
-SECRETS_FILE="$SECRETS_DIR/passwords_${ENV_NAME}.yaml"
 
 # Fall back to the published release when no build source was given.
 if [[ -z "$BUILD_URL" && -z "$BUILD_FILE" ]]; then
@@ -380,9 +417,18 @@ read_db_password() {
   # $SECRETS_DIR is only traversable by root and the service user, so the test
   # has to run under sudo too or it reports a missing file for any other admin.
   sudo test -f "$SECRETS_FILE" || return 0
-  sudo awk -v env="$ENV_NAME" '
+  # Generated passwords are bare hex; one typed in for --db existing is written
+  # single-quoted with '' for a quote, so that is undone here.
+  sudo awk -v env="$ENV_NAME" -v q="'" '
     /^[a-zA-Z]/ { in_env = ($0 ~ "^" env ":") ; next }
-    in_env && $1 == "database:" { sub(/^[^:]*: */, ""); print; exit }
+    in_env && $1 == "database:" {
+      sub(/^[^:]*: */, "")
+      if (length($0) >= 2 && substr($0, 1, 1) == q && substr($0, length($0), 1) == q) {
+        $0 = substr($0, 2, length($0) - 2)
+        gsub(q q, q)
+      }
+      print; exit
+    }
   ' "$SECRETS_FILE"
 }
 
@@ -391,6 +437,16 @@ REUSED_SECRETS=false
 if [[ -n "$DB_PASSWORD" ]]; then
   REUSED_SECRETS=true
   echo -e "${GREEN}Reusing existing credentials from $SECRETS_FILE${NC}"
+elif [[ "$DB_MODE" == "existing" ]]; then
+  # A database that already exists already has a password; making one up here
+  # would only fail at the migrations, with an error about logging in.
+  DB_PASSWORD="${FLUMIP_DB_PASSWORD:-}"
+  if [[ -z "$DB_PASSWORD" && "$INTERACTIVE" == "yes" ]]; then
+    read -r -s -p "$(echo -e "${CYAN}Password for ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}${NC}: ")" DB_PASSWORD || true
+    echo
+  fi
+  [[ -n "$DB_PASSWORD" ]] || die "--db existing needs the database password. Set FLUMIP_DB_PASSWORD, or run
+the script on a terminal without --yes to be asked for it."
 else
   # base64 would include '/' and '+', which complicate YAML and URLs.
   DB_PASSWORD="$(openssl rand -hex 24)"
@@ -434,10 +490,21 @@ if $RESTART && systemctl is-active --quiet "flumip_${ENV_NAME}"; then
   sudo systemctl stop "flumip_${ENV_NAME}"
 fi
 
+# Extract into a fresh directory and swap it in, rather than over the old
+# tree: files a newer build no longer ships (old web assets, an old executable)
+# would otherwise pile up, and a failed extraction would leave a half-replaced
+# install. Nothing under $TARGET needs keeping: the config is regenerated
+# below and the secrets live in $SECRETS_DIR.
 echo -e "${GREEN}Extracting build to $TARGET${NC}"
-sudo mkdir -p "$TARGET"
-sudo tar -xzf "$BUILD" -C "$TARGET"
-sudo chmod +x "$TARGET/bundle/bin/main"
+sudo rm -rf "$TARGET.new" "$TARGET.old"
+sudo mkdir -p "$TARGET.new"
+sudo tar -xzf "$BUILD" -C "$TARGET.new"
+sudo chmod +x "$TARGET.new/bundle/bin/main"
+if sudo test -d "$TARGET"; then
+  sudo mv "$TARGET" "$TARGET.old"
+fi
+sudo mv "$TARGET.new" "$TARGET"
+sudo rm -rf "$TARGET.old"
 
 # --- Config -----------------------------------------------------------------
 
@@ -493,7 +560,7 @@ shared:
   mySharedPassword: $(openssl rand -hex 16)
 
 ${ENV_NAME}:
-  database: ${DB_PASSWORD}
+  database: '${DB_PASSWORD//\'/\'\'}'
   serviceSecret: ${SERVICE_SECRET}
 EOF
   sudo chown root:"$SERVICE_USER" "$SECRETS_FILE"
@@ -501,6 +568,18 @@ EOF
 fi
 
 sudo cp "$SECRETS_FILE" "$TARGET/config/passwords.yaml"
+
+# Remembered for the next run; see "Remembered choices" above.
+sudo tee "$CHOICES_FILE" >/dev/null <<EOF
+PUBLIC_HOST=${PUBLIC_HOST}
+DB_MODE=${DB_MODE}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
+SERVICE_USER=${SERVICE_USER}
+EOF
+sudo chmod 640 "$CHOICES_FILE"
 
 # Optional runtime configuration, read by the systemd unit's EnvironmentFile.
 #
@@ -578,15 +657,18 @@ if $MIGRATIONS; then
       --apply-migrations \
       --logging=normal"; then
     die "Applying migrations failed. The service was not started.
-Check the database is reachable at ${DB_HOST}:${DB_PORT} and re-run, or pass
---no-migrations to skip this step."
+Check the database is reachable at ${DB_HOST}:${DB_PORT} and that the password
+in $SECRETS_FILE is right, then re-run, or pass --no-migrations to skip this step."
   fi
 fi
 
 # --- systemd ----------------------------------------------------------------
 
 echo -e "${GREEN}Installing systemd unit $UNIT${NC}"
-sudo cp "$UNIT_SRC" /etc/systemd/system/
+# The unit ships with User=www-data. --service-user owns the config, so the
+# service must run as that user or it cannot read its own passwords.yaml.
+sed "s/^User=.*/User=${SERVICE_USER}/" "$UNIT_SRC" \
+  | sudo tee "/etc/systemd/system/$UNIT" >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable "flumip_${ENV_NAME}"
 
@@ -598,6 +680,9 @@ else
 fi
 
 # --- Next steps -------------------------------------------------------------
+
+UPDATE_HINT=""
+[[ "$ENV_NAME" == "staging" ]] && UPDATE_HINT=" and --staging"
 
 cat <<EOF
 
@@ -665,10 +750,13 @@ $(echo -e "${YELLOW}Next steps:${NC}")
 
      If a sign-in configuration ever locks you out: set
      FLUMIP_AUTH_ENABLED=false in that env file and
-     'sudo systemctl restart flumip_${ENV_NAME}'. The Settings tab also stays
-     reachable with the admin password even while sign-in is required.
+     'sudo systemctl restart flumip_${ENV_NAME}'. While sign-in is enforced the
+     admin password does not open the Settings tab; only an admin account does.
 
-  5. Back up ${SECRETS_FILE}. It holds the only copy of the
-     database password.
+  5. Back up ${SECRETS_DIR}/. ${SECRETS_FILE} holds the only copy of
+     the database password.
+
+  To update later, re-run this script with the new build${UPDATE_HINT}. The choices
+  above are remembered in ${CHOICES_FILE}.
 
 EOF

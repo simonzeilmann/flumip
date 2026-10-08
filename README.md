@@ -187,16 +187,22 @@ switches to script it. `--help` lists them all.
 
 - checks prerequisites, and warns if `setup-mipgen.sh` has not run;
 - downloads the latest release (or uses `--file`, `--url`, `--release TAG`);
-- starts a `postgres:18` container (or connects to an existing database with
-  `--db existing --db-host … --db-port …`);
+- starts a `postgres:18` container, reachable from this machine only (or
+  connects to an existing database with `--db existing --db-host … --db-port …
+  --db-name … --db-user …`; the password is asked for, or read from
+  `FLUMIP_DB_PASSWORD` with `--yes`);
 - writes `config/<env>.yaml`, generates random secrets into
   `/etc/flumip/passwords_<env>.yaml`, and creates an optional settings file at
   `/etc/flumip/flumip_<env>.env`;
 - applies database migrations;
-- installs and starts the `flumip_<env>` systemd service.
+- installs and starts the `flumip_<env>` systemd service, running as
+  `www-data` (`--service-user` to change; `--no-restart` to leave it stopped);
+- remembers the hostname, database and service user in
+  `/etc/flumip/setup_<env>.conf`, so a later run needs none of those switches.
 
-Like the MIPGEN script, it prompts on a terminal when run with no switches. Two
-environments can live side by side on one machine:
+Like the MIPGEN script, it prompts on a terminal when run with no switches.
+`--help` lists every switch. Two environments can live side by side on one
+machine:
 
 | | `--prod` (default) | `--staging` |
 | --- | --- | --- |
@@ -260,9 +266,12 @@ server advertises the right URL. If you use single sign-on, also set
 
 ### Updating
 
-Re-run `setup-flumip.sh`. It downloads the latest release (or the one you name
-with `--release`), keeps the existing database, secrets and settings file,
-applies any new migrations and restarts the service.
+Re-run `setup-flumip.sh`, with `--staging` if that is what you are updating.
+It downloads the latest release (or the one you name with `--release`, or the
+tarball you pass with `--file`), keeps the existing database, secrets, settings
+file and the choices of the first run, replaces the installed build, applies any
+new migrations and restarts the service. Switches given on the re-run replace
+the remembered values, for example `--host` after moving behind a proxy.
 
 ### Operating
 
