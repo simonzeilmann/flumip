@@ -18,7 +18,7 @@ class CheckMipgenProgressFutureCall extends FutureCall<Project> {
     // completion email (`MailService.notifyProjectFinished` has no
     // already-notified flag, and it is called *after* the `finally` that marks
     // the project inactive), recomputes `completedIn` from the wall clock so the
-    // reported duration inflates, re-runs the python UCSC track generator, and
+    // reported duration inflates, rebuilds the UCSC track, and
     // deletes byproducts again.
     //
     // A redelivery would reach all of that, too. Once the first pass has set

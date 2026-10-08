@@ -217,8 +217,16 @@ cmd_signin() {
   fi
 
   curl -s -b "$jar" -c "$jar" -o /dev/null "$callback"
-  curl -s -b "$jar" "$WEB/auth/session" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])'
+  # The server's compact jsonEncode, read with sed so the script needs no
+  # JSON tool. A response without a token is the "no session" error body.
+  local body token
+  body="$(curl -s -b "$jar" "$WEB/auth/session")"
+  token="$(printf '%s' "$body" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')"
+  if [ -z "$token" ]; then
+    echo "No token from $WEB/auth/session: $body" >&2
+    exit 1
+  fi
+  echo "$token"
 }
 
 cmd_status() {

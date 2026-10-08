@@ -160,7 +160,7 @@ produced, and offers:
 | | |
 | --- | --- |
 | **OS** | Ubuntu or Debian on x86_64. The scripts use `apt`, systemd and a `linux.x86_64` UCSC tool. |
-| **Software** | `sudo`, `git`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). `setup-mipgen.sh` installs the rest: `bwa`, `samtools`, `tabix`, `trf`, a build toolchain and Python. |
+| **Software** | `sudo`, `git`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). `setup-mipgen.sh` installs the rest: `bwa`, `samtools`, `tabix`, `trf` and a build toolchain. |
 | **Memory** | **8 GB minimum.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
 | **Disk** | Roughly **15–20 GB per human genome** (sequence, bwa index, annotations, dbSNP), plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
 | **Network** | Outbound HTTPS to UCSC, NCBI and GitHub during installation. Users reach the server on one port, or on 443 behind a reverse proxy. |
@@ -173,9 +173,8 @@ once, then again whenever you want another genome:
 - installs the bioinformatics tools with `apt`;
 - clones MIPGEN, unmodified and pinned to a known commit, into
   `/opt/flumip/MIPGEN`, and builds it;
-- installs FLUMIP's two helpers into `/opt/flumip/tools`: `mipgen-trf`, which
-  lets MIPGEN accept the Tandem Repeats Finder that Ubuntu ships, and
-  `add_bins_to_refgene.py`, which builds the hs1 gene annotations;
+- installs FLUMIP's `mipgen-trf` helper into `/opt/flumip/tools`, which lets
+  MIPGEN accept the Tandem Repeats Finder that Ubuntu ships;
 - creates `/opt/flumip/{data/genomes,data/custom_snp,projects,tools}`;
 - downloads the reference data for the genomes you name (with `--download`);
 - gives the service user (default `www-data`, `--service-user` to change) write
