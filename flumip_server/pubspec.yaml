@@ -1,7 +1,6 @@
 name: flumip_server
-description: Mipgen automation backend using Serverpod server.
+description: The FLUMIP server, which drives MIPGEN, built on Serverpod.
 version: 0.7.0
-# homepage: https://www.example.com
 
 environment:
   sdk: '^3.12.2'
