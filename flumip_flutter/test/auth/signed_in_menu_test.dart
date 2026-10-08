@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// could pump it. That is the argument `platform_boundary_test.dart` makes, and
 /// this is a worked example of it.
 SessionTokenResponse userFixture({
-  String email = 'simon.zeilmann@it-gmbh.de',
+  String email = 'jo.researcher@example.org',
   String displayName = '',
   bool isAdmin = false,
 }) => SessionTokenResponse(
@@ -159,7 +159,7 @@ void main() {
     ) async {
       await pumpMenu(tester);
 
-      expect(find.text('simon.zeilmann@it-gmbh.de'), findsOneWidget);
+      expect(find.text('jo.researcher@example.org'), findsOneWidget);
     });
 
     testWidgets('the display name in preference to the address', (
@@ -169,7 +169,7 @@ void main() {
 
       expect(find.text('Simon Zeilmann'), findsOneWidget);
       // The address is still reachable, in the tooltip.
-      expect(find.text('simon.zeilmann@it-gmbh.de'), findsNothing);
+      expect(find.text('jo.researcher@example.org'), findsNothing);
     });
 
     testWidgets('⚠️ a narrow window drops the label, not just shortens it', (
@@ -179,10 +179,10 @@ void main() {
       // nothing the tooltip does not.
       await pumpMenu(tester, width: 500);
 
-      expect(find.text('simon.zeilmann@it-gmbh.de'), findsNothing);
+      expect(find.text('jo.researcher@example.org'), findsNothing);
       // …so the identity moves into the one control that is left.
       expect(
-        find.byTooltip('Sign out — simon.zeilmann@it-gmbh.de'),
+        find.byTooltip('Sign out — jo.researcher@example.org'),
         findsOneWidget,
       );
     });
@@ -191,7 +191,7 @@ void main() {
       await pumpMenu(tester, user: userFixture(isAdmin: true));
 
       expect(
-        find.byTooltip('simon.zeilmann@it-gmbh.de (administrator)'),
+        find.byTooltip('jo.researcher@example.org (administrator)'),
         findsOneWidget,
       );
     });
