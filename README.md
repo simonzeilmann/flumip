@@ -204,7 +204,7 @@ environments can live side by side on one machine:
 | Service | `flumip_production` | `flumip_staging` |
 | Public port (web: app, API under `/api`, downloads, sign-in) | 9082 | 8092 |
 | Internal ports (API, Insights) — keep firewalled | 9080, 9081 | 8090, 8091 |
-| Database | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
+| Database (localhost only) | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
 
 ### HTTPS and the reverse proxy
 
