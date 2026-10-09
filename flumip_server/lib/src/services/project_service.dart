@@ -63,6 +63,16 @@ class ProjectService {
       session.log("Project name cannot be empty", level: LogLevel.error);
       throw ArgumentException(message: 'A project needs a name.');
     }
+    // Before the directory below: options that were never saved have no id, and
+    // `options.id!` used to throw a bare null check *after* the folder existed,
+    // so the caller got a 500 and an empty folder was left behind. The app
+    // always saves the options first; this is for anything else on the API.
+    if (options.id == null) {
+      session.log("Project options were never saved", level: LogLevel.error);
+      throw ArgumentException(
+        message: 'Save the project options before creating the project.',
+      );
+    }
 
     // ⚠️ The directory is made **before** the row is inserted, and the order is
     // the whole point. It used to run last, after the insert and after the
