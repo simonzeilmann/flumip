@@ -1,6 +1,6 @@
 name: flumip_server
 description: The FLUMIP server, which drives MIPGEN, built on Serverpod.
-version: 0.7.0
+version: 0.7.1
 
 environment:
   sdk: '^3.12.2'

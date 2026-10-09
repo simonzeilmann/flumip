@@ -400,7 +400,10 @@ fetch_build() {
   # Serverpod 4 builds with `dart build cli`, so the executable is
   # bundle/bin/main with its native libraries next to it in bundle/lib/ —
   # not a single top-level `server` binary as it was up to Serverpod 3.
-  tar -tzf "$out" | grep -qE '(^|/)bundle/bin/main$' \
+  # ⚠️ Not `grep -q`: it exits at the first match, tar dies of SIGPIPE while
+  # still listing, and pipefail turns the match into a failure. A real build
+  # is big enough for that to happen every time.
+  tar -tzf "$out" | grep -E '(^|/)bundle/bin/main$' >/dev/null \
     || die "Archive contains no 'bundle/bin/main' executable — is this a FLUMIP build?"
 
   echo "$out"
@@ -454,7 +457,8 @@ fi
 SERVICE_SECRET="$(openssl rand -hex 32)"
 
 if [[ "$DB_MODE" == "docker" ]]; then
-  if docker ps -a --format '{{.Names}}' | grep -qx "$DB_CONTAINER"; then
+  # >/dev/null rather than grep -q, for the SIGPIPE reason in fetch_build.
+  if docker ps -a --format '{{.Names}}' | grep -x "$DB_CONTAINER" >/dev/null; then
     echo -e "${GREEN}Database container $DB_CONTAINER already exists; starting it if stopped.${NC}"
     docker start "$DB_CONTAINER" >/dev/null
     if ! $REUSED_SECRETS; then
@@ -481,6 +485,16 @@ Either restore that file, or remove the container and its volume to start over:
       "$POSTGRES_IMAGE" >/dev/null
   fi
   DB_HOST="127.0.0.1"
+
+  # A fresh container runs initdb on a socket-only server before it listens on
+  # TCP, which takes several seconds. The migrations would ride that out with
+  # Serverpod's own retry, but only after printing a connection error and a
+  # stack trace at a first-time user, so wait for the real server instead.
+  echo -e "${GREEN}Waiting for PostgreSQL to accept connections...${NC}"
+  for _ in $(seq 1 60); do
+    docker exec "$DB_CONTAINER" pg_isready -q -h 127.0.0.1 -U "$DB_USER" && break
+    sleep 1
+  done
 fi
 
 # --- Install files ----------------------------------------------------------
