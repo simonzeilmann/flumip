@@ -88,6 +88,21 @@ void main() {
       expect(after.length, before.length, reason: 'an orphan row was stored');
     }, tags: ['unit']);
 
+    test('unsaved options are refused before any folder is made', () async {
+      // `options.id!` used to throw a bare null check after the directory had
+      // been created: a 500 for the caller and an empty folder left behind.
+      final settings = await SettingsService().getSettings(session);
+      final dir = Directory(settings.projectDir);
+      final before = dir.listSync().length;
+
+      await expectLater(
+        () =>
+            projectService.createProject(session, 'unsaved', ProjectOptions()),
+        throwsMessage('Save the project options before creating the project.'),
+      );
+      expect(dir.listSync().length, before, reason: 'a folder was left behind');
+    }, tags: ['unit']);
+
     test('empty project name should throw an exception', () async {
       expect(
         () => projectService.createProject(session, "", ProjectOptions(id: 1)),
