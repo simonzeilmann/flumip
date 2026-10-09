@@ -310,6 +310,20 @@ cd /opt/flumip/tools
 wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
 chmod +x bigGenePredToGenePred
 
+# Unpacks $1 (a .gz in the current directory) beside itself. Each genome step
+# below is skipped when its unpacked file exists, so a file that is there must
+# be whole. gunzip -f wrote straight into it, and a run killed partway (power
+# loss, the OOM killer, kill -9) left a truncated genome or refGene.txt that
+# every later run trusted. Unpacking to a temporary name and renaming it at the end means the
+# file only appears once it is complete. The .gz goes last, so a rerun after a
+# failed unpack finds it and wget -N need not fetch it again.
+unpack() {
+  local out="${1%.gz}"
+  gunzip -c "$1" > "$out.tmp"
+  mv "$out.tmp" "$out"
+  rm -f "$1"
+}
+
 # Download genomes if the download flag is set.
 if $DOWNLOAD; then
   for GENOME in "${GENOMES[@]}"; do
@@ -329,7 +343,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading refGene for hg38...${NC}\n"
         cd "$BASE_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
-        gunzip -f refGene.txt.gz
+        unpack refGene.txt.gz
       fi
 
       # Download SNP files for hg38 if not present.
@@ -347,7 +361,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg38 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
-        gunzip -f hg38.fa.gz
+        unpack hg38.fa.gz
       fi
 
     elif [ "$GENOME" == "hg18" ]; then
@@ -370,7 +384,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg18 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg18/bigZips/hg18.fa.gz
-        gunzip -f hg18.fa.gz
+        unpack hg18.fa.gz
       fi
 
     elif [ "$GENOME" == "hg19" ]; then
@@ -386,7 +400,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading refGene for hg19...${NC}\n"
         cd "$BASE_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
-        gunzip -f refGene.txt.gz
+        unpack refGene.txt.gz
       fi
 
       # Download hg19 genome sequence if not present.
@@ -394,7 +408,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg19 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz
-        gunzip -f hg19.fa.gz
+        unpack hg19.fa.gz
       fi
 
     elif [ "$GENOME" == "hs1" ]; then
@@ -410,7 +424,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hs1 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz
-        gunzip -f hs1.fa.gz
+        unpack hs1.fa.gz
       fi
 
       # Generate refGene for hs1 if not present.
