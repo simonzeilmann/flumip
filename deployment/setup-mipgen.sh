@@ -22,7 +22,8 @@
 #   -y, --yes, --non-interactive Never prompt; use defaults/switches (for automation).
 #   -h, --help                   Show this help and exit.
 #
-# Genomes: hg18 hg19 hg38 hs1   (default: hg38)
+# Genomes: hg18 hg19 hg38 hs1   (default with --download: hg38). Naming a genome
+# without --download is an error, since nothing would be fetched.
 #
 # Examples:
 #   ./setup-mipgen.sh                         # interactive on a terminal
@@ -100,7 +101,12 @@ while [[ "$#" -gt 0 ]]; do
       exit 1
       ;;
     *)
-      # Treat as genome name.
+      # Treat as genome name. Checked here rather than in the download loop,
+      # which used to skip a typo and then report success for it anyway.
+      if [[ ! " ${AVAILABLE_GENOMES[*]} " == *" $1 "* ]]; then
+        echo -e "${RED}Unknown genome: $1. Choose from: ${AVAILABLE_GENOMES[*]}.${NC}"
+        exit 1
+      fi
       GENOMES+=("$1")
       GENOMES_SET=true
       ;;
@@ -199,6 +205,15 @@ select_genomes() {
   done
 }
 
+# Genome names only mean something with --download. Without it they used to be
+# ignored, and the run still reported success "for genomes: hg19" with nothing
+# fetched. (-i asks about downloading below, so the names can still be used.)
+if $GENOMES_SET && ! $DOWNLOAD && [ "$INTERACTIVE" != "yes" ]; then
+  echo -e "${RED}Genomes were named (${GENOMES[*]}) but --download was not given, so nothing would be fetched.${NC}"
+  echo -e "Run '${0} --download ${GENOMES[*]}' to download them."
+  exit 1
+fi
+
 # --- Interactive flow --------------------------------------------------------
 
 if [ "$INTERACTIVE" == "yes" ]; then
@@ -217,8 +232,9 @@ if [ "$INTERACTIVE" == "yes" ]; then
   SERVICE_USER="${_svc:-$SERVICE_USER}"
 fi
 
-# If no genomes specified, default to hg38.
-if [ ${#GENOMES[@]} -eq 0 ]; then
+# Downloading with no genomes named means hg38. Without --download there is no
+# genome to default to, so the list stays empty.
+if $DOWNLOAD && [ ${#GENOMES[@]} -eq 0 ]; then
   GENOMES=("hg38")
 fi
 
@@ -468,4 +484,10 @@ else
   exit 1
 fi
 
-echo -e "\n${GREEN}Setup completed successfully for genomes: ${GENOMES[*]}.${NC}\n"
+if $DOWNLOAD; then
+  echo -e "\n${GREEN}Setup completed successfully. Reference data is in place for: ${GENOMES[*]}.${NC}\n"
+else
+  echo -e "\n${GREEN}Setup completed successfully. No reference data was downloaded.${NC}"
+  echo -e "Run '${0} --download hg38' (or hg19, hg18, hs1) to fetch a genome, or put"
+  echo -e "your own under /opt/flumip/data/genomes/<category>/<name>/ and scan for it in the app.\n"
+fi
