@@ -20,16 +20,16 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 
 ## Quickstart
 
-You need an **x86_64 Ubuntu or Debian** machine with **sudo**, **git** and
-**Docker**, at least **8 GB of RAM** and about **20 GB of free disk** for one
-genome (see [Requirements](#requirements)).
+You need an **x86_64 Ubuntu or Debian** machine with **sudo** and **Docker**
+(with your user in the `docker` group), at least **8 GB of RAM** and about
+**20 GB of free disk** for one genome (see [Requirements](#requirements)).
 
 **1. Download a release and unpack it.** The archive contains the server, the
 web app and both install scripts.
 
 ```bash
 mkdir flumip && cd flumip
-curl -LO https://github.com/simonzeilmann/flumip/releases/latest/download/flumip-build.tar.gz
+curl -fLO https://github.com/simonzeilmann/flumip/releases/latest/download/flumip-build.tar.gz
 tar -xzf flumip-build.tar.gz
 ```
 
@@ -160,7 +160,7 @@ produced, and offers:
 | | |
 | --- | --- |
 | **OS** | Ubuntu or Debian on x86_64. The scripts use `apt`, systemd and a `linux.x86_64` UCSC tool. |
-| **Software** | `sudo`, `git`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). `setup-mipgen.sh` installs the rest: `bwa`, `samtools`, `tabix`, `trf`, a build toolchain and Python. |
+| **Software** | `sudo`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). The installing user must be able to run `docker` without sudo: `sudo usermod -aG docker $USER`, then log out and back in. `setup-mipgen.sh` installs the rest: `git`, `wget`, `bwa`, `samtools`, `tabix`, `trf` and a build toolchain. |
 | **Memory** | **8 GB minimum.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
 | **Disk** | Roughly **15–20 GB per human genome** (sequence, bwa index, annotations, dbSNP), plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
 | **Network** | Outbound HTTPS to UCSC, NCBI and GitHub during installation. Users reach the server on one port, or on 443 behind a reverse proxy. |
@@ -173,9 +173,8 @@ once, then again whenever you want another genome:
 - installs the bioinformatics tools with `apt`;
 - clones MIPGEN, unmodified and pinned to a known commit, into
   `/opt/flumip/MIPGEN`, and builds it;
-- installs FLUMIP's two helpers into `/opt/flumip/tools`: `mipgen-trf`, which
-  lets MIPGEN accept the Tandem Repeats Finder that Ubuntu ships, and
-  `add_bins_to_refgene.py`, which builds the hs1 gene annotations;
+- installs FLUMIP's `mipgen-trf` helper into `/opt/flumip/tools`, which lets
+  MIPGEN accept the Tandem Repeats Finder that Ubuntu ships;
 - creates `/opt/flumip/{data/genomes,data/custom_snp,projects,tools}`;
 - downloads the reference data for the genomes you name (with `--download`);
 - gives the service user (default `www-data`, `--service-user` to change) write
@@ -188,16 +187,22 @@ switches to script it. `--help` lists them all.
 
 - checks prerequisites, and warns if `setup-mipgen.sh` has not run;
 - downloads the latest release (or uses `--file`, `--url`, `--release TAG`);
-- starts a `postgres:18` container (or connects to an existing database with
-  `--db existing --db-host … --db-port …`);
+- starts a `postgres:18` container, reachable from this machine only (or
+  connects to an existing database with `--db existing --db-host … --db-port …
+  --db-name … --db-user …`; the password is asked for, or read from
+  `FLUMIP_DB_PASSWORD` with `--yes`);
 - writes `config/<env>.yaml`, generates random secrets into
   `/etc/flumip/passwords_<env>.yaml`, and creates an optional settings file at
   `/etc/flumip/flumip_<env>.env`;
 - applies database migrations;
-- installs and starts the `flumip_<env>` systemd service.
+- installs and starts the `flumip_<env>` systemd service, running as
+  `www-data` (`--service-user` to change; `--no-restart` to leave it stopped);
+- remembers the hostname, database and service user in
+  `/etc/flumip/setup_<env>.conf`, so a later run needs none of those switches.
 
-Like the MIPGEN script, it prompts on a terminal when run with no switches. Two
-environments can live side by side on one machine:
+Like the MIPGEN script, it prompts on a terminal when run with no switches.
+`--help` lists every switch. Two environments can live side by side on one
+machine:
 
 | | `--prod` (default) | `--staging` |
 | --- | --- | --- |
@@ -205,7 +210,7 @@ environments can live side by side on one machine:
 | Service | `flumip_production` | `flumip_staging` |
 | Public port (web: app, API under `/api`, downloads, sign-in) | 9082 | 8092 |
 | Internal ports (API, Insights) — keep firewalled | 9080, 9081 | 8090, 8091 |
-| Database | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
+| Database (localhost only) | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
 
 ### HTTPS and the reverse proxy
 
@@ -261,9 +266,12 @@ server advertises the right URL. If you use single sign-on, also set
 
 ### Updating
 
-Re-run `setup-flumip.sh`. It downloads the latest release (or the one you name
-with `--release`), keeps the existing database, secrets and settings file,
-applies any new migrations and restarts the service.
+Re-run `setup-flumip.sh`, with `--staging` if that is what you are updating.
+It downloads the latest release (or the one you name with `--release`, or the
+tarball you pass with `--file`), keeps the existing database, secrets, settings
+file and the choices of the first run, replaces the installed build, applies any
+new migrations and restarts the service. Switches given on the re-run replace
+the remembered values, for example `--host` after moving behind a proxy.
 
 ### Operating
 
@@ -292,11 +300,11 @@ it, or leave it empty to keep it.
 
 | Section | What you set |
 | --- | --- |
-| **Paths** | Where genomes, projects, custom SNP sets, tools and the MIPGEN executable live. The defaults match `setup-mipgen.sh`. |
+| **Storage** | Where projects, genomes and custom SNP sets live, and **Allowed SNP download hosts**, which restricts where SNP sets may be imported from by URL. The defaults match `setup-mipgen.sh`. |
+| **External tools** | The tools directory, the MIPGEN executable and the helpers around it. The defaults match `setup-mipgen.sh`. |
 | **Mail** | SMTP server, port, user, password, sender address, STARTTLS, and a **Send test email** button. |
 | **Sign-in** | Single sign-on through OpenID Connect; see below. |
-| **Allowed SNP download hosts** | Restricts where SNP sets may be imported from by URL. |
-| **Demo mode** | Deletes projects automatically after a set number of hours (default 168). Meant for public demonstration servers. |
+| **Security** | The settings password, and **Demo mode**, which deletes projects automatically after a set number of hours (default 168). Meant for public demonstration servers. |
 
 ### Email
 
@@ -323,7 +331,7 @@ group claim from your provider.
   what happens to existing projects when you switch sign-in on, and
   departments.
 
-Every sign-in setting can also be fixed from `/etc/flumip/flumip_<env>.env`
+Most sign-in settings can also be fixed from `/etc/flumip/flumip_<env>.env`
 (`FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_ISSUER`, and so on, all listed in that
 file). A value set there overrides the Settings tab, which then shows it
 read-only. `FLUMIP_AUTH_ENABLED=false` plus a restart is the way back in if
@@ -348,7 +356,8 @@ sign-in ever locks you out.
 
 - Flutter **3.47.5** (pinned in CI), which brings Dart 3.12
 - Serverpod CLI **4.0.1**: `dart pub global activate serverpod_cli 4.0.1`
-- Docker, for PostgreSQL 18 and Redis
+- Docker, for PostgreSQL 18 (compose also starts Redis, which the server does
+  not use yet)
 
 ### Running locally
 
@@ -386,14 +395,15 @@ sign-in ever locks you out.
 4. Open <http://localhost:8082>.
 
 For a quicker edit loop, `flutter run -d chrome` in `flumip_flutter` talks to the
-server's API at `localhost:8082/api`. Single sign-on cannot work that way, because it relies on
-a same-origin cookie; use the served build at :8082 for anything behind sign-in.
+server's API at `localhost:8082/api`. Single sign-on and SNP uploads cannot work
+that way, because both rely on a same-origin cookie; use the served build at
+:8082 for those.
 
 MIP design itself needs MIPGEN and an indexed genome on the development machine
 too: run `deployment/setup-mipgen.sh` once.
 
-**VS Code** users get all of this as launch configurations: `Server`,
-`Frontend (debug)`, `Full stack (debug)`, and `Server (single sign-on)`, which
+**VS Code** users get all of this as launch configurations, among them
+`Server`, `Frontend (debug)`, `Full stack (debug)`, and `Server (single sign-on)`, which
 also starts a mock identity provider. Sign in there as `boss@uni.example` to
 be an administrator; any other name signs you in as an ordinary user.
 

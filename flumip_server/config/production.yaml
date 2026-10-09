@@ -27,9 +27,10 @@ webServer:
   publicPort: 443
   publicScheme: https
 
-# The PostgreSQL database. The password is in config/passwords.yaml.
+# The PostgreSQL database. The password is in config/passwords.yaml. It runs
+# in a container on this host, published on 127.0.0.1 only (see production.yml).
 database:
-  host: db.flumip.simonzeilmann.com
+  host: 127.0.0.1
   port: 5432
   name: flumip_production
   user: postgres

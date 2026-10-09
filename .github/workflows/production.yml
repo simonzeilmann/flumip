@@ -98,7 +98,11 @@ jobs:
             # NOTE: the existing flumip_production_data volume holds a 16.3 data
             # directory at the old path and must be dumped and restored before
             # this first runs.
-            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql -p 5432:5432 --restart unless-stopped postgres:18
+            # Published on 127.0.0.1 only: the server runs on this host and
+            # connects to localhost, and Docker's own iptables rules bypass ufw,
+            # so a bare -p would put the database on the internet. Reach it from
+            # elsewhere through an SSH tunnel.
+            docker run -d --name postgres_production -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PRODUCTION_KEY }} -e POSTGRES_DB=flumip_production -v flumip_production_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 --restart unless-stopped postgres:18
             rm -rf /var/www/flumip_production
             mv ~/flumip_production/flumip_server/app /var/www/flumip_production
             echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_production/deployment/flumip_production.service /etc/systemd/system/

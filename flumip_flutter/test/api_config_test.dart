@@ -208,7 +208,8 @@ void main() {
     test('a malformed site URL does not crash the app', () {
       // ⚠️ resolveUploadsAvailable runs in a top-level `final`, so a throw here
       // would take the whole app down at startup rather than merely disabling
-      // uploading. SITE_URL is a build define, so a bad one is plausible.
+      // uploading. The site URL is derived from the page address today, but
+      // this guard is what keeps a bad one from ever being fatal.
       for (final bad in ['', '   ', 'not a url', '://nope', 'flumip.example']) {
         expect(
           () => uploadsAreSameOrigin(Uri.parse('https://x.example/'), bad),

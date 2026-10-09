@@ -1,0 +1,8 @@
+# Per-package rules live in flumip_server/, flumip_flutter/ and flumip_client/.
+
+# JetBrains project state is per developer, and dataSources.xml names real
+# database hosts.
+/.idea/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

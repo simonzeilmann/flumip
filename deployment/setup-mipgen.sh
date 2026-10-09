@@ -244,8 +244,8 @@ echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages.
-echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, python3, acl...${NC}\n"
-sudo apt install build-essential git tabix samtools bwa trf python3 acl -y
+echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, acl, wget...${NC}\n"
+sudo apt install build-essential git tabix samtools bwa trf acl wget -y
 
 # Create the mipgen directory and clone the MIPGEN repository.
 echo -e "\n${GREEN}Creating '/opt/flumip' directory and cloning MIPGEN repository...${NC}\n"
@@ -285,12 +285,13 @@ mkdir -p /opt/flumip/data/custom_snp/{common,private}
 # FLUMIP's own helpers.
 echo -e "\n${GREEN}Installing FLUMIP helper scripts...${NC}\n"
 install -m 755 "$SCRIPT_DIR/mipgen-trf" /opt/flumip/tools/mipgen-trf
-install -m 755 "$SCRIPT_DIR/add_bins_to_refgene.py" /opt/flumip/tools/add_bins_to_refgene.py
+# Earlier installs put a Python helper here; its job is now done inline, in awk.
+rm -f /opt/flumip/tools/add_bins_to_refgene.py
 
 # Download and activate bigGenePredToGenePred (needed for hs1).
 echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
 cd /opt/flumip/tools
-wget -N http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
+wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
 chmod +x bigGenePredToGenePred
 
 # Download genomes if the download flag is set.
@@ -401,7 +402,31 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Generating refGene for hs1...${NC}\n"
         cd "$BASE_DIR"
         /opt/flumip/tools/bigGenePredToGenePred https://hgdownload.soe.ucsc.edu/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.bb "$BASE_DIR/refWithoutBin.txt"
-        python3 /opt/flumip/tools/add_bins_to_refgene.py refWithoutBin.txt refGene.txt
+        # MIPGEN's exon extraction expects refGene.txt's layout, which starts
+        # with the UCSC bin column that bigGenePredToGenePred leaves out. Prepend
+        # it, computed from txStart/txEnd ($4/$5) by UCSC's binFromRange: the
+        # smallest of the 128k, 1M, 8M, 64M or whole-chromosome bins that holds
+        # the range. Written beside the target and moved into place, so a
+        # failure leaves no refGene.txt for the next run to mistake for done.
+        awk -F'\t' -v OFS='\t' '
+          function ucsc_bin(start, end,   s, e, i, offsets) {
+            split("585 73 9 1 0", offsets, " ")
+            s = int(start / 131072); e = int((end - 1) / 131072)
+            for (i = 1; i <= 5; i++) {
+              if (s == e) return offsets[i] + s
+              s = int(s / 8); e = int(e / 8)
+            }
+            return -1
+          }
+          /^[[:space:]]*$/ { next }
+          {
+            if (NF < 5 || $4 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ || (bin = ucsc_bin($4, $5)) < 0) {
+              print "refWithoutBin.txt line " NR ": no transcript range to bin" > "/dev/stderr"
+              exit 1
+            }
+            print bin, $0
+          }' refWithoutBin.txt > refGene.txt.tmp
+        mv refGene.txt.tmp refGene.txt
         rm refWithoutBin.txt
       fi
 

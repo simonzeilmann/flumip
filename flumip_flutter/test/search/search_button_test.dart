@@ -267,7 +267,7 @@ void main() {
                   if (signedIn)
                     Row(
                       children: [
-                        const Text('simon.zeilmann@it-gmbh.de'),
+                        const Text('jo.researcher@example.org'),
                         IconButton(
                           icon: const Icon(Icons.logout),
                           onPressed: () {},

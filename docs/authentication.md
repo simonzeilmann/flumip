@@ -63,8 +63,10 @@ Three ways this goes wrong:
 
 FLUMIP needs a **confidential client** (one with a client secret) using the
 **authorization code** flow with **PKCE**, and the `openid`, `email` and `profile`
-scopes. It never asks for offline access and never stores a provider token: after
-the initial code exchange it does not talk to your provider again.
+scopes. It never asks for offline access and never stores a provider token. At
+sign-in it exchanges the code and, when the ID token lacks the email or the
+department claim, asks the userinfo endpoint for them. Apart from that it only
+re-reads the discovery document, every 30 seconds.
 
 The client secret never reaches the browser and is never sent back by the API.
 
@@ -132,6 +134,7 @@ fill in:
 | Public URL of this server | Needed behind a TLS-terminating proxy |
 | Allowed email domains | Comma-separated. Empty allows everyone the provider authenticates |
 | Administrator email addresses | Comma-separated. These can open Settings without the password |
+| Department claim | The claim carrying group membership. Empty means no departments; see [authorization.md](authorization.md#departments) |
 | Scopes | Defaults to `openid email profile` |
 | Sign-in button label | |
 
@@ -168,7 +171,12 @@ Apply changes with `sudo systemctl restart flumip_<env>`. Settings-tab changes
 take effect immediately, with no restart.
 
 The client secret can also go in `config/passwords.yaml` as `oidcClientSecret`
-under the shared section, if that fits your secret management better.
+under the shared section, if that fits your secret management better. It then
+overrides the stored secret as the environment variable would, but unlike the
+variable it is **not** shown as read-only in the Settings tab, so a secret typed
+there is saved and silently ignored. `setup-flumip.sh` rewrites the installed
+copy of that file from `/etc/flumip/passwords_<env>.yaml` on every run, so put it
+there.
 
 ## Why sign-in might not be enforced
 
@@ -283,6 +291,8 @@ In order of preference:
 1. **Sign in as an administrator.** Any address on the admin list reaches the
    Settings tab with no password at all; untick "Require sign-in" there. This is
    the normal route, and it is why the admin list is worth keeping correct.
+   Saving with sign-in switched off ends **every** session, yours included, so
+   expect to be signed out the moment you save.
 2. **The settings password — but only if sign-in is not being enforced.**
    ⚠️ Once sign-in *is* enforced, the password is refused, deliberately: a user
    who knows the shared password must not be able to reach an administrator's
@@ -332,6 +342,13 @@ The cookie is `HttpOnly`, so no script — including a compromised FLUMIP page �
 can read it. It is `SameSite=Lax` because it has to survive the cross-site
 redirect back from your provider, and `Secure` only when the public scheme is
 `https`, because a `Secure` cookie on a plain-HTTP install is silently discarded.
+
+Two web routes do authenticate with the cookie: result downloads
+(`/download/…`) and SNP uploads (`/snp_upload/…`), because a browser download or
+a streamed upload cannot carry a custom header. `SameSite=Lax` is what keeps
+another site from using them: the browser does not send the cookie on a
+cross-site upload, and a download only hands the file to the person whose
+browser it is.
 
 API calls — answered by the same server under `/api` — do not authenticate with
 the cookie. They carry a bearer token instead, in an `Authorization: Bearer`

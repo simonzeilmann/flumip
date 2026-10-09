@@ -5,6 +5,6 @@ tags:
   # Endpoint-dispatch and future-call tests (DB-backed, faked process). Runs in CI.
   integration:
   # Tests that need the real /opt/flumip tree, external tools (bwa, mipgen,
-  # samtools, awk, python), and hg38 reference data. Excluded from CI via
+  # samtools, awk), and hg38 reference data. Excluded from CI via
   # `--exclude-tags env`; run locally or on a self-hosted runner.
   env:
