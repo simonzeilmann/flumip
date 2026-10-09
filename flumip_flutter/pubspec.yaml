@@ -5,7 +5,7 @@ publish_to: 'none'
 
 # Shown in the app's footer. Keep it equal to flumip_server's: release.yml
 # refuses a tag that does not match both.
-version: 0.7.0
+version: 0.7.1
 
 environment:
   sdk: '^3.12.2'

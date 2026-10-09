@@ -111,7 +111,7 @@ jobs:
           tar -czf flumip-build.tar.gz -C app .
           sha256sum flumip-build.tar.gz > flumip-build.tar.gz.sha256
           # setup-flumip.sh rejects an archive without the bundled executable.
-          tar -tzf flumip-build.tar.gz | grep -qE '(^|/)bundle/bin/main$'
+          tar -tzf flumip-build.tar.gz | grep -E '(^|/)bundle/bin/main$' >/dev/null
 
       - name: Upload artifact (manual runs)
         if: github.ref_type != 'tag'
