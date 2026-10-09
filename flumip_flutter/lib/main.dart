@@ -99,7 +99,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: siteTitle,
       theme: buildAppTheme(),
-      home: const _AuthGate(child: MyHomePage(title: 'Flumip')),
+      home: const _AuthGate(child: MyHomePage(title: siteTitle)),
     );
   }
 }

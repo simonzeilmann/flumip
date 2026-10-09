@@ -22,7 +22,8 @@
 #   -y, --yes, --non-interactive Never prompt; use defaults/switches (for automation).
 #   -h, --help                   Show this help and exit.
 #
-# Genomes: hg18 hg19 hg38 hs1   (default: hg38)
+# Genomes: hg18 hg19 hg38 hs1   (default with --download: hg38). Naming a genome
+# without --download is an error, since nothing would be fetched.
 #
 # Examples:
 #   ./setup-mipgen.sh                         # interactive on a terminal
@@ -100,7 +101,12 @@ while [[ "$#" -gt 0 ]]; do
       exit 1
       ;;
     *)
-      # Treat as genome name.
+      # Treat as genome name. Checked here rather than in the download loop,
+      # which used to skip a typo and then report success for it anyway.
+      if [[ ! " ${AVAILABLE_GENOMES[*]} " == *" $1 "* ]]; then
+        echo -e "${RED}Unknown genome: $1. Choose from: ${AVAILABLE_GENOMES[*]}.${NC}"
+        exit 1
+      fi
       GENOMES+=("$1")
       GENOMES_SET=true
       ;;
@@ -199,6 +205,15 @@ select_genomes() {
   done
 }
 
+# Genome names only mean something with --download. Without it they used to be
+# ignored, and the run still reported success "for genomes: hg19" with nothing
+# fetched. (-i asks about downloading below, so the names can still be used.)
+if $GENOMES_SET && ! $DOWNLOAD && [ "$INTERACTIVE" != "yes" ]; then
+  echo -e "${RED}Genomes were named (${GENOMES[*]}) but --download was not given, so nothing would be fetched.${NC}"
+  echo -e "Run '${0} --download ${GENOMES[*]}' to download them."
+  exit 1
+fi
+
 # --- Interactive flow --------------------------------------------------------
 
 if [ "$INTERACTIVE" == "yes" ]; then
@@ -217,8 +232,9 @@ if [ "$INTERACTIVE" == "yes" ]; then
   SERVICE_USER="${_svc:-$SERVICE_USER}"
 fi
 
-# If no genomes specified, default to hg38.
-if [ ${#GENOMES[@]} -eq 0 ]; then
+# Downloading with no genomes named means hg38. Without --download there is no
+# genome to default to, so the list stays empty.
+if $DOWNLOAD && [ ${#GENOMES[@]} -eq 0 ]; then
   GENOMES=("hg38")
 fi
 
@@ -294,6 +310,20 @@ cd /opt/flumip/tools
 wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
 chmod +x bigGenePredToGenePred
 
+# Unpacks $1 (a .gz in the current directory) beside itself. Each genome step
+# below is skipped when its unpacked file exists, so a file that is there must
+# be whole. gunzip -f wrote straight into it, and a run killed partway (power
+# loss, the OOM killer, kill -9) left a truncated genome or refGene.txt that
+# every later run trusted. Unpacking to a temporary name and renaming it at the end means the
+# file only appears once it is complete. The .gz goes last, so a rerun after a
+# failed unpack finds it and wget -N need not fetch it again.
+unpack() {
+  local out="${1%.gz}"
+  gunzip -c "$1" > "$out.tmp"
+  mv "$out.tmp" "$out"
+  rm -f "$1"
+}
+
 # Download genomes if the download flag is set.
 if $DOWNLOAD; then
   for GENOME in "${GENOMES[@]}"; do
@@ -313,7 +343,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading refGene for hg38...${NC}\n"
         cd "$BASE_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
-        gunzip -f refGene.txt.gz
+        unpack refGene.txt.gz
       fi
 
       # Download SNP files for hg38 if not present.
@@ -331,7 +361,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg38 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
-        gunzip -f hg38.fa.gz
+        unpack hg38.fa.gz
       fi
 
     elif [ "$GENOME" == "hg18" ]; then
@@ -354,7 +384,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg18 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg18/bigZips/hg18.fa.gz
-        gunzip -f hg18.fa.gz
+        unpack hg18.fa.gz
       fi
 
     elif [ "$GENOME" == "hg19" ]; then
@@ -370,7 +400,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading refGene for hg19...${NC}\n"
         cd "$BASE_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
-        gunzip -f refGene.txt.gz
+        unpack refGene.txt.gz
       fi
 
       # Download hg19 genome sequence if not present.
@@ -378,7 +408,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hg19 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz
-        gunzip -f hg19.fa.gz
+        unpack hg19.fa.gz
       fi
 
     elif [ "$GENOME" == "hs1" ]; then
@@ -394,7 +424,7 @@ if $DOWNLOAD; then
         echo -e "\n${GREEN}Downloading hs1 genome sequence...${NC}\n"
         cd "$FA_DIR"
         wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz
-        gunzip -f hs1.fa.gz
+        unpack hs1.fa.gz
       fi
 
       # Generate refGene for hs1 if not present.
@@ -468,4 +498,10 @@ else
   exit 1
 fi
 
-echo -e "\n${GREEN}Setup completed successfully for genomes: ${GENOMES[*]}.${NC}\n"
+if $DOWNLOAD; then
+  echo -e "\n${GREEN}Setup completed successfully. Reference data is in place for: ${GENOMES[*]}.${NC}\n"
+else
+  echo -e "\n${GREEN}Setup completed successfully. No reference data was downloaded.${NC}"
+  echo -e "Run '${0} --download hg38' (or hg19, hg18, hs1) to fetch a genome, or put"
+  echo -e "your own under /opt/flumip/data/genomes/<category>/<name>/ and scan for it in the app.\n"
+fi

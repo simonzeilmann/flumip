@@ -53,7 +53,8 @@ the browser:
 
 1. **Settings** — the settings password is `changeme`. Change it now; the tab
    warns until you do.
-2. **Genomes & SNP** — click **Scan for new genomes**. hg38 appears. Click
+2. **Genomes & SNP** — open the **⋮** menu beside *Genomes* and choose **Scan for
+   new genomes**. hg38 appears. Click
    **Build index** on it and wait: `bwa index` on a human genome takes about an
    hour, and the genome shows **Indexing** until it is done.
 3. **Projects** — **Create project**, choose the genome, add a few genes (for
@@ -86,7 +87,8 @@ Each genome folder holds:
 | `refGene.txt` | gene annotations, used to turn a gene symbol into coordinates |
 | `snp/<set>/` | optional built-in SNP sets (a bgzipped VCF and its `.tbi` index) |
 
-After adding or removing a folder, click **Scan for new genomes**. MIPGEN needs a
+After adding or removing a folder, choose **Scan for new genomes** from the **⋮**
+menu beside *Genomes*. MIPGEN needs a
 **bwa index** of the genome: click **Build index** on it (the log goes to
 `fa/bwa-index.log`). The genome picker marks a genome without one **Not
 indexed**, and one being built **Indexing**. The **Active** switch hides a
@@ -280,6 +282,11 @@ systemctl status flumip_production      # is it running?
 journalctl -u flumip_production -f      # follow the log
 sudo systemctl restart flumip_production
 ```
+
+To reach a server that is not exposed, tunnel its web port to the **same port**
+on your machine, for example `ssh -L 9082:localhost:9082 <host>`, then open
+`http://localhost:9082`. On `localhost`, the app takes any port other than 9082,
+8092 or 8082 for a `flutter run` and looks for a development server instead.
 
 **Back up** `/etc/flumip/` (it holds the only copy of the database password), the
 database volume `flumip_production_data`, and `/opt/flumip/projects` if the
