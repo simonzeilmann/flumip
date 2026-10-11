@@ -293,6 +293,34 @@ database volume `flumip_production_data`, and `/opt/flumip/projects` if the
 designs matter to you. The reference data under `/opt/flumip/data/genomes` can
 always be downloaded again.
 
+### Uninstalling
+
+**`deployment/uninstall-flumip.sh`** reverses both scripts. By default it removes
+only the software and keeps everything that cannot be downloaded again:
+
+| | Removed by default | Kept unless you pass |
+| --- | --- | --- |
+| Service and build | `flumip_<env>` unit, `/var/www/flumip_<env>` | |
+| MIPGEN | `/opt/flumip/MIPGEN` and `/opt/flumip/tools`, once no environment is left (`--keep-mipgen` to keep them) | |
+| Database | | `--database`: the `postgres_<env>` container, its volume, and `/etc/flumip/*_<env>.*` |
+| Projects | | `--projects`: `/opt/flumip/projects` |
+| Genomes | | `--genomes`: `/opt/flumip/data/genomes`, bwa indexes included |
+| Custom SNP sets | | `--custom-snps`: `/opt/flumip/data/custom_snp` |
+| Packages | | `--packages`: `bwa`, `samtools`, `tabix`, `trf` |
+
+`--purge` stands for the four data switches. Without `--prod` or `--staging`
+every environment found is removed. A database connected with `--db existing`
+is never dropped, and the shared `/opt/flumip` data cannot be deleted while
+another environment stays installed. Reinstalling after a default uninstall
+picks the kept database, projects and genomes up again.
+
+```bash
+./deployment/uninstall-flumip.sh --purge --dry-run    # see what would go
+./deployment/uninstall-flumip.sh                      # interactive
+```
+
+It asks for confirmation on a terminal, and needs `--yes` without one.
+
 ---
 
 ## Configuration
