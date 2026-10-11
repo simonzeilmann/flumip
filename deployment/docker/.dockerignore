@@ -1,0 +1,5 @@
+# mipgen.Dockerfile needs nothing from this directory, and in a real install
+# data/ and projects/ live here and hold gigabytes of genomes and results.
+# BuildKit would not send them anyway, but the legacy builder sends the whole
+# context before it even reads the Dockerfile.
+*

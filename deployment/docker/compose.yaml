@@ -1,0 +1,81 @@
+# FLUMIP with Docker Compose. See docs/docker.md for the whole procedure:
+#
+#   ./init-env.sh            # once: writes .env with fresh secrets
+#   docker compose build     # builds flumip-local, compiling MIPGEN locally
+#   docker compose up -d
+#   docker compose run --rm --no-deps flumip fetch-genome hg38
+#
+# Configuration lives in .env, next to this file.
+
+name: flumip
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ${FLUMIP_DB_NAME:-flumip}
+      # ⚠️ Read only when the database is first created. Changing it in .env
+      # afterwards does not change the database's password; it locks the server
+      # out of it.
+      POSTGRES_PASSWORD: ${FLUMIP_DB_PASSWORD:?FLUMIP_DB_PASSWORD is not set; run ./init-env.sh first}
+    volumes:
+      # ⚠️ /var/lib/postgresql, not /var/lib/postgresql/data. postgres:18 keeps
+      # its data in /var/lib/postgresql/18/docker, so a volume on .../data would
+      # hold nothing and the database would vanish with the container.
+      - db:/var/lib/postgresql
+    healthcheck:
+      # -h 127.0.0.1: a fresh container runs initdb on a socket-only server
+      # before it listens on TCP, and the server connects over TCP.
+      test: ["CMD-SHELL", "pg_isready -q -h 127.0.0.1 -U postgres -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    # No ports: only the flumip service talks to it, over the compose network.
+
+  flumip:
+    build:
+      context: .
+      dockerfile: mipgen.Dockerfile
+      args:
+        FLUMIP_IMAGE: ${FLUMIP_IMAGE:-ghcr.io/simonzeilmann/flumip}
+        FLUMIP_VERSION: ${FLUMIP_VERSION:?FLUMIP_VERSION is not set; run ./init-env.sh first}
+    # ⚠️ No registry in the name, so `docker push` has nowhere to send it. This
+    # image contains MIPGEN, whose licence forbids distributing it.
+    image: flumip-local:${FLUMIP_VERSION}
+    # tini as PID 1. Cancelling a design kills mipgen and its bwa children; init
+    # reaps what that leaves behind, and passes docker stop's SIGTERM on to the
+    # server, which shuts down cleanly on it.
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # 127.0.0.1 by default: put a reverse proxy with HTTPS in front (see the
+      # README). Docker's own firewall rules bypass ufw, so FLUMIP_BIND=0.0.0.0
+      # really does open it to the whole network — do that only on a trusted one.
+      - "${FLUMIP_BIND:-127.0.0.1}:${FLUMIP_PORT:-9082}:9082"
+    # The FLUMIP_* sign-in settings go straight through from .env, and only the
+    # ones that are set: an unset variable must not reach the server as an empty
+    # string, which some of them would take as a value.
+    env_file:
+      - .env
+    environment:
+      SERVERPOD_DATABASE_HOST: postgres
+      SERVERPOD_DATABASE_PORT: "5432"
+      SERVERPOD_DATABASE_NAME: ${FLUMIP_DB_NAME:-flumip}
+      SERVERPOD_DATABASE_USER: postgres
+      SERVERPOD_DATABASE_PASSWORD: ${FLUMIP_DB_PASSWORD}
+      SERVERPOD_SERVICE_SECRET: ${FLUMIP_SERVICE_SECRET:?FLUMIP_SERVICE_SECRET is not set; run ./init-env.sh first}
+    volumes:
+      # ⚠️ Only these two. MIPGEN and tools/ live in the image under /opt/flumip,
+      # and a volume on /opt/flumip itself would hide them.
+      - ${FLUMIP_DATA_DIR:-./data}:/opt/flumip/data
+      - ${FLUMIP_PROJECTS_DIR:-./projects}:/opt/flumip/projects
+
+volumes:
+  db:
