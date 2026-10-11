@@ -19,29 +19,55 @@ void main() {
     var session = sessionBuilder.build();
     final processService = sl<ProcessService>();
 
+    // What `ps -o comm= -o args=` prints for a running mipgen: the executable
+    // name, padded, then the full command line. `uuid` stands in for the
+    // project's folder, which is what identifies the run.
+    String mipgenPs(String folder) =>
+        'mipgen          /opt/flumip/MIPGEN/mipgen -regions_to_scan '
+        '/opt/flumip/projects/$folder/genes.bed -project_name test '
+        '-bwa_genome_index /g/hg38.fa\n';
+    const folder = '0199c3a0-0000-7000-8000-000000000001';
+    const otherFolder = '0199c3a0-0000-7000-8000-000000000002';
+
     test(
-      'checkIfMipgenProcessIsRunning is true when ps shows mipgen',
+      'checkIfMipgenProcessIsRunning is true when the pid is this project\'s mipgen',
       () async {
-        final project = await seedProject(session, options: 1, pid: 1234);
-        fake.stubRun(
-          'ps',
-          exitCode: 0,
-          stdout: 'PID TTY CMD\n1234 pts/0 00:00 mipgen -x\n',
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
         );
+        fake.stubRun('ps', exitCode: 0, stdout: mipgenPs(folder));
         expect(
           await processService.checkIfMipgenProcessIsRunning(session, project),
           isTrue,
         );
-        expect(fake.lastFor('ps')!.arguments, ['-p', '1234']);
+        expect(fake.lastFor('ps')!.arguments, [
+          '-o',
+          'comm=',
+          '-o',
+          'args=',
+          '-p',
+          '1234',
+        ]);
       },
       tags: ['unit'],
     );
 
     test(
-      'checkIfMipgenProcessIsRunning is false when process is gone',
+      'checkIfMipgenProcessIsRunning is false when the pid is another project\'s mipgen',
       () async {
-        final project = await seedProject(session, options: 1, pid: 1234);
-        fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
+        // ⚠️ The case this check exists for. After a restart — every restart,
+        // in a container — pids are handed out again, and the stored one can
+        // belong to a different design. It used to count as "running".
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
+        );
+        fake.stubRun('ps', exitCode: 0, stdout: mipgenPs(otherFolder));
         expect(
           await processService.checkIfMipgenProcessIsRunning(session, project),
           isFalse,
@@ -51,9 +77,98 @@ void main() {
     );
 
     test(
+      'checkIfMipgenProcessIsRunning is false when the pid is some other program',
+      () async {
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
+        );
+        // Not even fooled by the folder turning up in someone else's arguments.
+        fake.stubRun(
+          'ps',
+          exitCode: 0,
+          stdout:
+              'less            less /opt/flumip/projects/$folder/genes.bed\n',
+        );
+        expect(
+          await processService.checkIfMipgenProcessIsRunning(session, project),
+          isFalse,
+        );
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'checkIfMipgenProcessIsRunning is false for an unreaped mipgen',
+      () async {
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
+        );
+        fake.stubRun(
+          'ps',
+          exitCode: 0,
+          stdout: 'mipgen          [mipgen] <defunct>\n',
+        );
+        expect(
+          await processService.checkIfMipgenProcessIsRunning(session, project),
+          isFalse,
+        );
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'checkIfMipgenProcessIsRunning is false when process is gone',
+      () async {
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
+        );
+        fake.stubRun('ps', exitCode: 1);
+        expect(
+          await processService.checkIfMipgenProcessIsRunning(session, project),
+          isFalse,
+        );
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'checkIfMipgenProcessIsRunning is false without asking ps for pid 0',
+      () async {
+        // getProcessPID returns 0 when mipgen never showed up; the progress
+        // check relies on that reading as "finished".
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 0,
+          folderName: folder,
+        );
+        expect(
+          await processService.checkIfMipgenProcessIsRunning(session, project),
+          isFalse,
+        );
+        expect(fake.lastFor('ps'), isNull);
+      },
+      tags: ['unit'],
+    );
+
+    test(
       'checkIfMipgenProcessIsRunning throws when ps errors (exit > 1)',
       () async {
-        final project = await seedProject(session, options: 1, pid: 1234);
+        final project = await seedProject(
+          session,
+          options: 1,
+          pid: 1234,
+          folderName: folder,
+        );
         fake.stubRun('ps', exitCode: 2, stderr: 'ps: boom');
         expect(
           () => processService.checkIfMipgenProcessIsRunning(session, project),
@@ -63,25 +178,84 @@ void main() {
       tags: ['unit'],
     );
 
-    test('checkIfIndexProcessIsRunning is true when ps shows bwa', () async {
-      final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
-      fake.stubRun(
-        'ps',
-        exitCode: 0,
-        stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n',
-      );
-      expect(
-        await processService.checkIfIndexProcessIsRunning(session, genome),
-        isTrue,
-      );
-      expect(fake.lastFor('ps')!.arguments, ['-p', '555']);
-    }, tags: ['unit']);
+    test(
+      'checkIfIndexProcessIsRunning is true when the pid is bwa index on this FASTA',
+      () async {
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          indexPID: 555,
+          fastaPath: '/g/hg38/fa/hg38.fa',
+        );
+        fake.stubRun(
+          'ps',
+          exitCode: 0,
+          stdout: 'bwa             bwa index /g/hg38/fa/hg38.fa\n',
+        );
+        expect(
+          await processService.checkIfIndexProcessIsRunning(session, genome),
+          isTrue,
+        );
+        expect(fake.lastFor('ps')!.arguments.last, '555');
+        expect(fake.lastFor('ps')!.timeout, isNotNull);
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'checkIfIndexProcessIsRunning is false when the pid indexes another genome',
+      () async {
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          indexPID: 555,
+          fastaPath: '/g/hg38/fa/hg38.fa',
+        );
+        fake.stubRun(
+          'ps',
+          exitCode: 0,
+          stdout: 'bwa             bwa index /g/hg19/fa/hg19.fa\n',
+        );
+        expect(
+          await processService.checkIfIndexProcessIsRunning(session, genome),
+          isFalse,
+        );
+      },
+      tags: ['unit'],
+    );
+
+    test(
+      'checkIfIndexProcessIsRunning is false when the pid is a mipgen\'s bwa aln',
+      () async {
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          indexPID: 555,
+          fastaPath: '/g/hg38/fa/hg38.fa',
+        );
+        fake.stubRun(
+          'ps',
+          exitCode: 0,
+          stdout: 'bwa             bwa aln -t 1 /g/hg38/fa/hg38.fa x.fq\n',
+        );
+        expect(
+          await processService.checkIfIndexProcessIsRunning(session, genome),
+          isFalse,
+        );
+      },
+      tags: ['unit'],
+    );
 
     test(
       'checkIfIndexProcessIsRunning is false when process is gone',
       () async {
-        final genome = await seedGenome(session, name: 'hg38', indexPID: 555);
-        fake.stubRun('ps', exitCode: 1, stdout: 'PID TTY CMD\n');
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          indexPID: 555,
+          fastaPath: '/g/hg38/fa/hg38.fa',
+        );
+        fake.stubRun('ps', exitCode: 1);
         expect(
           await processService.checkIfIndexProcessIsRunning(session, genome),
           isFalse,
@@ -102,6 +276,55 @@ void main() {
       },
       tags: ['unit'],
     );
+
+    test('terminateMipgenRun kills the run when the pid is still it', () async {
+      final project = await seedProject(
+        session,
+        options: 1,
+        pid: 1234,
+        folderName: folder,
+      );
+      fake.stubRun('ps', exitCode: 0, stdout: mipgenPs(folder));
+      fake.stubRun('pgrep', exitCode: 1);
+
+      expect(await processService.terminateMipgenRun(session, project), isTrue);
+      expect(fake.lastFor('kill')!.arguments, ['-9', '1234']);
+    }, tags: ['unit']);
+
+    test('terminateMipgenRun leaves a reused pid alone', () async {
+      // ⚠️ kill -9 on a pid that now belongs to another design — or, after a
+      // container restart, to the server itself — is the failure this stops.
+      final project = await seedProject(
+        session,
+        options: 1,
+        pid: 1234,
+        folderName: folder,
+      );
+      fake.stubRun('ps', exitCode: 0, stdout: mipgenPs(otherFolder));
+
+      expect(
+        await processService.terminateMipgenRun(session, project),
+        isFalse,
+      );
+      expect(fake.lastFor('kill'), isNull);
+      expect(fake.lastFor('pgrep'), isNull);
+    }, tags: ['unit']);
+
+    test('terminateMipgenRun does nothing when the run is gone', () async {
+      final project = await seedProject(
+        session,
+        options: 1,
+        pid: 1234,
+        folderName: folder,
+      );
+      fake.stubRun('ps', exitCode: 1);
+
+      expect(
+        await processService.terminateMipgenRun(session, project),
+        isFalse,
+      );
+      expect(fake.lastFor('kill'), isNull);
+    }, tags: ['unit']);
 
     test('getProcessPID parses the matching pgrep line', () async {
       fake.stubRun(

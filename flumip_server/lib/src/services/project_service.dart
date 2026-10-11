@@ -144,9 +144,11 @@ class ProjectService {
 
     // Stop the run before the row goes, while the pid is still meaningful.
     // Best-effort: a process that has already exited must not stop a deletion.
+    // terminateMipgenRun, not terminateProcess: the stored pid may have been
+    // handed to another process since, and that one must not be killed.
     if (project.active && project.pid != null && project.pid! > 0) {
       try {
-        await processService.terminateProcess(session, project.pid!);
+        await processService.terminateMipgenRun(session, project);
       } catch (e) {
         session.log(
           'Could not terminate process ${project.pid} for project $id; '
