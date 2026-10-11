@@ -1,0 +1,64 @@
+# Serverpod configuration for the Docker image, installed as
+# /srv/flumip/config/production.yaml.
+#
+# Host-neutral on purpose. flumip_server/config/production.yaml is the author's
+# own production server; this one assumes nothing beyond the compose file.
+# Every value here can be overridden by an environment variable, and the
+# compose file does exactly that for the database: SERVERPOD_DATABASE_HOST,
+# SERVERPOD_DATABASE_NAME, SERVERPOD_DATABASE_PASSWORD, SERVERPOD_SERVICE_SECRET,
+# SERVERPOD_WEB_SERVER_PUBLIC_HOST and so on.
+#
+# Behind a reverse proxy, set FLUMIP_PUBLIC_URL (see docs/authentication.md)
+# rather than the public host and port below: nothing else derives a URL from
+# them. The app finds its API on whatever address it was loaded from.
+
+# The API server. Serverpod always starts it, but nothing reaches it directly:
+# the web server answers the API under /api on its own port (ApiRoute), so an
+# install is one origin. The container does not publish this port.
+apiServer:
+  port: 9080
+  publicHost: localhost
+  publicPort: 9080
+  publicScheme: http
+
+# The Insights server, for Serverpod's own monitoring tool. Not published either.
+insightsServer:
+  port: 9081
+  publicHost: localhost
+  publicPort: 9081
+  publicScheme: http
+
+# The web server: the app, the API under /api, downloads, uploads, sign-in and
+# UCSC tracks. The only port the container publishes.
+webServer:
+  port: 9082
+  publicHost: localhost
+  publicPort: 9082
+  publicScheme: http
+
+# The `postgres` service in deployment/docker/compose.yaml. The password comes
+# from SERVERPOD_DATABASE_PASSWORD; there is no passwords.yaml in the image.
+database:
+  host: postgres
+  port: 5432
+  name: flumip
+  user: postgres
+  requireSsl: false
+
+# Redis is not used. Serverpod reads this block regardless, so it stays,
+# disabled; see "Redis: seam-ready, not enabled" in HANDOFF.md.
+redis:
+  enabled: false
+  host: localhost
+  port: 6379
+
+# The largest request body the **API** server will accept, in bytes. This is the
+# framework default stated explicitly, not a change.
+#
+# ⚠️ It applies to the API server only. The web server's routes read their own
+# bodies, so `SnpUploadRoute` — where the request body *is* a multi-gigabyte VCF
+# streamed to disk — is not bounded by this. Its cap is
+# `SnpService.maxImportBytes`, enforced via `request.read(maxLength:)`. Changing
+# this number will not let larger SNP sets be uploaded, and lowering it will not
+# stop them.
+maxRequestSize: 524288

@@ -41,8 +41,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # commit so every install builds the same thing. Its licence does not allow
 # distributing a modified copy, so FLUMIP never patches it: what MIPGEN needs
 # adapting for (the TRF check) is handled by the mipgen-trf wrapper instead.
-MIPGEN_REPO="https://github.com/shendurelab/MIPGEN.git"
-MIPGEN_COMMIT="4d6c342"
+# The pin lives in mipgen.pin, shared with the Docker image's MIPGEN build.
+# shellcheck source=mipgen.pin
+. "$SCRIPT_DIR/mipgen.pin"
 
 # Define colors.
 GREEN='\033[0;32m'
@@ -310,172 +311,10 @@ cd /opt/flumip/tools
 wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
 chmod +x bigGenePredToGenePred
 
-# Unpacks $1 (a .gz in the current directory) beside itself. Each genome step
-# below is skipped when its unpacked file exists, so a file that is there must
-# be whole. gunzip -f wrote straight into it, and a run killed partway (power
-# loss, the OOM killer, kill -9) left a truncated genome or refGene.txt that
-# every later run trusted. Unpacking to a temporary name and renaming it at the end means the
-# file only appears once it is complete. The .gz goes last, so a rerun after a
-# failed unpack finds it and wget -N need not fetch it again.
-unpack() {
-  local out="${1%.gz}"
-  gunzip -c "$1" > "$out.tmp"
-  mv "$out.tmp" "$out"
-  rm -f "$1"
-}
-
-# Download genomes if the download flag is set.
+# Download genomes if the download flag is set. The downloads themselves live in
+# fetch-genome.sh, which the Docker image runs too.
 if $DOWNLOAD; then
-  for GENOME in "${GENOMES[@]}"; do
-    echo -e "\n${GREEN}Setting up genome directories for $GENOME...${NC}\n"
-    if [ "$GENOME" == "hg38" ]; then
-      BASE_DIR="/opt/flumip/data/genomes/human/hg38"
-      FA_DIR="$BASE_DIR/fa"
-      SNP_DIR="$BASE_DIR/snp/00-common_all"
-      FA_FILE="$FA_DIR/hg38.fa"
-      REFGENE_FILE="$BASE_DIR/refGene.txt"
-      mkdir -p "$BASE_DIR"
-      mkdir -p "$FA_DIR"
-      mkdir -p "$SNP_DIR"
-
-      # Download refGene for hg38 if not present.
-      if [ ! -f "$REFGENE_FILE" ]; then
-        echo -e "\n${GREEN}Downloading refGene for hg38...${NC}\n"
-        cd "$BASE_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
-        unpack refGene.txt.gz
-      fi
-
-      # Download SNP files for hg38 if not present.
-      SNP1_FILE="$SNP_DIR/00-common_all.vcf.gz"
-      SNP2_FILE="$SNP_DIR/00-common_all.vcf.gz.tbi"
-      if [ ! -f "$SNP1_FILE" ] || [ ! -f "$SNP2_FILE" ]; then
-        echo -e "\n${GREEN}Downloading SNP files for hg38...${NC}\n"
-        cd "$SNP_DIR"
-        wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz
-        wget -N https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-common_all.vcf.gz.tbi
-      fi
-
-      # Download hg38 genome sequence if not present.
-      if [ ! -f "$FA_FILE" ]; then
-        echo -e "\n${GREEN}Downloading hg38 genome sequence...${NC}\n"
-        cd "$FA_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
-        unpack hg38.fa.gz
-      fi
-
-    elif [ "$GENOME" == "hg18" ]; then
-      BASE_DIR="/opt/flumip/data/genomes/human/hg18"
-      FA_DIR="$BASE_DIR/fa"
-      FA_FILE="$FA_DIR/hg18.fa"
-      REFGENE_FILE="$BASE_DIR/refGene.txt"
-      mkdir -p "$BASE_DIR"
-      mkdir -p "$FA_DIR"
-
-      # Download refGene for hg18 if not present.
-      if [ ! -f "$REFGENE_FILE" ]; then
-        echo -e "\n${GREEN}Downloading refGene for hg18...${NC}\n"
-        cd "$BASE_DIR"
-        wget -N https://data.broadinstitute.org/igvdata/annotations/hg18/refGene.txt
-      fi
-
-      # Download hg18 genome sequence if not present.
-      if [ ! -f "$FA_FILE" ]; then
-        echo -e "\n${GREEN}Downloading hg18 genome sequence...${NC}\n"
-        cd "$FA_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg18/bigZips/hg18.fa.gz
-        unpack hg18.fa.gz
-      fi
-
-    elif [ "$GENOME" == "hg19" ]; then
-      BASE_DIR="/opt/flumip/data/genomes/human/hg19"
-      FA_DIR="$BASE_DIR/fa"
-      FA_FILE="$FA_DIR/hg19.fa"
-      REFGENE_FILE="$BASE_DIR/refGene.txt"
-      mkdir -p "$BASE_DIR"
-      mkdir -p "$FA_DIR"
-
-      # Download refGene for hg19 if not present.
-      if [ ! -f "$REFGENE_FILE" ]; then
-        echo -e "\n${GREEN}Downloading refGene for hg19...${NC}\n"
-        cd "$BASE_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
-        unpack refGene.txt.gz
-      fi
-
-      # Download hg19 genome sequence if not present.
-      if [ ! -f "$FA_FILE" ]; then
-        echo -e "\n${GREEN}Downloading hg19 genome sequence...${NC}\n"
-        cd "$FA_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz
-        unpack hg19.fa.gz
-      fi
-
-    elif [ "$GENOME" == "hs1" ]; then
-      BASE_DIR="/opt/flumip/data/genomes/human/hs1"
-      FA_DIR="$BASE_DIR/fa"
-      FA_FILE="$FA_DIR/hs1.fa"
-      REFGENE_FILE="$BASE_DIR/refGene.txt"
-      mkdir -p "$BASE_DIR"
-      mkdir -p "$FA_DIR"
-
-      # Download hs1 genome sequence if not present.
-      if [ ! -f "$FA_FILE" ]; then
-        echo -e "\n${GREEN}Downloading hs1 genome sequence...${NC}\n"
-        cd "$FA_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz
-        unpack hs1.fa.gz
-      fi
-
-      # Generate refGene for hs1 if not present.
-      if [ ! -f "$REFGENE_FILE" ]; then
-        echo -e "\n${GREEN}Generating refGene for hs1...${NC}\n"
-        cd "$BASE_DIR"
-        /opt/flumip/tools/bigGenePredToGenePred https://hgdownload.soe.ucsc.edu/gbdb/hs1/ncbiRefSeq/ncbiRefSeq.bb "$BASE_DIR/refWithoutBin.txt"
-        # MIPGEN's exon extraction expects refGene.txt's layout, which starts
-        # with the UCSC bin column that bigGenePredToGenePred leaves out. Prepend
-        # it, computed from txStart/txEnd ($4/$5) by UCSC's binFromRange: the
-        # smallest of the 128k, 1M, 8M, 64M or whole-chromosome bins that holds
-        # the range. Written beside the target and moved into place, so a
-        # failure leaves no refGene.txt for the next run to mistake for done.
-        awk -F'\t' -v OFS='\t' '
-          function ucsc_bin(start, end,   s, e, i, offsets) {
-            split("585 73 9 1 0", offsets, " ")
-            s = int(start / 131072); e = int((end - 1) / 131072)
-            for (i = 1; i <= 5; i++) {
-              if (s == e) return offsets[i] + s
-              s = int(s / 8); e = int(e / 8)
-            }
-            return -1
-          }
-          /^[[:space:]]*$/ { next }
-          {
-            if (NF < 5 || $4 !~ /^[0-9]+$/ || $5 !~ /^[0-9]+$/ || (bin = ucsc_bin($4, $5)) < 0) {
-              print "refWithoutBin.txt line " NR ": no transcript range to bin" > "/dev/stderr"
-              exit 1
-            }
-            print bin, $0
-          }' refWithoutBin.txt > refGene.txt.tmp
-        mv refGene.txt.tmp refGene.txt
-        rm refWithoutBin.txt
-      fi
-
-      # Set up SNP directory for hs1 with the new name and download SNP files.
-      SNP_DIR="$BASE_DIR/snp/dbSNPv155"
-      mkdir -p "$SNP_DIR"
-      SNP1_FILE="$SNP_DIR/chm13v2.0_dbSNPv155.vcf.gz"
-      SNP2_FILE="$SNP_DIR/chm13v2.0_dbSNPv155.vcf.gz.tbi"
-      if [ ! -f "$SNP1_FILE" ] || [ ! -f "$SNP2_FILE" ]; then
-        echo -e "\n${GREEN}Downloading SNP files for hs1...${NC}\n"
-        cd "$SNP_DIR"
-        wget -N https://hgdownload.soe.ucsc.edu/gbdb/hs1/dbSNP155/chm13v2.0_dbSNPv155.vcf.gz
-        wget -N https://hgdownload.soe.ucsc.edu/gbdb/hs1/dbSNP155/chm13v2.0_dbSNPv155.vcf.gz.tbi
-      fi
-
-    else
-      echo -e "${RED}Invalid genome option: $GENOME. Skipping.${NC}"
-    fi
-  done
+  "$SCRIPT_DIR/fetch-genome.sh" --root /opt/flumip "${GENOMES[@]}"
 fi
 
 # Set permissions for the service user and maintain current user access

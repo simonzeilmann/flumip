@@ -1,0 +1,22 @@
+# Only what the Dockerfile copies. Everything else stays out of the build
+# context, which keeps it small and keeps local state out of the image.
+*
+!LICENSE
+!deployment/
+!flumip_client/
+!flumip_flutter/
+!flumip_server/
+
+# Build output and tool state, regenerated inside the build.
+**/.dart_tool
+**/build
+**/.idea
+flumip_server/web/app
+
+# ⚠️ Never in an image: a developer's local database and Redis passwords.
+flumip_server/config/passwords.yaml
+
+# A local Docker install's secrets and data, if run from inside the repository.
+deployment/docker/.env
+deployment/docker/data
+deployment/docker/projects

@@ -6,3 +6,9 @@
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# A local Docker install run from inside the repository (docs/docker.md,
+# "Building the image yourself"): its secrets and its data.
+/deployment/docker/.env
+/deployment/docker/data/
+/deployment/docker/projects/
