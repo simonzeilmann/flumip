@@ -7,29 +7,25 @@
 #
 #   1. checks prerequisites (and that setup-mipgen.sh has run)
 #   2. downloads a release build (or uses a local tarball)
-#   3. provisions a PostgreSQL container for the environment
-#   4. generates config/<env>.yaml and a passwords.yaml with random secrets
+#   3. provisions a PostgreSQL container
+#   4. generates config/production.yaml and a passwords.yaml with random secrets
 #   5. applies the database migrations
-#   6. installs and starts the systemd unit
+#   6. installs and starts the flumip systemd unit
 #
 # Re-running is safe: an existing database and its generated passwords are
 # reused, and the choices made on the first run (hostname, database, service
-# user) are remembered in /etc/flumip/setup_<env>.conf, so it doubles as an
-# updater. Pass --staging again to update a staging install; any other switch
-# given on a re-run replaces the remembered value.
+# user) are remembered in /etc/flumip/setup.conf, so it doubles as an updater.
+# Any switch given on a re-run replaces the remembered value.
 #
 # The script has two modes, like setup-mipgen.sh:
 #   * Interactive      - run with no switches on a terminal and you are prompted
-#                        for the environment, hostname, service user and
-#                        database setup.
+#                        for the hostname, service user and database setup.
 #   * Non-interactive  - pass any switch below (or --yes) to script the run.
 #
 # Usage:
 #   ./setup-flumip.sh [options]
 #
 # Options:
-#   --prod, --production    Install the production environment (default).
-#   --staging               Install the staging environment instead.
 #   --host HOST             Public hostname clients reach this server on
 #                           (default: the previous run's, else localhost).
 #   --url URL               Download the build tarball from URL.
@@ -38,8 +34,8 @@
 #   --db docker|existing    Provision a PostgreSQL container, or connect to a
 #                           database that already exists (default: docker).
 #   --db-host HOST          Database host for --db existing (default: localhost).
-#   --db-port PORT          Database port (default: 5432 prod / 5433 staging).
-#   --db-name NAME          Database name (default: flumip_<env>).
+#   --db-port PORT          Database port (default: 5432).
+#   --db-name NAME          Database name (default: flumip).
 #   --db-user USER          Database user (default: postgres).
 #   --service-user USER     User the service runs as, and owner of the install
 #                           dir (default: www-data).
@@ -56,7 +52,7 @@
 # Examples:
 #   ./setup-flumip.sh                                  # interactive install
 #   ./setup-flumip.sh --yes --host mips.example.org     # scripted install
-#   ./setup-flumip.sh --staging --file ./flumip-build.tar.gz
+#   ./setup-flumip.sh --file ./flumip-build.tar.gz      # update from a tarball
 #   FLUMIP_DB_PASSWORD=... ./setup-flumip.sh --db existing --db-host 10.0.0.5 --yes
 #
 # TLS is out of scope: the server listens on plain HTTP and the script prints
@@ -78,10 +74,13 @@ REPO_SLUG="simonzeilmann/flumip"
 POSTGRES_IMAGE="postgres:18"
 
 # The generated passwords file is kept outside the install directory so it
-# survives a redeploy that replaces /var/www/flumip_<env> wholesale.
+# survives a redeploy that replaces /var/www/flumip wholesale.
 SECRETS_DIR="/etc/flumip"
 
-ENV_NAME=""
+# Serverpod's run mode: it picks config/production.yaml and the production:
+# block of passwords.yaml. A Serverpod name, not part of the install's.
+MODE="production"
+
 PUBLIC_HOST=""
 BUILD_URL=""
 BUILD_FILE=""
@@ -110,7 +109,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Directory this script lives in, so the .service files next to it are found
+# Directory this script lives in, so the .service file next to it is found
 # regardless of the working directory.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -134,8 +133,12 @@ require_value() {
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --prod|--production) ENV_NAME="production"; SWITCHES_GIVEN=true ;;
-    --staging) ENV_NAME="staging"; SWITCHES_GIVEN=true ;;
+    # Accepted so scripts written for the two-environment installer still run;
+    # production is now the only kind of install there is.
+    --prod|--production) SWITCHES_GIVEN=true ;;
+    --staging)
+      die "--staging is no longer supported: the installer sets up a single FLUMIP
+install. Staging is deployed by the project's own CI, not by this script." ;;
     --host)
       require_value "$1" "${2:-}"; PUBLIC_HOST="$2"; SWITCHES_GIVEN=true; shift ;;
     --url)
@@ -222,17 +225,26 @@ prompt_value() {
 if [[ "$INTERACTIVE" == "yes" ]]; then
   echo -e "${GREEN}=== FLUMIP server interactive setup ===${NC}"
   echo -e "Press Enter to accept the [default] shown in each prompt.\n"
-
-  if prompt_yes_no "Install the production environment? (no = staging)" "y"; then
-    ENV_NAME="production"
-  else
-    ENV_NAME="staging"
-  fi
 fi
 
-ENV_NAME="${ENV_NAME:-production}"
-SECRETS_FILE="$SECRETS_DIR/passwords_${ENV_NAME}.yaml"
-CHOICES_FILE="$SECRETS_DIR/setup_${ENV_NAME}.conf"
+SECRETS_FILE="$SECRETS_DIR/passwords.yaml"
+CHOICES_FILE="$SECRETS_DIR/setup.conf"
+ENV_FILE="$SECRETS_DIR/flumip.env"
+
+# --- Older installs ---------------------------------------------------------
+
+# Installers before the single-install layout named everything flumip_production
+# (service, /var/www dir, container, /etc/flumip files). There is no migration:
+# such an install holds the same ports and would make this one fail halfway, so
+# stop before anything is touched. The project's CI hosts use those names too.
+# $SECRETS_DIR is only traversable by root and the service user, hence sudo.
+if [[ -f /etc/systemd/system/flumip_production.service ]] \
+    || sudo test -f "$SECRETS_DIR/setup_production.conf"; then
+  die "This machine has a FLUMIP install from an older installer (flumip_production).
+It uses the same ports, and this version does not migrate it. Remove it first
+with the uninstall-flumip.sh that came with that release, then re-run this
+script. Back up /etc/flumip and the database first if you want to keep them."
+fi
 
 # --- Remembered choices -----------------------------------------------------
 
@@ -263,7 +275,7 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
     DB_MODE="existing"
     DB_HOST="$(prompt_value "Database host" "${DB_HOST:-localhost}")"
     DB_PORT="$(prompt_value "Database port" "${DB_PORT:-5432}")"
-    DB_NAME="$(prompt_value "Database name" "${DB_NAME:-flumip_${ENV_NAME}}")"
+    DB_NAME="$(prompt_value "Database name" "${DB_NAME:-flumip}")"
     DB_USER="$(prompt_value "Database user" "${DB_USER:-postgres}")"
   fi
 fi
@@ -274,26 +286,20 @@ PUBLIC_HOST="${PUBLIC_HOST:-localhost}"
 SERVICE_USER="${SERVICE_USER:-www-data}"
 DB_MODE="${DB_MODE:-docker}"
 DB_HOST="${DB_HOST:-localhost}"
-DB_NAME="${DB_NAME:-flumip_${ENV_NAME}}"
+DB_NAME="${DB_NAME:-flumip}"
 DB_USER="${DB_USER:-postgres}"
+DB_PORT="${DB_PORT:-5432}"
 
-# Serverpod listens on different ports per environment (see config/*.yaml), so
-# production and staging can coexist on one machine.
-if [[ "$ENV_NAME" == "production" ]]; then
-  API_PORT=9080; INSIGHTS_PORT=9081; WEB_PORT=9082
-  DB_PORT="${DB_PORT:-5432}"
-else
-  API_PORT=8090; INSIGHTS_PORT=8091; WEB_PORT=8092
-  DB_PORT="${DB_PORT:-5433}"
-fi
+# The ports of config/production.yaml, which the app's own URL logic expects
+# (installWebPorts in flumip_flutter/lib/api_config.dart).
+API_PORT=9080; INSIGHTS_PORT=9081; WEB_PORT=9082
 
-# Container and volume names match those used by the CI deploy step so that a
-# later CI deploy reattaches to this database instead of creating a second one.
-DB_CONTAINER="postgres_${ENV_NAME}"
-DB_VOLUME="flumip_${ENV_NAME}_data"
+DB_CONTAINER="flumip_postgres"
+DB_VOLUME="flumip_data"
 
-TARGET="/var/www/flumip_${ENV_NAME}"
-UNIT="flumip_${ENV_NAME}.service"
+TARGET="/var/www/flumip"
+SERVICE="flumip"
+UNIT="$SERVICE.service"
 UNIT_SRC="$SCRIPT_DIR/$UNIT"
 
 # Fall back to the published release when no build source was given.
@@ -352,8 +358,8 @@ fi
 # --- Summary / confirmation -------------------------------------------------
 
 echo -e "\n${GREEN}Configuration:${NC}"
-echo -e "  Environment:      ${ENV_NAME}"
 echo -e "  Install dir:      ${TARGET}"
+echo -e "  Service:          ${SERVICE}"
 echo -e "  Public hostname:  ${PUBLIC_HOST}"
 echo -e "  Server ports:     web ${WEB_PORT} (public) / api ${API_PORT}, insights ${INSIGHTS_PORT} (internal)"
 echo -e "  Service user:     ${SERVICE_USER}"
@@ -409,7 +415,7 @@ fetch_build() {
   echo "$out"
 }
 
-echo -e "\n${GREEN}=== Installing flumip_${ENV_NAME} ===${NC}"
+echo -e "\n${GREEN}=== Installing ${SERVICE} ===${NC}"
 BUILD="$(fetch_build)"
 
 # --- Database ---------------------------------------------------------------
@@ -422,7 +428,7 @@ read_db_password() {
   sudo test -f "$SECRETS_FILE" || return 0
   # Generated passwords are bare hex; one typed in for --db existing is written
   # single-quoted with '' for a quote, so that is undone here.
-  sudo awk -v env="$ENV_NAME" -v q="'" '
+  sudo awk -v env="$MODE" -v q="'" '
     /^[a-zA-Z]/ { in_env = ($0 ~ "^" env ":") ; next }
     in_env && $1 == "database:" {
       sub(/^[^:]*: */, "")
@@ -499,9 +505,9 @@ fi
 
 # --- Install files ----------------------------------------------------------
 
-if $RESTART && systemctl is-active --quiet "flumip_${ENV_NAME}"; then
-  echo -e "${GREEN}Stopping flumip_${ENV_NAME} before replacing the build...${NC}"
-  sudo systemctl stop "flumip_${ENV_NAME}"
+if $RESTART && systemctl is-active --quiet "${SERVICE}"; then
+  echo -e "${GREEN}Stopping ${SERVICE} before replacing the build...${NC}"
+  sudo systemctl stop "${SERVICE}"
 fi
 
 # Extract into a fresh directory and swap it in, rather than over the old
@@ -524,8 +530,8 @@ sudo rm -rf "$TARGET.old"
 
 # The config shipped in the build points at the upstream project's domains, so
 # it is replaced wholesale with one describing this machine.
-echo -e "${GREEN}Writing config/${ENV_NAME}.yaml${NC}"
-sudo tee "$TARGET/config/${ENV_NAME}.yaml" >/dev/null <<EOF
+echo -e "${GREEN}Writing config/${MODE}.yaml${NC}"
+sudo tee "$TARGET/config/${MODE}.yaml" >/dev/null <<EOF
 # Generated by setup-flumip.sh for host '${PUBLIC_HOST}'.
 # Re-running the script overwrites this file.
 
@@ -573,7 +579,7 @@ if ! $REUSED_SECRETS; then
 shared:
   mySharedPassword: $(openssl rand -hex 16)
 
-${ENV_NAME}:
+${MODE}:
   database: '${DB_PASSWORD//\'/\'\'}'
   serviceSecret: ${SERVICE_SECRET}
 EOF
@@ -601,17 +607,16 @@ sudo chmod 640 "$CHOICES_FILE"
 # does not wipe it, and every key ships commented out so the file documents what
 # is available without changing any behaviour. Never overwritten: an admin who has
 # configured single sign-on here must not lose it on a re-run.
-ENV_FILE="${SECRETS_DIR}/flumip_${ENV_NAME}.env"
-if [ -f "$ENV_FILE" ]; then
+if sudo test -f "$ENV_FILE"; then
   echo -e "${GREEN}Keeping existing $ENV_FILE${NC}"
 else
   echo -e "${GREEN}Creating $ENV_FILE${NC}"
   sudo mkdir -p "$SECRETS_DIR"
   sudo chmod 750 "$SECRETS_DIR"
   sudo tee "$ENV_FILE" >/dev/null <<EOF
-# Optional runtime settings for flumip_${ENV_NAME}, read by systemd.
+# Optional runtime settings for ${SERVICE}, read by systemd.
 # Generated by setup-flumip.sh; never overwritten on a re-run. Apply changes with
-#   sudo systemctl restart flumip_${ENV_NAME}
+#   sudo systemctl restart ${SERVICE}
 #
 # Everything here is optional. FLUMIP runs with no authentication at all by
 # default, which is the standard deployment — leave this file untouched and
@@ -670,8 +675,8 @@ sudo chmod 640 "$TARGET/config/passwords.yaml"
 if $MIGRATIONS; then
   echo -e "${GREEN}Applying database migrations...${NC}"
   if ! sudo -u "$SERVICE_USER" sh -c "cd '$TARGET' && ./bundle/bin/main \
-      --mode='$ENV_NAME' \
-      --server-id='$ENV_NAME' \
+      --mode='$MODE' \
+      --server-id='$MODE' \
       --role=maintenance \
       --apply-migrations \
       --logging=normal"; then
@@ -689,29 +694,26 @@ echo -e "${GREEN}Installing systemd unit $UNIT${NC}"
 sed "s/^User=.*/User=${SERVICE_USER}/" "$UNIT_SRC" \
   | sudo tee "/etc/systemd/system/$UNIT" >/dev/null
 sudo systemctl daemon-reload
-sudo systemctl enable "flumip_${ENV_NAME}"
+sudo systemctl enable "${SERVICE}"
 
 if $RESTART; then
-  echo -e "${GREEN}Starting flumip_${ENV_NAME}${NC}"
-  sudo systemctl restart "flumip_${ENV_NAME}"
+  echo -e "${GREEN}Starting ${SERVICE}${NC}"
+  sudo systemctl restart "${SERVICE}"
 else
   echo -e "${YELLOW}--no-restart given; not starting the service.${NC}"
 fi
 
 # --- Next steps -------------------------------------------------------------
 
-UPDATE_HINT=""
-[[ "$ENV_NAME" == "staging" ]] && UPDATE_HINT=" and --staging"
-
 cat <<EOF
 
-$(echo -e "${GREEN}Setup complete for ${ENV_NAME}.${NC}")
+$(echo -e "${GREEN}Setup complete.${NC}")
 
 $(echo -e "${YELLOW}Next steps:${NC}")
 
   1. Open the app:  http://${PUBLIC_HOST}:${WEB_PORT}
-     Check the service with:  systemctl status flumip_${ENV_NAME}
-     Follow the logs with:    journalctl -u flumip_${ENV_NAME} -f
+     Check the service with:  systemctl status ${SERVICE}
+     Follow the logs with:    journalctl -u ${SERVICE} -f
 
   2. Change the admin settings password. It defaults to 'changeme' and gates
      the settings screen, including the SMTP configuration. The Settings tab
@@ -763,19 +765,19 @@ $(echo -e "${YELLOW}Next steps:${NC}")
 
        FLUMIP_PUBLIC_URL=https://${PUBLIC_HOST}
 
-     in ${SECRETS_DIR}/flumip_${ENV_NAME}.env, or the public URL
+     in ${ENV_FILE}, or the public URL
      in the Settings tab. The Settings tab always shows the URI this server
      computes — register exactly that. See docs/authentication.md.
 
      If a sign-in configuration ever locks you out: set
      FLUMIP_AUTH_ENABLED=false in that env file and
-     'sudo systemctl restart flumip_${ENV_NAME}'. While sign-in is enforced the
+     'sudo systemctl restart ${SERVICE}'. While sign-in is enforced the
      admin password does not open the Settings tab; only an admin account does.
 
   5. Back up ${SECRETS_DIR}/. ${SECRETS_FILE} holds the only copy of
      the database password.
 
-  To update later, re-run this script with the new build${UPDATE_HINT}. The choices
+  To update later, re-run this script with the new build. The choices
   above are remembered in ${CHOICES_FILE}.
 
 EOF

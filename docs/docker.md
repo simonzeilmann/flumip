@@ -189,7 +189,7 @@ holds what has to be known before the server starts:
 | `FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_*`, `FLUMIP_PUBLIC_URL`, `FLUMIP_AUTH_STRICT` | unset | Single sign-on; see [authentication.md](authentication.md) |
 | `FLUMIP_PUBLIC_MODE` | unset | A public instance for anonymous visitors; see [public-instance.md](public-instance.md) |
 
-The sign-in variables work exactly as they do in `/etc/flumip/flumip_<env>.env`
+The sign-in variables work exactly as they do in `/etc/flumip/flumip.env`
 on a bare-metal install. A value set here overrides the Settings tab, which then
 shows it read-only, and `FLUMIP_AUTH_ENABLED=false` is the way back in if sign-in
 ever locks you out. Apply any change with `docker compose up -d`.
@@ -244,9 +244,13 @@ the directory with the Docker install files:
 1. Stop the old service and dump its database:
 
    ```bash
-   sudo systemctl stop flumip_production
-   docker exec postgres_production pg_dump -U postgres -Fc flumip_production > flumip.dump
+   sudo systemctl stop flumip
+   docker exec flumip_postgres pg_dump -U postgres -Fc flumip > flumip.dump
    ```
+
+   An install made by an older installer is named `flumip_production` instead:
+   the service, the database, the files in `/etc/flumip` below, and the
+   container, which is `postgres_production`.
 
 2. Run `./init-env.sh`. Then in `.env`, point the data at the old directories and
    keep the old database name:
@@ -254,17 +258,17 @@ the directory with the Docker install files:
    ```bash
    FLUMIP_DATA_DIR=/opt/flumip/data
    FLUMIP_PROJECTS_DIR=/opt/flumip/projects
-   FLUMIP_DB_NAME=flumip_production
+   FLUMIP_DB_NAME=flumip
    ```
 
-   Copy any `FLUMIP_*` lines you use from `/etc/flumip/flumip_production.env`.
+   Copy any `FLUMIP_*` lines you use from `/etc/flumip/flumip.env`.
 
 3. Restore the database into the new one and start everything:
 
    ```bash
    docker compose build
    docker compose up -d postgres
-   docker compose exec -T postgres pg_restore -U postgres -d flumip_production --no-owner --clean --if-exists < flumip.dump
+   docker compose exec -T postgres pg_restore -U postgres -d flumip --no-owner --clean --if-exists < flumip.dump
    docker compose up -d
    ```
 

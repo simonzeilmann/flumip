@@ -4,8 +4,8 @@
 # By default only the software goes, and everything that cannot be downloaded
 # again stays where it is:
 #
-#   removed  - the flumip_<env> systemd service and /var/www/flumip_<env>;
-#              once no environment is left, MIPGEN and /opt/flumip/tools too
+#   removed  - the flumip systemd service, /var/www/flumip, MIPGEN and
+#              /opt/flumip/tools
 #   kept     - the database, with its password and settings in /etc/flumip,
 #              the projects, the genomes and the custom SNP sets
 #
@@ -16,7 +16,7 @@
 #
 # The script has two modes, like the setup scripts:
 #   * Interactive      - run with no switches on a terminal and you are asked
-#                        which environments and which data to remove.
+#                        which data to remove.
 #   * Non-interactive  - pass switches to choose. On a terminal you are still
 #                        asked to confirm the summary unless you pass --yes;
 #                        without a terminal --yes is required.
@@ -25,12 +25,9 @@
 #   ./uninstall-flumip.sh [options]
 #
 # Options:
-#   --prod, --production    Remove the production environment.
-#   --staging               Remove the staging environment. Without either
-#                           switch, every environment found is removed.
 #   --database              Also delete the PostgreSQL container and its volume,
-#                           and the environment's files in /etc/flumip. A
-#                           database given with --db existing is never touched.
+#                           and the install's files in /etc/flumip. A database
+#                           given with --db existing is never touched.
 #   --projects              Also delete /opt/flumip/projects.
 #   --genomes               Also delete /opt/flumip/data/genomes: the reference
 #                           data, bwa indexes and built-in SNP sets.
@@ -40,20 +37,20 @@
 #   --packages              Also apt-remove bwa, samtools, tabix and trf.
 #                           build-essential, git, wget and acl are left alone:
 #                           other software is likely to need them.
-#   --keep-mipgen           Keep /opt/flumip/MIPGEN and /opt/flumip/tools even
-#                           when no environment is left.
+#   --keep-mipgen           Keep /opt/flumip/MIPGEN and /opt/flumip/tools.
 #   -n, --dry-run           Print what would be removed and change nothing.
 #   -i, --interactive       Force interactive prompts even if switches are given.
 #   -y, --yes               Never prompt, not even to confirm.
 #   -h, --help              Show this help and exit.
 #
-# Everything under /opt/flumip is shared by production and staging, so it can
-# only be deleted when no environment stays installed. Directories chosen in
-# Settings → Storage away from /opt/flumip are never touched.
+# Everything under /opt/flumip is shared with any other FLUMIP service on the
+# machine (a flumip_<name> unit, such as one from an older installer), so while
+# one is there MIPGEN stays and the data switches are refused. Directories
+# chosen in Settings → Storage away from /opt/flumip are never touched.
 #
 # Examples:
 #   ./uninstall-flumip.sh                       # interactive
-#   ./uninstall-flumip.sh --staging --database  # drop staging, keep production
+#   ./uninstall-flumip.sh --database            # software and database
 #   ./uninstall-flumip.sh --purge --yes         # remove everything, no prompts
 #   ./uninstall-flumip.sh --purge --dry-run     # see what that would delete
 
@@ -68,11 +65,18 @@ NC='\033[0m'
 # Must match setup-flumip.sh and setup-mipgen.sh.
 SECRETS_DIR="/etc/flumip"
 FLUMIP_ROOT="/opt/flumip"
-ALL_ENVS=("production" "staging")
+SERVICE="flumip"
+UNIT="$SERVICE.service"
+UNIT_FILE="/etc/systemd/system/$UNIT"
+TARGET="/var/www/flumip"
+SECRETS_FILE="$SECRETS_DIR/passwords.yaml"
+CHOICES_FILE="$SECRETS_DIR/setup.conf"
+ENV_FILE="$SECRETS_DIR/flumip.env"
+DB_CONTAINER="flumip_postgres"
+DB_VOLUME="flumip_data"
 # Only the tools nothing but FLUMIP is likely to want; see --packages.
 PACKAGES=("bwa" "samtools" "tabix" "trf")
 
-ENVS=()
 REMOVE_DATABASE=false
 REMOVE_PROJECTS=false
 REMOVE_GENOMES=false
@@ -96,16 +100,15 @@ die() {
   exit 1
 }
 
-add_env() {
-  [[ " ${ENVS[*]} " == *" $1 "* ]] || ENVS+=("$1")
-}
-
 # --- Argument parsing --------------------------------------------------------
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --prod|--production) add_env production; SWITCHES_GIVEN=true ;;
-    --staging) add_env staging; SWITCHES_GIVEN=true ;;
+    # Accepted so scripts written for the two-environment installer still run.
+    --prod|--production) SWITCHES_GIVEN=true ;;
+    --staging)
+      die "--staging is no longer supported: there is a single FLUMIP install, and
+staging is deployed by the project's own CI, not by setup-flumip.sh." ;;
     --database) REMOVE_DATABASE=true; SWITCHES_GIVEN=true ;;
     --projects) REMOVE_PROJECTS=true; SWITCHES_GIVEN=true ;;
     --genomes) REMOVE_GENOMES=true; SWITCHES_GIVEN=true ;;
@@ -193,49 +196,50 @@ if command -v docker >/dev/null 2>&1; then
   fi
 fi
 
-unit_file() { echo "/etc/systemd/system/flumip_$1.service"; }
-target_dir() { echo "/var/www/flumip_$1"; }
-choices_file() { echo "$SECRETS_DIR/setup_$1.conf"; }
-
-# Whether the application of environment $1 is installed: its unit or its
-# install directory. Leftover data alone (a kept database) does not count.
+# Whether the application is installed: its unit or its install directory.
+# Leftover data alone (a kept database) does not count.
 app_installed() {
-  [[ -f "$(unit_file "$1")" ]] || sudo test -d "$(target_dir "$1")"
+  [[ -f "$UNIT_FILE" ]] || sudo test -d "$TARGET"
 }
 
-# Whether anything at all of environment $1 is left, data included, so that a
-# second run can still remove a database the first one kept.
-env_present() {
-  local env="$1"
-  app_installed "$env" && return 0
-  sudo test -e "$(choices_file "$env")" && return 0
-  sudo test -e "$SECRETS_DIR/passwords_$env.yaml" && return 0
-  sudo test -e "$SECRETS_DIR/flumip_$env.env" && return 0
+# Whether anything at all is left, data included, so that a second run can
+# still remove a database the first one kept.
+install_present() {
+  app_installed && return 0
+  local file
+  for file in "$CHOICES_FILE" "$SECRETS_FILE" "$ENV_FILE"; do
+    sudo test -e "$file" && return 0
+  done
   if $HAVE_DOCKER; then
-    docker ps -a --format '{{.Names}}' | grep -x "postgres_$env" >/dev/null && return 0
-    docker volume ls --format '{{.Name}}' | grep -x "flumip_${env}_data" >/dev/null && return 0
+    docker ps -a --format '{{.Names}}' | grep -x "$DB_CONTAINER" >/dev/null && return 0
+    docker volume ls --format '{{.Name}}' | grep -x "$DB_VOLUME" >/dev/null && return 0
   fi
   return 1
 }
 
-# Reads KEY from environment $1's remembered choices; echoes nothing if absent.
+# Reads KEY from the remembered choices; echoes nothing if absent.
 remembered() {
-  local file
-  file="$(choices_file "$1")"
-  sudo test -f "$file" || return 0
-  sudo awk -F= -v key="$2" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "$file"
+  sudo test -f "$CHOICES_FILE" || return 0
+  sudo awk -F= -v key="$1" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "$CHOICES_FILE"
 }
 
-FOUND_ENVS=()
-for env in "${ALL_ENVS[@]}"; do
-  env_present "$env" && FOUND_ENVS+=("$env")
+FOUND=false
+install_present && FOUND=true
+
+# Other FLUMIP services on this machine: an install from an older installer
+# (flumip_production), or the project's own CI deploys (flumip_staging and
+# flumip_production on one host). They use /opt/flumip too, so nothing in it
+# may go while there are any. Matched by pattern rather than by name, so this
+# script cannot be the one that forgets a kind of install.
+OTHER_SERVICES=()
+for unit in /etc/systemd/system/flumip_*.service; do
+  [[ -f "$unit" ]] || continue
+  unit="${unit##*/}"
+  OTHER_SERVICES+=("${unit%.service}")
 done
 
 # Read now: the file it comes from may be deleted below.
-SERVICE_USER=""
-for env in "${FOUND_ENVS[@]}"; do
-  [[ -n "$SERVICE_USER" ]] || SERVICE_USER="$(remembered "$env" SERVICE_USER)"
-done
+SERVICE_USER="$(remembered SERVICE_USER)"
 SERVICE_USER="${SERVICE_USER:-www-data}"
 
 # --- Interactive flow -------------------------------------------------------
@@ -243,12 +247,6 @@ SERVICE_USER="${SERVICE_USER:-www-data}"
 if [[ "$INTERACTIVE" == "yes" ]]; then
   echo -e "${GREEN}=== FLUMIP uninstall ===${NC}"
   echo -e "Press Enter to accept the [default] shown in each prompt.\n"
-
-  if [[ ${#FOUND_ENVS[@]} -gt 1 ]]; then
-    for env in "${FOUND_ENVS[@]}"; do
-      prompt_yes_no "Remove the ${env} environment?" "y" && add_env "$env"
-    done
-  fi
 
   echo -e "\nThe software is always removed. Data is kept unless you say otherwise."
   prompt_yes_no "Delete the database, its password and its settings?" "n" && REMOVE_DATABASE=true
@@ -258,28 +256,15 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
   prompt_yes_no "apt-remove ${PACKAGES[*]}?" "n" && REMOVE_PACKAGES=true
 fi
 
-# No environment named means every one there is.
-if [[ ${#ENVS[@]} -eq 0 ]]; then
-  ENVS=("${FOUND_ENVS[@]}")
-fi
-
-# Environments whose application stays installed after this run. They use
-# /opt/flumip, so nothing in it may go while there are any.
-REMAINING_ENVS=()
-for env in "${ALL_ENVS[@]}"; do
-  [[ " ${ENVS[*]} " == *" $env "* ]] && continue
-  app_installed "$env" && REMAINING_ENVS+=("$env")
-done
-
-if [[ ${#REMAINING_ENVS[@]} -gt 0 ]] \
+if [[ ${#OTHER_SERVICES[@]} -gt 0 ]] \
     && { $REMOVE_PROJECTS || $REMOVE_GENOMES || $REMOVE_CUSTOM_SNPS; }; then
-  die "flumip_${REMAINING_ENVS[*]} stays installed and uses $FLUMIP_ROOT, so its
-projects, genomes and SNP sets cannot be deleted. Remove that environment too,
-or leave out --projects, --genomes, --custom-snps and --purge."
+  die "${OTHER_SERVICES[*]} is also installed and uses $FLUMIP_ROOT, so its projects,
+genomes and SNP sets cannot be deleted. Remove that service first, or leave out
+--projects, --genomes, --custom-snps and --purge."
 fi
 
 REMOVE_MIPGEN=false
-if [[ ${#REMAINING_ENVS[@]} -eq 0 ]] && ! $KEEP_MIPGEN; then
+if [[ ${#OTHER_SERVICES[@]} -eq 0 ]] && ! $KEEP_MIPGEN; then
   REMOVE_MIPGEN=true
 fi
 
@@ -287,24 +272,20 @@ fi
 
 DB_NOTES=()
 echo -e "\n${GREEN}This will remove:${NC}"
-if [[ ${#ENVS[@]} -eq 0 ]]; then
-  echo -e "  No FLUMIP environment is installed."
-fi
-for env in "${ENVS[@]}"; do
-  if [[ " ${FOUND_ENVS[*]} " != *" $env "* ]]; then
-    echo -e "  ${env}: nothing found, so nothing to remove"
-    continue
-  fi
-  echo -e "  ${env}: service flumip_${env}, $(target_dir "$env")"
+if ! $FOUND; then
+  echo -e "  FLUMIP is not installed, so there is no service to remove."
+else
+  echo -e "  service $SERVICE, $TARGET"
   if $REMOVE_DATABASE; then
-    if [[ "$(remembered "$env" DB_MODE)" == "existing" ]]; then
-      DB_NOTES+=("The ${env} database at $(remembered "$env" DB_HOST):$(remembered "$env" DB_PORT)/$(remembered "$env" DB_NAME) was not created by setup-flumip.sh and is left alone.")
-      echo -e "  ${env}: $SECRETS_DIR/*_${env}.* (the database itself is external and kept)"
+    if [[ "$(remembered DB_MODE)" == "existing" ]]; then
+      DB_NOTES+=("The database at $(remembered DB_HOST):$(remembered DB_PORT)/$(remembered DB_NAME) was not created by setup-flumip.sh and is left alone.")
+      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE (the database itself is external and kept)"
     else
-      echo -e "  ${env}: container postgres_${env}, volume flumip_${env}_data, $SECRETS_DIR/*_${env}.*"
+      echo -e "  container $DB_CONTAINER, volume $DB_VOLUME"
+      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE"
     fi
   fi
-done
+fi
 if $REMOVE_MIPGEN; then
   echo -e "  $FLUMIP_ROOT/MIPGEN and $FLUMIP_ROOT/tools"
 fi
@@ -315,15 +296,13 @@ $REMOVE_PACKAGES && echo -e "  apt packages: ${PACKAGES[*]}"
 
 echo -e "\n${GREEN}This will keep:${NC}"
 KEPT=false
-for env in "${REMAINING_ENVS[@]}"; do
-  echo -e "  the ${env} environment, which you did not choose"; KEPT=true
+for other in "${OTHER_SERVICES[@]}"; do
+  echo -e "  the $other service, which this script does not manage"; KEPT=true
 done
-if ! $REMOVE_DATABASE; then
-  for env in "${ENVS[@]}"; do
-    echo -e "  ${env}: its database and $SECRETS_DIR/*_${env}.*"; KEPT=true
-  done
+if ! $REMOVE_DATABASE && $FOUND; then
+  echo -e "  the database, $SECRETS_FILE, $CHOICES_FILE and $ENV_FILE"; KEPT=true
 fi
-if ! $REMOVE_MIPGEN && [[ ${#REMAINING_ENVS[@]} -eq 0 ]]; then
+if ! $REMOVE_MIPGEN; then
   echo -e "  $FLUMIP_ROOT/MIPGEN and $FLUMIP_ROOT/tools"; KEPT=true
 fi
 if ! $REMOVE_PROJECTS; then echo -e "  $FLUMIP_ROOT/projects"; KEPT=true; fi
@@ -354,57 +333,53 @@ elif ! $ASSUME_YES; then
   prompt_yes_no "Proceed?" "n" || die "Aborted by user."
 fi
 
-# --- Environments -----------------------------------------------------------
+# --- Service ----------------------------------------------------------------
 
-for env in "${ENVS[@]}"; do
-  echo -e "\n${GREEN}=== Removing flumip_${env} ===${NC}"
-  UNIT="flumip_${env}.service"
+if $FOUND; then
+  echo -e "\n${GREEN}=== Removing $SERVICE ===${NC}"
 
-  if [[ -f "$(unit_file "$env")" ]]; then
+  if [[ -f "$UNIT_FILE" ]]; then
     echo -e "${GREEN}Stopping and disabling $UNIT${NC}"
     run sudo systemctl disable --now "$UNIT" || true
-    run sudo rm -f "$(unit_file "$env")"
+    run sudo rm -f "$UNIT_FILE"
     run sudo systemctl daemon-reload
     run sudo systemctl reset-failed "$UNIT" 2>/dev/null || true
   fi
 
   # .new and .old are what setup-flumip.sh swaps through; an interrupted run
   # can leave either behind.
-  for dir in "$(target_dir "$env")" "$(target_dir "$env").new" "$(target_dir "$env").old"; do
+  for dir in "$TARGET" "$TARGET.new" "$TARGET.old"; do
     if sudo test -e "$dir"; then
       echo -e "${GREEN}Removing $dir${NC}"
       run sudo rm -rf "$dir"
     fi
   done
+fi
 
-  if ! $REMOVE_DATABASE; then
-    continue
-  fi
-
+if $FOUND && $REMOVE_DATABASE; then
   # Only a database setup-flumip.sh created itself. Without the choices file
   # there is no record either way, and a container under this name is the one
-  # setup-flumip.sh or the CI deploy started.
-  if [[ "$(remembered "$env" DB_MODE)" != "existing" ]] && $HAVE_DOCKER; then
-    if docker ps -a --format '{{.Names}}' | grep -x "postgres_${env}" >/dev/null; then
-      echo -e "${GREEN}Removing database container postgres_${env}${NC}"
-      run docker rm -f "postgres_${env}"
+  # setup-flumip.sh started.
+  if [[ "$(remembered DB_MODE)" != "existing" ]] && $HAVE_DOCKER; then
+    if docker ps -a --format '{{.Names}}' | grep -x "$DB_CONTAINER" >/dev/null; then
+      echo -e "${GREEN}Removing database container $DB_CONTAINER${NC}"
+      run docker rm -f "$DB_CONTAINER"
     fi
-    if docker volume ls --format '{{.Name}}' | grep -x "flumip_${env}_data" >/dev/null; then
-      echo -e "${GREEN}Removing database volume flumip_${env}_data${NC}"
-      run docker volume rm "flumip_${env}_data"
+    if docker volume ls --format '{{.Name}}' | grep -x "$DB_VOLUME" >/dev/null; then
+      echo -e "${GREEN}Removing database volume $DB_VOLUME${NC}"
+      run docker volume rm "$DB_VOLUME"
     fi
   fi
 
-  for file in "$SECRETS_DIR/passwords_${env}.yaml" "$(choices_file "$env")" \
-      "$SECRETS_DIR/flumip_${env}.env"; do
+  for file in "$SECRETS_FILE" "$CHOICES_FILE" "$ENV_FILE"; do
     if sudo test -e "$file"; then
       echo -e "${GREEN}Removing $file${NC}"
       run sudo rm -f "$file"
     fi
   done
-done
+fi
 
-# The directory itself goes once nothing of either environment is left in it.
+# The directory itself goes once nothing else is left in it.
 if sudo test -d "$SECRETS_DIR" && [[ -z "$(sudo ls -A "$SECRETS_DIR")" ]]; then
   run sudo rmdir "$SECRETS_DIR"
 fi

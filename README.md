@@ -208,26 +208,31 @@ switches to script it. `--help` lists them all.
   connects to an existing database with `--db existing --db-host … --db-port …
   --db-name … --db-user …`; the password is asked for, or read from
   `FLUMIP_DB_PASSWORD` with `--yes`);
-- writes `config/<env>.yaml`, generates random secrets into
-  `/etc/flumip/passwords_<env>.yaml`, and creates an optional settings file at
-  `/etc/flumip/flumip_<env>.env`;
+- writes `config/production.yaml`, generates random secrets into
+  `/etc/flumip/passwords.yaml`, and creates an optional settings file at
+  `/etc/flumip/flumip.env`;
 - applies database migrations;
-- installs and starts the `flumip_<env>` systemd service, running as
+- installs and starts the `flumip` systemd service, running as
   `www-data` (`--service-user` to change; `--no-restart` to leave it stopped);
 - remembers the hostname, database and service user in
-  `/etc/flumip/setup_<env>.conf`, so a later run needs none of those switches.
+  `/etc/flumip/setup.conf`, so a later run needs none of those switches.
 
 Like the MIPGEN script, it prompts on a terminal when run with no switches.
-`--help` lists every switch. Two environments can live side by side on one
-machine:
+`--help` lists every switch. An install looks like this:
 
-| | `--prod` (default) | `--staging` |
-| --- | --- | --- |
-| Install directory | `/var/www/flumip_production` | `/var/www/flumip_staging` |
-| Service | `flumip_production` | `flumip_staging` |
-| Public port (web: app, API under `/api`, downloads, sign-in) | 9082 | 8092 |
-| Internal ports (API, Insights) — keep firewalled | 9080, 9081 | 8090, 8091 |
-| Database (localhost only) | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
+| | |
+| --- | --- |
+| Install directory | `/var/www/flumip` |
+| Service | `flumip` |
+| Public port (web: app, API under `/api`, downloads, sign-in) | 9082 |
+| Internal ports (API, Insights) — keep firewalled | 9080, 9081 |
+| Database (localhost only) | container `flumip_postgres`, volume `flumip_data`, port 5432 |
+
+⚠️ Installers before this layout named everything `flumip_production` (service,
+`/var/www/flumip_production`, `postgres_production`, `/etc/flumip/*_production.*`).
+`setup-flumip.sh` does not migrate such an install and stops if it finds one;
+remove it with the `uninstall-flumip.sh` from that release first, after backing
+up `/etc/flumip` and the database if you want to keep them.
 
 ### Using an existing PostgreSQL
 
@@ -285,7 +290,7 @@ The container reaches the host on Docker's bridge address (usually
 address (`listen_addresses` in `postgresql.conf`), and `pg_hba.conf` has to
 accept the containers' addresses (`172.16.0.0/12` on a default Docker setup).
 ⚠️ A database that listens on `127.0.0.1` only cannot be reached from the
-container at all. That includes the `postgres_<env>` container `setup-flumip.sh`
+container at all. That includes the `flumip_postgres` container `setup-flumip.sh`
 creates. To move such an install to Docker, follow
 [Moving a bare-metal install to Docker](docs/docker.md#moving-a-bare-metal-install-to-docker),
 which copies the database into the bundled one.
@@ -295,8 +300,7 @@ which copies the database into the bundled one.
 FLUMIP serves plain HTTP. For anything beyond a trusted lab network, put a
 reverse proxy in front that terminates TLS.
 
-Everything a browser needs is on **one port**, the web port (9082 for
-production): the app, its API calls (under `/api`), downloads, uploads,
+Everything a browser needs is on **one port**, the web port (9082): the app, its API calls (under `/api`), downloads, uploads,
 sign-in and UCSC tracks. The proxy therefore needs a single upstream, and the
 app finds its API on whatever address it was loaded from. There is nothing to
 rebuild and no per-host setting for it.
@@ -344,8 +348,7 @@ server advertises the right URL. If you use single sign-on, also set
 
 ### Updating
 
-Re-run `setup-flumip.sh`, with `--staging` if that is what you are updating.
-It downloads the latest release (or the one you name with `--release`, or the
+Re-run `setup-flumip.sh`. It downloads the latest release (or the one you name with `--release`, or the
 tarball you pass with `--file`), keeps the existing database, secrets, settings
 file and the choices of the first run, replaces the installed build, applies any
 new migrations and restarts the service. Switches given on the re-run replace
@@ -354,9 +357,9 @@ the remembered values, for example `--host` after moving behind a proxy.
 ### Operating
 
 ```bash
-systemctl status flumip_production      # is it running?
-journalctl -u flumip_production -f      # follow the log
-sudo systemctl restart flumip_production
+systemctl status flumip      # is it running?
+journalctl -u flumip -f      # follow the log
+sudo systemctl restart flumip
 ```
 
 To reach a server that is not exposed, tunnel its web port to the **same port**
@@ -365,7 +368,7 @@ on your machine, for example `ssh -L 9082:localhost:9082 <host>`, then open
 8092 or 8082 for a `flutter run` and looks for a development server instead.
 
 **Back up** `/etc/flumip/` (it holds the only copy of the database password), the
-database volume `flumip_production_data`, and `/opt/flumip/projects` if the
+database volume `flumip_data`, and `/opt/flumip/projects` if the
 designs matter to you. The reference data under `/opt/flumip/data/genomes` can
 always be downloaded again.
 
@@ -376,18 +379,18 @@ only the software and keeps everything that cannot be downloaded again:
 
 | | Removed by default | Kept unless you pass |
 | --- | --- | --- |
-| Service and build | `flumip_<env>` unit, `/var/www/flumip_<env>` | |
-| MIPGEN | `/opt/flumip/MIPGEN` and `/opt/flumip/tools`, once no environment is left (`--keep-mipgen` to keep them) | |
-| Database | | `--database`: the `postgres_<env>` container, its volume, and `/etc/flumip/*_<env>.*` |
+| Service and build | `flumip` unit, `/var/www/flumip` | |
+| MIPGEN | `/opt/flumip/MIPGEN` and `/opt/flumip/tools` (`--keep-mipgen` to keep them) | |
+| Database | | `--database`: the `flumip_postgres` container, its volume `flumip_data`, and `/etc/flumip/{passwords.yaml,setup.conf,flumip.env}` |
 | Projects | | `--projects`: `/opt/flumip/projects` |
 | Genomes | | `--genomes`: `/opt/flumip/data/genomes`, bwa indexes included |
 | Custom SNP sets | | `--custom-snps`: `/opt/flumip/data/custom_snp` |
 | Packages | | `--packages`: `bwa`, `samtools`, `tabix`, `trf` |
 
-`--purge` stands for the four data switches. Without `--prod` or `--staging`
-every environment found is removed. A database connected with `--db existing`
-is never dropped, and the shared `/opt/flumip` data cannot be deleted while
-another environment stays installed. Reinstalling after a default uninstall
+`--purge` stands for the four data switches. A database connected with
+`--db existing` is never dropped. If another FLUMIP service is on the machine (a
+`flumip_<name>` unit, such as one from an older installer), MIPGEN stays and the
+shared `/opt/flumip` data cannot be deleted while it is there. Reinstalling after a default uninstall
 picks the kept database, projects and genomes up again.
 
 ```bash
@@ -447,7 +450,7 @@ group claim from your provider.
   what happens to existing projects when you switch sign-in on, and
   departments.
 
-Most sign-in settings can also be fixed from `/etc/flumip/flumip_<env>.env`
+Most sign-in settings can also be fixed from `/etc/flumip/flumip.env`
 (`FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_ISSUER`, and so on, all listed in that
 file), or, with Docker, from `.env` beside `compose.yaml`. A value set there
 overrides the Settings tab, which then shows it read-only.

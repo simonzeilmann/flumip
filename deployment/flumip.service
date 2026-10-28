@@ -1,0 +1,23 @@
+[Unit]
+Description=FLUMIP
+After=network.target
+
+[Service]
+Type=simple
+# The executable lives in bundle/bin/ because Serverpod 4 is built with
+# `dart build cli`, which emits it alongside the native libraries in
+# bundle/lib/ that it resolves relative to itself. WorkingDirectory stays the
+# install root so config/, web/ and migrations/ still resolve.
+# --mode=production is Serverpod's run mode (config/production.yaml), not part
+# of the install's name.
+WorkingDirectory=/var/www/flumip
+ExecStart=/var/www/flumip/bundle/bin/main --mode=production --server-id=production --logging=normal --role=monolith --apply-migrations
+# Optional runtime configuration, chiefly the single sign-on settings; see
+# docs/authentication.md. setup-flumip.sh creates this file, but the leading
+# dash keeps the service starting if an admin ever deletes it.
+EnvironmentFile=-/etc/flumip/flumip.env
+Restart=always
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

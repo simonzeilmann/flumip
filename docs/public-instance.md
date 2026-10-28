@@ -69,7 +69,7 @@ deliberate: being signed in proves the way back into Settings works before you
 need it.
 
 You can also set `FLUMIP_PUBLIC_MODE=true` in the environment
-(`/etc/flumip/flumip_<env>.env`, or `.env` beside `compose.yaml` with Docker). It
+(`/etc/flumip/flumip.env`, or `.env` beside `compose.yaml` with Docker). It
 overrides the stored setting in both directions, and the Settings tab then shows
 the switch read-only.
 

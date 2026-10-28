@@ -141,7 +141,7 @@ case "$command" in
       echo "flumip: redistribution). Use deployment/docker/compose.yaml, which builds" >&2
       echo "flumip: it locally. See docs/docker.md." >&2
     fi
-    # The command line of deployment/flumip_production.service. --apply-migrations
+    # The command line of deployment/flumip.service. --apply-migrations
     # makes every start, including the first and every upgrade, bring the
     # database schema up to date.
     as_flumip bundle/bin/main \
