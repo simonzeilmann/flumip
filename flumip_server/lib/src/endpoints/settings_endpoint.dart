@@ -102,29 +102,62 @@ class SettingsEndpoint extends Endpoint {
       // neither the password nor an admin session authorises this.
       await settingsService.requireAdmin(session, password);
 
+      final runtime = sl<AuthRuntime>();
+
       // Read before writing, so the transition can be detected rather than
       // inferred from the incoming object — which may not be what actually gets
-      // stored, since updateSettings merges an explicit field list.
-      final wasRequiringLogin = (await settingsService.getSettings(
-        session,
-      )).loginRequired;
+      // stored, since updateSettings merges an explicit field list. The runtime
+      // is re-resolved first so that the "before" includes the environment as
+      // it is now.
+      final stored = await settingsService.getSettings(session);
+      await runtime.refresh(session);
+      final before = runtime.config;
+
+      // ⚠️ Switching public mode on is the one change here that can lock the
+      // person making it out. It enforces from the moment it is saved, and
+      // enforcing refuses the settings password — so an administrator who
+      // saved it with the password, never having signed in, would have no way
+      // back into Settings short of the environment or the database. Having
+      // them be signed in proves the way back works before they need it.
+      final isAdminSession =
+          session.authenticated?.scopes.contains(adminScope) ?? false;
+      if (settings.publicMode && !stored.publicMode && !isAdminSession) {
+        throw ArgumentException(
+          message:
+              'Sign in as an administrator before switching public mode on. '
+              'A public server no longer accepts the settings password, so '
+              'signing in is the only way back into Settings afterwards. '
+              'Switch "Require sign-in" on, sign in with an address on the '
+              'administrator list, then switch public mode on.',
+        );
+      }
 
       await settingsService.updateSettings(session, settings);
-      await sl<AuthRuntime>().broadcastConfigChange(session);
+      await runtime.broadcastConfigChange(session);
+      final after = runtime.config;
 
-      final nowRequiringLogin = (await settingsService.getSettings(
-        session,
-      )).loginRequired;
-      if (wasRequiringLogin && !nowRequiringLogin) {
+      if (before.wantsSignIn && !after.wantsSignIn) {
         // Switching sign-in off ends every session, the caller's included.
         // Otherwise the tokens issued while it was on stay valid for their full
         // lifetime, so the app goes on showing people as signed in — and an
         // administrator as an administrator — on a server that no longer
         // authenticates anyone. The admin who threw the switch is logged out
         // too, which is the point: there is nothing left to be signed in to.
+        //
+        // A public instance still wants sign-in — it is how administrators get
+        // in — so switching "Require sign-in" off there ends nothing.
         final ended = await sl<AuthService>().revokeAllSessions(session);
         session.log(
           'Sign-in switched off; ended $ended session(s).',
+          level: LogLevel.info,
+        );
+      } else if (before.publicMode && !after.publicMode) {
+        // Guests exist only on a public instance. Their bearers are already
+        // refused by the authentication handler once public mode is off; this
+        // removes the sessions behind them too.
+        final ended = await sl<AuthService>().revokeGuestSessions(session);
+        session.log(
+          'Public mode switched off; ended $ended guest session(s).',
           level: LogLevel.info,
         );
       }

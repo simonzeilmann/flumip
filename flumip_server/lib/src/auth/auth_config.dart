@@ -19,6 +19,7 @@ abstract final class AuthEnv {
   static const departmentClaim = 'FLUMIP_OIDC_DEPARTMENT_CLAIM';
   static const publicUrl = 'FLUMIP_PUBLIC_URL';
   static const strict = 'FLUMIP_AUTH_STRICT';
+  static const publicMode = 'FLUMIP_PUBLIC_MODE';
 }
 
 /// The effective authentication configuration: stored settings with environment
@@ -37,6 +38,7 @@ class AuthConfig {
     required this.allowedDomains,
     required this.adminEmails,
     this.departmentClaim = '',
+    this.publicMode = false,
     required this.redirectUri,
     required this.appOrigin,
     required this.cookieSecure,
@@ -97,6 +99,21 @@ class AuthConfig {
   /// Whether this install collects group membership at all.
   bool get usesDepartments => departmentClaim.isNotEmpty;
 
+  /// Whether this is a public instance: anonymous visitors accept the entry
+  /// notice and become guests, each seeing only their own projects.
+  ///
+  /// Implies [isEnforcing] — the isolation between guests *is* the access rule —
+  /// but not [loginRequired]: nobody has to sign in, and administrators still
+  /// can. See docs/public-instance.md.
+  final bool publicMode;
+
+  /// Whether signing in through the identity provider should be possible.
+  ///
+  /// [loginRequired] on an internal install. On a public one signing in is
+  /// optional but still how administrators get in, so the provider has to be
+  /// probed and `/auth/login` has to work there too.
+  bool get wantsSignIn => loginRequired || publicMode;
+
   /// The absolute callback URL registered with the provider.
   final String redirectUri;
 
@@ -130,7 +147,12 @@ class AuthConfig {
   ///
   /// [hasDiscovery] is passed in rather than held here because discovery is a
   /// network result with its own lifetime; see [AuthRuntime].
+  ///
+  /// Always true in [publicMode], whatever the identity provider is doing: guests
+  /// never depend on it, and failing open there would show every visitor every
+  /// other visitor's projects.
   bool isEnforcing({required bool hasDiscovery}) {
+    if (publicMode) return true;
     if (!loginRequired) return false;
     if (strict) return true;
     return isComplete && hasDiscovery;
@@ -201,6 +223,19 @@ class AuthConfig {
       overrides.add(AuthEnv.clientSecret);
     }
 
+    // Both directions, like FLUMIP_AUTH_ENABLED: deployment tooling switches a
+    // public instance on, and it is the way back for an administrator who
+    // switched one on and can no longer sign in.
+    var publicMode = settings?.publicMode ?? false;
+    final publicEnv = envValue(AuthEnv.publicMode);
+    if (publicEnv != null) {
+      final parsed = _parseBool(publicEnv);
+      if (parsed != null) {
+        overrides.add(AuthEnv.publicMode);
+        publicMode = parsed;
+      }
+    }
+
     var strict = false;
     final strictEnv = envValue(AuthEnv.strict);
     if (strictEnv != null) {
@@ -231,6 +266,7 @@ class AuthConfig {
         AuthEnv.departmentClaim,
         settings?.oidcDepartmentClaim ?? '',
       ).trim(),
+      publicMode: publicMode,
       redirectUri: origin.isEmpty ? '' : '$origin/auth/callback',
       appOrigin: origin,
       cookieSecure: origin.startsWith('https://'),

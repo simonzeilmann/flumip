@@ -32,10 +32,12 @@ abstract class AuthSession
     required this.email,
     bool? isAdmin,
     this.departments,
+    bool? isGuest,
     DateTime? created,
     required this.expires,
     DateTime? lastSeen,
   }) : isAdmin = isAdmin ?? false,
+       isGuest = isGuest ?? false,
        created = created ?? DateTime.now(),
        lastSeen = lastSeen ?? DateTime.now();
 
@@ -46,6 +48,7 @@ abstract class AuthSession
     required String email,
     bool? isAdmin,
     List<String>? departments,
+    bool? isGuest,
     DateTime? created,
     required DateTime expires,
     DateTime? lastSeen,
@@ -65,6 +68,9 @@ abstract class AuthSession
           : _ijyeyqvr.Protocol().deserialize<List<String>>(
               jsonSerialization['departments'],
             ),
+      isGuest: jsonSerialization['isGuest'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isGuest']),
       created: jsonSerialization['created'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -95,6 +101,15 @@ abstract class AuthSession
   /// call, so carrying the groups here keeps that at one query instead of two.
   List<String>? departments;
 
+  /// An anonymous visitor on a public instance rather than somebody who signed
+  /// in through the identity provider. Created by `POST /auth/guest` once the
+  /// entry notice is accepted, never by `/auth/callback`.
+  ///
+  /// Guest sessions live much longer than signed-in ones and are extended on
+  /// every visit — the cookie is the only thing tying a visitor to their
+  /// projects — and they are refused outright while public mode is off.
+  bool isGuest;
+
   DateTime created;
 
   DateTime expires;
@@ -114,6 +129,7 @@ abstract class AuthSession
     String? email,
     bool? isAdmin,
     List<String>? departments,
+    bool? isGuest,
     DateTime? created,
     DateTime? expires,
     DateTime? lastSeen,
@@ -128,6 +144,7 @@ abstract class AuthSession
       'email': email,
       'isAdmin': isAdmin,
       if (departments != null) 'departments': departments?.toJson(),
+      'isGuest': isGuest,
       'created': created.toJson(),
       'expires': expires.toJson(),
       'lastSeen': lastSeen.toJson(),
@@ -177,6 +194,7 @@ class _AuthSessionImpl extends AuthSession {
     required String email,
     bool? isAdmin,
     List<String>? departments,
+    bool? isGuest,
     DateTime? created,
     required DateTime expires,
     DateTime? lastSeen,
@@ -187,6 +205,7 @@ class _AuthSessionImpl extends AuthSession {
          email: email,
          isAdmin: isAdmin,
          departments: departments,
+         isGuest: isGuest,
          created: created,
          expires: expires,
          lastSeen: lastSeen,
@@ -203,6 +222,7 @@ class _AuthSessionImpl extends AuthSession {
     String? email,
     bool? isAdmin,
     Object? departments = _Undefined,
+    bool? isGuest,
     DateTime? created,
     DateTime? expires,
     DateTime? lastSeen,
@@ -216,6 +236,7 @@ class _AuthSessionImpl extends AuthSession {
       departments: departments is List<String>?
           ? departments
           : this.departments?.map((e0) => e0).toList(),
+      isGuest: isGuest ?? this.isGuest,
       created: created ?? this.created,
       expires: expires ?? this.expires,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -242,6 +263,9 @@ class AuthSessionUpdateTable extends _is.UpdateTable<AuthSessionTable> {
     List<String>? value,
   ) => _is.ColumnValue(table.departments, value);
 
+  _is.ColumnValue<bool, bool> isGuest(bool value) =>
+      _is.ColumnValue(table.isGuest, value);
+
   _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
       _is.ColumnValue(table.created, value);
 
@@ -260,6 +284,7 @@ class AuthSessionTable extends _is.Table<int?> {
     email = _is.ColumnString('email', this);
     isAdmin = _is.ColumnBool('isAdmin', this, hasDefault: true);
     departments = _is.ColumnSerializable<List<String>>('departments', this);
+    isGuest = _is.ColumnBool('isGuest', this, hasDefault: true);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     expires = _is.ColumnDateTime('expires', this);
     lastSeen = _is.ColumnDateTime('lastSeen', this, hasDefault: true);
@@ -280,6 +305,15 @@ class AuthSessionTable extends _is.Table<int?> {
   /// call, so carrying the groups here keeps that at one query instead of two.
   late final _is.ColumnSerializable<List<String>> departments;
 
+  /// An anonymous visitor on a public instance rather than somebody who signed
+  /// in through the identity provider. Created by `POST /auth/guest` once the
+  /// entry notice is accepted, never by `/auth/callback`.
+  ///
+  /// Guest sessions live much longer than signed-in ones and are extended on
+  /// every visit — the cookie is the only thing tying a visitor to their
+  /// projects — and they are refused outright while public mode is off.
+  late final _is.ColumnBool isGuest;
+
   late final _is.ColumnDateTime created;
 
   late final _is.ColumnDateTime expires;
@@ -294,6 +328,7 @@ class AuthSessionTable extends _is.Table<int?> {
     email,
     isAdmin,
     departments,
+    isGuest,
     created,
     expires,
     lastSeen,

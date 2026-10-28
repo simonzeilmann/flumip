@@ -1,4 +1,5 @@
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -34,6 +35,11 @@ Future<AuthenticationInfo?> flumipAuthenticationHandler(
 
     final row = await sl<AuthService>().resolveApiToken(session, token);
     if (row == null) return null;
+
+    // A guest's bearer is worthless the moment public mode goes off — even one
+    // minted seconds earlier and still in the cache. On an install that
+    // requires sign-in it would otherwise pass the gate for up to its lifetime.
+    if (row.isGuest && !sl<AuthRuntime>().config.publicMode) return null;
 
     return AuthenticationInfo(
       // The email, not the user id: it is what endpoints will want, and

@@ -72,7 +72,7 @@ ARG APP_VERSION=
 ARG SITE_TITLE=FLUMIP
 RUN version="${APP_VERSION:-$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')}" \
  && cd flumip_flutter \
- && flutter build web --release --wasm \
+ && flutter build web --release --wasm --no-web-resources-cdn \
       --dart-define=APP_VERSION="$version" \
       --dart-define=SITE_TITLE="$SITE_TITLE" \
       --output ../flumip_server/web/app

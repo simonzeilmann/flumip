@@ -93,7 +93,7 @@ class AuthRuntime {
       serverpodConfig: session.server.serverpod.config,
     );
 
-    if (!_config.loginRequired) {
+    if (!_config.wantsSignIn) {
       // Nothing to probe, and probing anyway would log warnings about an
       // unconfigured provider on every tick of an install that never wanted
       // authentication in the first place.
@@ -108,11 +108,19 @@ class AuthRuntime {
           'Incomplete configuration: '
           '${_missingFields().join(', ')} not set.';
       session.log(
-        'Authentication is switched on but not fully configured '
-        '(${_missingFields().join(', ')} missing), so it is not being '
-        'enforced and the server stays reachable without signing in. '
-        'Finish the configuration in Settings, or set '
-        '${AuthEnv.strict}=true to refuse requests instead.',
+        _config.publicMode
+            // Guests are unaffected — public mode enforces on its own — but
+            // nobody can sign in as an administrator, and with the settings
+            // password refused that leaves the Settings tab unreachable.
+            ? 'Public mode is on but single sign-on is not fully configured '
+                  '(${_missingFields().join(', ')} missing), so no '
+                  'administrator can sign in. Set ${AuthEnv.publicMode}=false '
+                  'to get back into Settings.'
+            : 'Authentication is switched on but not fully configured '
+                  '(${_missingFields().join(', ')} missing), so it is not being '
+                  'enforced and the server stays reachable without signing in. '
+                  'Finish the configuration in Settings, or set '
+                  '${AuthEnv.strict}=true to refuse requests instead.',
         level: LogLevel.warning,
       );
       return;

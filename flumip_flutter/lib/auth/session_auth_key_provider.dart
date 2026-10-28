@@ -149,6 +149,7 @@ class SessionTokenResponse {
     required this.email,
     this.displayName = '',
     this.isAdmin = false,
+    this.isGuest = false,
   });
 
   factory SessionTokenResponse.fromJson(Map<String, dynamic> json) =>
@@ -158,6 +159,7 @@ class SessionTokenResponse {
         email: json['email'] as String? ?? '',
         displayName: json['displayName'] as String? ?? '',
         isAdmin: json['isAdmin'] as bool? ?? false,
+        isGuest: json['isGuest'] as bool? ?? false,
       );
 
   final String token;
@@ -165,4 +167,8 @@ class SessionTokenResponse {
   final String email;
   final String displayName;
   final bool isAdmin;
+
+  /// An anonymous visitor on a public instance, who accepted the entry notice
+  /// rather than signing in. Has no email and nothing to sign out of.
+  final bool isGuest;
 }

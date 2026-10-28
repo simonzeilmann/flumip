@@ -18,6 +18,15 @@ abstract class Settings
     this.id,
     bool? demoMode,
     int? demoModeRetentionHours,
+    bool? publicMode,
+    int? maxProjectLifetimeDays,
+    int? guestMaxProjects,
+    int? termsVersion,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? maxConcurrentRuns,
+    int? maxBwaThreads,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -44,6 +53,15 @@ abstract class Settings
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
        demoModeRetentionHours = demoModeRetentionHours ?? 168,
+       publicMode = publicMode ?? false,
+       maxProjectLifetimeDays = maxProjectLifetimeDays ?? 30,
+       guestMaxProjects = guestMaxProjects ?? 10,
+       termsVersion = termsVersion ?? 1,
+       publicNoticeText = publicNoticeText ?? '',
+       imprintUrl = imprintUrl ?? '',
+       privacyUrl = privacyUrl ?? '',
+       maxConcurrentRuns = maxConcurrentRuns ?? 0,
+       maxBwaThreads = maxBwaThreads ?? 0,
        baseDir = baseDir ?? '/opt/flumip',
        projectDir = projectDir ?? '/opt/flumip/projects',
        genomeDir = genomeDir ?? '/opt/flumip/data/genomes',
@@ -77,6 +95,15 @@ abstract class Settings
     int? id,
     bool? demoMode,
     int? demoModeRetentionHours,
+    bool? publicMode,
+    int? maxProjectLifetimeDays,
+    int? guestMaxProjects,
+    int? termsVersion,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? maxConcurrentRuns,
+    int? maxBwaThreads,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -111,6 +138,18 @@ abstract class Settings
           : _isc.BoolJsonExtension.fromJson(jsonSerialization['demoMode']),
       demoModeRetentionHours:
           jsonSerialization['demoModeRetentionHours'] as int?,
+      publicMode: jsonSerialization['publicMode'] == null
+          ? null
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['publicMode']),
+      maxProjectLifetimeDays:
+          jsonSerialization['maxProjectLifetimeDays'] as int?,
+      guestMaxProjects: jsonSerialization['guestMaxProjects'] as int?,
+      termsVersion: jsonSerialization['termsVersion'] as int?,
+      publicNoticeText: jsonSerialization['publicNoticeText'] as String?,
+      imprintUrl: jsonSerialization['imprintUrl'] as String?,
+      privacyUrl: jsonSerialization['privacyUrl'] as String?,
+      maxConcurrentRuns: jsonSerialization['maxConcurrentRuns'] as int?,
+      maxBwaThreads: jsonSerialization['maxBwaThreads'] as int?,
       baseDir: jsonSerialization['baseDir'] as String?,
       projectDir: jsonSerialization['projectDir'] as String?,
       genomeDir: jsonSerialization['genomeDir'] as String?,
@@ -161,6 +200,45 @@ abstract class Settings
   /// pull a scheduled deletion earlier — that project keeps the deadline it was
   /// created with. See DemoModeCleanup.
   int demoModeRetentionHours;
+
+  /// Public mode: an instance open to anonymous visitors, like UCSC BLAT.
+  ///
+  /// Visitors accept the entry notice and become guests with their own projects,
+  /// isolated from each other; administrators still sign in through the
+  /// identity provider. Implies demo-mode deletion, with
+  /// [demoModeRetentionHours] as the initial window. Overridden in both
+  /// directions by FLUMIP_PUBLIC_MODE. See docs/public-instance.md.
+  bool publicMode;
+
+  /// The furthest "Keep longer" can push a project's deletion, in days after it
+  /// was created. Never shorter than [demoModeRetentionHours].
+  int maxProjectLifetimeDays;
+
+  /// How many projects one guest may have at a time. Administrators and
+  /// signed-in users are not counted.
+  int guestMaxProjects;
+
+  /// Raise this to make every guest accept the entry notice again, for example
+  /// after changing [publicNoticeText]. Each guest records the version they
+  /// accepted (`FlumipUser.termsVersion`).
+  int termsVersion;
+
+  /// Replaces the terms-of-use paragraph of the entry notice. Empty uses the
+  /// default: non-commercial, academic research use only.
+  String publicNoticeText;
+
+  /// Links shown on the entry notice and in the footer. A public site in
+  /// Germany needs both an Impressum and a privacy policy.
+  String imprintUrl;
+
+  String privacyUrl;
+
+  /// How many mipgen runs may go at once; any more wait in a queue. 0 means no
+  /// limit, which is how every install behaved before this existed.
+  int maxConcurrentRuns;
+
+  /// The most bwa threads one run may ask for. 0 means no limit.
+  int maxBwaThreads;
 
   String baseDir;
 
@@ -217,6 +295,15 @@ abstract class Settings
     int? id,
     bool? demoMode,
     int? demoModeRetentionHours,
+    bool? publicMode,
+    int? maxProjectLifetimeDays,
+    int? guestMaxProjects,
+    int? termsVersion,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? maxConcurrentRuns,
+    int? maxBwaThreads,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -249,6 +336,15 @@ abstract class Settings
       if (id != null) 'id': id,
       'demoMode': demoMode,
       'demoModeRetentionHours': demoModeRetentionHours,
+      'publicMode': publicMode,
+      'maxProjectLifetimeDays': maxProjectLifetimeDays,
+      'guestMaxProjects': guestMaxProjects,
+      'termsVersion': termsVersion,
+      'publicNoticeText': publicNoticeText,
+      'imprintUrl': imprintUrl,
+      'privacyUrl': privacyUrl,
+      'maxConcurrentRuns': maxConcurrentRuns,
+      'maxBwaThreads': maxBwaThreads,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -283,6 +379,15 @@ abstract class Settings
       if (id != null) 'id': id,
       'demoMode': demoMode,
       'demoModeRetentionHours': demoModeRetentionHours,
+      'publicMode': publicMode,
+      'maxProjectLifetimeDays': maxProjectLifetimeDays,
+      'guestMaxProjects': guestMaxProjects,
+      'termsVersion': termsVersion,
+      'publicNoticeText': publicNoticeText,
+      'imprintUrl': imprintUrl,
+      'privacyUrl': privacyUrl,
+      'maxConcurrentRuns': maxConcurrentRuns,
+      'maxBwaThreads': maxBwaThreads,
       'baseDir': baseDir,
       'projectDir': projectDir,
       'genomeDir': genomeDir,
@@ -323,6 +428,15 @@ class _SettingsImpl extends Settings {
     int? id,
     bool? demoMode,
     int? demoModeRetentionHours,
+    bool? publicMode,
+    int? maxProjectLifetimeDays,
+    int? guestMaxProjects,
+    int? termsVersion,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? maxConcurrentRuns,
+    int? maxBwaThreads,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -351,6 +465,15 @@ class _SettingsImpl extends Settings {
          id: id,
          demoMode: demoMode,
          demoModeRetentionHours: demoModeRetentionHours,
+         publicMode: publicMode,
+         maxProjectLifetimeDays: maxProjectLifetimeDays,
+         guestMaxProjects: guestMaxProjects,
+         termsVersion: termsVersion,
+         publicNoticeText: publicNoticeText,
+         imprintUrl: imprintUrl,
+         privacyUrl: privacyUrl,
+         maxConcurrentRuns: maxConcurrentRuns,
+         maxBwaThreads: maxBwaThreads,
          baseDir: baseDir,
          projectDir: projectDir,
          genomeDir: genomeDir,
@@ -385,6 +508,15 @@ class _SettingsImpl extends Settings {
     Object? id = _Undefined,
     bool? demoMode,
     int? demoModeRetentionHours,
+    bool? publicMode,
+    int? maxProjectLifetimeDays,
+    int? guestMaxProjects,
+    int? termsVersion,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? maxConcurrentRuns,
+    int? maxBwaThreads,
     String? baseDir,
     String? projectDir,
     String? genomeDir,
@@ -415,6 +547,16 @@ class _SettingsImpl extends Settings {
       demoMode: demoMode ?? this.demoMode,
       demoModeRetentionHours:
           demoModeRetentionHours ?? this.demoModeRetentionHours,
+      publicMode: publicMode ?? this.publicMode,
+      maxProjectLifetimeDays:
+          maxProjectLifetimeDays ?? this.maxProjectLifetimeDays,
+      guestMaxProjects: guestMaxProjects ?? this.guestMaxProjects,
+      termsVersion: termsVersion ?? this.termsVersion,
+      publicNoticeText: publicNoticeText ?? this.publicNoticeText,
+      imprintUrl: imprintUrl ?? this.imprintUrl,
+      privacyUrl: privacyUrl ?? this.privacyUrl,
+      maxConcurrentRuns: maxConcurrentRuns ?? this.maxConcurrentRuns,
+      maxBwaThreads: maxBwaThreads ?? this.maxBwaThreads,
       baseDir: baseDir ?? this.baseDir,
       projectDir: projectDir ?? this.projectDir,
       genomeDir: genomeDir ?? this.genomeDir,

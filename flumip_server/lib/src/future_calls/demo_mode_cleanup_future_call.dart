@@ -30,7 +30,8 @@ class DemoModeCleanupFutureCall extends FutureCall<Project> {
     );
     final settings = await settingsService.getSettings(session);
 
-    if (!settings.demoMode) return;
+    // Public mode implies demo-mode deletion; see `projectsExpire`.
+    if (!projectsExpire(settings)) return;
 
     final Project project;
     try {
@@ -43,22 +44,32 @@ class DemoModeCleanupFutureCall extends FutureCall<Project> {
       return;
     }
 
-    // ⚠️ The retention is re-read here, not just when the call was scheduled.
-    // Without this, raising the setting would not spare projects already queued
-    // for deletion — an admin who noticed the window was too short could not
-    // rescue anything, because every existing project already had its deadline
-    // baked in.
+    // An administrator exempted it. Not rescheduled: nothing will ever be due,
+    // and `setKeptIndefinitely` schedules a new call if the flag is cleared.
+    if (project.keptIndefinitely) {
+      session.log(
+        "Project ${project.id} is kept indefinitely; not deleting it.",
+        level: LogLevel.info,
+      );
+      return;
+    }
+
+    // ⚠️ The deadline is re-derived here, not just when the call was
+    // scheduled. That is what lets "Keep longer" work without cancelling
+    // anything — the call fires at the old time, finds `expires` has moved, and
+    // puts itself back for the rest. It is also why raising the retention
+    // setting spares projects already queued: `deletionDeadline` never goes
+    // below `created` plus the window as it is *now*.
     //
     // The reverse does not hold: *lowering* the setting cannot pull a scheduled
     // deletion earlier, because nothing wakes up before the time it was given.
     // Those projects keep the window they were created with.
-    final retention = demoRetention(settings);
-    final age = DateTime.now().toUtc().difference(project.created.toUtc());
-    if (age < retention) {
-      final remaining = retention - age;
+    final deadline = deletionDeadline(project, settings);
+    final remaining = deadline.difference(DateTime.now().toUtc());
+    if (remaining > Duration.zero) {
       session.log(
-        "Project ${project.id} is ${age.inHours}h old and the demo window is "
-        "now ${retention.inHours}h; re-checking in ${remaining.inHours}h.",
+        "Project ${project.id} is due for deletion at "
+        "${deadline.toIso8601String()}; re-checking in ${remaining.inHours}h.",
         level: LogLevel.info,
       );
       await _reschedule(session, project, remaining);

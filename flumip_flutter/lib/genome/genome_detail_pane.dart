@@ -60,6 +60,7 @@ class GenomeDetailPane extends StatelessWidget {
     this.onBack,
     this.error,
     this.onDismissError,
+    this.canManage = true,
   });
 
   final Genome genome;
@@ -70,6 +71,10 @@ class GenomeDetailPane extends StatelessWidget {
 
   final VoidCallback onDeleteIndex;
   final VoidCallback onIndexGenome;
+
+  /// Whether this genome can be indexed, un-indexed or switched off from here.
+  /// False for a guest on a public instance: these act on the whole server.
+  final bool canManage;
   final void Function(bool) onToggleGenomeActive;
 
   /// Only set on a narrow window, where this pane replaces the rail entirely.
@@ -190,13 +195,13 @@ class GenomeDetailPane extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         StatusPill(label: state.label, icon: state.icon, colour: colour),
-        if (state == IndexState.none)
+        if (canManage && state == IndexState.none)
           FilledButton.icon(
             onPressed: onIndexGenome,
             icon: const Icon(Icons.build, size: 18),
             label: const Text('Build index'),
           ),
-        if (state == IndexState.built)
+        if (canManage && state == IndexState.built)
           // Outlined rather than a filled redAccent button. It is already behind
           // a confirmation dialog, and a destructive action should not be the
           // loudest thing on the screen.
@@ -213,7 +218,10 @@ class GenomeDetailPane extends StatelessWidget {
           children: [
             Text('Active', style: context.text.bodyMedium),
             const SizedBox(width: 4),
-            Switch(value: genome.active, onChanged: onToggleGenomeActive),
+            Switch(
+              value: genome.active,
+              onChanged: canManage ? onToggleGenomeActive : null,
+            ),
           ],
         ),
       ],

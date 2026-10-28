@@ -42,14 +42,22 @@ Headers _cookieHeaders({
   required String value,
   required bool secure,
   required Duration maxAge,
-}) => Headers.build((h) {
+}) => Headers.build(
+  (h) => h.setCookie = _setCookie(value: value, secure: secure, maxAge: maxAge),
+);
+
+SetCookieHeader _setCookie({
+  required String value,
+  required bool secure,
+  required Duration maxAge,
+}) {
   // Relic 2 split the type: `SetCookie` is one cookie, `SetCookieHeader` is the
   // list of them the response header carries — one `Set-Cookie` line each. This
   // must stay a single-element list; two lines would have the second parsed as a
   // nameless cookie, and an empty list would emit no header at all, which looks
   // exactly like a cancelled sign-in. `path` also went from `Uri` to `String`,
   // which is what it always was — `Uri.parse('/')` was a round trip for nothing.
-  h.setCookie = SetCookieHeader([
+  return SetCookieHeader([
     SetCookie(
       name: authCookieName,
       value: value,
@@ -65,7 +73,7 @@ Headers _cookieHeaders({
       maxAge: maxAge.inSeconds,
     ),
   ]);
-});
+}
 
 /// `GET /auth/login` — starts the flow and redirects to the provider.
 class AuthLoginRoute extends Route {
@@ -181,34 +189,108 @@ class AuthSessionRoute extends Route {
       return _noSession('There is no sign-in cookie on this request.');
     }
 
-    final issued = await sl<AuthService>().issueApiToken(session, cookie);
+    final IssuedApiToken? issued;
+    try {
+      issued = await sl<AuthService>().issueApiToken(session, cookie);
+    } on TermsNotAcceptedException {
+      return _noSession(
+        'The terms of use have changed since you last accepted them.',
+      );
+    }
     if (issued == null) {
       return _noSession('This sign-in has expired or was signed out.');
     }
-
-    return Response.ok(
-      body: Body.fromString(
-        jsonEncode({
-          'token': issued.token,
-          'expiresIn': issued.expires
-              .difference(DateTime.now().toUtc())
-              .inSeconds,
-          'email': issued.email,
-          'displayName': issued.displayName,
-          'isAdmin': issued.isAdmin,
-        }),
-        mimeType: MimeType.json,
-      ),
-      // A bearer token must never be cached by a proxy or by the browser.
-      headers: Headers.build((h) => h['cache-control'] = ['no-store']),
-    );
+    return _tokenResponse(issued, renewCookie: issued.isGuest ? cookie : null);
   }
 
+  /// A 401 that, on a public instance, also tells the app to show the entry
+  /// notice. Nothing is created and no cookie is set until it is accepted.
   Response _noSession(String message) => Response.unauthorized(
     body: Body.fromString(
-      jsonEncode({'error': message}),
+      jsonEncode({
+        'error': message,
+        'needsAcceptance': sl<AuthRuntime>().config.publicMode,
+      }),
       mimeType: MimeType.json,
     ),
+  );
+}
+
+/// `POST /auth/guest` — the entry notice's "Accept and continue" button.
+///
+/// The only way a guest comes into existence: records the acceptance, starts the
+/// guest session, sets the cookie, and answers exactly like `/auth/session` so
+/// the app can carry straight on. Since nothing else issues a guest cookie, a
+/// visitor who has not accepted the notice cannot reach a single endpoint.
+///
+/// A POST, never a GET: `SameSite=Lax` sends the cookie on a cross-site
+/// top-level GET, so a link on another site could otherwise accept the terms on
+/// a visitor's behalf.
+class AuthGuestRoute extends Route {
+  AuthGuestRoute() : super(methods: {Method.post});
+
+  @override
+  Future<Result> handleCall(Session session, Request request) async {
+    final auth = sl<AuthService>();
+    final CompletedSignIn accepted;
+    try {
+      accepted = await auth.acceptAsGuest(
+        session,
+        cookieValue: _readAuthCookie(request),
+      );
+    } on AuthFlowException catch (e) {
+      return Response.notFound(
+        body: Body.fromString(
+          jsonEncode({'error': e.message}),
+          mimeType: MimeType.json,
+        ),
+      );
+    }
+
+    final issued = await auth.issueApiToken(session, accepted.cookieValue);
+    if (issued == null) {
+      return Response.unauthorized(
+        body: Body.fromString(
+          jsonEncode({'error': 'This session could not be started.'}),
+          mimeType: MimeType.json,
+        ),
+      );
+    }
+    return _tokenResponse(issued, renewCookie: accepted.cookieValue);
+  }
+}
+
+/// The JSON both `/auth/session` and `/auth/guest` answer with.
+///
+/// [renewCookie] re-sends the cookie with a fresh `Max-Age`. Only ever for a
+/// guest, whose session slides forward on every visit: without it the browser
+/// would drop the cookie at its original expiry while the session it names was
+/// still alive.
+Response _tokenResponse(IssuedApiToken issued, {String? renewCookie}) {
+  final now = DateTime.now().toUtc();
+  return Response.ok(
+    body: Body.fromString(
+      jsonEncode({
+        'token': issued.token,
+        'expiresIn': issued.expires.difference(now).inSeconds,
+        'email': issued.email,
+        'displayName': issued.displayName,
+        'isAdmin': issued.isAdmin,
+        'isGuest': issued.isGuest,
+      }),
+      mimeType: MimeType.json,
+    ),
+    headers: Headers.build((h) {
+      // A bearer token must never be cached by a proxy or by the browser.
+      h['cache-control'] = ['no-store'];
+      if (renewCookie != null) {
+        h.setCookie = _setCookie(
+          value: renewCookie,
+          secure: sl<AuthRuntime>().config.cookieSecure,
+          maxAge: issued.sessionExpires.difference(now),
+        );
+      }
+    }),
   );
 }
 

@@ -1,0 +1,22 @@
+### Access to a project granted by its share link.
+###
+### Redeeming a link (`ProjectEndpoint.redeemShareLink`) writes one of these for
+### the caller, and from then on the project is in their list exactly as if they
+### owned it — see `projectIsAccessible`. That is what lets a guest get back to a
+### project from a second browser, and lets anybody share one with a colleague.
+###
+### Cascades on both sides: a grant means nothing once the project or the
+### identity holding it is gone.
+class: ProjectGrant
+table: project_grant
+serverOnly: true
+fields:
+  projectId: int, relation(parent=project, onDelete=Cascade)
+  userId: int, relation(parent=flumip_user, onDelete=Cascade)
+  created: DateTime, default=now
+indexes:
+  project_grant_pair_idx:
+    fields: projectId, userId
+    unique: true
+  project_grant_user_idx:
+    fields: userId

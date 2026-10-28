@@ -36,6 +36,7 @@ import 'flumip_user_dto.dart' as _im3lr0ct;
 import 'genome.dart' as _ik3s3pjn;
 import 'project.dart' as _ifiazq2p;
 import 'project_file_dto.dart' as _ip1wvjxo;
+import 'project_grant.dart' as _i45tws7n;
 import 'project_options.dart' as _i4kq7s26;
 import 'score_method.dart' as _iootg8bv;
 import 'search_hit_dto.dart' as _iy8r37ur;
@@ -61,6 +62,7 @@ export 'flumip_user_dto.dart';
 export 'genome.dart';
 export 'project.dart';
 export 'project_file_dto.dart';
+export 'project_grant.dart';
 export 'project_options.dart';
 export 'score_method.dart';
 export 'search_hit_dto.dart';
@@ -112,6 +114,13 @@ class Protocol extends _is.DatabaseSerializationManager {
         ),
         _isp.ColumnDefinition(
           name: 'isAdmin',
+          columnType: _isp.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _isp.ColumnDefinition(
+          name: 'isGuest',
           columnType: _isp.ColumnType.boolean,
           isNullable: false,
           dartType: 'bool',
@@ -313,6 +322,13 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'List<String>?',
         ),
         _isp.ColumnDefinition(
+          name: 'isGuest',
+          columnType: _isp.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _isp.ColumnDefinition(
           name: 'created',
           columnType: _isp.ColumnType.timestampWithoutTimeZone,
           isNullable: false,
@@ -418,6 +434,18 @@ class Protocol extends _is.DatabaseSerializationManager {
           columnType: _isp.ColumnType.json,
           isNullable: true,
           dartType: 'List<String>?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'termsAcceptedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'termsVersion',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
         ),
         _isp.ColumnDefinition(
           name: 'created',
@@ -642,6 +670,31 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'String?',
         ),
         _isp.ColumnDefinition(
+          name: 'shareToken',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'expires',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'keptIndefinitely',
+          columnType: _isp.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _isp.ColumnDefinition(
+          name: 'queuedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _isp.ColumnDefinition(
           name: 'genes',
           columnType: _isp.ColumnType.json,
           isNullable: true,
@@ -768,6 +821,108 @@ class Protocol extends _is.DatabaseSerializationManager {
           ],
           type: 'btree',
           isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'project_share_token_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'shareToken',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'project_grant',
+      dartName: 'ProjectGrant',
+      schema: 'public',
+      module: 'flumip',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'projectId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'userId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'created',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+          columnDefault: 'now',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'project_grant_fk_0',
+          columns: ['projectId'],
+          referenceTable: 'project',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+        _isp.ForeignKeyDefinition(
+          constraintName: 'project_grant_fk_1',
+          columns: ['userId'],
+          referenceTable: 'flumip_user',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'project_grant_pair_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'projectId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'project_grant_user_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
           isPrimary: false,
         ),
       ],
@@ -1025,6 +1180,69 @@ class Protocol extends _is.DatabaseSerializationManager {
           isNullable: false,
           dartType: 'int',
           columnDefault: '168',
+        ),
+        _isp.ColumnDefinition(
+          name: 'publicMode',
+          columnType: _isp.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _isp.ColumnDefinition(
+          name: 'maxProjectLifetimeDays',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '30',
+        ),
+        _isp.ColumnDefinition(
+          name: 'guestMaxProjects',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '10',
+        ),
+        _isp.ColumnDefinition(
+          name: 'termsVersion',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '1',
+        ),
+        _isp.ColumnDefinition(
+          name: 'publicNoticeText',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'',
+        ),
+        _isp.ColumnDefinition(
+          name: 'imprintUrl',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'',
+        ),
+        _isp.ColumnDefinition(
+          name: 'privacyUrl',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'\'',
+        ),
+        _isp.ColumnDefinition(
+          name: 'maxConcurrentRuns',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
+        ),
+        _isp.ColumnDefinition(
+          name: 'maxBwaThreads',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
         ),
         _isp.ColumnDefinition(
           name: 'baseDir',
@@ -1489,6 +1707,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ip1wvjxo.ProjectFileDto) {
       return _ip1wvjxo.ProjectFileDto.fromJson(data) as T;
     }
+    if (t == _i45tws7n.ProjectGrant) {
+      return _i45tws7n.ProjectGrant.fromJson(data) as T;
+    }
     if (t == _i4kq7s26.ProjectOptions) {
       return _i4kq7s26.ProjectOptions.fromJson(data) as T;
     }
@@ -1580,6 +1801,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_ip1wvjxo.ProjectFileDto?>()) {
       return (data != null ? _ip1wvjxo.ProjectFileDto.fromJson(data) : null)
           as T;
+    }
+    if (t == _is.getType<_i45tws7n.ProjectGrant?>()) {
+      return (data != null ? _i45tws7n.ProjectGrant.fromJson(data) : null) as T;
     }
     if (t == _is.getType<_i4kq7s26.ProjectOptions?>()) {
       return (data != null ? _i4kq7s26.ProjectOptions.fromJson(data) : null)
@@ -1688,6 +1912,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ik3s3pjn.Genome => 'Genome',
       _ifiazq2p.Project => 'Project',
       _ip1wvjxo.ProjectFileDto => 'ProjectFileDto',
+      _i45tws7n.ProjectGrant => 'ProjectGrant',
       _i4kq7s26.ProjectOptions => 'ProjectOptions',
       _iootg8bv.ScoreMethod => 'ScoreMethod',
       _iy8r37ur.SearchHitDto => 'SearchHitDto',
@@ -1743,6 +1968,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'Project';
       case _ip1wvjxo.ProjectFileDto():
         return 'ProjectFileDto';
+      case _i45tws7n.ProjectGrant():
+        return 'ProjectGrant';
       case _i4kq7s26.ProjectOptions():
         return 'ProjectOptions';
       case _iootg8bv.ScoreMethod():
@@ -1823,6 +2050,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ProjectFileDto') {
       return deserialize<_ip1wvjxo.ProjectFileDto>(data['data']);
     }
+    if (dataClassName == 'ProjectGrant') {
+      return deserialize<_i45tws7n.ProjectGrant>(data['data']);
+    }
     if (dataClassName == 'ProjectOptions') {
       return deserialize<_i4kq7s26.ProjectOptions>(data['data']);
     }
@@ -1878,6 +2108,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _ik3s3pjn.Genome.t;
       case _ifiazq2p.Project:
         return _ifiazq2p.Project.t;
+      case _i45tws7n.ProjectGrant:
+        return _i45tws7n.ProjectGrant.t;
       case _i4kq7s26.ProjectOptions:
         return _i4kq7s26.ProjectOptions.t;
       case _ibmr8d9c.Settings:

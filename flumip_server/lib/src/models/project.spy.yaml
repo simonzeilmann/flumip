@@ -49,6 +49,34 @@ fields:
   ### being enumerable. Null on projects created before this existed; minted on
   ### first request.
   trackToken: String?, scope=serverOnly
+  ### Unguessable token for the project's share link, `<site>/#/p/<token>`.
+  ###
+  ### Separate from [trackToken] on purpose. That one is a UUIDv7 — a timestamp
+  ### and about 74 random bits — and it only ever reads one BED file. This one
+  ### grants full access to the project, so it is 32 bytes from
+  ### `Random.secure()`. Null until somebody asks for a link; rotated by
+  ### `ProjectEndpoint.resetShareLink`, which is how a leaked link is withdrawn.
+  shareToken: String?, scope=serverOnly
+  ### When the project will be deleted automatically, or null if it will not.
+  ###
+  ### Stamped at creation while demo mode or public mode is on, and pushed back
+  ### by `ProjectEndpoint.extendProject` up to `Settings.maxProjectLifetimeDays`
+  ### after [created]. `DemoModeCleanupFutureCall` reads it when it fires; null
+  ### on a project from before this existed, which falls back to [created]
+  ### plus the retention window as it always did.
+  expires: DateTime?
+  ### Exempt from automatic deletion, by an administrator's decision.
+  ###
+  ### Set through `ProjectEndpoint.setKeptIndefinitely`, administrators only —
+  ### on a public instance this is how a project cited in a paper outlives the
+  ### retention window. `DemoModeCleanupFutureCall` leaves such a project alone
+  ### and stops rescheduling itself; clearing the flag starts a fresh window and
+  ### schedules a new call.
+  keptIndefinitely: bool, default=false
+  ### When this project's run was put in the queue, or null if it is not
+  ### waiting. Set by `MipgenService.generateMips` when `maxConcurrentRuns`
+  ### runs are already going; the oldest is started as soon as one finishes.
+  queuedAt: DateTime?
   genes: List<String>?
   bedFileCreated: bool, default=false
   active: bool, default=false
@@ -77,4 +105,7 @@ indexes:
     fields: owner
   project_track_token_idx:
     fields: trackToken
+    unique: true
+  project_share_token_idx:
+    fields: shareToken
     unique: true
