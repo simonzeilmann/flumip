@@ -62,6 +62,21 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  # ⚠️ Roboto is bundled rather than left to the engine, which otherwise fetches
+  # it from fonts.gstatic.com on every page load — handing each visitor's address
+  # to Google, which the public instance's cookie notice says never happens. See
+  # fonts/README.md and docs/public-instance.md.
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto-Regular.ttf
+        - asset: fonts/Roboto-Italic.ttf
+          style: italic
+        - asset: fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: fonts/Roboto-Bold.ttf
+          weight: 700
+
   # fonts:
   #   - family: Schyler
   #     fonts:
