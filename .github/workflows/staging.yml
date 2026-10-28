@@ -69,6 +69,9 @@ jobs:
           cp -r migrations app/migrations
           cp -r web app/web
           cp -r ../deployment app/deployment
+          # The unit is CI-only, so it is not in deployment/ (which the release
+          # tarball ships); the remote script below installs it from here.
+          cp ../.github/deploy/flumip_staging.service app/deployment/
 
       - name: Transfer app to remote server
         uses: appleboy/scp-action@v1

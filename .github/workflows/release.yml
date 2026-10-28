@@ -104,6 +104,9 @@ jobs:
           dart build cli --target bin/main.dart --output build
           cp -r build/bundle app/bundle
           cp -r config app/config
+          # Staging exists only for .github/workflows/staging.yml; an install
+          # has one environment and never runs in that mode.
+          rm app/config/staging.yaml
           cp -r migrations app/migrations
           cp -r web app/web
           cp -r ../deployment app/deployment
@@ -117,6 +120,13 @@ jobs:
           # fail loudly rather than ship secrets if that ever changes.
           if [ -e app/config/passwords.yaml ]; then
             echo "::error::app/config/passwords.yaml is present; refusing to publish it."
+            exit 1
+          fi
+          # The CI deploys' staging and production files stay out of the
+          # installer, which has a single environment named flumip.
+          CI_ONLY="$(find app -iname '*staging*' -o -name '*flumip_production*')"
+          if [ -n "$CI_ONLY" ]; then
+            echo "::error::CI-only deploy files found in app/: $CI_ONLY"
             exit 1
           fi
           tar -czf flumip-build.tar.gz -C app .
@@ -265,8 +275,7 @@ jobs:
             ```
 
             To update an existing install, unpack this release into a fresh
-            directory and re-run step 2 without `--host`; add `--staging` for a
-            staging install.
+            directory and re-run step 2 without `--host`.
 
             Or with Docker (see docs/docker.md; MIPGEN is compiled on your machine):
 

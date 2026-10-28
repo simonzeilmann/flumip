@@ -148,7 +148,7 @@ admit `c@evil-uni.example`.
 
 ### In the environment
 
-The systemd units read `/etc/flumip/flumip_<env>.env`, created by
+The systemd unit reads `/etc/flumip/flumip.env`, created by
 `setup-flumip.sh` with every key present but commented out. A Docker install
 reads the same keys from `.env` beside `compose.yaml`, where `init-env.sh` puts
 them, commented out in the same way (see [docker.md](docker.md#configuration)).
@@ -171,7 +171,7 @@ Settings tab, so nobody saves a value that silently does nothing.
 A blank value counts as unset, so uncommenting a key and leaving it empty means
 "not filled in yet" rather than "blank out the stored value".
 
-Apply changes with `sudo systemctl restart flumip_<env>`, or `docker compose up -d`
+Apply changes with `sudo systemctl restart flumip`, or `docker compose up -d`
 with Docker. Settings-tab changes take effect immediately, with no restart.
 
 The client secret can also go in `config/passwords.yaml` as `oidcClientSecret`
@@ -179,7 +179,7 @@ under the shared section, if that fits your secret management better. It then
 overrides the stored secret as the environment variable would, but unlike the
 variable it is **not** shown as read-only in the Settings tab, so a secret typed
 there is saved and silently ignored. `setup-flumip.sh` rewrites the installed
-copy of that file from `/etc/flumip/passwords_<env>.yaml` on every run, so put it
+copy of that file from `/etc/flumip/passwords.yaml` on every run, so put it
 there. The Docker image has no `passwords.yaml`; use `FLUMIP_OIDC_CLIENT_SECRET`
 in `.env` there.
 
@@ -320,7 +320,7 @@ In order of preference:
    enforcing from its cached configuration, nobody can sign in, and the password
    will not help. Use option 3 or 4.
 3. **The environment override.** Set `FLUMIP_AUTH_ENABLED=false` in
-   `/etc/flumip/flumip_<env>.env` and `sudo systemctl restart flumip_<env>`. With
+   `/etc/flumip/flumip.env` and `sudo systemctl restart flumip`. With
    Docker, set it in `.env` and run `docker compose up -d`.
 4. **The database.** With Docker, open it with
    `docker compose exec postgres psql -U postgres flumip`.
