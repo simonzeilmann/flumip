@@ -196,6 +196,9 @@ ever locks you out. Apply any change with `docker compose up -d`.
 The database lives in the Docker volume `flumip_db` (`<name>_db` with
 `COMPOSE_PROJECT_NAME` set). It is not published to the
 host. Use `docker compose exec postgres psql -U postgres flumip` to reach it.
+To use a PostgreSQL server you already run instead, see
+[Using an existing PostgreSQL](../README.md#using-an-existing-postgresql) in the
+README.
 
 ## Updating
 

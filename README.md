@@ -11,7 +11,7 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 
 - [Quickstart](#quickstart) — a working server in about an hour, most of it downloading
 - [Using FLUMIP](#using-flumip) — genomes, SNP sets, projects, results
-- [Installing and operating a server](#installing-and-operating-a-server) — requirements, the two install scripts, HTTPS, updates, backups
+- [Installing and operating a server](#installing-and-operating-a-server) — requirements, the two install scripts, an existing PostgreSQL, HTTPS, updates, backups
 - [Docker](docs/docker.md) — the alternative: the whole server with Docker Compose
 - [Configuration](#configuration) — the Settings tab, email, single sign-on
 - [Development](#development) — building, running and testing from source
@@ -227,6 +227,67 @@ machine:
 | Public port (web: app, API under `/api`, downloads, sign-in) | 9082 | 8092 |
 | Internal ports (API, Insights) — keep firewalled | 9080, 9081 | 8090, 8091 |
 | Database (localhost only) | container `postgres_production`, port 5432 | container `postgres_staging`, port 5433 |
+
+### Using an existing PostgreSQL
+
+Both ways of installing can use a PostgreSQL server you already run instead of
+starting their own. It has to be **PostgreSQL 18**, with a database of its own
+for FLUMIP and a user that may create tables in it: FLUMIP applies its
+migrations on every start. FLUMIP connects without TLS, so keep the database on
+a network you trust.
+
+**With the scripts**, pass the connection to `setup-flumip.sh`. The password is
+asked for, or read from `FLUMIP_DB_PASSWORD` with `--yes`:
+
+```bash
+FLUMIP_DB_PASSWORD=… ./setup-flumip.sh --db existing --db-host 10.0.0.5 \
+  --db-port 5432 --db-name flumip --db-user flumip --yes
+```
+
+**With Docker**, install as in [docs/docker.md](docs/docker.md#installing),
+with two changes before `docker compose up -d`:
+
+1. In `.env`, replace the generated `FLUMIP_DB_PASSWORD` with the password of
+   your database user, and set `FLUMIP_DB_NAME` to your database.
+2. Next to `compose.yaml`, create `compose.override.yaml`. Docker Compose reads
+   it on every command, so nothing else changes:
+
+   ```yaml
+   services:
+     # The bundled database is not started.
+     postgres:
+       profiles: [bundled-database]
+
+     flumip:
+       depends_on: !reset {}
+       environment:
+         SERVERPOD_DATABASE_HOST: db.example.org
+         SERVERPOD_DATABASE_PORT: "5432"
+         SERVERPOD_DATABASE_USER: flumip
+   ```
+
+`docker compose ps` then shows only `flumip`, and `docker compose down -v` has no
+database of its own to delete. Back up with `pg_dump` against your server, not
+with the `docker compose exec postgres …` command in docs/docker.md.
+
+**A database on the same machine as Docker** is reached as
+`host.docker.internal`. Use that as `SERVERPOD_DATABASE_HOST`, and add to the
+`flumip` service in `compose.override.yaml`:
+
+```yaml
+    extra_hosts:
+      - host.docker.internal:host-gateway
+```
+
+The container reaches the host on Docker's bridge address (usually
+`172.17.0.1`), not on `127.0.0.1`. PostgreSQL therefore has to listen on that
+address (`listen_addresses` in `postgresql.conf`), and `pg_hba.conf` has to
+accept the containers' addresses (`172.16.0.0/12` on a default Docker setup).
+⚠️ A database that listens on `127.0.0.1` only cannot be reached from the
+container at all. That includes the `postgres_<env>` container `setup-flumip.sh`
+creates. To move such an install to Docker, follow
+[Moving a bare-metal install to Docker](docs/docker.md#moving-a-bare-metal-install-to-docker),
+which copies the database into the bundled one.
 
 ### HTTPS and the reverse proxy
 
