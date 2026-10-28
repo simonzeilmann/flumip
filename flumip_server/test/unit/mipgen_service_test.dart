@@ -167,10 +167,15 @@ void main() {
         genome: genome.id,
       );
       Directory('${base.path}/proj').createSync(recursive: true);
+      // ⚠️ Another design with the same name is listed first. Names are free
+      // text and need not be unique, so the pid is found by the project's
+      // folder; finding it by `-project_name` recorded 700 here.
       fake.stubRun(
         'pgrep',
         exitCode: 0,
-        stdout: '777 mipgen -project_name demo\n',
+        stdout:
+            '700 mipgen -regions_to_scan /p/other/genes.bed -project_name demo\n'
+            '777 mipgen -regions_to_scan /p/proj/genes.bed -project_name demo\n',
       );
 
       await NoScheduleMipgenService().generateMips(session, project.id!, false);
@@ -302,7 +307,8 @@ void main() {
       fake.stubRun(
         'pgrep',
         exitCode: 0,
-        stdout: '777 mipgen -project_name demo\n',
+        stdout:
+            '777 mipgen -regions_to_scan /p/proj/genes.bed -project_name demo\n',
       );
 
       await expectLater(
@@ -366,7 +372,8 @@ void main() {
       fake.stubRun(
         'pgrep',
         exitCode: 0,
-        stdout: '777 mipgen -project_name demo\n',
+        stdout:
+            '777 mipgen -regions_to_scan /p/proj/genes.bed -project_name demo\n',
       );
 
       await NoScheduleMipgenService().generateMips(session, project.id!, false);
@@ -409,7 +416,8 @@ void main() {
         fake.stubRun(
           'pgrep',
           exitCode: 0,
-          stdout: '777 mipgen -project_name demo\n',
+          stdout:
+              '777 mipgen -regions_to_scan /p/proj/genes.bed -project_name demo\n',
         );
 
         await NoScheduleMipgenService().generateMips(

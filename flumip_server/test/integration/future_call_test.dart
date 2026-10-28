@@ -64,11 +64,12 @@ void main() {
         name: 'hg38',
         indexPID: 555,
         indexing: true,
+        fastaPath: '/g/hg38/fa/hg38.fa',
       );
       fake.stubRun(
         'ps',
         exitCode: 0,
-        stdout: 'PID TTY CMD\n555 pts/0 00:00 bwa index\n',
+        stdout: 'bwa             bwa index /g/hg38/fa/hg38.fa\n',
       );
 
       await CheckIndexProgressFutureCall().run(session, genome);
@@ -104,11 +105,14 @@ void main() {
           options: 1,
           pid: 1234,
           active: true,
+          folderName: 'run-folder',
         );
         fake.stubRun(
           'ps',
           exitCode: 0,
-          stdout: 'PID TTY CMD\n1234 pts/0 00:00 mipgen -x\n',
+          stdout:
+              'mipgen          mipgen -regions_to_scan '
+              '/opt/flumip/projects/run-folder/genes.bed\n',
         );
 
         await CheckMipgenProgressFutureCall().run(session, project);

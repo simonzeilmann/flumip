@@ -402,10 +402,13 @@ class MipgenService {
     project.error = '';
     project.warning = '';
     project.completedIn = null;
+    // By folder, not by `-project_name`: names are free text and need not be
+    // unique, so the name could pick up another project's run. The same marker
+    // is what every later liveness check holds the pid to (isMipgenRunOf).
     var mipgenPID = await processService.getProcessPID(
       session,
       "mipgen",
-      "-project_name ${project.name}",
+      mipgenRunMarker("${project.folderName}"),
     );
     project.pid = mipgenPID;
     project.cleanup = deleteExcessFiles;

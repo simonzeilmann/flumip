@@ -1,0 +1,10 @@
+# The MIPGEN that FLUMIP builds against: upstream, unmodified, at a known commit.
+#
+# The single place this is defined. setup-mipgen.sh sources it on a bare-metal
+# install; the published Docker image carries a copy at
+# /usr/share/flumip/mipgen.pin, and deployment/docker/mipgen.Dockerfile builds
+# from that copy, so every FLUMIP version builds the MIPGEN it was released with.
+#
+# Plain KEY=value lines only: this file is sourced by sh, not just bash.
+MIPGEN_REPO=https://github.com/shendurelab/MIPGEN.git
+MIPGEN_COMMIT=4d6c342

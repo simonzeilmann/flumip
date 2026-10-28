@@ -178,10 +178,10 @@ final GenomeReveals genomeReveals = GenomeReveals();
 
 /// The tabs, by position.
 ///
-/// ⚠️ The order of the `TabBar` in `main.dart` is the contract these name, and
-/// nothing enforces it — there is no router to ask. Inserting a tab in the middle
-/// silently sends every search result to the wrong one, which is why
-/// `test/search/search_button_test.dart` asserts the two indices.
+/// ⚠️ The order of the `TabBar` in `app.dart` is the contract these name, and
+/// nothing but a test enforces it — there is no router to ask. Inserting a tab in
+/// the middle silently sends every search result to the wrong one, which is why
+/// `test/app_test.dart` checks the two indices against the real `TabBar`.
 const int projectsTabIndex = 0;
 const int genomesTabIndex = 1;
 

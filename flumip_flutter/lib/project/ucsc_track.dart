@@ -82,7 +82,7 @@ Map<String, String> ucscTrackUrls({
   return {
     for (final range in genomeRanges(track))
       range.name:
-          '$base&position=${range.name}:${range.start}-${range.end} '
+          '$base&position=${range.name}:${range.start}-${range.end}'
           '&hgt.customText=$siteUrl/ucsc_track/$trackToken',
   };
 }

@@ -12,6 +12,7 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 - [Quickstart](#quickstart) — a working server in about an hour, most of it downloading
 - [Using FLUMIP](#using-flumip) — genomes, SNP sets, projects, results
 - [Installing and operating a server](#installing-and-operating-a-server) — requirements, the two install scripts, HTTPS, updates, backups
+- [Docker](docs/docker.md) — the alternative: the whole server with Docker Compose
 - [Configuration](#configuration) — the Settings tab, email, single sign-on
 - [Development](#development) — building, running and testing from source
 - [License](#license) — MIT for FLUMIP; MIPGEN has its own terms
@@ -20,9 +21,12 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 
 ## Quickstart
 
+This is the bare-metal install, as a systemd service. To run FLUMIP with Docker
+Compose instead, follow [docs/docker.md](docs/docker.md#installing).
+
 You need an **x86_64 Ubuntu or Debian** machine with **sudo** and **Docker**
-(with your user in the `docker` group), at least **8 GB of RAM** and about
-**20 GB of free disk** for one genome (see [Requirements](#requirements)).
+(with your user in the `docker` group), at least **8 GB of RAM** (16 GB
+recommended) and **20–50 GB of free disk** per genome (see [Requirements](#requirements)).
 
 **1. Download a release and unpack it.** The archive contains the server, the
 web app and both install scripts.
@@ -77,7 +81,8 @@ search box that finds projects, genomes and SNP sets by name.
 FLUMIP designs against reference genomes stored under
 `/opt/flumip/data/genomes/<category>/<name>/`, for example
 `/opt/flumip/data/genomes/human/hg38/`. `setup-mipgen.sh` can download
-**hg38** (the default), **hg19**, **hg18** and **hs1** (T2T-CHM13).
+**hg38** (the default), **hg19**, **hg18** and **hs1** (T2T-CHM13); a Docker
+install does the same with `fetch-genome`, into its data directory.
 
 Each genome folder holds:
 
@@ -96,6 +101,8 @@ genome from the project picker without deleting anything.
 
 To add another genome later, run `setup-mipgen.sh` again with its name, for
 example `./deployment/setup-mipgen.sh --download hg19`, then scan and index it.
+With Docker it is `docker compose run --rm --no-deps flumip fetch-genome hg19`
+(see [docs/docker.md](docs/docker.md#reference-genomes)).
 
 ### SNP sets
 
@@ -103,8 +110,9 @@ A SNP set is a VCF of known variants. MIPGEN uses it to avoid placing probe arms
 over common polymorphisms, which would otherwise capture unevenly between
 samples.
 
-- **Built-in sets** come from a genome's `snp/` folder. `setup-mipgen.sh`
-  installs dbSNP common variants for hg38 and dbSNP 155 for hs1. Only an
+- **Built-in sets** come from a genome's `snp/` folder. `setup-mipgen.sh` (or
+  `fetch-genome` with Docker) installs dbSNP common variants for hg38 and
+  dbSNP 155 for hs1. Only an
   administrator can change or remove them.
 - **Custom sets** are added from the genome's page with **Add a custom SNP
   set**, either by **uploading** a VCF and its index or by **fetching from a
@@ -157,14 +165,20 @@ produced, and offers:
 
 ## Installing and operating a server
 
+There are two ways to install FLUMIP. The two scripts below install it
+directly on an Ubuntu or Debian host, as a systemd service. **Docker Compose**
+runs the same server in containers and needs nothing on the host but Docker:
+see **[docs/docker.md](docs/docker.md)**. With either one, MIPGEN is compiled
+on your own machine and never comes prebuilt from FLUMIP; see [License](#license).
+
 ### Requirements
 
 | | |
 | --- | --- |
 | **OS** | Ubuntu or Debian on x86_64. The scripts use `apt`, systemd and a `linux.x86_64` UCSC tool. |
 | **Software** | `sudo`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). The installing user must be able to run `docker` without sudo: `sudo usermod -aG docker $USER`, then log out and back in. `setup-mipgen.sh` installs the rest: `git`, `wget`, `bwa`, `samtools`, `tabix`, `trf` and a build toolchain. |
-| **Memory** | **8 GB minimum.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
-| **Disk** | Roughly **15–20 GB per human genome** (sequence, bwa index, annotations, dbSNP), plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
+| **Memory** | **8 GB minimum, 16 GB recommended.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
+| **Disk** | **15–20 GB minimum per human genome** (sequence, bwa index, annotations, dbSNP); **20–50 GB recommended**, depending on the SNP files you add. Plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
 | **Network** | Outbound HTTPS to UCSC, NCBI and GitHub during installation. Users reach the server on one port, or on 443 behind a reverse proxy. |
 
 ### What the two scripts do
@@ -293,6 +307,37 @@ database volume `flumip_production_data`, and `/opt/flumip/projects` if the
 designs matter to you. The reference data under `/opt/flumip/data/genomes` can
 always be downloaded again.
 
+### Uninstalling
+
+**`deployment/uninstall-flumip.sh`** reverses both scripts. By default it removes
+only the software and keeps everything that cannot be downloaded again:
+
+| | Removed by default | Kept unless you pass |
+| --- | --- | --- |
+| Service and build | `flumip_<env>` unit, `/var/www/flumip_<env>` | |
+| MIPGEN | `/opt/flumip/MIPGEN` and `/opt/flumip/tools`, once no environment is left (`--keep-mipgen` to keep them) | |
+| Database | | `--database`: the `postgres_<env>` container, its volume, and `/etc/flumip/*_<env>.*` |
+| Projects | | `--projects`: `/opt/flumip/projects` |
+| Genomes | | `--genomes`: `/opt/flumip/data/genomes`, bwa indexes included |
+| Custom SNP sets | | `--custom-snps`: `/opt/flumip/data/custom_snp` |
+| Packages | | `--packages`: `bwa`, `samtools`, `tabix`, `trf` |
+
+`--purge` stands for the four data switches. Without `--prod` or `--staging`
+every environment found is removed. A database connected with `--db existing`
+is never dropped, and the shared `/opt/flumip` data cannot be deleted while
+another environment stays installed. Reinstalling after a default uninstall
+picks the kept database, projects and genomes up again.
+
+```bash
+./deployment/uninstall-flumip.sh --purge --dry-run    # see what would go
+./deployment/uninstall-flumip.sh                      # interactive
+```
+
+It asks for confirmation on a terminal, and needs `--yes` without one.
+
+The script knows nothing about a Docker install, and leaves it alone; that one is
+removed with `docker compose`, see [docs/docker.md](docs/docker.md#uninstalling).
+
 ---
 
 ## Configuration
@@ -340,9 +385,10 @@ group claim from your provider.
 
 Most sign-in settings can also be fixed from `/etc/flumip/flumip_<env>.env`
 (`FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_ISSUER`, and so on, all listed in that
-file). A value set there overrides the Settings tab, which then shows it
-read-only. `FLUMIP_AUTH_ENABLED=false` plus a restart is the way back in if
-sign-in ever locks you out.
+file), or, with Docker, from `.env` beside `compose.yaml`. A value set there
+overrides the Settings tab, which then shows it read-only.
+`FLUMIP_AUTH_ENABLED=false` plus a restart (`docker compose up -d` with Docker)
+is the way back in if sign-in ever locks you out.
 
 ---
 
@@ -355,7 +401,8 @@ sign-in ever locks you out.
 | `flumip_server/` | The [Serverpod](https://serverpod.dev) 4 backend: endpoints, services that drive MIPGEN, web routes for downloads, sign-in and UCSC tracks, database models and migrations. |
 | `flumip_flutter/` | The Flutter web app. |
 | `flumip_client/` | The client library, **generated** by `serverpod generate`. Do not edit it. |
-| `deployment/` | The install scripts and systemd units. |
+| `deployment/` | The install scripts and systemd units, `fetch-genome.sh`, the MIPGEN pin (`mipgen.pin`), and in `docker/` the Docker install: compose file, local MIPGEN build, entrypoint. |
+| `Dockerfile` | The published Docker image (no MIPGEN); see [docs/docker.md](docs/docker.md). |
 | `docs/` | Operator documentation. |
 | `.github/workflows/` | CI, the staging and production deploys, and the release build. |
 
@@ -469,7 +516,10 @@ cd flumip_server && dart format $(find lib bin test -name '*.dart' -not -path 'l
   green.
 - **`main`** deploys to production.
 - **Releases** are cut by pushing a version tag. `release.yml` then builds the
-  host-independent `flumip-build.tar.gz` that `setup-flumip.sh` downloads:
+  host-independent `flumip-build.tar.gz` that `setup-flumip.sh` downloads, builds
+  the Docker image `ghcr.io/simonzeilmann/flumip` from that same tarball (tagged
+  `X.Y.Z`, `X.Y` and `latest`) along with `flumip-docker.tar.gz`, the files a
+  Docker install needs, and publishes the release only once both have passed:
 
   ```bash
   git tag v0.7.0
@@ -478,6 +528,9 @@ cd flumip_server && dart format $(find lib bin test -name '*.dart' -not -path 'l
 
   Keep the tag in step with `version:` in `flumip_flutter/pubspec.yaml`, which is
   what the app reports about itself.
+
+  ⚠️ GitHub creates the image's package **private** on the first push. Make it
+  public once, in the package settings, or every Docker install fails to build.
 
 ---
 
@@ -500,6 +553,12 @@ patch it or ship a modified copy. What FLUMIP needed done differently lives in
 FLUMIP's own code under the MIT licence: the UCSC track is built by the server
 rather than by MIPGEN's Python script, and the TRF check is satisfied by the
 `deployment/mipgen-trf` wrapper.
+
+The same holds for Docker. The published image, `ghcr.io/simonzeilmann/flumip`,
+contains FLUMIP and Debian's packages of `bwa` (GPL-3), `trf` (AGPL-3),
+`samtools` and `tabix`, but **no MIPGEN**. `docker compose build` compiles MIPGEN
+into a local image, `flumip-local`, which must stay inside your organisation and
+must never be pushed to a registry. See [docs/docker.md](docs/docker.md#licences).
 
 The reference genomes, gene annotations and dbSNP files the setup script fetches
 come from UCSC and NCBI under their own terms of use.

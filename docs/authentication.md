@@ -51,7 +51,8 @@ Three ways this goes wrong:
   `http://flumip.example.org:9082`, because that is what its config says. Fix it
   by setting `FLUMIP_PUBLIC_URL=https://flumip.example.org`. This is the common
   case: `setup-flumip.sh` generates a plain-HTTP config and tells you to add
-  nginx afterwards.
+  nginx afterwards, and the Docker image knows itself only as
+  `http://localhost:9082`.
 - **Plain HTTP at all.** Most providers refuse a non-HTTPS redirect URI unless
   the host is `localhost`. Put a reverse proxy with a certificate in front first.
 - **A trailing slash on the issuer.** `https://idp.example.org/realms/staff/`
@@ -148,9 +149,11 @@ admit `c@evil-uni.example`.
 ### In the environment
 
 The systemd units read `/etc/flumip/flumip_<env>.env`, created by
-`setup-flumip.sh` with every key present but commented out. Anything set there
-overrides the stored setting and shows read-only in the Settings tab, so nobody
-saves a value that silently does nothing.
+`setup-flumip.sh` with every key present but commented out. A Docker install
+reads the same keys from `.env` beside `compose.yaml`, where `init-env.sh` puts
+them, commented out in the same way (see [docker.md](docker.md#configuration)).
+Anything set there overrides the stored setting and shows read-only in the
+Settings tab, so nobody saves a value that silently does nothing.
 
 | Variable | Overrides |
 | --- | --- |
@@ -167,8 +170,8 @@ saves a value that silently does nothing.
 A blank value counts as unset, so uncommenting a key and leaving it empty means
 "not filled in yet" rather than "blank out the stored value".
 
-Apply changes with `sudo systemctl restart flumip_<env>`. Settings-tab changes
-take effect immediately, with no restart.
+Apply changes with `sudo systemctl restart flumip_<env>`, or `docker compose up -d`
+with Docker. Settings-tab changes take effect immediately, with no restart.
 
 The client secret can also go in `config/passwords.yaml` as `oidcClientSecret`
 under the shared section, if that fits your secret management better. It then
@@ -176,7 +179,8 @@ overrides the stored secret as the environment variable would, but unlike the
 variable it is **not** shown as read-only in the Settings tab, so a secret typed
 there is saved and silently ignored. `setup-flumip.sh` rewrites the installed
 copy of that file from `/etc/flumip/passwords_<env>.yaml` on every run, so put it
-there.
+there. The Docker image has no `passwords.yaml`; use `FLUMIP_OIDC_CLIENT_SECRET`
+in `.env` there.
 
 ## Why sign-in might not be enforced
 
@@ -307,8 +311,10 @@ In order of preference:
    enforcing from its cached configuration, nobody can sign in, and the password
    will not help. Use option 3 or 4.
 3. **The environment override.** Set `FLUMIP_AUTH_ENABLED=false` in
-   `/etc/flumip/flumip_<env>.env` and `sudo systemctl restart flumip_<env>`.
-4. **The database.**
+   `/etc/flumip/flumip_<env>.env` and `sudo systemctl restart flumip_<env>`. With
+   Docker, set it in `.env` and run `docker compose up -d`.
+4. **The database.** With Docker, open it with
+   `docker compose exec postgres psql -U postgres flumip`.
 
    ```sql
    UPDATE settings SET "loginRequired" = false, "settingsPassword" = 'changeme';

@@ -11,8 +11,8 @@ import 'package:web/web.dart' as web;
 /// ⚠️ **Size.** On web, `file_picker` returns bytes — read through a `FileReader`,
 /// so every byte of a 1.5 GB VCF passes through the Dart heap — and it never
 /// exposes the underlying browser `File` object, which is the one thing needed
-/// here. It would also pull six platform plugin packages into an app whose only
-/// current plugin dependency is `url_launcher`.
+/// here. It would also pull six platform plugin packages into an app that has no
+/// plugin dependency at all.
 ///
 /// `package:web` has exactly what is required and is already a dependency. The
 /// returned [PickedFile.handle] is the browser's `File`, which

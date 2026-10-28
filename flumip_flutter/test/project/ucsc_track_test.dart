@@ -98,6 +98,22 @@ void main() {
       expect(urls['chr1'], isNot(contains('chr7:')));
     });
 
+    test('⚠️ no link carries a space', () {
+      // The URL was two adjacent literals and the first ended in a space, so
+      // every link sent `%20` between the position and `&hgt.customText`. UCSC
+      // tolerated it, which is why it went unnoticed.
+      final urls = ucscTrackUrls(
+        track: track,
+        genomeName: 'hg38',
+        trackToken: token,
+        siteUrl: site,
+      );
+      for (final url in urls.values) {
+        expect(url, isNot(contains(' ')));
+        expect(url, isNot(contains('%20')));
+      }
+    });
+
     test('every link is keyed by the token, never the project id', () {
       // Making this the project id is what made every project's track readable
       // and enumerable by anyone who could reach the port.
