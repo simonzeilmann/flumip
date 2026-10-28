@@ -36,6 +36,7 @@ class GenomeRail extends StatelessWidget {
     this.loadingCategory,
     this.error,
     this.onDismissError,
+    this.canManage = true,
   });
 
   final List<String> categories;
@@ -53,6 +54,10 @@ class GenomeRail extends StatelessWidget {
 
   final VoidCallback onCollectGenomes;
   final VoidCallback onCollectCustomSnps;
+
+  /// Whether the library actions are offered. False for a guest on a public
+  /// instance, whom the server refuses them anyway.
+  final bool canManage;
 
   /// Set while a category's genomes are on their way.
   final String? loadingCategory;
@@ -90,24 +95,25 @@ class GenomeRail extends StatelessWidget {
           // over the whole tab. A menu also suits what they cost: collecting
           // genomes walks the entire genome tree with a recursive size count,
           // which is hundreds of gigabytes of stat calls on a real install.
-          PopupMenuButton<_LibraryAction>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: 'Library actions',
-            onSelected: (action) => switch (action) {
-              _LibraryAction.collectGenomes => onCollectGenomes(),
-              _LibraryAction.collectSnps => onCollectCustomSnps(),
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: _LibraryAction.collectGenomes,
-                child: Text('Scan for new genomes'),
-              ),
-              PopupMenuItem(
-                value: _LibraryAction.collectSnps,
-                child: Text('Recheck custom SNP sets'),
-              ),
-            ],
-          ),
+          if (canManage)
+            PopupMenuButton<_LibraryAction>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'Library actions',
+              onSelected: (action) => switch (action) {
+                _LibraryAction.collectGenomes => onCollectGenomes(),
+                _LibraryAction.collectSnps => onCollectCustomSnps(),
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _LibraryAction.collectGenomes,
+                  child: Text('Scan for new genomes'),
+                ),
+                PopupMenuItem(
+                  value: _LibraryAction.collectSnps,
+                  child: Text('Recheck custom SNP sets'),
+                ),
+              ],
+            ),
         ],
       ),
     );

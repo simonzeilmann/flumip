@@ -1,4 +1,5 @@
 import 'package:flumip_client/flumip_client.dart';
+import 'package:flutter/material.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 
 import 'access_controller.dart';
@@ -11,6 +12,7 @@ import 'project/projects_controller.dart';
 import 'search/reveal.dart';
 import 'search/search_controller.dart';
 import 'settings/settings_controller.dart';
+import 'share_link.dart';
 import 'snp/picked_file.dart';
 import 'snp/snp_section_controller.dart';
 import 'snp/snp_transport.dart';
@@ -59,7 +61,18 @@ final bool uploadsAvailable = resolveUploadsAvailable();
 var client = Client(apiUrl)..connectivityMonitor = FlutterConnectivityMonitor();
 
 /// Sign-in state for the whole app.
-late AuthController authController;
+///
+/// ⚠️ Not `late`: widgets that only *read* it — a project tile asking how long
+/// projects are kept, the genome tab asking whether this is a guest — are pumped
+/// in tests that never call [installServices]. Until that runs this is an inert
+/// controller that has bootstrapped nothing: no sign-in, no public mode, nobody
+/// signed in. `installServices` replaces it before the app is drawn.
+AuthController authController = AuthController(
+  fetchConfig: () async =>
+      const AuthConfigSnapshot(enabled: false, buttonLabel: ''),
+  fetchSession: () async => null,
+  navigate: (_) {},
+);
 
 /// What this caller may do, asked of the server rather than inferred.
 late AccessController accessController;
@@ -162,6 +175,11 @@ ProjectTileController createProjectTileController(
   setSnp: (projectId, snpId) => client.project.setSnpById(projectId, snpId),
   setEmailNotification: (projectId, enabled) =>
       client.project.setEmailNotification(projectId, enabled),
+  extendProject: (projectId) => client.project.extendProject(projectId),
+  getShareToken: (projectId) => client.project.getShareToken(projectId),
+  resetShareToken: (projectId) => client.project.resetShareToken(projectId),
+  setKeptIndefinitely: (projectId, kept) =>
+      client.project.setKeptIndefinitely(projectId, kept),
 );
 
 /// A controller for the search box, wired to the real client.
@@ -222,6 +240,30 @@ NewProjectController createNewProjectController() => NewProjectController(
       client.project.createProject(name, options, description),
 );
 
+/// The app's `ScaffoldMessenger`, for the few messages that have no widget of
+/// their own to come from — a share link that no longer works, chiefly.
+final GlobalKey<ScaffoldMessengerState> messengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
+/// Shows [message] in a snack bar, wherever the user is.
+void showAppMessage(String message) =>
+    messengerKey.currentState?.showSnackBar(SnackBar(content: Text(message)));
+
+/// Opens the project a share link points at — see `share_link.dart`.
+///
+/// [clearLink] rewrites the address bar, which only `main.dart` can do.
+ShareLinkOpener createShareLinkOpener({required void Function() clearLink}) =>
+    ShareLinkOpener(
+      auth: authController,
+      redeem: (token) => client.project.redeemShareToken(token),
+      reveal: (project) async {
+        await projectsController.refresh();
+        projectsController.reveal(project.id!);
+      },
+      clearLink: clearLink,
+      report: showAppMessage,
+    );
+
 /// Opens a URL in a new tab.
 ///
 /// Injected rather than called directly, because `web.window.open` is the whole
@@ -258,6 +300,11 @@ void installServices({
     client: client,
     siteUrl: siteUrl,
     navigate: navigate,
+  );
+  // Kept in step rather than set once after bootstrap: accepting a public
+  // instance's entry notice produces the first credential long after start-up.
+  authController.addListener(
+    () => client.authKeyProvider = authController.authKeyProvider,
   );
 
   // A single owner for the question, because there were already two answers to

@@ -5,6 +5,7 @@ import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/file_service.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
 import 'package:flumip_server/src/services/mail_service.dart';
 import 'package:flumip_server/src/services/options_service.dart';
@@ -207,22 +208,164 @@ class MipgenService {
   /// \param session The current session.
   /// \param projectID The ID of the project for which to generate MIPs.
   /// \param deleteExcessFiles Whether to delete intermediate files after MIP generation.
+  ///
+  /// Starts the run straight away, or — when `Settings.maxConcurrentRuns` runs
+  /// are already going, or others are already waiting — puts the project in the
+  /// queue ([Project.queuedAt]). [startNextQueued] picks it up when a slot
+  /// frees. Everything that can be checked is checked first either way, so a
+  /// project that cannot run says so now rather than when its turn comes.
   Future<void> generateMips(
     Session session,
     int projectID,
     bool deleteExcessFiles,
   ) async {
-    GenomeService genomeService = sl<GenomeService>();
     ProjectService projectService = sl<ProjectService>();
-    SettingsService settingsService = sl<SettingsService>();
-    OptionsService optionsService = sl<OptionsService>();
-    ProcessService processService = sl<ProcessService>();
 
     session.log(
       "Starting generateMips for project ID: $projectID",
       level: LogLevel.info,
     );
     var project = await projectService.getProject(session, projectID);
+
+    // ⚠️ Nothing used to stop a second start: `active` was written and never
+    // read, so a double click ran mipgen twice in the same directory, each run
+    // overwriting the other's files.
+    if (project.active || project.queuedAt != null) {
+      throw ArgumentException(
+        message: project.active
+            ? 'MIP generation is already running for this project.'
+            : 'This project is already waiting for its turn to run.',
+      );
+    }
+    await _requireGuestRunSlot(session, project);
+
+    final run = await _prepareRun(session, project);
+
+    final limit = run.settings.maxConcurrentRuns;
+    if (limit > 0) {
+      final running = await Project.db.count(
+        session,
+        where: (t) => t.active.equals(true),
+      );
+      final waiting = await Project.db.count(
+        session,
+        where: (t) => t.queuedAt.notEquals(null),
+      );
+      // Behind anyone already waiting, even when a slot happens to be free
+      // this instant: first come, first served.
+      if (running >= limit || waiting > 0) {
+        project.queuedAt = DateTime.now().toUtc();
+        project.cleanup = deleteExcessFiles;
+        // Cleared now rather than at the start, so the tile stops showing the
+        // last run's verdict while this one waits.
+        project.error = '';
+        project.warning = '';
+        project.completedIn = null;
+        await projectService.updateProject(session, project);
+        session.log(
+          "Queued MIP generation for project ID: $projectID "
+          "($running of $limit running, $waiting waiting)",
+          level: LogLevel.info,
+        );
+        return;
+      }
+    }
+
+    await _launch(session, project, run, deleteExcessFiles);
+  }
+
+  /// Starts queued runs while there are free slots, oldest first.
+  ///
+  /// Called when a run finishes and when a running project is deleted. Never
+  /// throws: a queued project that can no longer run — its SNP set deleted while
+  /// it waited, say — gets the reason as its error and the next one is tried.
+  ///
+  /// ⚠️ Two runs finishing in the same instant can both see the same free slot,
+  /// so the limit can be overshot by one. Accepted: the alternative is a lock
+  /// around process start-up, for a limit whose job is to keep the server from
+  /// being swamped, not to be exact.
+  Future<void> startNextQueued(Session session) async {
+    try {
+      final settings = await sl<SettingsService>().getSettings(session);
+      while (true) {
+        final limit = settings.maxConcurrentRuns;
+        if (limit > 0) {
+          final running = await Project.db.count(
+            session,
+            where: (t) => t.active.equals(true),
+          );
+          if (running >= limit) return;
+        }
+
+        final next = await Project.db.findFirstRow(
+          session,
+          where: (t) => t.queuedAt.notEquals(null),
+          orderBy: (t) => t.queuedAt,
+        );
+        if (next == null) return;
+
+        next.queuedAt = null;
+        await sl<ProjectService>().updateProject(session, next);
+        try {
+          final run = await _prepareRun(session, next);
+          await _launch(session, next, run, next.cleanup);
+        } catch (e) {
+          session.log(
+            "Could not start the queued run for project ID: ${next.id}",
+            level: LogLevel.warning,
+            exception: e,
+          );
+          next.error = "MIP generation could not start: ${_short(e)}";
+          await sl<ProjectService>().updateProject(session, next);
+        }
+      }
+    } catch (e, stackTrace) {
+      session.log(
+        "Starting the next queued MIP generation failed",
+        level: LogLevel.error,
+        exception: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Refuses a guest who already has a run going or waiting.
+  ///
+  /// One at a time per visitor, so that a single guest cannot fill the queue
+  /// ahead of everybody else. Administrators and signed-in users are not
+  /// limited.
+  Future<void> _requireGuestRunSlot(Session session, Project project) async {
+    final who = await authz.principal(session);
+    final userId = who.userId;
+    if (!who.isGuest || userId == null) return;
+
+    final busy = await Project.db.count(
+      session,
+      where: (t) =>
+          t.owner.equals(userId) &
+          (t.active.equals(true) | t.queuedAt.notEquals(null)),
+    );
+    if (busy == 0) return;
+
+    throw ArgumentException(
+      message:
+          'You already have a design running or waiting on this public '
+          'server. Wait for it to finish, then start this one.',
+    );
+  }
+
+  /// Checks that [project] can run and builds mipgen's command line.
+  ///
+  /// Throws the reason it cannot, as something the user can act on.
+  Future<({Settings settings, List<String> args})> _prepareRun(
+    Session session,
+    Project project,
+  ) async {
+    GenomeService genomeService = sl<GenomeService>();
+    SettingsService settingsService = sl<SettingsService>();
+    OptionsService optionsService = sl<OptionsService>();
+    final projectID = project.id;
+
     var options = await optionsService.getProjectOptions(
       session,
       project.options,
@@ -373,8 +516,30 @@ class MipgenService {
       "-silent_mode",
       options.silentMode == true ? "on" : "off",
       "-bwa_threads",
-      options.bwaThreads.toString(),
+      _cappedThreads(options.bwaThreads, settings.maxBwaThreads).toString(),
     ];
+
+    return (settings: settings, args: arg);
+  }
+
+  /// [requested] bwa threads, held to [cap] when the server sets one.
+  static int _cappedThreads(int requested, int cap) {
+    final atLeastOne = requested < 1 ? 1 : requested;
+    return cap > 0 && atLeastOne > cap ? cap : atLeastOne;
+  }
+
+  /// Starts mipgen for a prepared run and begins polling it.
+  Future<void> _launch(
+    Session session,
+    Project project,
+    ({Settings settings, List<String> args}) run,
+    bool deleteExcessFiles,
+  ) async {
+    ProjectService projectService = sl<ProjectService>();
+    ProcessService processService = sl<ProcessService>();
+    final settings = run.settings;
+    final arg = run.args;
+    final projectID = project.id;
 
     session.log(
       "Starting MIP generation process with arguments: $arg",
@@ -394,6 +559,7 @@ class MipgenService {
     );
     project.started = DateTime.now();
     project.active = true;
+    project.queuedAt = null;
     // ⚠️ Clear the last run's verdict. None of these were reset when a run
     // started, so re-running a project that had failed left the old `error` in
     // place — and the moment the new run finished successfully the project went
@@ -684,6 +850,9 @@ class MipgenService {
       project.active = false;
       await projectService.updateProject(session, project);
     }
+
+    // A slot is free. Never throws, so it cannot disturb the notification.
+    await startNextQueued(session);
 
     // Notify after the project has been persisted, so the email reflects the
     // final state (size, duration, error). Guarded independently: finalization

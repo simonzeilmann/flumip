@@ -1,0 +1,386 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "auth_api_token",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "isGuest",
+            "fieldName": "isGuest",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "false",
+            "dartType": "bool"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": []
+      }
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "auth_session",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "isGuest",
+            "fieldName": "isGuest",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "false",
+            "dartType": "bool"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": []
+      }
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "flumip_user",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "termsAcceptedAt",
+            "fieldName": "termsAcceptedAt",
+            "columnType": 4,
+            "isNullable": true,
+            "dartType": "DateTime?"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "termsVersion",
+            "fieldName": "termsVersion",
+            "columnType": 6,
+            "isNullable": true,
+            "dartType": "int?"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": []
+      }
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "project",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "shareToken",
+            "fieldName": "shareToken",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "expires",
+            "fieldName": "expires",
+            "columnType": 4,
+            "isNullable": true,
+            "dartType": "DateTime?"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "queuedAt",
+            "fieldName": "queuedAt",
+            "columnType": 4,
+            "isNullable": true,
+            "dartType": "DateTime?"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [
+          {
+            "__className__": "serverpod.IndexDefinition",
+            "indexName": "project_share_token_idx",
+            "elements": [
+              {
+                "__className__": "serverpod.IndexElementDefinition",
+                "type": 0,
+                "definition": "shareToken"
+              }
+            ],
+            "type": "btree",
+            "isUnique": true,
+            "isPrimary": false
+          }
+        ],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "uniqueIndexCreated",
+            "message": "Unique index \"project_share_token_idx\" is added to table \"project\". If there are existing rows with duplicate values, this migration will fail.",
+            "table": "project",
+            "columns": [
+              "shareToken"
+            ],
+            "destrucive": false
+          }
+        ]
+      }
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "createTable",
+      "createTable": {
+        "__className__": "serverpod.TableDefinition",
+        "name": "project_grant",
+        "dartName": "ProjectGrant",
+        "module": "flumip",
+        "schema": "public",
+        "columns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "id",
+            "fieldName": "id",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "serial",
+            "dartType": "int?"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "projectId",
+            "fieldName": "projectId",
+            "columnType": 6,
+            "isNullable": false,
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "userId",
+            "fieldName": "userId",
+            "columnType": 6,
+            "isNullable": false,
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "created",
+            "fieldName": "created",
+            "columnType": 4,
+            "isNullable": false,
+            "columnDefault": "now",
+            "dartType": "DateTime"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "__className__": "serverpod.ForeignKeyDefinition",
+            "constraintName": "project_grant_fk_0",
+            "columns": [
+              "projectId"
+            ],
+            "referenceTable": "project",
+            "referenceTableSchema": "public",
+            "referenceColumns": [
+              "id"
+            ],
+            "onUpdate": 3,
+            "onDelete": 4
+          },
+          {
+            "__className__": "serverpod.ForeignKeyDefinition",
+            "constraintName": "project_grant_fk_1",
+            "columns": [
+              "userId"
+            ],
+            "referenceTable": "flumip_user",
+            "referenceTableSchema": "public",
+            "referenceColumns": [
+              "id"
+            ],
+            "onUpdate": 3,
+            "onDelete": 4
+          }
+        ],
+        "indexes": [
+          {
+            "__className__": "serverpod.IndexDefinition",
+            "indexName": "project_grant_pair_idx",
+            "elements": [
+              {
+                "__className__": "serverpod.IndexElementDefinition",
+                "type": 0,
+                "definition": "projectId"
+              },
+              {
+                "__className__": "serverpod.IndexElementDefinition",
+                "type": 0,
+                "definition": "userId"
+              }
+            ],
+            "type": "btree",
+            "isUnique": true,
+            "isPrimary": false
+          },
+          {
+            "__className__": "serverpod.IndexDefinition",
+            "indexName": "project_grant_user_idx",
+            "elements": [
+              {
+                "__className__": "serverpod.IndexElementDefinition",
+                "type": 0,
+                "definition": "userId"
+              }
+            ],
+            "type": "btree",
+            "isUnique": false,
+            "isPrimary": false
+          }
+        ],
+        "managed": true
+      }
+    },
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "settings",
+        "schema": "public",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "publicMode",
+            "fieldName": "publicMode",
+            "columnType": 1,
+            "isNullable": false,
+            "columnDefault": "false",
+            "dartType": "bool"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "maxProjectLifetimeDays",
+            "fieldName": "maxProjectLifetimeDays",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "30",
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "guestMaxProjects",
+            "fieldName": "guestMaxProjects",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "10",
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "termsVersion",
+            "fieldName": "termsVersion",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "1",
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "publicNoticeText",
+            "fieldName": "publicNoticeText",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "''",
+            "dartType": "String"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "imprintUrl",
+            "fieldName": "imprintUrl",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "''",
+            "dartType": "String"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "privacyUrl",
+            "fieldName": "privacyUrl",
+            "columnType": 0,
+            "isNullable": false,
+            "columnDefault": "''",
+            "dartType": "String"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "maxConcurrentRuns",
+            "fieldName": "maxConcurrentRuns",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "0",
+            "dartType": "int"
+          },
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "maxBwaThreads",
+            "fieldName": "maxBwaThreads",
+            "columnType": 6,
+            "isNullable": false,
+            "columnDefault": "0",
+            "dartType": "int"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": []
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "uniqueIndexCreated",
+      "message": "Unique index \"project_share_token_idx\" is added to table \"project\". If there are existing rows with duplicate values, this migration will fail.",
+      "table": "project",
+      "columns": [
+        "shareToken"
+      ],
+      "destrucive": false
+    }
+  ],
+  "migrationApiVersion": 1
+}

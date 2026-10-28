@@ -24,7 +24,16 @@ import 'snp_tile.dart';
 /// Fetching and changing live in [SnpSectionController]. What stays here is the
 /// part that needs a `BuildContext`: four dialogs, and the snack bars.
 class SnpSection extends StatefulWidget {
-  const SnpSection({super.key, required this.genome, this.controller});
+  const SnpSection({
+    super.key,
+    required this.genome,
+    this.controller,
+    this.canAdd = true,
+  });
+
+  /// Whether the Add button is offered. False for a guest on a public instance,
+  /// who cannot add SNP sets there.
+  final bool canAdd;
 
   final Genome genome;
 
@@ -202,15 +211,16 @@ class _SnpSectionState extends State<SnpSection> {
                 style: context.text.titleSmall,
               ),
               const Spacer(),
-              TextButton.icon(
-                onPressed: _add,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 32),
+              if (widget.canAdd)
+                TextButton.icon(
+                  onPressed: _add,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 32),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

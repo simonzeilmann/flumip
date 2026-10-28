@@ -29,7 +29,7 @@ import 'package:serverpod/serverpod.dart' as _is;
 /// lets every tab hold its own token, and deleting the AuthSession cascades to
 /// all of them so revocation stays a single operation.
 ///
-/// `email` and `isAdmin` are denormalised from AuthSession so that the
+/// `email`, `isAdmin` and `isGuest` are denormalised from AuthSession so that the
 /// authentication handler needs exactly one indexed lookup per request.
 abstract class AuthApiToken
     implements _is.TableRow<int?>, _is.ProtocolSerialization {
@@ -39,9 +39,11 @@ abstract class AuthApiToken
     required this.tokenHash,
     required this.email,
     bool? isAdmin,
+    bool? isGuest,
     DateTime? created,
     required this.expires,
   }) : isAdmin = isAdmin ?? false,
+       isGuest = isGuest ?? false,
        created = created ?? DateTime.now();
 
   factory AuthApiToken({
@@ -50,6 +52,7 @@ abstract class AuthApiToken
     required String tokenHash,
     required String email,
     bool? isAdmin,
+    bool? isGuest,
     DateTime? created,
     required DateTime expires,
   }) = _AuthApiTokenImpl;
@@ -63,6 +66,9 @@ abstract class AuthApiToken
       isAdmin: jsonSerialization['isAdmin'] == null
           ? null
           : _is.BoolJsonExtension.fromJson(jsonSerialization['isAdmin']),
+      isGuest: jsonSerialization['isGuest'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isGuest']),
       created: jsonSerialization['created'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -85,6 +91,11 @@ abstract class AuthApiToken
 
   bool isAdmin;
 
+  /// Denormalised from AuthSession like [isAdmin], so that the authentication
+  /// handler can refuse a guest's bearer the moment public mode is switched off
+  /// without a second lookup. See `flumipAuthenticationHandler`.
+  bool isGuest;
+
   DateTime created;
 
   DateTime expires;
@@ -101,6 +112,7 @@ abstract class AuthApiToken
     String? tokenHash,
     String? email,
     bool? isAdmin,
+    bool? isGuest,
     DateTime? created,
     DateTime? expires,
   });
@@ -113,6 +125,7 @@ abstract class AuthApiToken
       'tokenHash': tokenHash,
       'email': email,
       'isAdmin': isAdmin,
+      'isGuest': isGuest,
       'created': created.toJson(),
       'expires': expires.toJson(),
     };
@@ -160,6 +173,7 @@ class _AuthApiTokenImpl extends AuthApiToken {
     required String tokenHash,
     required String email,
     bool? isAdmin,
+    bool? isGuest,
     DateTime? created,
     required DateTime expires,
   }) : super._(
@@ -168,6 +182,7 @@ class _AuthApiTokenImpl extends AuthApiToken {
          tokenHash: tokenHash,
          email: email,
          isAdmin: isAdmin,
+         isGuest: isGuest,
          created: created,
          expires: expires,
        );
@@ -182,6 +197,7 @@ class _AuthApiTokenImpl extends AuthApiToken {
     String? tokenHash,
     String? email,
     bool? isAdmin,
+    bool? isGuest,
     DateTime? created,
     DateTime? expires,
   }) {
@@ -191,6 +207,7 @@ class _AuthApiTokenImpl extends AuthApiToken {
       tokenHash: tokenHash ?? this.tokenHash,
       email: email ?? this.email,
       isAdmin: isAdmin ?? this.isAdmin,
+      isGuest: isGuest ?? this.isGuest,
       created: created ?? this.created,
       expires: expires ?? this.expires,
     );
@@ -212,6 +229,9 @@ class AuthApiTokenUpdateTable extends _is.UpdateTable<AuthApiTokenTable> {
   _is.ColumnValue<bool, bool> isAdmin(bool value) =>
       _is.ColumnValue(table.isAdmin, value);
 
+  _is.ColumnValue<bool, bool> isGuest(bool value) =>
+      _is.ColumnValue(table.isGuest, value);
+
   _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
       _is.ColumnValue(table.created, value);
 
@@ -227,6 +247,7 @@ class AuthApiTokenTable extends _is.Table<int?> {
     tokenHash = _is.ColumnString('tokenHash', this);
     email = _is.ColumnString('email', this);
     isAdmin = _is.ColumnBool('isAdmin', this, hasDefault: true);
+    isGuest = _is.ColumnBool('isGuest', this, hasDefault: true);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     expires = _is.ColumnDateTime('expires', this);
   }
@@ -241,6 +262,11 @@ class AuthApiTokenTable extends _is.Table<int?> {
 
   late final _is.ColumnBool isAdmin;
 
+  /// Denormalised from AuthSession like [isAdmin], so that the authentication
+  /// handler can refuse a guest's bearer the moment public mode is switched off
+  /// without a second lookup. See `flumipAuthenticationHandler`.
+  late final _is.ColumnBool isGuest;
+
   late final _is.ColumnDateTime created;
 
   late final _is.ColumnDateTime expires;
@@ -252,6 +278,7 @@ class AuthApiTokenTable extends _is.Table<int?> {
     tokenHash,
     email,
     isAdmin,
+    isGuest,
     created,
     expires,
   ];

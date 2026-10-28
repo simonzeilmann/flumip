@@ -2,7 +2,20 @@
 ###
 ### Deliberately minimal and safe to serve unauthenticated: whether a sign-in is
 ### required at all, and what to put on the button. No table — transport only.
+###
+### The public-mode fields are what the entry notice needs to draw itself before
+### the visitor has any credential: they are all shown to every visitor anyway.
 class: AuthConfigDto
 fields:
   enabled: bool, default=false
   buttonLabel: String, default="Sign in with SSO"
+  publicMode: bool, default=false
+  publicNoticeText: String, default=""
+  imprintUrl: String, default=""
+  privacyUrl: String, default=""
+  ### How long a new project is kept, in hours, or null when nothing on this
+  ### server is deleted automatically.
+  projectRetentionHours: int?
+  ### The furthest "Keep longer" can go, in hours after creation. Null exactly
+  ### when [projectRetentionHours] is.
+  maxProjectLifetimeHours: int?

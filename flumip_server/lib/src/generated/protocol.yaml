@@ -33,6 +33,11 @@ options:
 project:
   - createProject:
   - deleteProject:
+  - extendProject:
+  - setKeptIndefinitely:
+  - getShareToken:
+  - resetShareToken:
+  - redeemShareToken:
   - getProjects:
   - getProject:
   - addGeneToProject:

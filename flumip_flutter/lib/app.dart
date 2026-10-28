@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'auth/auth_controller.dart';
+import 'auth/public_notice_screen.dart';
 import 'auth/signed_in_menu.dart';
 import 'genome/genome_tab.dart';
 import 'project/projects_tab.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: siteTitle,
+      scaffoldMessengerKey: messengerKey,
       theme: buildAppTheme(),
       home: AuthGate(
         auth: auth ?? authController,
@@ -60,11 +62,22 @@ class MyApp extends StatelessWidget {
 ///
 /// On a default install [AuthState.disabled] is the answer and this widget is a
 /// pass-through, so nothing about the no-authentication case changes.
+///
+/// On a public instance it shows the entry notice instead, until the visitor
+/// accepts it.
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key, required this.auth, required this.child});
+  const AuthGate({
+    super.key,
+    required this.auth,
+    required this.child,
+    this.openUrl,
+  });
 
   final AuthController auth;
   final Widget child;
+
+  /// Opens a link in a new tab, or null for the app-wide [openExternalUrl].
+  final void Function(String url)? openUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +96,12 @@ class AuthGate extends StatelessWidget {
             return _SignInScreen(
               label: auth.buttonLabel,
               onSignIn: () => auth.signIn(siteUrl),
+            );
+          case AuthState.needsAcceptance:
+            return PublicNoticeScreen(
+              auth: auth,
+              onSignIn: () => auth.signIn(siteUrl),
+              openUrl: openUrl ?? openExternalUrl,
             );
         }
       },
@@ -152,8 +171,18 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = this.auth ?? authController;
+    // A guest on a public instance has nothing in Settings they could change —
+    // the server answers them with "no settings" — so the tab is not offered.
+    // It is the last tab on purpose: dropping it moves no other index, and
+    // `projectsTabIndex` / `genomesTabIndex` stay true.
+    final showSettings =
+        !(auth.state == AuthState.signedIn && auth.user!.isGuest);
+    final views = tabs ?? const [ProjectsTab(), GenomeTab(), SettingsTab()];
+    final shown = showSettings ? views : views.take(2).toList();
     return DefaultTabController(
-      length: 3,
+      // Keyed on the count: a controller cannot change length in place.
+      key: ValueKey(shown.length),
+      length: shown.length,
       child: Scaffold(
         appBar: AppBar(
           title: Text(title),
@@ -164,7 +193,13 @@ class MyHomePage extends StatelessWidget {
             const SearchButton(),
             // Only present when someone is actually signed in, so the default
             // install shows an unchanged app bar.
-            if (auth.state == AuthState.signedIn)
+            if (auth.state == AuthState.signedIn && auth.user!.isGuest)
+              GuestMenu(
+                onSignIn: auth.config.enabled
+                    ? () => auth.signIn(siteUrl)
+                    : null,
+              )
+            else if (auth.state == AuthState.signedIn)
               SignedInMenu(
                 user: auth.user!,
                 onSignOut: () => auth.signOut(siteUrl),
@@ -178,13 +213,14 @@ class MyHomePage extends StatelessWidget {
           // ⚠️ The order is a contract: `projectsTabIndex` and `genomesTabIndex`
           // in `services.dart` name these positions, and search sends its hits
           // by them. `test/app_test.dart` holds the two together.
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.center,
             tabs: [
-              Tab(text: 'Projects', icon: Icon(Icons.folder)),
-              Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns)),
-              Tab(text: 'Settings', icon: Icon(Icons.settings)),
+              const Tab(text: 'Projects', icon: Icon(Icons.folder)),
+              const Tab(text: 'Genomes & SNP', icon: Icon(Icons.dns)),
+              if (showSettings)
+                const Tab(text: 'Settings', icon: Icon(Icons.settings)),
             ],
           ),
         ),
@@ -216,12 +252,7 @@ class MyHomePage extends StatelessWidget {
               // an app full of gene names, file paths and genome coordinates is
               // the wrong default. Fields and buttons keep their own behaviour;
               // this only makes static text selectable.
-              child: SelectionArea(
-                child: TabBarView(
-                  children:
-                      tabs ?? const [ProjectsTab(), GenomeTab(), SettingsTab()],
-                ),
-              ),
+              child: SelectionArea(child: TabBarView(children: shown)),
             ),
           ),
         ),
@@ -235,6 +266,20 @@ class MyHomePage extends StatelessWidget {
               ),
               child: Row(
                 children: [
+                  // A public site in Germany has to link both from every page.
+                  // Empty on an internal install, where neither is set.
+                  if (auth.config.imprintUrl.isNotEmpty)
+                    _FooterLink(
+                      label: 'Imprint',
+                      onTap: () =>
+                          (openUrl ?? openExternalUrl)(auth.config.imprintUrl),
+                    ),
+                  if (auth.config.privacyUrl.isNotEmpty)
+                    _FooterLink(
+                      label: 'Privacy policy',
+                      onTap: () =>
+                          (openUrl ?? openExternalUrl)(auth.config.privacyUrl),
+                    ),
                   // Fill remaining space so version stays at bottom-right
                   const Spacer(),
                   // Clickable GitHub link
@@ -260,6 +305,29 @@ class MyHomePage extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FooterLink extends StatelessWidget {
+  const _FooterLink({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: onTap,
+        child: Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(decoration: TextDecoration.underline),
         ),
       ),
     );

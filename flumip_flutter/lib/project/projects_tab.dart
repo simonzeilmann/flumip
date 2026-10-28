@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../services.dart';
 import '../ui/error_banner.dart';
+import '../ui/info_banner.dart';
 import '../ui/layout.dart';
 import 'create_project_widget.dart';
+import 'expiry.dart';
 import 'project_tile.dart';
 import 'projects_controller.dart';
 
@@ -76,6 +78,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
     final projects = _controller.projects;
     final error = _controller.errorMessage;
+    final retention = authController.config.projectRetention;
 
     return ContentWidth(
       padding: const EdgeInsets.all(16),
@@ -93,6 +96,17 @@ class _ProjectsTabState extends State<ProjectsTab> {
               label: const Text('Create project'),
             ),
           ),
+          // On a public or demo server, said once up front rather than left to
+          // be discovered from a date on each tile.
+          if (retention != null)
+            InfoBanner(
+              'Projects on this server are kept for '
+              '${describeRetention(retention)} and deleted automatically when '
+              'their last day ends. Use '
+              '"Keep longer" on a project to extend that, and "Copy link" to '
+              'open it in another browser.',
+              icon: Icons.auto_delete_outlined,
+            ),
           if (error != null)
             ErrorBanner(
               error,

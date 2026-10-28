@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../auth/auth_controller.dart';
 import '../format.dart';
 import '../services.dart';
 import '../ui/responsive_row.dart';
 import '../ui/theme.dart';
 import 'genome_picker_dialog.dart';
 import 'department_picker.dart';
+import 'expiry.dart';
 import 'owner_picker.dart';
 import 'project_inputs.dart';
 import 'project_options_view.dart';
@@ -45,6 +48,8 @@ class ProjectTile extends StatefulWidget {
     this.onDepartmentChanged,
     this.initiallyExpanded = false,
     this.controller,
+    this.serverConfig,
+    this.isAdmin,
   });
 
   /// ⚠️ `final` now, and the class is `const`-constructible again. It used to be
@@ -91,6 +96,14 @@ class ProjectTile extends StatefulWidget {
   /// ⚠️ Owned by this widget when it builds its own: it holds a poll for one
   /// project, and there is one of these per row.
   final ProjectTileController? controller;
+
+  /// How long this server keeps projects, or null for the app-wide
+  /// `authController.config`. Only a test passes it.
+  final AuthConfigSnapshot? serverConfig;
+
+  /// Whether the viewer is an administrator, who may keep a project
+  /// indefinitely. Null for the app-wide `authController`'s answer.
+  final bool? isAdmin;
 
   @override
   State<ProjectTile> createState() => _ProjectTileState();
@@ -206,9 +219,54 @@ class _ProjectTileState extends State<ProjectTile> {
     );
   }
 
+  AuthConfigSnapshot get _serverConfig =>
+      widget.serverConfig ?? authController.config;
+
+  /// Copies the share link to the clipboard.
+  Future<void> _copyLink({bool reset = false}) async {
+    final link = reset
+        ? await _controller.resetShareLink(siteUrl)
+        : await _controller.shareLink(siteUrl);
+    if (link == null || !mounted) return;
+    await Clipboard.setData(ClipboardData(text: link));
+    _say(
+      reset
+          ? 'The old link no longer works. The new one is on your clipboard.'
+          : 'Link copied. Anyone who opens it can see and change this project.',
+    );
+  }
+
+  void _confirmResetLink() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset share link'),
+        content: const Text(
+          'The current link stops working, and everybody who opened it loses '
+          'access to this project — in your other browsers too. You get a new '
+          'link to share again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _copyLink(reset: true);
+            },
+            child: const Text('Reset link'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = _controller.project;
+    final deletion = deletionDate(project, _serverConfig);
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: context.colours.outlineVariant),
@@ -247,6 +305,28 @@ class _ProjectTileState extends State<ProjectTile> {
                 // What this project is doing, without having to open it.
                 ProjectStatePill(state: ProjectState.of(project)),
                 Text(DateFormat('dd.MM.yyyy').format(project.created)),
+                if (project.keptIndefinitely &&
+                    _serverConfig.projectRetention != null)
+                  const Tooltip(
+                    message: 'Kept indefinitely by an administrator',
+                    child: Icon(Icons.all_inclusive, size: 16),
+                  ),
+                if (deletion != null)
+                  Tooltip(
+                    message: 'Kept until the end of this day',
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        const Icon(Icons.auto_delete_outlined, size: 16),
+                        Text(
+                          DateFormat(
+                            'dd.MM.yyyy',
+                          ).format(lastDayKept(deletion)),
+                        ),
+                      ],
+                    ),
+                  ),
                 Text(formatBytes(project.size)),
                 IconButton(
                   icon: const Icon(Icons.delete),
@@ -257,6 +337,22 @@ class _ProjectTileState extends State<ProjectTile> {
             ),
           ),
           if (_controller.expanded) ...[
+            _ProjectLifetimeRow(
+              deletion: deletion,
+              // Only where projects expire at all: on a server that keeps
+              // everything there is nothing to exempt a project from.
+              keptIndefinitely: _serverConfig.projectRetention == null
+                  ? null
+                  : project.keptIndefinitely,
+              onKeptIndefinitelyChanged:
+                  (widget.isAdmin ?? authController.user?.isAdmin ?? false)
+                  ? _controller.setKeptIndefinitely
+                  : null,
+              canExtend: canExtend(project, _serverConfig),
+              onKeepLonger: _controller.keepLonger,
+              onCopyLink: _copyLink,
+              onResetLink: _confirmResetLink,
+            ),
             // Full width, above the three columns, so it appears once in both
             // layouts — ownership is a property of the project, not of any one
             // of them.
@@ -342,6 +438,92 @@ class _ProjectTileState extends State<ProjectTile> {
       onShowUcscTrackFile: () => showUcscTrackFileDialog(context, project.id!),
       onShowDesignLog: () => showDesignLogDialog(context, project.id!),
       onShowDownloads: () => showProjectDownloadsDialog(context, project.id!),
+    );
+  }
+}
+
+/// When the project will be deleted, the way to keep it longer, and its share
+/// link.
+///
+/// One row because they answer one question — "how do I keep hold of this?" —
+/// which on a public instance is the first thing a visitor needs to know.
+class _ProjectLifetimeRow extends StatelessWidget {
+  const _ProjectLifetimeRow({
+    required this.deletion,
+    required this.keptIndefinitely,
+    required this.onKeptIndefinitelyChanged,
+    required this.canExtend,
+    required this.onKeepLonger,
+    required this.onCopyLink,
+    required this.onResetLink,
+  });
+
+  /// Null when this server keeps projects indefinitely, or this project is.
+  final DateTime? deletion;
+
+  /// Whether an administrator exempted this project, or null on a server that
+  /// deletes nothing.
+  final bool? keptIndefinitely;
+
+  /// Toggles [keptIndefinitely]. Null unless the viewer is an administrator.
+  final void Function(bool kept)? onKeptIndefinitelyChanged;
+  final bool canExtend;
+  final VoidCallback onKeepLonger;
+  final VoidCallback onCopyLink;
+  final VoidCallback onResetLink;
+
+  @override
+  Widget build(BuildContext context) {
+    final deletion = this.deletion;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (keptIndefinitely == true)
+            Text(
+              'Kept indefinitely by an administrator.',
+              style: context.text.bodySmall,
+            ),
+          if (deletion != null) ...[
+            Text(
+              'Kept until the end of '
+              '${DateFormat('dd.MM.yyyy').format(lastDayKept(deletion))}, '
+              'then deleted automatically.',
+              style: context.text.bodySmall,
+            ),
+            Tooltip(
+              message: canExtend
+                  ? ''
+                  : 'Already kept as long as this server allows',
+              child: TextButton.icon(
+                onPressed: canExtend ? onKeepLonger : null,
+                icon: const Icon(Icons.update),
+                label: const Text('Keep longer'),
+              ),
+            ),
+          ],
+          if (keptIndefinitely != null && onKeptIndefinitelyChanged != null)
+            FilterChip(
+              label: const Text('Keep indefinitely'),
+              tooltip: 'Exempt this project from automatic deletion',
+              selected: keptIndefinitely!,
+              onSelected: onKeptIndefinitelyChanged,
+            ),
+          TextButton.icon(
+            onPressed: onCopyLink,
+            icon: const Icon(Icons.link),
+            label: const Text('Copy link'),
+          ),
+          TextButton.icon(
+            onPressed: onResetLink,
+            icon: const Icon(Icons.link_off),
+            label: const Text('Reset link'),
+          ),
+        ],
+      ),
     );
   }
 }

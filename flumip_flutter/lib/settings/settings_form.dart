@@ -66,6 +66,15 @@ class SettingsForm {
 
   final demoRetentionHours = TextEditingController();
 
+  final maxProjectLifetimeDays = TextEditingController();
+  final guestMaxProjects = TextEditingController();
+  final termsVersion = TextEditingController();
+  final publicNoticeText = TextEditingController();
+  final imprintUrl = TextEditingController();
+  final privacyUrl = TextEditingController();
+  final maxConcurrentRuns = TextEditingController();
+  final maxBwaThreads = TextEditingController();
+
   final oidcIssuer = TextEditingController();
   final oidcClientId = TextEditingController();
 
@@ -84,6 +93,7 @@ class SettingsForm {
   bool startTLS = false;
   bool loginRequired = false;
   bool demoMode = false;
+  bool publicMode = false;
 
   /// Fills the form from what the server holds.
   void load(Settings settings) {
@@ -101,6 +111,14 @@ class SettingsForm {
     smtpUser.text = settings.smtpUser;
     smtpFrom.text = settings.smtpFrom;
     demoRetentionHours.text = '${settings.demoModeRetentionHours}';
+    maxProjectLifetimeDays.text = '${settings.maxProjectLifetimeDays}';
+    guestMaxProjects.text = '${settings.guestMaxProjects}';
+    termsVersion.text = '${settings.termsVersion}';
+    publicNoticeText.text = settings.publicNoticeText;
+    imprintUrl.text = settings.imprintUrl;
+    privacyUrl.text = settings.privacyUrl;
+    maxConcurrentRuns.text = '${settings.maxConcurrentRuns}';
+    maxBwaThreads.text = '${settings.maxBwaThreads}';
     oidcIssuer.text = settings.oidcIssuer;
     oidcClientId.text = settings.oidcClientId;
     oidcScopes.text = settings.oidcScopes;
@@ -114,6 +132,7 @@ class SettingsForm {
     startTLS = settings.startTLS;
     loginRequired = settings.loginRequired;
     demoMode = settings.demoMode;
+    publicMode = settings.publicMode;
 
     // ⚠️ Cleared, never populated. The server does not send any of these three
     // back, so leaving a stale value here would offer to re-send something this
@@ -150,6 +169,16 @@ class SettingsForm {
     // The server clamps this to 1..8760, so a nonsense entry becomes the nearest
     // sane value rather than being rejected.
     demoModeRetentionHours: int.tryParse(demoRetentionHours.text) ?? 168,
+    publicMode: publicMode,
+    // Clamped on the server like the retention above.
+    maxProjectLifetimeDays: int.tryParse(maxProjectLifetimeDays.text) ?? 30,
+    guestMaxProjects: int.tryParse(guestMaxProjects.text) ?? 10,
+    termsVersion: int.tryParse(termsVersion.text) ?? 1,
+    publicNoticeText: publicNoticeText.text.trim(),
+    imprintUrl: imprintUrl.text.trim(),
+    privacyUrl: privacyUrl.text.trim(),
+    maxConcurrentRuns: int.tryParse(maxConcurrentRuns.text) ?? 0,
+    maxBwaThreads: int.tryParse(maxBwaThreads.text) ?? 0,
     // ⚠️ Trimmed, and only these. A trailing space on an issuer URL breaks
     // discovery with an error that names the wrong cause; a trailing space on a
     // filesystem path is at least visible in the field beside it.
@@ -183,6 +212,14 @@ class SettingsForm {
       testMail,
       newPassword,
       demoRetentionHours,
+      maxProjectLifetimeDays,
+      guestMaxProjects,
+      termsVersion,
+      publicNoticeText,
+      imprintUrl,
+      privacyUrl,
+      maxConcurrentRuns,
+      maxBwaThreads,
       oidcIssuer,
       oidcClientId,
       oidcClientSecret,

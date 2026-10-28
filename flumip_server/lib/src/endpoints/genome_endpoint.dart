@@ -2,8 +2,14 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 import '../generated/protocol.dart';
+import '../services/authorization_service.dart';
 import '../services/genome_service.dart';
 import 'flumip_endpoint.dart';
+
+/// Why a guest on a public instance cannot manage genomes. Scanning, indexing
+/// and editing act on the whole server, for every visitor at once.
+const _guestGenomeRefusal =
+    'Managing genomes is reserved for administrators on this public server.';
 
 /// Endpoint for genome-related operations.
 class GenomeEndpoint extends FlumipEndpoint {
@@ -58,6 +64,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> updateGenome(Session session, int id, Genome genome) async {
     session.log('Updating genome with ID: $id', level: LogLevel.info);
     try {
+      await authz.refuseGuest(session, message: _guestGenomeRefusal);
       return await genomeService.updateGenome(session, id, genome);
     } catch (e) {
       session.log(
@@ -76,6 +83,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> collectGenomes(Session session) async {
     session.log('Collecting genomes', level: LogLevel.info);
     try {
+      await authz.refuseGuest(session, message: _guestGenomeRefusal);
       return await genomeService.collectGenomes(session);
     } catch (e) {
       session.log(
@@ -183,6 +191,7 @@ class GenomeEndpoint extends FlumipEndpoint {
   Future<void> indexFasta(Session session, int id) async {
     session.log('Indexing fasta for genome with ID: $id', level: LogLevel.info);
     try {
+      await authz.refuseGuest(session, message: _guestGenomeRefusal);
       return await genomeService.indexFasta(session, id);
     } catch (e) {
       session.log(
@@ -200,6 +209,7 @@ class GenomeEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await authz.refuseGuest(session, message: _guestGenomeRefusal);
       return await genomeService.deleteFastaIndex(session, id);
     } catch (e) {
       session.log(

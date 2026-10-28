@@ -10,6 +10,11 @@ import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+/// Why a guest on a public instance cannot add an SNP set.
+const _guestSnpRefusal =
+    'Adding SNP sets is not available on this public server. Use one of the '
+    'SNP sets it provides.';
+
 /// Everything to do with SNP sets that a user, rather than the server's
 /// administrator, brought along.
 ///
@@ -95,6 +100,7 @@ class SnpEndpoint extends FlumipEndpoint {
       level: LogLevel.info,
     );
     try {
+      await authz.refuseGuest(session, message: _guestSnpRefusal);
       final name = request.name.trim();
       if (name.isEmpty) {
         throw ArgumentException(message: 'An SNP set needs a name.');
@@ -203,6 +209,7 @@ class SnpEndpoint extends FlumipEndpoint {
   ) async {
     session.log('Importing an SNP set from URLs', level: LogLevel.info);
     try {
+      await authz.refuseGuest(session, message: _guestSnpRefusal);
       final name = request.name.trim();
       if (name.isEmpty) {
         throw ArgumentException(message: 'An SNP set needs a name.');
@@ -537,6 +544,7 @@ class SnpEndpoint extends FlumipEndpoint {
   /// gating both is a defensible hardening for another day.
   Future<void> collectCustomSnps(Session session) async {
     try {
+      await authz.refuseGuest(session, message: _guestSnpRefusal);
       await snpService.collectCustomSnps(session);
     } catch (e) {
       session.log(

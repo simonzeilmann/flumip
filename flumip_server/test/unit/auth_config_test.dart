@@ -57,6 +57,55 @@ void main() {
     clientSecret: 's3cret',
   );
 
+  group('public mode', () {
+    test('enforces with no identity provider at all', () {
+      // Guests never depend on the provider, so nothing about it may open the
+      // gate — failing open here would show every visitor every project.
+      final config = AuthConfig.resolve(
+        settings: Settings(publicMode: true),
+        env: const {},
+      );
+      expect(config.publicMode, isTrue);
+      expect(config.loginRequired, isFalse);
+      expect(config.isEnforcing(hasDiscovery: false), isTrue);
+    });
+
+    test(
+      'wants sign-in without requiring it, so administrators can get in',
+      () {
+        final config = AuthConfig.resolve(
+          settings: Settings(publicMode: true),
+          env: const {},
+        );
+        expect(config.wantsSignIn, isTrue);
+      },
+    );
+
+    test('FLUMIP_PUBLIC_MODE overrides in both directions', () {
+      final on = AuthConfig.resolve(
+        settings: Settings(),
+        env: const {AuthEnv.publicMode: 'true'},
+      );
+      expect(on.publicMode, isTrue);
+      expect(on.envOverrides, contains(AuthEnv.publicMode));
+
+      // The way back for an administrator who switched public mode on and can
+      // no longer sign in.
+      final off = AuthConfig.resolve(
+        settings: Settings(publicMode: true),
+        env: const {AuthEnv.publicMode: 'false'},
+      );
+      expect(off.publicMode, isFalse);
+      expect(off.isEnforcing(hasDiscovery: false), isFalse);
+    });
+
+    test('is off by default', () {
+      final config = AuthConfig.resolve(settings: Settings(), env: const {});
+      expect(config.publicMode, isFalse);
+      expect(config.wantsSignIn, isFalse);
+    });
+  });
+
   group('defaults', () {
     test('no settings and no environment means authentication is off', () {
       final config = AuthConfig.resolve(env: const {});

@@ -27,6 +27,17 @@ Duration demoRetention(Settings settings) {
   return Duration(hours: hours);
 }
 
+/// The furthest "Keep longer" can push a project's deletion, measured from its
+/// creation — and how long a guest's session lasts between visits.
+///
+/// Never shorter than [demoRetention]: a maximum below the initial window would
+/// make extending a project *shorten* it.
+Duration maxProjectLifetime(Settings settings) {
+  final days = Duration(days: settings.maxProjectLifetimeDays.clamp(1, 365));
+  final initial = demoRetention(settings);
+  return days < initial ? initial : days;
+}
+
 /// A service class for handling settings-related operations.
 class SettingsService {
   SettingsService();
@@ -220,6 +231,15 @@ class SettingsService {
     stored
       ..demoMode = settings.demoMode
       ..demoModeRetentionHours = settings.demoModeRetentionHours
+      ..publicMode = settings.publicMode
+      ..maxProjectLifetimeDays = settings.maxProjectLifetimeDays
+      ..guestMaxProjects = settings.guestMaxProjects
+      ..termsVersion = settings.termsVersion
+      ..publicNoticeText = settings.publicNoticeText
+      ..imprintUrl = settings.imprintUrl
+      ..privacyUrl = settings.privacyUrl
+      ..maxConcurrentRuns = settings.maxConcurrentRuns
+      ..maxBwaThreads = settings.maxBwaThreads
       ..baseDir = settings.baseDir
       ..projectDir = settings.projectDir
       ..genomeDir = settings.genomeDir
@@ -243,6 +263,7 @@ class SettingsService {
       ..oidcButtonLabel = settings.oidcButtonLabel
       ..oidcAllowedEmailDomains = settings.oidcAllowedEmailDomains
       ..oidcAdminEmails = settings.oidcAdminEmails
+      ..oidcDepartmentClaim = settings.oidcDepartmentClaim
       ..authPublicUrl = settings.authPublicUrl;
     // oidcClientSecret is deliberately absent: it is serverOnly, so it arrives
     // as null from the client and is written only by setOidcClientSecret.

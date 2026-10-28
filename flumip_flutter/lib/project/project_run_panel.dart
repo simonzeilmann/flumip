@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../format.dart';
 import '../ui/error_banner.dart';
+import '../ui/info_banner.dart';
 import '../ui/theme.dart';
 import '../ui/warning_banner.dart';
 import 'mipgen_progress.dart';
@@ -83,7 +84,12 @@ class ProjectRunPanel extends StatelessWidget {
       children: [
         if (idle) _BedFileStep(project: project, onCreate: onCreateBedFile),
         if (project.bedFileCreated && idle) _startSection(context),
-        if (state.isRunning)
+        if (state == ProjectState.queued)
+          const InfoBanner(
+            'Waiting for a free slot: this server runs a limited number of '
+            'designs at once. Yours starts by itself — you can close this page.',
+          )
+        else if (state.isRunning)
           MipgenProgressPanel(progress: progress, elapsed: _elapsed),
         if (state.succeeded) _resultSection(context),
         if (state == ProjectState.failed)

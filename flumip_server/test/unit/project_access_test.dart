@@ -18,12 +18,82 @@ void main() {
     Principal principal = Principal.anonymous,
     int? projectOwner,
     String? department,
+    bool publicMode = false,
+    bool granted = false,
   }) => projectIsAccessible(
     enforcing: enforcing,
     principal: principal,
     owner: projectOwner,
     department: department,
+    publicMode: publicMode,
+    granted: granted,
   );
+
+  group('a public instance', () {
+    const guest = Principal(userId: 7, isGuest: true);
+    const otherGuest = Principal(userId: 8, isGuest: true);
+
+    test('a guest reaches their own project', () {
+      expect(
+        allowed(principal: guest, projectOwner: 7, publicMode: true),
+        isTrue,
+      );
+    });
+
+    test("a guest is refused another guest's project", () {
+      // The whole point of public mode: visitors are isolated from each other.
+      expect(
+        allowed(principal: otherGuest, projectOwner: 7, publicMode: true),
+        isFalse,
+      );
+    });
+
+    test('an unowned project is for administrators only', () {
+      // ⚠️ The opposite of an internal install, where unowned means shared. On
+      // a public one, unowned is a project whose guest has gone — handing it to
+      // every visitor would be a leak.
+      expect(
+        allowed(principal: guest, projectOwner: null, publicMode: true),
+        isFalse,
+      );
+      expect(
+        allowed(principal: admin, projectOwner: null, publicMode: true),
+        isTrue,
+      );
+    });
+
+    test('an unowned project stays shared on an internal install', () {
+      expect(allowed(principal: other, projectOwner: null), isTrue);
+    });
+  });
+
+  group('share-link grants', () {
+    test('a grant opens somebody else\'s project', () {
+      expect(allowed(principal: other, projectOwner: 7, granted: true), isTrue);
+    });
+
+    test('a grant opens an unowned project on a public instance', () {
+      // The owner's guest identity may have been pruned; the people they shared
+      // the link with keep the project.
+      const guest = Principal(userId: 8, isGuest: true);
+      expect(
+        allowed(
+          principal: guest,
+          projectOwner: null,
+          publicMode: true,
+          granted: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('a grant means nothing without an identity', () {
+      expect(
+        allowed(principal: Principal.anonymous, projectOwner: 7, granted: true),
+        isFalse,
+      );
+    });
+  });
 
   group('the default install (no authentication)', () {
     // If any of these ever fails, the standard deployment has lost access to its

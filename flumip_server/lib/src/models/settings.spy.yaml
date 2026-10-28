@@ -9,6 +9,36 @@ fields:
   ### pull a scheduled deletion earlier — that project keeps the deadline it was
   ### created with. See DemoModeCleanup.
   demoModeRetentionHours: int, default=168
+  ### Public mode: an instance open to anonymous visitors, like UCSC BLAT.
+  ###
+  ### Visitors accept the entry notice and become guests with their own projects,
+  ### isolated from each other; administrators still sign in through the
+  ### identity provider. Implies demo-mode deletion, with
+  ### [demoModeRetentionHours] as the initial window. Overridden in both
+  ### directions by FLUMIP_PUBLIC_MODE. See docs/public-instance.md.
+  publicMode: bool, default=false
+  ### The furthest "Keep longer" can push a project's deletion, in days after it
+  ### was created. Never shorter than [demoModeRetentionHours].
+  maxProjectLifetimeDays: int, default=30
+  ### How many projects one guest may have at a time. Administrators and
+  ### signed-in users are not counted.
+  guestMaxProjects: int, default=10
+  ### Raise this to make every guest accept the entry notice again, for example
+  ### after changing [publicNoticeText]. Each guest records the version they
+  ### accepted (`FlumipUser.termsVersion`).
+  termsVersion: int, default=1
+  ### Replaces the terms-of-use paragraph of the entry notice. Empty uses the
+  ### default: non-commercial, academic research use only.
+  publicNoticeText: String, default=""
+  ### Links shown on the entry notice and in the footer. A public site in
+  ### Germany needs both an Impressum and a privacy policy.
+  imprintUrl: String, default=""
+  privacyUrl: String, default=""
+  ### How many mipgen runs may go at once; any more wait in a queue. 0 means no
+  ### limit, which is how every install behaved before this existed.
+  maxConcurrentRuns: int, default=0
+  ### The most bwa threads one run may ask for. 0 means no limit.
+  maxBwaThreads: int, default=0
   baseDir: String, default="/opt/flumip"
   projectDir: String, default="/opt/flumip/projects"
   genomeDir: String, default="/opt/flumip/data/genomes"

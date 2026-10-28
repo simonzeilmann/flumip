@@ -24,6 +24,9 @@ abstract class Project
     DateTime? created,
     this.owner,
     this.department,
+    this.expires,
+    bool? keptIndefinitely,
+    this.queuedAt,
     this.genes,
     bool? bedFileCreated,
     bool? active,
@@ -37,6 +40,7 @@ abstract class Project
     bool? cleanup,
   }) : description = description ?? '',
        created = created ?? DateTime.now(),
+       keptIndefinitely = keptIndefinitely ?? false,
        bedFileCreated = bedFileCreated ?? false,
        active = active ?? false,
        size = size ?? 0,
@@ -54,6 +58,9 @@ abstract class Project
     DateTime? created,
     int? owner,
     String? department,
+    DateTime? expires,
+    bool? keptIndefinitely,
+    DateTime? queuedAt,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -79,6 +86,17 @@ abstract class Project
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
       owner: jsonSerialization['owner'] as int?,
       department: jsonSerialization['department'] as String?,
+      expires: jsonSerialization['expires'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
+      keptIndefinitely: jsonSerialization['keptIndefinitely'] == null
+          ? null
+          : _isc.BoolJsonExtension.fromJson(
+              jsonSerialization['keptIndefinitely'],
+            ),
+      queuedAt: jsonSerialization['queuedAt'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['queuedAt']),
       genes: jsonSerialization['genes'] == null
           ? null
           : _i2kzrgg5.Protocol().deserialize<List<String>>(
@@ -166,6 +184,29 @@ abstract class Project
   /// exactly one group, because then there is nothing to choose.
   String? department;
 
+  /// When the project will be deleted automatically, or null if it will not.
+  ///
+  /// Stamped at creation while demo mode or public mode is on, and pushed back
+  /// by `ProjectEndpoint.extendProject` up to `Settings.maxProjectLifetimeDays`
+  /// after [created]. `DemoModeCleanupFutureCall` reads it when it fires; null
+  /// on a project from before this existed, which falls back to [created]
+  /// plus the retention window as it always did.
+  DateTime? expires;
+
+  /// Exempt from automatic deletion, by an administrator's decision.
+  ///
+  /// Set through `ProjectEndpoint.setKeptIndefinitely`, administrators only —
+  /// on a public instance this is how a project cited in a paper outlives the
+  /// retention window. `DemoModeCleanupFutureCall` leaves such a project alone
+  /// and stops rescheduling itself; clearing the flag starts a fresh window and
+  /// schedules a new call.
+  bool keptIndefinitely;
+
+  /// When this project's run was put in the queue, or null if it is not
+  /// waiting. Set by `MipgenService.generateMips` when `maxConcurrentRuns`
+  /// runs are already going; the oldest is started as soon as one finishes.
+  DateTime? queuedAt;
+
   List<String>? genes;
 
   bool bedFileCreated;
@@ -211,6 +252,9 @@ abstract class Project
     DateTime? created,
     int? owner,
     String? department,
+    DateTime? expires,
+    bool? keptIndefinitely,
+    DateTime? queuedAt,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -235,6 +279,9 @@ abstract class Project
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
+      if (expires != null) 'expires': expires?.toJson(),
+      'keptIndefinitely': keptIndefinitely,
+      if (queuedAt != null) 'queuedAt': queuedAt?.toJson(),
       if (genes != null) 'genes': genes?.toJson(),
       'bedFileCreated': bedFileCreated,
       'active': active,
@@ -261,6 +308,9 @@ abstract class Project
       'created': created.toJson(),
       if (owner != null) 'owner': owner,
       if (department != null) 'department': department,
+      if (expires != null) 'expires': expires?.toJson(),
+      'keptIndefinitely': keptIndefinitely,
+      if (queuedAt != null) 'queuedAt': queuedAt?.toJson(),
       if (genes != null) 'genes': genes?.toJson(),
       'bedFileCreated': bedFileCreated,
       'active': active,
@@ -293,6 +343,9 @@ class _ProjectImpl extends Project {
     DateTime? created,
     int? owner,
     String? department,
+    DateTime? expires,
+    bool? keptIndefinitely,
+    DateTime? queuedAt,
     List<String>? genes,
     bool? bedFileCreated,
     bool? active,
@@ -313,6 +366,9 @@ class _ProjectImpl extends Project {
          created: created,
          owner: owner,
          department: department,
+         expires: expires,
+         keptIndefinitely: keptIndefinitely,
+         queuedAt: queuedAt,
          genes: genes,
          bedFileCreated: bedFileCreated,
          active: active,
@@ -339,6 +395,9 @@ class _ProjectImpl extends Project {
     DateTime? created,
     Object? owner = _Undefined,
     Object? department = _Undefined,
+    Object? expires = _Undefined,
+    bool? keptIndefinitely,
+    Object? queuedAt = _Undefined,
     Object? genes = _Undefined,
     bool? bedFileCreated,
     bool? active,
@@ -360,6 +419,9 @@ class _ProjectImpl extends Project {
       created: created ?? this.created,
       owner: owner is int? ? owner : this.owner,
       department: department is String? ? department : this.department,
+      expires: expires is DateTime? ? expires : this.expires,
+      keptIndefinitely: keptIndefinitely ?? this.keptIndefinitely,
+      queuedAt: queuedAt is DateTime? ? queuedAt : this.queuedAt,
       genes: genes is List<String>?
           ? genes
           : this.genes?.map((e0) => e0).toList(),

@@ -477,6 +477,80 @@ class Endpoints extends _is.EndpointDispatch {
                 params['id'],
               ),
         ),
+        'extendProject': _is.MethodConnector(
+          name: 'extendProject',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint).extendProject(
+                session,
+                params['id'],
+              ),
+        ),
+        'setKeptIndefinitely': _is.MethodConnector(
+          name: 'setKeptIndefinitely',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'kept': _is.ParameterDescription(
+              name: 'kept',
+              type: _is.getType<bool>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .setKeptIndefinitely(session, params['id'], params['kept']),
+        ),
+        'getShareToken': _is.MethodConnector(
+          name: 'getShareToken',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint).getShareToken(
+                session,
+                params['id'],
+              ),
+        ),
+        'resetShareToken': _is.MethodConnector(
+          name: 'resetShareToken',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .resetShareToken(session, params['id']),
+        ),
+        'redeemShareToken': _is.MethodConnector(
+          name: 'redeemShareToken',
+          params: {
+            'token': _is.ParameterDescription(
+              name: 'token',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .redeemShareToken(session, params['token']),
+        ),
         'getProjects': _is.MethodConnector(
           name: 'getProjects',
           params: {},

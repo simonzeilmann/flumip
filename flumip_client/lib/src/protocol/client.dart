@@ -47,6 +47,9 @@ class EndpointAuth extends _isc.EndpointRef {
   /// Answered unauthenticated on purpose. It leaks only whether SSO is on and a
   /// label an administrator chose — both of which are visible from the sign-in
   /// page anyway.
+  ///
+  /// On a public instance it also carries what the entry notice shows, and how
+  /// long projects are kept — all of it shown to every visitor anyway.
   _ida.Future<_im9pga5k.AuthConfigDto> config() =>
       caller.callServerEndpoint<_im9pga5k.AuthConfigDto>('auth', 'config', {});
 
@@ -388,6 +391,71 @@ class EndpointProject extends EndpointFlumip {
   _ida.Future<void> deleteProject(int id) =>
       caller.callServerEndpoint<void>('project', 'deleteProject', {'id': id});
 
+  /// Pushes the project's automatic deletion back, up to the server's maximum.
+  ///
+  /// Returns the project with its new [Project.expires]; unchanged when it is
+  /// already as late as it can go.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  _ida.Future<_iqi8mkqf.Project> extendProject(int id) =>
+      caller.callServerEndpoint<_iqi8mkqf.Project>('project', 'extendProject', {
+        'id': id,
+      });
+
+  /// Exempts a project from automatic deletion, or puts it back under it with a
+  /// fresh retention window.
+  ///
+  /// **Administrators only**, guarded like [setProjectOwner] by
+  /// [AuthorizationService.requireAdmin] rather than `requireProject`: an owner
+  /// may keep their project longer, up to the server's limit, but lifting the
+  /// limit altogether is the operator's decision.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param kept Whether the project is kept indefinitely.
+  _ida.Future<_iqi8mkqf.Project> setKeptIndefinitely(int id, bool kept) =>
+      caller.callServerEndpoint<_iqi8mkqf.Project>(
+        'project',
+        'setKeptIndefinitely',
+        {'id': id, 'kept': kept},
+      );
+
+  /// The token for this project's share link, minted on first request.
+  ///
+  /// The app builds the link as `<site>/#/p/<token>`. Anyone who opens it gets
+  /// the project in their own list, with the same access as its owner.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  _ida.Future<String> getShareToken(int id) =>
+      caller.callServerEndpoint<String>('project', 'getShareToken', {'id': id});
+
+  /// Withdraws the project's share link and returns the new token.
+  ///
+  /// The old link stops working, and everybody who opened it loses access.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  _ida.Future<String> resetShareToken(int id) => caller
+      .callServerEndpoint<String>('project', 'resetShareToken', {'id': id});
+
+  /// Opens a project from its share link and adds it to the caller's list.
+  ///
+  /// ⚠️ Deliberately **not** guarded by `requireProject`: holding the token is
+  /// the permission, exactly as it is for `/ucsc_track/<token>`. It is still
+  /// behind the endpoint's login gate, so on a public instance only somebody
+  /// who accepted the entry notice gets this far.
+  ///
+  /// \param session The current session.
+  /// \param token The token from the link.
+  _ida.Future<_iqi8mkqf.Project> redeemShareToken(String token) =>
+      caller.callServerEndpoint<_iqi8mkqf.Project>(
+        'project',
+        'redeemShareToken',
+        {'token': token},
+      );
+
   /// Retrieves all projects.
   ///
   /// \param session The current session.
@@ -540,6 +608,8 @@ class EndpointProject extends EndpointFlumip {
   /// ordinary user has to be able to read this to render their own switch.
   ///
   /// \param session The current session.
+  ///
+  /// False for a guest on a public instance, who has no address to send to.
   _ida.Future<bool> notificationsAvailable() =>
       caller.callServerEndpoint<bool>('project', 'notificationsAvailable', {});
 
