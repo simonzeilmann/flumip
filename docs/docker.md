@@ -85,6 +85,14 @@ password and service secret, readable only by you.
 ./init-env.sh
 ```
 
+⚠️ **Installing again on the same machine? Copy the old `.env` instead.** Every
+copy of these files names its database volume `flumip_db`, so a new install
+directory picks up the database an earlier one left behind (`docker compose down`
+keeps it). That database still has the password it was created with, and the new
+one from `init-env.sh` locks FLUMIP out of it. To run a second, separate install
+next to the first, add `COMPOSE_PROJECT_NAME=<another name>` and another
+`FLUMIP_PORT` to its `.env` before step 4.
+
 **3. Build the local image.** It downloads the published image and compiles
 MIPGEN on top of it. This takes a few minutes the first time.
 
@@ -177,6 +185,7 @@ holds what has to be known before the server starts:
 | `FLUMIP_BIND`, `FLUMIP_PORT` | `127.0.0.1`, `9082` | Where the web port is published on the host |
 | `FLUMIP_DATA_DIR`, `FLUMIP_PROJECTS_DIR` | `./data`, `./projects` | Host directories for genomes and SNP sets, and for project results |
 | `FLUMIP_DB_NAME` | `flumip` | The database name |
+| `COMPOSE_PROJECT_NAME` | `flumip` | Names the containers and the database volume (`<name>_db`). Set it only for a second install on the same machine, before its first start. |
 | `FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_*`, `FLUMIP_PUBLIC_URL`, `FLUMIP_AUTH_STRICT` | unset | Single sign-on; see [authentication.md](authentication.md) |
 
 The sign-in variables work exactly as they do in `/etc/flumip/flumip_<env>.env`
@@ -184,7 +193,8 @@ on a bare-metal install. A value set here overrides the Settings tab, which then
 shows it read-only, and `FLUMIP_AUTH_ENABLED=false` is the way back in if sign-in
 ever locks you out. Apply any change with `docker compose up -d`.
 
-The database lives in the Docker volume `flumip_db`. It is not published to the
+The database lives in the Docker volume `flumip_db` (`<name>_db` with
+`COMPOSE_PROJECT_NAME` set). It is not published to the
 host. Use `docker compose exec postgres psql -U postgres flumip` to reach it.
 
 ## Updating
@@ -283,6 +293,10 @@ docker compose down                  # stop and remove the containers; keeps the
 docker compose down -v               # …and delete the database volume as well
 ```
 
+After a plain `down` the database stays in the volume `flumip_db`, and the next
+install on this machine uses it, wherever its files are. Keep `.env` if you might
+install again: its password is the only one that database accepts.
+
 The genomes, SNP sets and projects are ordinary directories (`./data` and
 `./projects` unless `.env` points elsewhere) owned by uid 33, so removing them
 takes `sudo rm -rf data projects`. Or, without sudo and before `down`, empty them
@@ -292,10 +306,12 @@ from inside the container:
 docker compose run --rm --no-deps flumip sh -c 'rm -rf /opt/flumip/data/* /opt/flumip/projects/*'
 ```
 
-The images go with
-`docker image rm flumip-local:<version> ghcr.io/simonzeilmann/flumip:<version>`,
-the version being `FLUMIP_VERSION` in `.env`. `flumip-local` is the one that
-contains MIPGEN. Finally delete `.env`, which holds the database password.
+The local image, the one that contains MIPGEN, goes with
+`docker image rm flumip-local:<version>`, the version being `FLUMIP_VERSION` in
+`.env`. The published image is not tagged on your machine unless you pulled it
+yourself: `docker compose build` fetches it into Docker's build cache, which
+`docker builder prune` clears.
+Finally delete `.env`, which holds the database password.
 
 ## Troubleshooting
 
@@ -316,6 +332,7 @@ the data directories are writable. If anything fails, it says what.
 | A design or an index build dies partway | Almost always memory. `bwa` needs about 5 GB. See `docker compose logs flumip` and the project's `mipgen.log`. |
 | `FLUMIP_DB_PASSWORD is not set` | There is no `.env`. Run `./init-env.sh`. |
 | The server cannot log in to the database after `.env` changed | The password only takes effect when the database is first created. Put the old one back. |
+| The same, on a new install (*Failed to connect to the database*, over and over) | An earlier Docker install on this machine left its database in the volume `flumip_db`, and the new `.env` has a different password. Copy that install's `.env` across, or, if its data can go, `docker compose down -v` and `docker compose up -d` again. |
 
 `docker compose logs -f flumip` follows the server log.
 
