@@ -647,6 +647,11 @@ else
 # enforced, so a half-finished setup cannot lock everyone out. Set this to refuse
 # requests instead.
 #FLUMIP_AUTH_STRICT=false
+
+# A public instance: anonymous visitors accept a notice and see only their own
+# projects, which expire. Overrides the Settings tab in both directions, so
+# =false is also the way back in. See docs/public-instance.md.
+#FLUMIP_PUBLIC_MODE=true
 EOF
   sudo chown root:"$SERVICE_USER" "$ENV_FILE"
   sudo chmod 640 "$ENV_FILE"

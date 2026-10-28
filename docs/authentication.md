@@ -166,6 +166,7 @@ Settings tab, so nobody saves a value that silently does nothing.
 | `FLUMIP_OIDC_DEPARTMENT_CLAIM` | Department claim; see [authorization.md](authorization.md#departments) |
 | `FLUMIP_PUBLIC_URL` | Public URL |
 | `FLUMIP_AUTH_STRICT` | See "Why sign-in might not be enforced" |
+| `FLUMIP_PUBLIC_MODE` | "Public mode". Works in **both** directions; see [public-instance.md](public-instance.md) |
 
 A blank value counts as unset, so uncommenting a key and leaving it empty means
 "not filled in yet" rather than "blank out the stored value".
@@ -181,6 +182,14 @@ there is saved and silently ignored. `setup-flumip.sh` rewrites the installed
 copy of that file from `/etc/flumip/passwords_<env>.yaml` on every run, so put it
 there. The Docker image has no `passwords.yaml`; use `FLUMIP_OIDC_CLIENT_SECRET`
 in `.env` there.
+
+## On a public instance
+
+[Public mode](public-instance.md) changes three things here. Visitors don't sign
+in at all: they accept an entry notice and become guests. Signing in stays
+available, and it is how administrators get in, even with "Require sign-in"
+switched off. And **the settings password is refused**, the same way it is
+whenever sign-in is enforced, because public mode always enforces.
 
 ## Why sign-in might not be enforced
 
