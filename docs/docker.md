@@ -63,8 +63,8 @@ would hide MIPGEN, and every design would fail.
 | --- | --- |
 | **Machine** | x86_64 (amd64). ARM is not supported yet. |
 | **Software** | Docker Engine with the Compose plugin (`docker compose`, v2). |
-| **Memory** | **8 GB minimum.** `bwa` against hg38 needs about 5 GB, both while indexing and during a design. On Docker Desktop, raise the VM's memory limit to match. |
-| **Disk** | Roughly **15–20 GB per human genome**, plus space for projects, plus about 1 GB for the images. |
+| **Memory** | **8 GB minimum, 16 GB recommended.** `bwa` against hg38 needs about 5 GB, both while indexing and during a design. On Docker Desktop, raise the VM's memory limit to match. |
+| **Disk** | **15–20 GB minimum per human genome**; **20–50 GB recommended**, depending on the SNP files you add. Plus space for projects, plus about 1 GB for the images. |
 | **Network** | Outbound HTTPS to GitHub (images and MIPGEN), UCSC and NCBI (genomes). |
 
 ## Installing

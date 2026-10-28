@@ -25,8 +25,8 @@ This is the bare-metal install, as a systemd service. To run FLUMIP with Docker
 Compose instead, follow [docs/docker.md](docs/docker.md#installing).
 
 You need an **x86_64 Ubuntu or Debian** machine with **sudo** and **Docker**
-(with your user in the `docker` group), at least **8 GB of RAM** and about
-**20 GB of free disk** for one genome (see [Requirements](#requirements)).
+(with your user in the `docker` group), at least **8 GB of RAM** (16 GB
+recommended) and **20–50 GB of free disk** per genome (see [Requirements](#requirements)).
 
 **1. Download a release and unpack it.** The archive contains the server, the
 web app and both install scripts.
@@ -177,8 +177,8 @@ on your own machine and never comes prebuilt from FLUMIP; see [License](#license
 | --- | --- |
 | **OS** | Ubuntu or Debian on x86_64. The scripts use `apt`, systemd and a `linux.x86_64` UCSC tool. |
 | **Software** | `sudo`, `curl`, `openssl`, and Docker (unless you bring your own PostgreSQL 18 with `--db existing`). The installing user must be able to run `docker` without sudo: `sudo usermod -aG docker $USER`, then log out and back in. `setup-mipgen.sh` installs the rest: `git`, `wget`, `bwa`, `samtools`, `tabix`, `trf` and a build toolchain. |
-| **Memory** | **8 GB minimum.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
-| **Disk** | Roughly **15–20 GB per human genome** (sequence, bwa index, annotations, dbSNP), plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
+| **Memory** | **8 GB minimum, 16 GB recommended.** `bwa` against hg38 needs about 5 GB on its own, during both indexing and design. Without enough memory the kernel kills it, and the design fails partway through. Add swap on a small machine. |
+| **Disk** | **15–20 GB minimum per human genome** (sequence, bwa index, annotations, dbSNP); **20–50 GB recommended**, depending on the SNP files you add. Plus space for projects. A design whose intermediate files are kept can run to gigabytes. |
 | **Network** | Outbound HTTPS to UCSC, NCBI and GitHub during installation. Users reach the server on one port, or on 443 behind a reverse proxy. |
 
 ### What the two scripts do
