@@ -25,6 +25,14 @@ is true:
 Otherwise the project does not appear in their list, and opening it directly
 fails with *"You do not have access to this project"*.
 
+On a [public instance](public-instance.md) the rule has two differences. Guests
+are owners like anyone else, so each sees only their own projects. And rule 3
+does not apply: **an unowned project is visible to administrators only**.
+
+Anyone who opens a project's **share link** gets it in their own list and from
+then on has the same access as its owner. **Reset link** on the project
+withdraws that from everybody who used the old link.
+
 There is no read-only middle ground. If you can see a project you can change it,
 including deleting it and running mipgen on it. Anything more granular is not
 built.

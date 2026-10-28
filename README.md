@@ -13,6 +13,7 @@ database, MIPGEN and the reference data; everybody else just uses a browser.
 - [Using FLUMIP](#using-flumip) — genomes, SNP sets, projects, results
 - [Installing and operating a server](#installing-and-operating-a-server) — requirements, the two install scripts, an existing PostgreSQL, HTTPS, updates, backups
 - [Docker](docs/docker.md) — the alternative: the whole server with Docker Compose
+- [A public instance](docs/public-instance.md) — open to anyone, with an entry notice, guest projects that expire, and share links
 - [Configuration](#configuration) — the Settings tab, email, single sign-on
 - [Development](#development) — building, running and testing from source
 - [License](#license) — MIT for FLUMIP; MIPGEN has its own terms
@@ -418,6 +419,8 @@ it, or leave it empty to keep it.
 | **Mail** | SMTP server, port, user, password, sender address, STARTTLS, and a **Send test email** button. |
 | **Sign-in** | Single sign-on through OpenID Connect; see below. |
 | **Security** | The settings password, and **Demo mode**, which deletes projects automatically after a set number of hours (default 168). Meant for public demonstration servers. |
+| **Public instance** | **Public mode**, for a server anyone can use without an account: the entry notice, how long projects are kept, projects per visitor, and the imprint and privacy policy links. See [docs/public-instance.md](docs/public-instance.md). |
+| **Run limits** | How many designs run at once (the rest wait in a queue) and the most bwa threads one design may use. Both off by default. |
 
 ### Email
 
@@ -502,7 +505,7 @@ is the way back in if sign-in ever locks you out.
 
    ```bash
    cd flumip_flutter
-   flutter build web --debug && rm -rf ../flumip_server/web/app && cp -r build/web ../flumip_server/web/app
+   flutter build web --debug --no-web-resources-cdn && rm -rf ../flumip_server/web/app && cp -r build/web ../flumip_server/web/app
    cd ../flumip_server
    dart run bin/main.dart --apply-migrations
    ```

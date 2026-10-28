@@ -187,6 +187,7 @@ holds what has to be known before the server starts:
 | `FLUMIP_DB_NAME` | `flumip` | The database name |
 | `COMPOSE_PROJECT_NAME` | `flumip` | Names the containers and the database volume (`<name>_db`). Set it only for a second install on the same machine, before its first start. |
 | `FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_*`, `FLUMIP_PUBLIC_URL`, `FLUMIP_AUTH_STRICT` | unset | Single sign-on; see [authentication.md](authentication.md) |
+| `FLUMIP_PUBLIC_MODE` | unset | A public instance for anonymous visitors; see [public-instance.md](public-instance.md) |
 
 The sign-in variables work exactly as they do in `/etc/flumip/flumip_<env>.env`
 on a bare-metal install. A value set here overrides the Settings tab, which then
