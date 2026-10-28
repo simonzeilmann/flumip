@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flumip_flutter/app.dart';
 import 'package:flumip_flutter/auth/signed_in_menu.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/project/project_tile.dart';
@@ -135,5 +136,10 @@ void main() {
     // ship a label that overflowed the app bar on any narrow window — a bug no
     // test could reach. It is here because moving it out is what found it.
     expect(SignedInMenu, isNotNull);
+    // ⚠️ And so was the shell itself — gate, app bar, tab order, footer — until
+    // it moved to `app.dart`. It was the last thing in `main.dart` with logic.
+    expect(MyApp, isNotNull);
+    expect(AuthGate, isNotNull);
+    expect(MyHomePage, isNotNull);
   });
 }

@@ -150,7 +150,7 @@ class SearchButton extends StatelessWidget {
     );
   }
 
-  /// Opens the dialog. Also the target of the `Ctrl+K` shortcut in `main.dart`.
+  /// Opens the dialog. Also the target of the `Ctrl+K` shortcut in `app.dart`.
   void open(BuildContext context) {
     // ⚠️ Captured here, at press time, and passed down as a callback. This
     // context sits under the `DefaultTabController` — that is how the `const

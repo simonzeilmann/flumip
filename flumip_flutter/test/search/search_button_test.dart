@@ -14,7 +14,7 @@ import 'search_controller_test.dart' show Harness, hitFixture;
 /// The app-bar button, and where choosing a hit sends you.
 void main() {
   /// The button inside an app bar with the real tab controller above it, which is
-  /// the arrangement `main.dart` builds and the one `DefaultTabController.of`
+  /// the arrangement `app.dart` builds and the one `DefaultTabController.of`
   /// depends on.
   Future<void> pumpButton(
     WidgetTester tester, {
@@ -145,11 +145,12 @@ void main() {
     expect(opened.map((h) => h.id), [5]);
   });
 
-  /// ⚠️ The only test of the tab-index contract, which is otherwise invisible:
-  /// `services.dart` names indices 0 and 1 and `main.dart`'s `TabBar` supplies the
-  /// order they refer to. Nothing enforces the agreement — there is no router to
-  /// ask — so inserting a tab in the middle would silently send every search result
-  /// to the wrong pane, with nothing failing anywhere else.
+  /// ⚠️ Half of the tab-index contract, which is otherwise invisible:
+  /// `services.dart` names indices 0 and 1 and `app.dart`'s `TabBar` supplies the
+  /// order they refer to. There is no router to ask, so inserting a tab in the
+  /// middle would silently send every search result to the wrong pane. These pin
+  /// where each hit goes; `test/app_test.dart` pins that the real `TabBar` has
+  /// the matching tab at each index.
   group('openSearchHit sends each kind to its own tab', () {
     setUp(() {
       // Both are app-wide, so they carry state between tests unless drained.
@@ -172,7 +173,7 @@ void main() {
       openSearchHit(hitFixture(kind: SearchHitKind.project, id: 3), moves.add);
 
       expect(moves, [projectsTabIndex]);
-      expect(projectsTabIndex, 0, reason: 'the TabBar order in main.dart');
+      expect(projectsTabIndex, 0, reason: 'the TabBar order in app.dart');
       expect(projectsController.openProjectId, 3);
     });
 
@@ -190,7 +191,7 @@ void main() {
       );
 
       expect(moves, [genomesTabIndex]);
-      expect(genomesTabIndex, 1, reason: 'the TabBar order in main.dart');
+      expect(genomesTabIndex, 1, reason: 'the TabBar order in app.dart');
       expect(
         genomeReveals.take(),
         const GenomeReveal(genomeId: 9, category: 'Homo sapiens'),
@@ -233,7 +234,7 @@ void main() {
   });
 
   group('⚠️ it fits in the real app bar', () {
-    // The tests above pump an app bar with nothing else in it. `main.dart`'s has a
+    // The tests above pump an app bar with nothing else in it. `app.dart`'s has a
     // centred title, a `TabBar` underneath, *and* a signed-in menu carrying a full
     // email address — so the field competes for width with about 250px of account
     // chrome. An overflow is a thrown exception in a test and a yellow-and-black
