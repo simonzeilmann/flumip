@@ -16,6 +16,10 @@ enum ProjectState {
   /// Everything is in place; the design has not been started.
   readyToRun,
 
+  /// Started, but waiting for a free slot: the server limits how many designs
+  /// run at once.
+  queued,
+
   /// mipgen is working.
   running,
 
@@ -35,6 +39,10 @@ enum ProjectState {
     // report a project as failed on the strength of an error left over from a
     // previous run.
     if (project.active && project.completedIn == null) return running;
+    // Before `completedIn`. The server clears the last run's verdict when it
+    // queues a re-run, but a list fetched a moment earlier may still carry it,
+    // and "waiting to run" is the truer answer either way.
+    if (project.queuedAt != null) return queued;
     if (project.completedIn != null) {
       if (project.error.isNotEmpty) return failed;
       // ⚠️ Still complete. A warning means the MIPs are there and something
@@ -53,14 +61,17 @@ enum ProjectState {
     draft => 'Draft',
     needsBedFile => 'Needs BED file',
     readyToRun => 'Ready to run',
+    queued => 'Queued',
     running => 'Designing',
     complete => 'Complete',
     completeWithWarning => 'Complete',
     failed => 'Failed',
   };
 
-  /// Whether the design is going, which is what drives the faster poll.
-  bool get isRunning => this == running;
+  /// Whether the design is going — or waiting to — which is what drives the
+  /// faster poll. A queued project has to be watched so that the tile notices
+  /// the moment its run starts.
+  bool get isRunning => this == running || this == queued;
 
   bool get isFinished =>
       this == complete || this == completeWithWarning || this == failed;

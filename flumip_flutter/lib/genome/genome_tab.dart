@@ -128,6 +128,7 @@ class _GenomeTabState extends State<GenomeTab> {
       onGenomeSelected: _controller.selectGenome,
       onCollectGenomes: _controller.scanForGenomes,
       onCollectCustomSnps: _controller.recheckSnpSets,
+      canManage: !_isGuest,
       error: _controller.railError,
       onDismissError: _controller.dismissRailError,
     );
@@ -162,9 +163,13 @@ class _GenomeTabState extends State<GenomeTab> {
     );
   }
 
+  /// A guest on a public instance: browses the library, manages none of it.
+  bool get _isGuest => authController.user?.isGuest ?? false;
+
   Widget _detail(Genome genome, {VoidCallback? onBack}) => GenomeDetailPane(
     genome: genome,
-    snpSection: SnpSection(genome: genome),
+    snpSection: SnpSection(genome: genome, canAdd: !_isGuest),
+    canManage: !_isGuest,
     onDeleteIndex: _confirmDeleteIndex,
     onIndexGenome: _controller.indexGenome,
     onToggleGenomeActive: _controller.toggleActive,

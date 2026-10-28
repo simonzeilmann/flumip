@@ -13,9 +13,11 @@
 import 'package:flumip_server/src/generated/protocol.dart' as _ijyeyqvr;
 import 'package:serverpod/serverpod.dart' as _is;
 
-/// An identity that has signed in through the configured OIDC provider.
+/// An identity that has signed in through the configured OIDC provider, or a
+/// guest on a public instance.
 ///
-/// Created on first sign-in and reused afterwards. `issuer` + `subject` is the
+/// Created on first sign-in and reused afterwards. A guest has issuer
+/// `flumip:guest` (`AuthService.guestIssuer`), a random subject and no email. `issuer` + `subject` is the
 /// identity key, because that is the only pair the spec guarantees to be stable
 /// and unique; `email` is treated as a mutable attribute and is deliberately
 /// *not* unique, so that moving an install to a different IdP does not fail on
@@ -31,6 +33,8 @@ abstract class FlumipUser
     required this.issuer,
     String? displayName,
     this.departments,
+    this.termsAcceptedAt,
+    this.termsVersion,
     DateTime? created,
     DateTime? lastLogin,
   }) : displayName = displayName ?? '',
@@ -44,6 +48,8 @@ abstract class FlumipUser
     required String issuer,
     String? displayName,
     List<String>? departments,
+    DateTime? termsAcceptedAt,
+    int? termsVersion,
     DateTime? created,
     DateTime? lastLogin,
   }) = _FlumipUserImpl;
@@ -60,6 +66,12 @@ abstract class FlumipUser
           : _ijyeyqvr.Protocol().deserialize<List<String>>(
               jsonSerialization['departments'],
             ),
+      termsAcceptedAt: jsonSerialization['termsAcceptedAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['termsAcceptedAt'],
+            ),
+      termsVersion: jsonSerialization['termsVersion'] as int?,
       created: jsonSerialization['created'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
@@ -92,6 +104,17 @@ abstract class FlumipUser
   /// the same rule `AuthSession.isAdmin` already follows.
   List<String>? departments;
 
+  /// When this identity last accepted the public instance's entry notice, and
+  /// which `Settings.termsVersion` it accepted.
+  ///
+  /// Null on every identity that signed in through the identity provider, and
+  /// on every install that has never been in public mode. Kept as the record
+  /// that a guest agreed to the terms of use before getting in; raising
+  /// `Settings.termsVersion` makes every guest accept again.
+  DateTime? termsAcceptedAt;
+
+  int? termsVersion;
+
   DateTime created;
 
   DateTime lastLogin;
@@ -109,6 +132,8 @@ abstract class FlumipUser
     String? issuer,
     String? displayName,
     List<String>? departments,
+    DateTime? termsAcceptedAt,
+    int? termsVersion,
     DateTime? created,
     DateTime? lastLogin,
   });
@@ -122,6 +147,8 @@ abstract class FlumipUser
       'issuer': issuer,
       'displayName': displayName,
       if (departments != null) 'departments': departments?.toJson(),
+      if (termsAcceptedAt != null) 'termsAcceptedAt': termsAcceptedAt?.toJson(),
+      if (termsVersion != null) 'termsVersion': termsVersion,
       'created': created.toJson(),
       'lastLogin': lastLogin.toJson(),
     };
@@ -170,6 +197,8 @@ class _FlumipUserImpl extends FlumipUser {
     required String issuer,
     String? displayName,
     List<String>? departments,
+    DateTime? termsAcceptedAt,
+    int? termsVersion,
     DateTime? created,
     DateTime? lastLogin,
   }) : super._(
@@ -179,6 +208,8 @@ class _FlumipUserImpl extends FlumipUser {
          issuer: issuer,
          displayName: displayName,
          departments: departments,
+         termsAcceptedAt: termsAcceptedAt,
+         termsVersion: termsVersion,
          created: created,
          lastLogin: lastLogin,
        );
@@ -194,6 +225,8 @@ class _FlumipUserImpl extends FlumipUser {
     String? issuer,
     String? displayName,
     Object? departments = _Undefined,
+    Object? termsAcceptedAt = _Undefined,
+    Object? termsVersion = _Undefined,
     DateTime? created,
     DateTime? lastLogin,
   }) {
@@ -206,6 +239,10 @@ class _FlumipUserImpl extends FlumipUser {
       departments: departments is List<String>?
           ? departments
           : this.departments?.map((e0) => e0).toList(),
+      termsAcceptedAt: termsAcceptedAt is DateTime?
+          ? termsAcceptedAt
+          : this.termsAcceptedAt,
+      termsVersion: termsVersion is int? ? termsVersion : this.termsVersion,
       created: created ?? this.created,
       lastLogin: lastLogin ?? this.lastLogin,
     );
@@ -231,6 +268,12 @@ class FlumipUserUpdateTable extends _is.UpdateTable<FlumipUserTable> {
     List<String>? value,
   ) => _is.ColumnValue(table.departments, value);
 
+  _is.ColumnValue<DateTime, DateTime> termsAcceptedAt(DateTime? value) =>
+      _is.ColumnValue(table.termsAcceptedAt, value);
+
+  _is.ColumnValue<int, int> termsVersion(int? value) =>
+      _is.ColumnValue(table.termsVersion, value);
+
   _is.ColumnValue<DateTime, DateTime> created(DateTime value) =>
       _is.ColumnValue(table.created, value);
 
@@ -246,6 +289,8 @@ class FlumipUserTable extends _is.Table<int?> {
     issuer = _is.ColumnString('issuer', this);
     displayName = _is.ColumnString('displayName', this, hasDefault: true);
     departments = _is.ColumnSerializable<List<String>>('departments', this);
+    termsAcceptedAt = _is.ColumnDateTime('termsAcceptedAt', this);
+    termsVersion = _is.ColumnInt('termsVersion', this);
     created = _is.ColumnDateTime('created', this, hasDefault: true);
     lastLogin = _is.ColumnDateTime('lastLogin', this, hasDefault: true);
   }
@@ -268,6 +313,17 @@ class FlumipUserTable extends _is.Table<int?> {
   /// the same rule `AuthSession.isAdmin` already follows.
   late final _is.ColumnSerializable<List<String>> departments;
 
+  /// When this identity last accepted the public instance's entry notice, and
+  /// which `Settings.termsVersion` it accepted.
+  ///
+  /// Null on every identity that signed in through the identity provider, and
+  /// on every install that has never been in public mode. Kept as the record
+  /// that a guest agreed to the terms of use before getting in; raising
+  /// `Settings.termsVersion` makes every guest accept again.
+  late final _is.ColumnDateTime termsAcceptedAt;
+
+  late final _is.ColumnInt termsVersion;
+
   late final _is.ColumnDateTime created;
 
   late final _is.ColumnDateTime lastLogin;
@@ -280,6 +336,8 @@ class FlumipUserTable extends _is.Table<int?> {
     issuer,
     displayName,
     departments,
+    termsAcceptedAt,
+    termsVersion,
     created,
     lastLogin,
   ];

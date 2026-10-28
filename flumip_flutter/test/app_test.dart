@@ -190,6 +190,31 @@ void main() {
       expect(tabs[genomesTabIndex].text, 'Genomes & SNP');
     });
 
+    testWidgets('a guest is not offered Settings, and nothing else moves', (
+      tester,
+    ) async {
+      // A guest has nothing there they could change. Settings is the last
+      // tab, so dropping it leaves the indices search relies on intact.
+      await pumpHome(
+        tester,
+        auth: await authFor(
+          enabled: true,
+          user: const SessionTokenResponse(
+            token: 't',
+            expiresIn: Duration(minutes: 30),
+            email: 'guest',
+            isGuest: true,
+          ),
+        ),
+      );
+
+      final tabs = tester.widget<TabBar>(find.byType(TabBar)).tabs.cast<Tab>();
+      expect(tabs.map((t) => t.text), ['Projects', 'Genomes & SNP']);
+      expect(tabs[projectsTabIndex].text, 'Projects');
+      expect(tabs[genomesTabIndex].text, 'Genomes & SNP');
+      expect(find.text('settings pane'), findsNothing);
+    });
+
     testWidgets('the tabs switch panes', (tester) async {
       await pumpHome(tester, auth: await authFor(enabled: false));
 

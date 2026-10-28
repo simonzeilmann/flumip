@@ -190,6 +190,178 @@ void main() {
       expect(reloaded.active, isTrue);
     }, tags: ['unit']);
 
+    /// A project ready to run, in a fresh project directory, with the run
+    /// limits set as given.
+    Future<Project> seedRunnable(
+      String name, {
+      int maxConcurrentRuns = 0,
+      int maxBwaThreads = 0,
+      int bwaThreads = 1,
+    }) async {
+      final base = createTempDir('queue');
+      final settings = await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      settings
+        ..maxConcurrentRuns = maxConcurrentRuns
+        ..maxBwaThreads = maxBwaThreads;
+      await Settings.db.updateRow(session, settings);
+      final options = await ProjectOptions.db.insertRow(
+        session,
+        ProjectOptions(armLengths: '', bwaThreads: bwaThreads),
+      );
+      final genome = await seedGenome(
+        session,
+        name: 'hg38-$name',
+        fastaPath: '/data/hg38.fa',
+      );
+      Directory('${base.path}/$name').createSync(recursive: true);
+      return seedProject(
+        session,
+        name: name,
+        options: options.id!,
+        folderName: name,
+        genome: genome.id,
+      );
+    }
+
+    int mipgenStarts() =>
+        fake.startCalls.where((c) => c.executable == 'mipgen-exe').length;
+
+    group('the run queue', () {
+      test('a second start of a running project is refused', () async {
+        // `active` used to be written and never read, so a double click ran
+        // mipgen twice in the same directory.
+        final project = await seedRunnable('twice');
+        project.active = true;
+        await Project.db.updateRow(session, project);
+
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsA(isA<ArgumentException>()),
+        );
+        expect(mipgenStarts(), 0);
+      }, tags: ['unit']);
+
+      test('waits in the queue when every slot is taken', () async {
+        final project = await seedRunnable('waiting', maxConcurrentRuns: 1);
+        final options = await seedOptions(session);
+        await seedProject(
+          session,
+          name: 'busy',
+          options: options.id!,
+          active: true,
+        );
+
+        await NoScheduleMipgenService().generateMips(
+          session,
+          project.id!,
+          true,
+        );
+
+        expect(mipgenStarts(), 0, reason: 'nothing may start over the limit');
+        final reloaded = await Project.db.findById(session, project.id!);
+        expect(reloaded!.queuedAt, isNotNull);
+        expect(reloaded.active, isFalse);
+        expect(reloaded.cleanup, isTrue, reason: 'remembered for later');
+      }, tags: ['unit']);
+
+      test('a queued project cannot be queued twice', () async {
+        final project = await seedRunnable('queued', maxConcurrentRuns: 1);
+        project.queuedAt = DateTime.now().toUtc();
+        await Project.db.updateRow(session, project);
+
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsA(isA<ArgumentException>()),
+        );
+      }, tags: ['unit']);
+
+      test('starts the oldest waiting project when a slot frees', () async {
+        final project = await seedRunnable('next', maxConcurrentRuns: 1);
+        project.queuedAt = DateTime.now().toUtc().subtract(
+          const Duration(minutes: 5),
+        );
+        await Project.db.updateRow(session, project);
+
+        await NoScheduleMipgenService().startNextQueued(session);
+
+        expect(mipgenStarts(), 1);
+        final reloaded = await Project.db.findById(session, project.id!);
+        expect(reloaded!.queuedAt, isNull);
+        expect(reloaded.active, isTrue);
+      }, tags: ['unit']);
+
+      test('leaves the queue alone while the limit is reached', () async {
+        final project = await seedRunnable('patient', maxConcurrentRuns: 1);
+        project.queuedAt = DateTime.now().toUtc();
+        await Project.db.updateRow(session, project);
+        final options = await seedOptions(session);
+        await seedProject(
+          session,
+          name: 'busy',
+          options: options.id!,
+          active: true,
+        );
+
+        await NoScheduleMipgenService().startNextQueued(session);
+
+        expect(mipgenStarts(), 0);
+        final reloaded = await Project.db.findById(session, project.id!);
+        expect(reloaded!.queuedAt, isNotNull);
+      }, tags: ['unit']);
+
+      test('a queued project that can no longer run is told why', () async {
+        final project = await seedRunnable('broken', maxConcurrentRuns: 1);
+        project
+          ..queuedAt = DateTime.now().toUtc()
+          ..genome = null;
+        await Project.db.updateRow(session, project);
+
+        await NoScheduleMipgenService().startNextQueued(session);
+
+        final reloaded = await Project.db.findById(session, project.id!);
+        expect(reloaded!.queuedAt, isNull);
+        expect(reloaded.error, contains('no genome'));
+      }, tags: ['unit']);
+
+      test('no limit starts straight away, as before', () async {
+        final project = await seedRunnable('free');
+        final options = await seedOptions(session);
+        await seedProject(
+          session,
+          name: 'busy',
+          options: options.id!,
+          active: true,
+        );
+
+        await NoScheduleMipgenService().generateMips(
+          session,
+          project.id!,
+          false,
+        );
+
+        expect(mipgenStarts(), 1);
+      }, tags: ['unit']);
+    });
+
+    test('bwa threads are held to the server cap', () async {
+      final project = await seedRunnable(
+        'threads',
+        maxBwaThreads: 2,
+        bwaThreads: 16,
+      );
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final args = fake.startCalls
+          .firstWhere((c) => c.executable == 'mipgen-exe')
+          .arguments;
+      expect(args[args.indexOf('-bwa_threads') + 1], '2');
+    }, tags: ['unit']);
+
     /// A project with TRF switched on, ready to run, with the tools directory
     /// at [toolsDir].
     Future<Project> seedTrfProject(String toolsDir) async {

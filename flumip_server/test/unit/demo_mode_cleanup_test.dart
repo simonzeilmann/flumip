@@ -46,11 +46,16 @@ void main() {
     /// A project whose retention window has already elapsed — which is the only
     /// state the cleanup call is ever scheduled to run in. Backdating beats
     /// waiting a week.
+    ///
+    /// ⚠️ `expires` is backdated with `created`. It is stamped at creation now,
+    /// and the cleanup obeys it, so moving `created` alone leaves a project
+    /// that is old but not yet due — which is exactly what "Keep longer" makes.
     Future<Project> makeExpiredProject(String name) async {
       final project = await makeProject(name);
       project.created = DateTime.now().toUtc().subtract(
         const Duration(days: 400),
       );
+      project.expires = project.created.add(const Duration(days: 7));
       await Project.db.updateRow(session, project);
       return project;
     }
@@ -125,16 +130,43 @@ void main() {
     test('deletes once the project is older than the window', () async {
       await _setDemoMode(session, true, retentionHours: 1);
       final project = await makeProject('old-enough');
-      // Backdate past the one-hour window rather than waiting an hour.
+      // Backdated by two days, not just past the hour: a project goes when the
+      // day its window ends in is over, so three hours ago could still be today.
       project.created = DateTime.now().toUtc().subtract(
-        const Duration(hours: 3),
+        const Duration(days: 2),
       );
+      project.expires = endOfDay(project.created.add(const Duration(hours: 1)));
       await Project.db.updateRow(session, project);
 
       await cleanup.run(session, project);
 
       expect(await projectService.getProjects(session), isEmpty);
     }, tags: ['unit']);
+
+    test('a project is kept until its last day is over', () async {
+      // Deleted at midnight, not at the minute it was created: one date, kept
+      // all day.
+      await _setDemoMode(session, true, retentionHours: 1);
+      final project = await makeProject('today');
+
+      await cleanup.run(session, project);
+
+      final remaining = await projectService.getProjects(session);
+      expect(remaining.map((p) => p.name), ['today']);
+      final reloaded = remaining.single;
+      final local = reloaded.expires!.toLocal();
+      expect([local.hour, local.minute, local.second], [0, 0, 0]);
+    }, tags: ['unit']);
+
+    test('the end of a day that is already midnight is itself', () {
+      // Otherwise every pass over a stored deadline would push it a day on.
+      final midnight = DateTime(2026, 11, 4);
+      expect(endOfDay(midnight), midnight.toUtc());
+      expect(
+        endOfDay(DateTime(2026, 11, 4, 0, 0, 1)),
+        DateTime(2026, 11, 5).toUtc(),
+      );
+    });
 
     test('a nonsense window is clamped rather than obeyed', () async {
       // Zero would delete a project the instant it was created — including the

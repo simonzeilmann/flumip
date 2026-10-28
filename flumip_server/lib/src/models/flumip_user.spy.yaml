@@ -1,6 +1,8 @@
-### An identity that has signed in through the configured OIDC provider.
+### An identity that has signed in through the configured OIDC provider, or a
+### guest on a public instance.
 ###
-### Created on first sign-in and reused afterwards. `issuer` + `subject` is the
+### Created on first sign-in and reused afterwards. A guest has issuer
+### `flumip:guest` (`AuthService.guestIssuer`), a random subject and no email. `issuer` + `subject` is the
 ### identity key, because that is the only pair the spec guarantees to be stable
 ### and unique; `email` is treated as a mutable attribute and is deliberately
 ### *not* unique, so that moving an install to a different IdP does not fail on
@@ -22,6 +24,15 @@ fields:
   ### change in the provider takes effect the next time somebody signs in —
   ### the same rule `AuthSession.isAdmin` already follows.
   departments: List<String>?
+  ### When this identity last accepted the public instance's entry notice, and
+  ### which `Settings.termsVersion` it accepted.
+  ###
+  ### Null on every identity that signed in through the identity provider, and
+  ### on every install that has never been in public mode. Kept as the record
+  ### that a guest agreed to the terms of use before getting in; raising
+  ### `Settings.termsVersion` makes every guest accept again.
+  termsAcceptedAt: DateTime?
+  termsVersion: int?
   created: DateTime, default=now
   lastLogin: DateTime, default=now
 indexes:

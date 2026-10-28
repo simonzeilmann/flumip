@@ -19,8 +19,13 @@ enum AuthState {
   /// A sign-in is offered and nobody is signed in.
   signedOut,
 
-  /// Signed in.
+  /// Signed in, or — on a public instance — a guest who accepted the entry
+  /// notice. [AuthController.user]'s `isGuest` tells the two apart.
   signedIn,
+
+  /// A public instance, and this browser has not accepted the entry notice
+  /// yet. Nothing on the server answers until it does.
+  needsAcceptance,
 }
 
 /// Drives the app's sign-in state.
@@ -34,6 +39,7 @@ class AuthController extends ChangeNotifier {
     required this._fetchConfig,
     required this._fetchSession,
     required this._navigate,
+    this._acceptTerms,
   });
 
   /// Builds the controller the running app uses.
@@ -56,20 +62,45 @@ class AuthController extends ChangeNotifier {
       return AuthConfigSnapshot(
         enabled: config.enabled,
         buttonLabel: config.buttonLabel,
+        publicMode: config.publicMode,
+        publicNoticeText: config.publicNoticeText,
+        imprintUrl: config.imprintUrl,
+        privacyUrl: config.privacyUrl,
+        projectRetention: _hours(config.projectRetentionHours),
+        maxProjectLifetime: _hours(config.maxProjectLifetimeHours),
       );
     },
     fetchSession: () => fetchSessionToken(siteUrl),
+    acceptTerms: () => acceptAsGuest(siteUrl),
   );
+
+  static Duration? _hours(int? hours) =>
+      hours == null ? null : Duration(hours: hours);
 
   final Future<AuthConfigSnapshot> Function() _fetchConfig;
   final Future<SessionTokenResponse?> Function() _fetchSession;
   final void Function(String url) _navigate;
+  final Future<SessionTokenResponse> Function()? _acceptTerms;
 
   AuthState _state = AuthState.unknown;
   AuthState get state => _state;
 
   String _buttonLabel = 'Sign in with SSO';
   String get buttonLabel => _buttonLabel;
+
+  AuthConfigSnapshot _config = const AuthConfigSnapshot(
+    enabled: false,
+    buttonLabel: 'Sign in with SSO',
+  );
+
+  /// What the server said about itself at bootstrap: whether it is public,
+  /// what the entry notice says, and how long projects are kept.
+  AuthConfigSnapshot get config => _config;
+
+  bool _accepting = false;
+
+  /// Whether [accept] is waiting for the server.
+  bool get accepting => _accepting;
 
   SessionTokenResponse? _user;
 
@@ -95,9 +126,10 @@ class AuthController extends ChangeNotifier {
   Future<void> bootstrap() async {
     try {
       final config = await _fetchConfig();
+      _config = config;
       _buttonLabel = config.buttonLabel;
 
-      if (!config.enabled) {
+      if (!config.enabled && !config.publicMode) {
         // Leave authKeyProvider null so not a single request carries an
         // Authorization header. That keeps the default install byte-for-byte as
         // it was, and avoids waking the server's authentication handler at all.
@@ -107,26 +139,57 @@ class AuthController extends ChangeNotifier {
 
       final session = await _fetchSession();
       if (session == null) {
-        _set(AuthState.signedOut);
+        _set(_signedOutState);
         return;
       }
-
-      _user = session;
-      // Only installed once we know there is a session to refresh. Installing a
-      // refreshing provider earlier risks a deadlock, because the header getter
-      // triggers a refresh and the config call above is itself unauthenticated.
-      _authKeyProvider = SessionAuthKeyProvider.wrapped(
-        fetchSession: _fetchSession,
-      );
-      // Prime it so the first real request has a header rather than paying for a
-      // round trip mid-flight.
-      await _authKeyProvider!.refreshAuthKey(force: true);
-      _set(AuthState.signedIn);
+      await _startSession(session);
     } catch (e) {
       _errorMessage = describeError(e);
       _set(AuthState.disabled);
     }
   }
+
+  /// Accepts the entry notice: the server creates this browser's guest
+  /// identity, sets its cookie, and hands back a bearer.
+  ///
+  /// Never throws. A failure leaves the notice up with [errorMessage] set, so
+  /// the visitor can try again.
+  Future<void> accept() async {
+    final acceptTerms = _acceptTerms;
+    if (acceptTerms == null || _accepting) return;
+    _accepting = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _startSession(await acceptTerms());
+    } catch (e) {
+      _errorMessage = describeError(e);
+      notifyListeners();
+    } finally {
+      _accepting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _startSession(SessionTokenResponse session) async {
+    _user = session;
+    // Only installed once we know there is a session to refresh. Installing a
+    // refreshing provider earlier risks a deadlock, because the header getter
+    // triggers a refresh and the config call above is itself unauthenticated.
+    _authKeyProvider = SessionAuthKeyProvider.wrapped(
+      fetchSession: _fetchSession,
+    );
+    // Prime it so the first real request has a header rather than paying for a
+    // round trip mid-flight.
+    await _authKeyProvider!.refreshAuthKey(force: true);
+    _errorMessage = null;
+    _set(AuthState.signedIn);
+  }
+
+  /// Where a browser with no usable session lands: the entry notice on a
+  /// public instance, the sign-in screen otherwise.
+  AuthState get _signedOutState =>
+      _config.publicMode ? AuthState.needsAcceptance : AuthState.signedOut;
 
   /// Re-checks whether the session is still good, after a 401 for instance.
   Future<void> revalidate() async {
@@ -135,7 +198,7 @@ class AuthController extends ChangeNotifier {
     if (result == RefreshAuthKeyResult.success) return;
     _user = null;
     _authKeyProvider = null;
-    _set(AuthState.signedOut);
+    _set(_signedOutState);
   }
 
   /// Starts a sign-in.
@@ -161,12 +224,65 @@ class AuthController extends ChangeNotifier {
   }
 }
 
-/// The answer to "does this server want a sign-in?".
+/// The answer to "does this server want a sign-in?" — and, on a public
+/// instance, what the entry notice says and how long projects are kept.
 class AuthConfigSnapshot {
-  const AuthConfigSnapshot({required this.enabled, required this.buttonLabel});
+  const AuthConfigSnapshot({
+    required this.enabled,
+    required this.buttonLabel,
+    this.publicMode = false,
+    this.publicNoticeText = '',
+    this.imprintUrl = '',
+    this.privacyUrl = '',
+    this.projectRetention,
+    this.maxProjectLifetime,
+  });
 
   final bool enabled;
   final String buttonLabel;
+  final bool publicMode;
+
+  /// Replaces the notice's terms paragraph when not empty.
+  final String publicNoticeText;
+  final String imprintUrl;
+  final String privacyUrl;
+
+  /// How long a new project is kept, or null when nothing is deleted
+  /// automatically.
+  final Duration? projectRetention;
+
+  /// The furthest "Keep longer" goes, measured from creation. Null exactly when
+  /// [projectRetention] is.
+  final Duration? maxProjectLifetime;
+}
+
+/// `POST /auth/guest`: accepts the entry notice on a public instance.
+///
+/// Same-origin, so the cookie it sets is stored without any further flag; the
+/// answer is the same shape as `/auth/session`'s.
+Future<SessionTokenResponse> acceptAsGuest(String siteUrl) async {
+  final response = await http.post(
+    Uri.parse('$siteUrl/auth/guest'),
+    headers: const {'Accept': 'application/json'},
+  );
+  if (response.statusCode != 200) {
+    throw http.ClientException(
+      _serverError(response.body) ??
+          'Unexpected status ${response.statusCode} from /auth/guest',
+    );
+  }
+  return SessionTokenResponse.fromJson(
+    jsonDecode(response.body) as Map<String, dynamic>,
+  );
+}
+
+String? _serverError(String body) {
+  try {
+    final error = (jsonDecode(body) as Map<String, dynamic>)['error'];
+    return error is String && error.isNotEmpty ? error : null;
+  } catch (_) {
+    return null;
+  }
 }
 
 /// Fetches `/auth/session` from [siteUrl], returning null when not signed in.

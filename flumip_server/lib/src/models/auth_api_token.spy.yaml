@@ -15,7 +15,7 @@
 ### lets every tab hold its own token, and deleting the AuthSession cascades to
 ### all of them so revocation stays a single operation.
 ###
-### `email` and `isAdmin` are denormalised from AuthSession so that the
+### `email`, `isAdmin` and `isGuest` are denormalised from AuthSession so that the
 ### authentication handler needs exactly one indexed lookup per request.
 class: AuthApiToken
 table: auth_api_token
@@ -25,6 +25,10 @@ fields:
   tokenHash: String
   email: String
   isAdmin: bool, default=false
+  ### Denormalised from AuthSession like [isAdmin], so that the authentication
+  ### handler can refuse a guest's bearer the moment public mode is switched off
+  ### without a second lookup. See `flumipAuthenticationHandler`.
+  isGuest: bool, default=false
   created: DateTime, default=now
   expires: DateTime
 indexes:

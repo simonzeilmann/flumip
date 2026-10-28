@@ -99,6 +99,8 @@ void run(List<String> args) async {
   pod.webServer.addRoute(AuthLoginRoute(), '/auth/login');
   pod.webServer.addRoute(AuthCallbackRoute(), '/auth/callback');
   pod.webServer.addRoute(AuthSessionRoute(), '/auth/session');
+  // Public instances only: the entry notice's Accept button. See AuthGuestRoute.
+  pod.webServer.addRoute(AuthGuestRoute(), '/auth/guest');
   pod.webServer.addRoute(AuthLogoutRoute(), '/auth/logout');
 
   // The API, under /api on the web port, so an install is one origin and a

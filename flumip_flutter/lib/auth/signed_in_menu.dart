@@ -73,3 +73,38 @@ class SignedInMenu extends StatelessWidget {
     );
   }
 }
+
+/// What a guest on a public instance sees where [SignedInMenu] would be.
+///
+/// No sign-out: a guest's projects are tied to this browser's cookie, and
+/// throwing it away would lose them with no way back except their share links.
+/// Instead, the way for an administrator to sign in, when the server offers one.
+class GuestMenu extends StatelessWidget {
+  const GuestMenu({super.key, this.onSignIn});
+
+  /// Starts an administrator's sign-in, or null when the server cannot do one.
+  final VoidCallback? onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final room = MediaQuery.sizeOf(context).width >= kSplitWidth;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (room)
+          const Tooltip(
+            message:
+                'Your projects are kept in this browser. Use a project\'s '
+                'share link to open it anywhere else.',
+            child: Text('Guest'),
+          ),
+        if (onSignIn != null)
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings),
+            tooltip: 'Administrator sign-in',
+            onPressed: onSignIn,
+          ),
+      ],
+    );
+  }
+}

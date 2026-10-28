@@ -43,6 +43,17 @@ class AuthorizationService {
     }
   }
 
+  /// Whether this is a public instance. Same refusal to throw as [isEnforcing];
+  /// an unavailable runtime means "not public", which is the internal default.
+  bool get isPublic {
+    if (!sl.isRegistered<AuthRuntime>()) return false;
+    try {
+      return sl<AuthRuntime>().config.publicMode;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Resolves who is making this request.
   ///
   /// [Principal.anonymous] when nothing is signed in, which is every request
@@ -73,6 +84,7 @@ class AuthorizationService {
         // request. The cost is that changing somebody's groups in the provider
         // takes effect at their next sign-in — the same rule `isAdmin` follows.
         departments: authSession?.departments ?? const [],
+        isGuest: authSession?.isGuest ?? false,
       );
     } catch (e, stackTrace) {
       session.log(
@@ -125,6 +137,8 @@ class AuthorizationService {
       principal: who,
       owner: project.owner,
       department: project.department,
+      publicMode: isPublic,
+      granted: (await grantedProjectIds(session, who)).contains(project.id),
     )) {
       return;
     }
@@ -191,6 +205,8 @@ class AuthorizationService {
     if (!enforcing) return all;
 
     final who = await principal(session);
+    final public = isPublic;
+    final granted = await grantedProjectIds(session, who);
     return all
         .where(
           (p) => projectIsAccessible(
@@ -198,9 +214,25 @@ class AuthorizationService {
             principal: who,
             owner: p.owner,
             department: p.department,
+            publicMode: public,
+            granted: granted.contains(p.id),
           ),
         )
         .toList();
+  }
+
+  /// The projects [who] holds a share-link grant for.
+  ///
+  /// One query for the whole list, so [visibleProjects] stays a Dart-side filter
+  /// over rows it already has. Empty for anybody with no identity.
+  Future<Set<int>> grantedProjectIds(Session session, Principal who) async {
+    final userId = who.userId;
+    if (userId == null) return const {};
+    final grants = await ProjectGrant.db.find(
+      session,
+      where: (t) => t.userId.equals(userId),
+    );
+    return grants.map((g) => g.projectId).toSet();
   }
 
   /// Refuses if the caller may not see [snp].
@@ -339,6 +371,21 @@ class AuthorizationService {
     throw ProjectAccessDeniedException(
       message: 'This action is restricted to administrators.',
     );
+  }
+
+  /// Refuses a guest on a public instance.
+  ///
+  /// For the things a guest may not do at all — adding SNP sets, chiefly, which
+  /// can be gigabytes each and are the cheapest way to fill a public server's
+  /// disk. Everybody else passes, including every caller on an install that is
+  /// not enforcing.
+  Future<void> refuseGuest(Session session, {required String message}) async {
+    if (!isEnforcing) return;
+    final who = await principal(session);
+    if (!who.isGuest) return;
+
+    session.log('Refused a guest: $message', level: LogLevel.warning);
+    throw ProjectAccessDeniedException(message: message);
   }
 
   /// The `flumip_user` id to stamp on a project being created, or null.

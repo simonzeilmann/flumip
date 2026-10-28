@@ -70,6 +70,8 @@ class AdminSettingsForm extends StatelessWidget {
             _mail(),
             _signIn(),
             _security(context),
+            _publicInstance(context),
+            _runLimits(),
           ],
         ),
       ),
@@ -346,7 +348,8 @@ class AdminSettingsForm extends StatelessWidget {
           onChanged();
         },
       ),
-      if (form.demoMode)
+      // Also the initial window on a public instance, which implies demo mode.
+      if (form.demoMode || form.publicMode)
         ResponsiveRow(
           minChildWidth: 220,
           flex: const [1, 2],
@@ -377,6 +380,129 @@ class AdminSettingsForm extends StatelessWidget {
           ],
         ),
     ],
+  );
+
+  /// Public mode, and everything a public instance needs that an internal one
+  /// does not. See docs/public-instance.md.
+  FormSection _publicInstance(BuildContext context) {
+    // Set in the environment: shown, but not editable, like the sign-in fields
+    // the environment overrides — a value saved here would silently do nothing.
+    final fromEnv =
+        authStatus?.envOverrides.contains('FLUMIP_PUBLIC_MODE') ?? false;
+    return FormSection(
+      title: 'Public instance',
+      children: [
+        SwitchListTile(
+          value: form.publicMode,
+          title: const Text('Public mode'),
+          subtitle: Text(
+            fromEnv
+                ? 'Set by FLUMIP_PUBLIC_MODE in the environment.'
+                : 'Anyone can use this server without an account. Visitors '
+                      'accept a notice and see only their own projects, which '
+                      'are deleted automatically. Saving this needs you to be '
+                      'signed in as an administrator: afterwards the settings '
+                      'password no longer opens this tab.',
+          ),
+          isThreeLine: true,
+          contentPadding: EdgeInsets.zero,
+          onChanged: fromEnv
+              ? null
+              : (value) {
+                  form.publicMode = value;
+                  onChanged();
+                },
+        ),
+        if (form.publicMode) ...[
+          ResponsiveRow(
+            minChildWidth: 220,
+            children: [
+              _number(
+                form.maxProjectLifetimeDays,
+                'Longest a project can be kept (days)',
+                helper: 'How far "Keep longer" can go, from creation.',
+              ),
+              _number(
+                form.guestMaxProjects,
+                'Projects per visitor',
+                helper: '0 means no limit.',
+              ),
+            ],
+          ),
+          TextField(
+            controller: form.publicNoticeText,
+            minLines: 2,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              labelText: 'Terms of use on the entry notice',
+              helperMaxLines: 3,
+              helperText:
+                  'Empty uses the default: non-commercial, academic research '
+                  'use only. The cookie paragraph is always shown.',
+            ),
+          ),
+          _number(
+            form.termsVersion,
+            'Terms version',
+            helper:
+                'Raise it after changing the terms: every visitor has to '
+                'accept again. Their projects are kept.',
+          ),
+          ResponsiveRow(
+            minChildWidth: 220,
+            children: [
+              _url(form.imprintUrl, 'Imprint (Impressum) URL'),
+              _url(form.privacyUrl, 'Privacy policy URL'),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Limits that keep one busy day from swamping the server. They apply to every
+  /// install, and are off until set.
+  FormSection _runLimits() => FormSection(
+    title: 'Run limits',
+    children: [
+      ResponsiveRow(
+        minChildWidth: 220,
+        children: [
+          _number(
+            form.maxConcurrentRuns,
+            'Designs running at once',
+            helper: 'More wait in a queue. 0 means no limit.',
+          ),
+          _number(
+            form.maxBwaThreads,
+            'Most bwa threads per design',
+            helper: '0 means no limit.',
+          ),
+        ],
+      ),
+    ],
+  );
+
+  TextField _number(
+    TextEditingController controller,
+    String label, {
+    String? helper,
+  }) => TextField(
+    controller: controller,
+    keyboardType: TextInputType.number,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    decoration: InputDecoration(
+      labelText: label,
+      helperText: helper,
+      helperMaxLines: 3,
+    ),
+  );
+
+  TextField _url(TextEditingController controller, String label) => TextField(
+    controller: controller,
+    autocorrect: false,
+    keyboardType: TextInputType.url,
+    decoration: InputDecoration(labelText: label),
   );
 
   TextField _path(TextEditingController controller, String label) => TextField(

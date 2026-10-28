@@ -7,6 +7,7 @@ import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
+import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/file_service.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart'
     show authCookieName;
@@ -132,14 +133,27 @@ class DownloadRoute extends Route {
       );
       if (authSession == null) return false;
 
+      final publicMode = sl<AuthRuntime>().config.publicMode;
+      // The same refusal the authentication handler applies to a guest's
+      // bearer: a guest cookie means nothing once public mode is off.
+      if (authSession.isGuest && !publicMode) return false;
+
+      final principal = Principal(
+        userId: authSession.userId,
+        isAdmin: authSession.isAdmin,
+        departments: authSession.departments ?? const [],
+        isGuest: authSession.isGuest,
+      );
       return projectIsAccessible(
         enforcing: true,
-        principal: Principal(
-          userId: authSession.userId,
-          isAdmin: authSession.isAdmin,
-        ),
+        principal: principal,
         owner: project.owner,
         department: project.department,
+        publicMode: publicMode,
+        granted: (await authz.grantedProjectIds(
+          session,
+          principal,
+        )).contains(project.id),
       );
     } catch (e, stackTrace) {
       session.log(

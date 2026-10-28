@@ -23,6 +23,7 @@ import 'dart:js_interop';
 
 import 'package:flumip_flutter/app.dart';
 import 'package:flumip_flutter/services.dart';
+import 'package:flumip_flutter/share_link.dart';
 import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,9 @@ String _warnBeforeUnload(web.BeforeUnloadEvent event) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Read before anything can rewrite the address bar. See `share_link.dart`.
+  final sharedToken = shareTokenFrom(Uri.base);
 
   // Everything that needs a browser, handed to the rest of the app as plain
   // callbacks. This is the whole of what `services.dart` cannot do for itself.
@@ -62,6 +66,14 @@ void main() async {
   // rather than an anonymous one. Not awaited: it never throws, and the app must
   // not wait on it to draw.
   unawaited(accessController.reload());
+
+  // A share link: opened once there is a session — on a public instance, after
+  // the entry notice is accepted. The token is then dropped from the address
+  // bar, keeping the path, so a reload is an ordinary visit.
+  createShareLinkOpener(
+    clearLink: () =>
+        web.window.history.replaceState(null, '', web.window.location.pathname),
+  ).start(sharedToken);
 
   // ⚠️ Warn before leaving with an upload in flight. Closing the tab aborts the
   // transfer and leaves a `pending` row behind: the partial file in `.incoming/`

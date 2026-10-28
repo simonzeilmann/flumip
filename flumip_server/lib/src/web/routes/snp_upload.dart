@@ -119,6 +119,9 @@ class SnpUploadRoute extends Route {
         cookie,
       );
       if (authSession == null) return false;
+      // Guests never add SNP sets (see `SnpEndpoint.createUpload`), so they own
+      // none to put files in. Refused here too rather than left to follow.
+      if (authSession.isGuest) return false;
 
       return snpIsWritable(
         enforcing: true,

@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/future_calls.dart';
+import 'package:flumip_server/src/auth/auth_tokens.dart';
+import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/authorization_service.dart';
+import 'package:flumip_server/src/services/mipgen_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -17,6 +20,40 @@ import 'package:uuid/uuid.dart';
 /// widening it is one edit. Widening it is a behaviour change nobody has asked
 /// for yet; see HANDOFF.md.
 final geneSymbol = RegExp(r'^[A-Za-z0-9]+$');
+
+/// Whether projects on this server are deleted automatically: demo mode, or a
+/// public instance, which implies it.
+bool projectsExpire(Settings settings) => settings.demoMode || authz.isPublic;
+
+/// The end of the day [moment] falls in: the first midnight, in the server's
+/// own time zone, at or after it.
+///
+/// Projects are deleted when their last day is over rather than at the minute
+/// they were created, so a project shows one date and keeps it all day. A
+/// moment that is already exactly midnight is its own end of day — which is what
+/// keeps [deletionDeadline] and `extendProject` from creeping a day further on
+/// every pass.
+DateTime endOfDay(DateTime moment) {
+  final local = moment.toLocal();
+  final midnight = DateTime(local.year, local.month, local.day);
+  if (local.isAtSameMomentAs(midnight)) return midnight.toUtc();
+  return DateTime(local.year, local.month, local.day + 1).toUtc();
+}
+
+/// When [project] is due to be deleted, assuming [projectsExpire]: always a
+/// midnight, the end of the project's last day.
+///
+/// [Project.expires] where it is set, but never earlier than the end of the day
+/// [Project.created] plus the current retention window falls in. That floor
+/// keeps the rule this had before the column existed: **raising** the window
+/// spares projects that are already scheduled, while lowering it cannot pull a
+/// deletion forward. It is also the whole answer for a project from before
+/// [Project.expires] existed, where the column is null.
+DateTime deletionDeadline(Project project, Settings settings) {
+  final floor = endOfDay(project.created.toUtc().add(demoRetention(settings)));
+  final expires = project.expires?.toUtc();
+  return expires != null && expires.isAfter(floor) ? expires : floor;
+}
 
 /// A service class for handling project-related operations.
 class ProjectService {
@@ -87,14 +124,25 @@ class ProjectService {
     // `recursive: true` because the non-recursive form throws
     // PathNotFoundException when `projectDir` itself is absent — which is the
     // ordinary state of a fresh install that has not had a project yet.
-    final folderName = Uuid().v7();
     final settings = await SettingsService().getSettings(session);
+    final who = await authz.principal(session);
+    // Before the directory, for the same reason as the options check above.
+    await _requireGuestQuota(session, who, settings);
+
+    final folderName = Uuid().v7();
     await Directory(
       "${settings.projectDir}/$folderName",
     ).create(recursive: true);
 
+    final now = DateTime.now().toUtc();
     var projectRow = Project(
       name: projectName,
+      created: now,
+      // What the tile shows as "Deleted on". The cleanup call scheduled below
+      // is what actually deletes it, and reads this when it fires.
+      expires: projectsExpire(settings)
+          ? endOfDay(now.add(demoRetention(settings)))
+          : null,
       description: desc,
       folderName: folderName,
       options: options.id!,
@@ -109,7 +157,7 @@ class ProjectService {
       // the tile — guessing one of them and calling it the project's would be
       // an arbitrary decision presented as a fact, and it widens who can see
       // the project, so getting it wrong is not free.
-      department: (await authz.principal(session)).departments.singleOrNull,
+      department: who.departments.singleOrNull,
       trackToken: Uuid().v7(),
     );
     var project = await Project.db.insertRow(session, projectRow);
@@ -207,6 +255,9 @@ class ProjectService {
         );
       }
     }
+
+    // A running project frees a slot for the queue. Never throws.
+    if (project.active) await sl<MipgenService>().startNextQueued(session);
 
     session.log("Project deleted with ID: $id", level: LogLevel.info);
   }
@@ -368,6 +419,223 @@ class ProjectService {
         level: LogLevel.info,
       );
     }
+  }
+
+  /// Pushes a project's automatic deletion back by one retention window, up to
+  /// the end of the day `Settings.maxProjectLifetimeDays` after it was created.
+  ///
+  /// ⚠️ **One window from the current deadline, not from now.** It used to be
+  /// "now plus the window", which on a project created this week is the date it
+  /// already had — the button did nothing visible until most of the window had
+  /// passed. Each press now adds the window again, up to the cap.
+  ///
+  /// Returns the project unchanged once it is at that limit — the app disables
+  /// the button there, and a second click arriving late is not an error. The
+  /// cleanup call needs no rescheduling: when it fires at the old time it finds
+  /// the deadline has moved and puts itself back for the rest.
+  ///
+  /// The caller is responsible for the access check.
+  ///
+  /// \throws [ArgumentException] if nothing on this server is deleted
+  ///   automatically.
+  Future<Project> extendProject(Session session, int id) async {
+    final project = await getProject(session, id);
+    final settings = await SettingsService().getSettings(session);
+    if (project.keptIndefinitely) return project;
+    if (!projectsExpire(settings)) {
+      throw ArgumentException(
+        message:
+            'Projects on this server are not deleted automatically, so there '
+            'is nothing to extend.',
+      );
+    }
+
+    final deadline = deletionDeadline(project, settings);
+    final cap = endOfDay(
+      project.created.toUtc().add(maxProjectLifetime(settings)),
+    );
+    var target = endOfDay(deadline.add(demoRetention(settings)));
+    if (target.isAfter(cap)) target = cap;
+    if (!target.isAfter(deadline)) return project;
+
+    project.expires = target;
+    final updated = await Project.db.updateRow(session, project);
+    session.log(
+      "Project $id will now be deleted on ${target.toIso8601String()}",
+      level: LogLevel.info,
+    );
+    return updated;
+  }
+
+  /// Exempts a project from automatic deletion, or puts it back under it.
+  ///
+  /// Turning it back on gives the project a **fresh** window from today rather
+  /// than its old deadline, which has usually passed by then and would delete
+  /// it on the spot. The cleanup call is replaced, not just left to run: a kept
+  /// project's call stops rescheduling itself when it fires, so there may be
+  /// none left to find the new deadline.
+  ///
+  /// The caller is responsible for the check — administrators only.
+  Future<Project> setKeptIndefinitely(
+    Session session,
+    int id,
+    bool kept,
+  ) async {
+    final project = await getProject(session, id);
+    final settings = await SettingsService().getSettings(session);
+    project.keptIndefinitely = kept;
+    if (!kept && projectsExpire(settings)) {
+      project.expires = endOfDay(
+        DateTime.now().toUtc().add(demoRetention(settings)),
+      );
+    }
+    final updated = await Project.db.updateRow(session, project);
+
+    final folderName = project.folderName;
+    if (folderName != null && folderName.isNotEmpty) {
+      await session.serverpod.futureCalls.cancel(folderName);
+      if (!kept) {
+        await session.serverpod.futureCalls
+            .callWithDelay(
+              deletionDeadline(
+                updated,
+                settings,
+              ).difference(DateTime.now().toUtc()),
+              identifier: folderName,
+            )
+            .demoModeCleanup
+            .run(updated);
+      }
+    }
+    session.log(
+      kept
+          ? "Project $id is now kept indefinitely"
+          : "Project $id is subject to automatic deletion again",
+      level: LogLevel.info,
+    );
+    return updated;
+  }
+
+  /// The token for this project's share link, `<site>/#/p/<token>`, minting one
+  /// on first request.
+  ///
+  /// Stored as it is, unlike the session cookie, because the owner has to be
+  /// able to copy the same link again tomorrow. What limits the damage of a
+  /// database leak is the same thing that limits a leaked link:
+  /// [resetShareToken].
+  ///
+  /// The caller is responsible for the access check.
+  Future<String> ensureShareToken(Session session, int id) async {
+    final project = await getProject(session, id);
+    final existing = project.shareToken;
+    if (existing != null && existing.isNotEmpty) return existing;
+    return _mintShareToken(session, project);
+  }
+
+  /// Withdraws the project's share link: mints a new token, so the old link
+  /// stops working, **and** removes every grant redeemed from it.
+  ///
+  /// Both halves are needed. A new token alone stops the link being used again,
+  /// but everybody who had already opened it would keep the project in their
+  /// list — which is exactly who a leaked link let in.
+  ///
+  /// The caller is responsible for the access check.
+  Future<String> resetShareToken(Session session, int id) async {
+    final project = await getProject(session, id);
+    await ProjectGrant.db.deleteWhere(
+      session,
+      where: (t) => t.projectId.equals(id),
+    );
+    return _mintShareToken(session, project);
+  }
+
+  Future<String> _mintShareToken(Session session, Project project) async {
+    final token = AuthTokens.newToken();
+    project.shareToken = token;
+    await Project.db.updateRow(session, project);
+    session.log(
+      "Minted a share link for project ID: ${project.id}",
+      level: LogLevel.info,
+    );
+    return token;
+  }
+
+  /// Opens the project a share link points at, and gives [userId] lasting
+  /// access to it.
+  ///
+  /// [userId] is null on an install with no identities, where every project is
+  /// everybody's already; the project is simply returned.
+  ///
+  /// An unknown token answers with the same not-found error as a deleted
+  /// project, so the endpoint cannot be used to tell a withdrawn link from one
+  /// that never existed.
+  Future<Project> redeemShareToken(
+    Session session,
+    String token,
+    int? userId,
+  ) async {
+    final project = token.isEmpty
+        ? null
+        : await Project.db.findFirstRow(
+            session,
+            where: (t) => t.shareToken.equals(token),
+          );
+    if (project == null) {
+      throw FlumipFileNotFoundException(
+        message:
+            'This link does not lead to a project any more. It may have been '
+            'withdrawn, or the project deleted.',
+      );
+    }
+
+    if (userId != null && project.owner != userId) {
+      final existing = await ProjectGrant.db.findFirstRow(
+        session,
+        where: (t) => t.projectId.equals(project.id!) & t.userId.equals(userId),
+      );
+      if (existing == null) {
+        await ProjectGrant.db.insertRow(
+          session,
+          ProjectGrant(projectId: project.id!, userId: userId),
+        );
+        session.log(
+          "User $userId opened project ${project.id} from its share link",
+          level: LogLevel.info,
+        );
+      }
+    }
+    return project;
+  }
+
+  /// Refuses a guest who already has as many projects as one visitor may.
+  ///
+  /// Guests only: administrators and people who signed in are not counted, and
+  /// a quota of zero or less means no limit. Counts what the guest owns, not
+  /// what they reached through a share link — those are somebody else's.
+  Future<void> _requireGuestQuota(
+    Session session,
+    Principal who,
+    Settings settings,
+  ) async {
+    final userId = who.userId;
+    final limit = settings.guestMaxProjects;
+    if (!who.isGuest || userId == null || limit <= 0) return;
+
+    final owned = await Project.db.count(
+      session,
+      where: (t) => t.owner.equals(userId),
+    );
+    if (owned < limit) return;
+
+    session.log(
+      "Refused a new project for guest $userId: $owned of $limit",
+      level: LogLevel.warning,
+    );
+    throw ArgumentException(
+      message:
+          'You already have $owned projects, the most this public server keeps '
+          'for one visitor. Delete one to make room for a new one.',
+    );
   }
 
   /// The token for this project's public `/ucsc_track/<token>` URL, minting one

@@ -61,6 +61,127 @@ class ProjectEndpoint extends FlumipEndpoint {
     }
   }
 
+  /// Pushes the project's automatic deletion back, up to the server's maximum.
+  ///
+  /// Returns the project with its new [Project.expires]; unchanged when it is
+  /// already as late as it can go.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  Future<Project> extendProject(Session session, int id) async {
+    session.log("Extending project with ID: $id", level: LogLevel.info);
+    try {
+      await requireProject(session, id);
+      return await projectService.extendProject(session, id);
+    } catch (e) {
+      session.log(
+        "Error extending project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Exempts a project from automatic deletion, or puts it back under it with a
+  /// fresh retention window.
+  ///
+  /// **Administrators only**, guarded like [setProjectOwner] by
+  /// [AuthorizationService.requireAdmin] rather than `requireProject`: an owner
+  /// may keep their project longer, up to the server's limit, but lifting the
+  /// limit altogether is the operator's decision.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  /// \param kept Whether the project is kept indefinitely.
+  Future<Project> setKeptIndefinitely(
+    Session session,
+    int id,
+    bool kept,
+  ) async {
+    try {
+      await authz.requireAdmin(session);
+      return await projectService.setKeptIndefinitely(session, id, kept);
+    } catch (e) {
+      session.log(
+        "Error setting keep-indefinitely on project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// The token for this project's share link, minted on first request.
+  ///
+  /// The app builds the link as `<site>/#/p/<token>`. Anyone who opens it gets
+  /// the project in their own list, with the same access as its owner.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  Future<String> getShareToken(Session session, int id) async {
+    try {
+      await requireProject(session, id);
+      return await projectService.ensureShareToken(session, id);
+    } catch (e) {
+      session.log(
+        "Error getting the share link of project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Withdraws the project's share link and returns the new token.
+  ///
+  /// The old link stops working, and everybody who opened it loses access.
+  ///
+  /// \param session The current session.
+  /// \param id The ID of the project.
+  Future<String> resetShareToken(Session session, int id) async {
+    try {
+      await requireProject(session, id);
+      return await projectService.resetShareToken(session, id);
+    } catch (e) {
+      session.log(
+        "Error resetting the share link of project with ID: $id",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Opens a project from its share link and adds it to the caller's list.
+  ///
+  /// ⚠️ Deliberately **not** guarded by `requireProject`: holding the token is
+  /// the permission, exactly as it is for `/ucsc_track/<token>`. It is still
+  /// behind the endpoint's login gate, so on a public instance only somebody
+  /// who accepted the entry notice gets this far.
+  ///
+  /// \param session The current session.
+  /// \param token The token from the link.
+  Future<Project> redeemShareToken(Session session, String token) async {
+    try {
+      final who = await authz.principal(session);
+      return await projectService.redeemShareToken(
+        session,
+        token.trim(),
+        authz.isEnforcing ? who.userId : null,
+      );
+    } on FlumipFileNotFoundException {
+      rethrow;
+    } catch (e) {
+      session.log(
+        "Error opening a project from its share link",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
   /// Retrieves all projects.
   ///
   /// \param session The current session.
@@ -354,9 +475,12 @@ class ProjectEndpoint extends FlumipEndpoint {
   /// ordinary user has to be able to read this to render their own switch.
   ///
   /// \param session The current session.
+  ///
+  /// False for a guest on a public instance, who has no address to send to.
   Future<bool> notificationsAvailable(Session session) async {
     final settings = await SettingsService().getSettings(session);
-    return settings.mailActive;
+    if (!settings.mailActive) return false;
+    return !(await authz.principal(session)).isGuest;
   }
 
   /// Sets the SNP for a project, or clears it.

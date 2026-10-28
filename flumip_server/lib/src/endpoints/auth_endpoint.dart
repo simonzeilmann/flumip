@@ -2,6 +2,7 @@ import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
@@ -18,14 +19,30 @@ class AuthEndpoint extends Endpoint {
   /// Answered unauthenticated on purpose. It leaks only whether SSO is on and a
   /// label an administrator chose — both of which are visible from the sign-in
   /// page anyway.
+  ///
+  /// On a public instance it also carries what the entry notice shows, and how
+  /// long projects are kept — all of it shown to every visitor anyway.
   Future<AuthConfigDto> config(Session session) async {
     final runtime = sl<AuthRuntime>();
+    final publicMode = runtime.config.publicMode;
+    final settings = await sl<SettingsService>().getSettings(session);
+    final autoDelete = settings.demoMode || publicMode;
     return AuthConfigDto(
       // Show the sign-in button whenever signing in is possible, not only when
       // it is compulsory: an install can reasonably want identities without
       // locking anonymous users out.
       enabled: runtime.canSignIn,
       buttonLabel: runtime.config.buttonLabel,
+      publicMode: publicMode,
+      publicNoticeText: publicMode ? settings.publicNoticeText : '',
+      imprintUrl: settings.imprintUrl,
+      privacyUrl: settings.privacyUrl,
+      projectRetentionHours: autoDelete
+          ? demoRetention(settings).inHours
+          : null,
+      maxProjectLifetimeHours: autoDelete
+          ? maxProjectLifetime(settings).inHours
+          : null,
     );
   }
 

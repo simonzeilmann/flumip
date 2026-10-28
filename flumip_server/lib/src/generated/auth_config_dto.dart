@@ -16,14 +16,37 @@ import 'package:serverpod/serverpod.dart' as _is;
 ///
 /// Deliberately minimal and safe to serve unauthenticated: whether a sign-in is
 /// required at all, and what to put on the button. No table — transport only.
+///
+/// The public-mode fields are what the entry notice needs to draw itself before
+/// the visitor has any credential: they are all shown to every visitor anyway.
 abstract class AuthConfigDto
     implements _is.SerializableModel, _is.ProtocolSerialization {
-  AuthConfigDto._({bool? enabled, String? buttonLabel})
-    : enabled = enabled ?? false,
-      buttonLabel = buttonLabel ?? 'Sign in with SSO';
+  AuthConfigDto._({
+    bool? enabled,
+    String? buttonLabel,
+    bool? publicMode,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    this.projectRetentionHours,
+    this.maxProjectLifetimeHours,
+  }) : enabled = enabled ?? false,
+       buttonLabel = buttonLabel ?? 'Sign in with SSO',
+       publicMode = publicMode ?? false,
+       publicNoticeText = publicNoticeText ?? '',
+       imprintUrl = imprintUrl ?? '',
+       privacyUrl = privacyUrl ?? '';
 
-  factory AuthConfigDto({bool? enabled, String? buttonLabel}) =
-      _AuthConfigDtoImpl;
+  factory AuthConfigDto({
+    bool? enabled,
+    String? buttonLabel,
+    bool? publicMode,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? projectRetentionHours,
+    int? maxProjectLifetimeHours,
+  }) = _AuthConfigDtoImpl;
 
   factory AuthConfigDto.fromJson(Map<String, dynamic> jsonSerialization) {
     return AuthConfigDto(
@@ -31,6 +54,15 @@ abstract class AuthConfigDto
           ? null
           : _is.BoolJsonExtension.fromJson(jsonSerialization['enabled']),
       buttonLabel: jsonSerialization['buttonLabel'] as String?,
+      publicMode: jsonSerialization['publicMode'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['publicMode']),
+      publicNoticeText: jsonSerialization['publicNoticeText'] as String?,
+      imprintUrl: jsonSerialization['imprintUrl'] as String?,
+      privacyUrl: jsonSerialization['privacyUrl'] as String?,
+      projectRetentionHours: jsonSerialization['projectRetentionHours'] as int?,
+      maxProjectLifetimeHours:
+          jsonSerialization['maxProjectLifetimeHours'] as int?,
     );
   }
 
@@ -38,16 +70,49 @@ abstract class AuthConfigDto
 
   String buttonLabel;
 
+  bool publicMode;
+
+  String publicNoticeText;
+
+  String imprintUrl;
+
+  String privacyUrl;
+
+  /// How long a new project is kept, in hours, or null when nothing on this
+  /// server is deleted automatically.
+  int? projectRetentionHours;
+
+  /// The furthest "Keep longer" can go, in hours after creation. Null exactly
+  /// when [projectRetentionHours] is.
+  int? maxProjectLifetimeHours;
+
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
-  AuthConfigDto copyWith({bool? enabled, String? buttonLabel});
+  AuthConfigDto copyWith({
+    bool? enabled,
+    String? buttonLabel,
+    bool? publicMode,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? projectRetentionHours,
+    int? maxProjectLifetimeHours,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'AuthConfigDto',
       'enabled': enabled,
       'buttonLabel': buttonLabel,
+      'publicMode': publicMode,
+      'publicNoticeText': publicNoticeText,
+      'imprintUrl': imprintUrl,
+      'privacyUrl': privacyUrl,
+      if (projectRetentionHours != null)
+        'projectRetentionHours': projectRetentionHours,
+      if (maxProjectLifetimeHours != null)
+        'maxProjectLifetimeHours': maxProjectLifetimeHours,
     };
   }
 
@@ -57,6 +122,14 @@ abstract class AuthConfigDto
       '__className__': 'AuthConfigDto',
       'enabled': enabled,
       'buttonLabel': buttonLabel,
+      'publicMode': publicMode,
+      'publicNoticeText': publicNoticeText,
+      'imprintUrl': imprintUrl,
+      'privacyUrl': privacyUrl,
+      if (projectRetentionHours != null)
+        'projectRetentionHours': projectRetentionHours,
+      if (maxProjectLifetimeHours != null)
+        'maxProjectLifetimeHours': maxProjectLifetimeHours,
     };
   }
 
@@ -66,18 +139,56 @@ abstract class AuthConfigDto
   }
 }
 
+class _Undefined {}
+
 class _AuthConfigDtoImpl extends AuthConfigDto {
-  _AuthConfigDtoImpl({bool? enabled, String? buttonLabel})
-    : super._(enabled: enabled, buttonLabel: buttonLabel);
+  _AuthConfigDtoImpl({
+    bool? enabled,
+    String? buttonLabel,
+    bool? publicMode,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    int? projectRetentionHours,
+    int? maxProjectLifetimeHours,
+  }) : super._(
+         enabled: enabled,
+         buttonLabel: buttonLabel,
+         publicMode: publicMode,
+         publicNoticeText: publicNoticeText,
+         imprintUrl: imprintUrl,
+         privacyUrl: privacyUrl,
+         projectRetentionHours: projectRetentionHours,
+         maxProjectLifetimeHours: maxProjectLifetimeHours,
+       );
 
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
   @override
-  AuthConfigDto copyWith({bool? enabled, String? buttonLabel}) {
+  AuthConfigDto copyWith({
+    bool? enabled,
+    String? buttonLabel,
+    bool? publicMode,
+    String? publicNoticeText,
+    String? imprintUrl,
+    String? privacyUrl,
+    Object? projectRetentionHours = _Undefined,
+    Object? maxProjectLifetimeHours = _Undefined,
+  }) {
     return AuthConfigDto(
       enabled: enabled ?? this.enabled,
       buttonLabel: buttonLabel ?? this.buttonLabel,
+      publicMode: publicMode ?? this.publicMode,
+      publicNoticeText: publicNoticeText ?? this.publicNoticeText,
+      imprintUrl: imprintUrl ?? this.imprintUrl,
+      privacyUrl: privacyUrl ?? this.privacyUrl,
+      projectRetentionHours: projectRetentionHours is int?
+          ? projectRetentionHours
+          : this.projectRetentionHours,
+      maxProjectLifetimeHours: maxProjectLifetimeHours is int?
+          ? maxProjectLifetimeHours
+          : this.maxProjectLifetimeHours,
     );
   }
 }

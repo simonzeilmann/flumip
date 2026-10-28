@@ -377,6 +377,24 @@ void main() {
           endpoints.project.setEmailNotification(b, id, true),
           throwsA(isA<ProjectAccessDeniedException>()),
         );
+        await expectLater(
+          endpoints.project.extendProject(b, id),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+        // A stranger who could fetch the share token would let themselves in.
+        await expectLater(
+          endpoints.project.getShareToken(b, id),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+        await expectLater(
+          endpoints.project.resetShareToken(b, id),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+        // Admin-only, like setProjectOwner below.
+        await expectLater(
+          endpoints.project.setKeptIndefinitely(b, id, true),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
         // Guarded by requireAdmin rather than requireProject, but it takes a
         // project id, so it belongs in this enumeration all the same.
         await expectLater(

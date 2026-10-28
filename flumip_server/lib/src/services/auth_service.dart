@@ -7,6 +7,7 @@ import 'package:flumip_server/src/auth/id_token.dart';
 import 'package:flumip_server/src/auth/oidc_client.dart';
 import 'package:flumip_server/src/auth/oidc_discovery.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Raised when a sign-in cannot be completed. The message is shown to the
@@ -41,6 +42,8 @@ class IssuedApiToken {
     required this.email,
     required this.displayName,
     required this.isAdmin,
+    this.isGuest = false,
+    required this.sessionExpires,
   });
 
   final String token;
@@ -48,6 +51,18 @@ class IssuedApiToken {
   final String email;
   final String displayName;
   final bool isAdmin;
+  final bool isGuest;
+
+  /// When the browser session behind the token ends. A guest's moves forward
+  /// on every visit, and the route renews the cookie to match.
+  final DateTime sessionExpires;
+}
+
+/// Raised by [AuthService.issueApiToken] for a guest who has not accepted the
+/// current version of the entry notice — `Settings.termsVersion` was raised
+/// since they last did. `/auth/session` turns it into `needsAcceptance`.
+class TermsNotAcceptedException implements Exception {
+  const TermsNotAcceptedException();
 }
 
 /// The database-facing half of authentication.
@@ -74,6 +89,17 @@ class AuthService {
   /// `HttpOnly` cookie.
   static const apiTokenLifetime = Duration(minutes: 30);
 
+  /// The issuer recorded on a guest's `flumip_user` row. Not a URL, so it can
+  /// never collide with a real identity provider's.
+  static const guestIssuer = 'flumip:guest';
+
+  /// What a guest's session and bearers carry as their email.
+  ///
+  /// Not an address, and not empty either: `AuthenticationInfo` rejects an empty
+  /// identifier. The `flumip_user` row itself keeps an empty email, which is
+  /// what keeps guests out of every mail path.
+  static const guestEmail = 'guest';
+
   AuthRuntime get _runtime => sl<AuthRuntime>();
   OidcClient get _oidc => sl<OidcClient>();
 
@@ -89,7 +115,7 @@ class AuthService {
     // been switched off — including via the FLUMIP_AUTH_ENABLED break-glass
     // switch, which leaves the stored OIDC settings intact — says so, rather
     // than blaming the provider it is no longer talking to.
-    if (!config.loginRequired) {
+    if (!config.wantsSignIn) {
       throw AuthFlowException(
         'Single sign-on is switched off on this server, so there is nothing to '
         'sign in to. You should be able to use FLUMIP without signing in.',
@@ -356,6 +382,25 @@ class AuthService {
     if (authSession == null) return null;
 
     final now = DateTime.now().toUtc();
+    final user = await FlumipUser.db.findById(session, authSession.userId);
+
+    if (authSession.isGuest) {
+      // A guest exists only because this is a public instance. Once it is not,
+      // their cookie must stop working — on an install that requires sign-in it
+      // would otherwise get straight past the gate.
+      if (!_runtime.config.publicMode) return null;
+
+      final settings = await sl<SettingsService>().getSettings(session);
+      if ((user?.termsVersion ?? 0) < settings.termsVersion) {
+        throw const TermsNotAcceptedException();
+      }
+
+      // Sliding: the cookie is the only thing tying a visitor to their
+      // projects, so every visit pushes its end back by the longest a project
+      // can live. A visitor who comes back within that never loses them.
+      authSession.expires = now.add(maxProjectLifetime(settings));
+    }
+
     final token = AuthTokens.newToken();
     // Never outlive the browser session that authorised it.
     final expires = _earliest(now.add(apiTokenLifetime), authSession.expires);
@@ -367,6 +412,7 @@ class AuthService {
         tokenHash: AuthTokens.sha256Hex(token),
         email: authSession.email,
         isAdmin: authSession.isAdmin,
+        isGuest: authSession.isGuest,
         expires: expires,
       ),
     );
@@ -374,14 +420,107 @@ class AuthService {
     authSession.lastSeen = now;
     await AuthSession.db.updateRow(session, authSession);
 
-    final user = await FlumipUser.db.findById(session, authSession.userId);
     return IssuedApiToken(
       token: token,
       expires: expires,
       email: authSession.email,
       displayName: user?.displayName ?? '',
       isAdmin: authSession.isAdmin,
+      isGuest: authSession.isGuest,
+      sessionExpires: authSession.expires,
     );
+  }
+
+  /// Records that the holder of this browser accepted the entry notice, and
+  /// returns the guest session to set the cookie for.
+  ///
+  /// The only place a guest is created. A browser that already holds a guest
+  /// cookie keeps its identity — this is how a guest accepts a raised
+  /// `Settings.termsVersion` without losing their projects. A browser holding a
+  /// signed-in session keeps that, untouched: it never needed the notice.
+  ///
+  /// Throws [AuthFlowException] when this is not a public instance.
+  Future<CompletedSignIn> acceptAsGuest(
+    Session session, {
+    String? cookieValue,
+  }) async {
+    if (!_runtime.config.publicMode) {
+      throw AuthFlowException(
+        'This server is not a public instance, so there is nothing to accept.',
+      );
+    }
+
+    final settings = await sl<SettingsService>().getSettings(session);
+    final now = DateTime.now().toUtc();
+    final lifetime = maxProjectLifetime(settings);
+
+    final existing = cookieValue == null
+        ? null
+        : await _sessionForCookie(session, cookieValue);
+    if (existing != null && !existing.isGuest) {
+      return CompletedSignIn(cookieValue: cookieValue!, session: existing);
+    }
+    if (existing != null) {
+      final user = await FlumipUser.db.findById(session, existing.userId);
+      if (user != null) {
+        user
+          ..termsAcceptedAt = now
+          ..termsVersion = settings.termsVersion
+          ..lastLogin = now;
+        await FlumipUser.db.updateRow(session, user);
+        existing.expires = now.add(lifetime);
+        final renewed = await AuthSession.db.updateRow(session, existing);
+        return CompletedSignIn(cookieValue: cookieValue!, session: renewed);
+      }
+    }
+
+    final user = await FlumipUser.db.insertRow(
+      session,
+      FlumipUser(
+        email: '',
+        subject: AuthTokens.newToken(),
+        issuer: guestIssuer,
+        termsAcceptedAt: now,
+        termsVersion: settings.termsVersion,
+        created: now,
+        lastLogin: now,
+      ),
+    );
+
+    final newCookie = AuthTokens.newToken();
+    final guestSession = await AuthSession.db.insertRow(
+      session,
+      AuthSession(
+        userId: user.id!,
+        cookieHash: AuthTokens.sha256Hex(newCookie),
+        email: guestEmail,
+        isGuest: true,
+        expires: now.add(lifetime),
+      ),
+    );
+
+    session.log(
+      'Guest ${user.id} accepted the entry notice (version '
+      '${settings.termsVersion})',
+      level: LogLevel.info,
+    );
+    return CompletedSignIn(cookieValue: newCookie, session: guestSession);
+  }
+
+  /// Ends every guest session, and returns how many.
+  ///
+  /// Used when an administrator switches public mode off. The identities stay,
+  /// and so do their projects, until [pruneExpired] finds them without a
+  /// session.
+  Future<int> revokeGuestSessions(Session session) async {
+    final sessions = await AuthSession.db.find(
+      session,
+      where: (t) => t.isGuest.equals(true),
+    );
+    for (final revoked in sessions) {
+      await revokeSession(session, revoked.id!);
+    }
+    return sessions.length;
   }
 
   /// Looks up a bearer token, reading through a process-local cache.
@@ -490,12 +629,47 @@ class AuthService {
       await AuthApiToken.db.deleteWhere(session, where: (t) => t.expires < now);
       // Cascades to any remaining tokens of the session.
       await AuthSession.db.deleteWhere(session, where: (t) => t.expires < now);
+      await _pruneGuests(session, now);
     } catch (e) {
       session.log(
         'Pruning expired authentication rows failed: $e',
         level: LogLevel.warning,
       );
     }
+  }
+
+  /// Deletes guest identities that no longer have a session.
+  ///
+  /// A guest has no way back once their cookie has expired — there is nothing
+  /// to sign in with — so the row is dead weight. Their projects become unowned,
+  /// which in public mode means administrators only (and anybody holding a
+  /// grant from the share link), and they are deleted on schedule regardless.
+  ///
+  /// The hour of grace covers the gap between `acceptAsGuest` inserting the
+  /// user and inserting its session.
+  Future<void> _pruneGuests(Session session, DateTime now) async {
+    final guests = await FlumipUser.db.find(
+      session,
+      where: (t) =>
+          t.issuer.equals(guestIssuer) &
+          (t.created < now.subtract(const Duration(hours: 1))),
+    );
+    if (guests.isEmpty) return;
+
+    final ids = guests.map((u) => u.id!).toSet();
+    final live = await AuthSession.db.find(
+      session,
+      where: (t) => t.userId.inSet(ids),
+    );
+    final dead = ids.difference(live.map((s) => s.userId).toSet());
+    if (dead.isEmpty) return;
+
+    await FlumipUser.db.deleteWhere(session, where: (t) => t.id.inSet(dead));
+    session.log(
+      'Deleted ${dead.length} guest identit${dead.length == 1 ? 'y' : 'ies'} '
+      'with no session left',
+      level: LogLevel.info,
+    );
   }
 
   /// Cache key for a bearer token hash.

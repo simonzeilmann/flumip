@@ -23,10 +23,17 @@ class Principal {
   /// provider's strings, not ids.
   final List<String> departments;
 
+  /// An anonymous visitor on a public instance, as opposed to somebody who
+  /// signed in through the identity provider. Guests own projects like anyone
+  /// else; what they may not do — add SNP sets, exceed the project quota — is
+  /// decided where those things happen, not here.
+  final bool isGuest;
+
   const Principal({
     this.userId,
     this.isAdmin = false,
     this.departments = const [],
+    this.isGuest = false,
   });
 
   /// Nobody. What every request carries while single sign-on is switched off.
@@ -34,7 +41,7 @@ class Principal {
 
   @override
   String toString() =>
-      'Principal(userId: $userId, isAdmin: $isAdmin, '
+      'Principal(userId: $userId, isAdmin: $isAdmin, isGuest: $isGuest, '
       'departments: ${departments.join('|')})';
 }
 
@@ -52,20 +59,28 @@ class Principal {
 ///    itself out of its own data.
 /// 2. **Admins see everything.** They already hold the settings password's
 ///    powers, and somebody has to be able to reassign an orphaned project.
-/// 3. **Unowned projects are everyone's.** `owner` is null on every project that
-///    predates this code, so anything stricter would make an admin's decision to
-///    switch single sign-on on look like data loss.
-/// 4. Otherwise the owner matches, or the departments match, or access is
+/// 3. **A share-link grant is as good as ownership.** [granted] is true when
+///    the caller redeemed the project's link (`ProjectGrant`).
+/// 4. **Unowned projects are everyone's — except on a public instance.** `owner`
+///    is null on every project that predates this code, so anything stricter
+///    would make an admin's decision to switch single sign-on on look like data
+///    loss. A [publicMode] instance has no such history: there, an unowned
+///    project is one whose guest has gone, and handing it to every visitor
+///    would be a leak. Administrators only.
+/// 5. Otherwise the owner matches, or the departments match, or access is
 ///    refused.
 bool projectIsAccessible({
   required bool enforcing,
   required Principal principal,
   required int? owner,
   required String? department,
+  bool publicMode = false,
+  bool granted = false,
 }) {
   if (!enforcing) return true;
   if (principal.isAdmin) return true;
-  if (owner == null) return true;
+  if (granted && principal.userId != null) return true;
+  if (owner == null) return !publicMode;
 
   final userId = principal.userId;
   if (userId == null) return false;

@@ -21,6 +21,7 @@ class ProjectStatePill extends StatelessWidget {
       ProjectState.draft => (context.colours.outline, Icons.edit_outlined),
       ProjectState.needsBedFile => (status.warning, Icons.pending_outlined),
       ProjectState.readyToRun => (status.info, Icons.play_circle_outline),
+      ProjectState.queued => (status.info, Icons.hourglass_top),
       ProjectState.running => (status.info, Icons.autorenew),
       ProjectState.complete => (status.success, Icons.check_circle),
       // Complete, but flagged: amber rather than green, so the row says there is

@@ -34,6 +34,10 @@ class ProjectTileController extends ChangeNotifier {
     required this._setGenome,
     required this._setSnp,
     required this._setEmailNotification,
+    this._extendProject,
+    this._getShareToken,
+    this._resetShareToken,
+    this._setKeptIndefinitely,
   });
 
   final Future<Project> Function(int projectId) _loadProject;
@@ -53,6 +57,17 @@ class ProjectTileController extends ChangeNotifier {
   final Future<void> Function(int projectId, int? snpId) _setSnp;
   final Future<void> Function(int projectId, bool enabled)
   _setEmailNotification;
+
+  /// Optional, like the two below, so the many tests that build this
+  /// controller for something else need not supply them. Without one the
+  /// matching action reports that it is unavailable.
+  final Future<Project> Function(int projectId)? _extendProject;
+  final Future<String> Function(int projectId)? _getShareToken;
+  final Future<String> Function(int projectId)? _resetShareToken;
+
+  /// Administrators only — the server refuses anyone else.
+  final Future<Project> Function(int projectId, bool kept)?
+  _setKeptIndefinitely;
 
   Project _project;
   bool _expanded;
@@ -264,6 +279,60 @@ class ProjectTileController extends ChangeNotifier {
     }
   }
 
+  /// Pushes the project's automatic deletion back as far as the server allows.
+  Future<void> keepLonger() async {
+    final extend = _extendProject;
+    if (extend == null) return;
+    try {
+      adopt(await extend(_project.id!));
+      _say('This project will be kept longer.');
+    } catch (e) {
+      _say('Could not keep the project longer: ${describeError(e)}');
+    }
+  }
+
+  /// Exempts the project from automatic deletion, or puts it back under it.
+  Future<void> setKeptIndefinitely(bool kept) async {
+    final set = _setKeptIndefinitely;
+    if (set == null) return;
+    try {
+      adopt(await set(_project.id!, kept));
+      _say(
+        kept
+            ? 'This project is now kept indefinitely.'
+            : 'This project will be deleted automatically again, starting '
+                  'from today.',
+      );
+    } catch (e) {
+      _say(
+        'Could not change how long the project is kept: ${describeError(e)}',
+      );
+    }
+  }
+
+  /// The project's share link, or null — with a message — when it could not
+  /// be fetched.
+  Future<String?> shareLink(String siteUrl) =>
+      _linkFrom(_getShareToken, siteUrl, failure: 'Could not get the link');
+
+  /// Withdraws the share link and returns its replacement, or null.
+  Future<String?> resetShareLink(String siteUrl) =>
+      _linkFrom(_resetShareToken, siteUrl, failure: 'Could not reset the link');
+
+  Future<String?> _linkFrom(
+    Future<String> Function(int projectId)? fetch,
+    String siteUrl, {
+    required String failure,
+  }) async {
+    if (fetch == null) return null;
+    try {
+      return shareLinkFor(siteUrl, await fetch(_project.id!));
+    } catch (e) {
+      _say('$failure: ${describeError(e)}');
+      return null;
+    }
+  }
+
   void setDeleteExcessFiles(bool value) {
     _deleteExcessFiles = value;
     _notify();
@@ -369,3 +438,11 @@ class ProjectTileController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+/// The share link for [token]: `<site>/#/p/<token>`.
+///
+/// ⚠️ In the **fragment**, not the path or the query. A browser never sends the
+/// fragment to the server, so the token stays out of every access log and proxy
+/// between here and there; the app reads it from `Uri.base` itself. See
+/// `share_link.dart`.
+String shareLinkFor(String siteUrl, String token) => '$siteUrl/#/p/$token';

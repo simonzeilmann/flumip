@@ -20,6 +20,14 @@ fields:
   ### `AuthorizationService.principal` already reads this row on every guarded
   ### call, so carrying the groups here keeps that at one query instead of two.
   departments: List<String>?
+  ### An anonymous visitor on a public instance rather than somebody who signed
+  ### in through the identity provider. Created by `POST /auth/guest` once the
+  ### entry notice is accepted, never by `/auth/callback`.
+  ###
+  ### Guest sessions live much longer than signed-in ones and are extended on
+  ### every visit — the cookie is the only thing tying a visitor to their
+  ### projects — and they are refused outright while public mode is off.
+  isGuest: bool, default=false
   created: DateTime, default=now
   expires: DateTime
   lastSeen: DateTime, default=now
