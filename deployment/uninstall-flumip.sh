@@ -5,14 +5,17 @@
 # again stays where it is:
 #
 #   removed  - the flumip systemd service, /var/www/flumip, MIPGEN and
-#              /opt/flumip/tools
+#              /opt/flumip/tools, and Pocket ID's service and binary if
+#              setup-flumip.sh --pocket-id installed it
 #   kept     - the database, with its password and settings in /etc/flumip,
-#              the projects, the genomes and the custom SNP sets
+#              the projects, the genomes and the custom SNP sets, and Pocket
+#              ID's users, passkeys and key
 #
 # Each kept item has a switch to remove it as well, and --purge removes all of
 # them. Reinstalling after a default uninstall picks the kept data up again:
 # setup-flumip.sh reconnects to the database with the password it finds in
-# /etc/flumip, and setup-mipgen.sh leaves existing genomes alone.
+# /etc/flumip, and to Pocket ID's database with the key it finds there, and
+# setup-mipgen.sh leaves existing genomes alone.
 #
 # The script has two modes, like the setup scripts:
 #   * Interactive      - run with no switches on a terminal and you are asked
@@ -33,7 +36,11 @@
 #                           data, bwa indexes and built-in SNP sets.
 #   --custom-snps           Also delete /opt/flumip/data/custom_snp, the SNP
 #                           sets uploaded or imported in the app.
-#   --purge                 All four of the above.
+#   --pocket-id-data        Also delete Pocket ID's data: /var/lib/pocket-id
+#                           (its users, passkeys and signing keys),
+#                           /etc/flumip/pocket-id.env and the pocket-id user.
+#                           Every administrator then has to be set up again.
+#   --purge                 All five of the above.
 #   --packages              Also apt-remove bwa, samtools, tabix and trf.
 #                           build-essential, git, wget and acl are left alone:
 #                           other software is likely to need them.
@@ -74,6 +81,12 @@ CHOICES_FILE="$SECRETS_DIR/setup.conf"
 ENV_FILE="$SECRETS_DIR/flumip.env"
 DB_CONTAINER="flumip_postgres"
 DB_VOLUME="flumip_data"
+# Pocket ID, from setup-flumip.sh --pocket-id. Must match that script.
+POCKET_ID_UNIT_FILE="/etc/systemd/system/pocket-id.service"
+POCKET_ID_DIR="/opt/pocket-id"
+POCKET_ID_DATA="/var/lib/pocket-id"
+POCKET_ID_ENV="$SECRETS_DIR/pocket-id.env"
+POCKET_ID_USER="pocket-id"
 # Only the tools nothing but FLUMIP is likely to want; see --packages.
 PACKAGES=("bwa" "samtools" "tabix" "trf")
 
@@ -81,6 +94,7 @@ REMOVE_DATABASE=false
 REMOVE_PROJECTS=false
 REMOVE_GENOMES=false
 REMOVE_CUSTOM_SNPS=false
+REMOVE_POCKET_ID_DATA=false
 REMOVE_PACKAGES=false
 KEEP_MIPGEN=false
 DRY_RUN=false
@@ -113,9 +127,11 @@ staging is deployed by the project's own CI, not by setup-flumip.sh." ;;
     --projects) REMOVE_PROJECTS=true; SWITCHES_GIVEN=true ;;
     --genomes) REMOVE_GENOMES=true; SWITCHES_GIVEN=true ;;
     --custom-snps) REMOVE_CUSTOM_SNPS=true; SWITCHES_GIVEN=true ;;
+    --pocket-id-data) REMOVE_POCKET_ID_DATA=true; SWITCHES_GIVEN=true ;;
     --purge)
       REMOVE_DATABASE=true; REMOVE_PROJECTS=true
       REMOVE_GENOMES=true; REMOVE_CUSTOM_SNPS=true
+      REMOVE_POCKET_ID_DATA=true
       SWITCHES_GIVEN=true ;;
     --packages) REMOVE_PACKAGES=true; SWITCHES_GIVEN=true ;;
     --keep-mipgen) KEEP_MIPGEN=true; SWITCHES_GIVEN=true ;;
@@ -238,6 +254,16 @@ for unit in /etc/systemd/system/flumip_*.service; do
   OTHER_SERVICES+=("${unit%.service}")
 done
 
+# Pocket ID: its software, and separately its data, which outlives a default
+# uninstall the way the database does.
+POCKET_ID_INSTALLED=false
+[[ -f "$POCKET_ID_UNIT_FILE" || -e "$POCKET_ID_DIR" ]] && POCKET_ID_INSTALLED=true
+POCKET_ID_DATA_PRESENT=false
+if sudo test -e "$POCKET_ID_DATA" || sudo test -e "$POCKET_ID_ENV" \
+    || id "$POCKET_ID_USER" &>/dev/null; then
+  POCKET_ID_DATA_PRESENT=true
+fi
+
 # Read now: the file it comes from may be deleted below.
 SERVICE_USER="$(remembered SERVICE_USER)"
 SERVICE_USER="${SERVICE_USER:-www-data}"
@@ -253,6 +279,9 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
   prompt_yes_no "Delete the projects in $FLUMIP_ROOT/projects?" "n" && REMOVE_PROJECTS=true
   prompt_yes_no "Delete the genomes in $FLUMIP_ROOT/data/genomes?" "n" && REMOVE_GENOMES=true
   prompt_yes_no "Delete the custom SNP sets in $FLUMIP_ROOT/data/custom_snp?" "n" && REMOVE_CUSTOM_SNPS=true
+  if $POCKET_ID_DATA_PRESENT; then
+    prompt_yes_no "Delete Pocket ID's users, passkeys and key?" "n" && REMOVE_POCKET_ID_DATA=true
+  fi
   prompt_yes_no "apt-remove ${PACKAGES[*]}?" "n" && REMOVE_PACKAGES=true
 fi
 
@@ -292,6 +321,10 @@ fi
 $REMOVE_PROJECTS && echo -e "  $FLUMIP_ROOT/projects"
 $REMOVE_GENOMES && echo -e "  $FLUMIP_ROOT/data/genomes"
 $REMOVE_CUSTOM_SNPS && echo -e "  $FLUMIP_ROOT/data/custom_snp"
+$POCKET_ID_INSTALLED && echo -e "  service pocket-id, $POCKET_ID_DIR"
+if $REMOVE_POCKET_ID_DATA && $POCKET_ID_DATA_PRESENT; then
+  echo -e "  $POCKET_ID_DATA, $POCKET_ID_ENV, user $POCKET_ID_USER"
+fi
 $REMOVE_PACKAGES && echo -e "  apt packages: ${PACKAGES[*]}"
 
 echo -e "\n${GREEN}This will keep:${NC}"
@@ -308,6 +341,9 @@ fi
 if ! $REMOVE_PROJECTS; then echo -e "  $FLUMIP_ROOT/projects"; KEPT=true; fi
 if ! $REMOVE_GENOMES; then echo -e "  $FLUMIP_ROOT/data/genomes"; KEPT=true; fi
 if ! $REMOVE_CUSTOM_SNPS; then echo -e "  $FLUMIP_ROOT/data/custom_snp"; KEPT=true; fi
+if ! $REMOVE_POCKET_ID_DATA && $POCKET_ID_DATA_PRESENT; then
+  echo -e "  Pocket ID's data: $POCKET_ID_DATA, $POCKET_ID_ENV, user $POCKET_ID_USER"; KEPT=true
+fi
 $KEPT || echo -e "  nothing"
 echo ""
 
@@ -327,7 +363,8 @@ fi
 if $DRY_RUN; then
   echo -e "${CYAN}Dry run: nothing below is carried out.${NC}\n"
 elif ! $ASSUME_YES; then
-  if $REMOVE_DATABASE || $REMOVE_PROJECTS || $REMOVE_GENOMES || $REMOVE_CUSTOM_SNPS; then
+  if $REMOVE_DATABASE || $REMOVE_PROJECTS || $REMOVE_GENOMES || $REMOVE_CUSTOM_SNPS \
+      || { $REMOVE_POCKET_ID_DATA && $POCKET_ID_DATA_PRESENT; }; then
     echo -e "${RED}Deleted data cannot be recovered.${NC}"
   fi
   prompt_yes_no "Proceed?" "n" || die "Aborted by user."
@@ -377,6 +414,38 @@ if $FOUND && $REMOVE_DATABASE; then
       run sudo rm -f "$file"
     fi
   done
+fi
+
+# --- Pocket ID --------------------------------------------------------------
+
+if $POCKET_ID_INSTALLED; then
+  echo -e "\n${GREEN}=== Removing Pocket ID ===${NC}"
+  if [[ -f "$POCKET_ID_UNIT_FILE" ]]; then
+    echo -e "${GREEN}Stopping and disabling pocket-id.service${NC}"
+    run sudo systemctl disable --now pocket-id.service || true
+    run sudo rm -f "$POCKET_ID_UNIT_FILE"
+    run sudo systemctl daemon-reload
+    run sudo systemctl reset-failed pocket-id.service 2>/dev/null || true
+  fi
+  if [[ -e "$POCKET_ID_DIR" ]]; then
+    echo -e "${GREEN}Removing $POCKET_ID_DIR${NC}"
+    run sudo rm -rf "$POCKET_ID_DIR"
+  fi
+fi
+
+# The user goes with the data, not the software: a kept /var/lib/pocket-id is
+# owned by it, and a reinstall reuses it.
+if $REMOVE_POCKET_ID_DATA && $POCKET_ID_DATA_PRESENT; then
+  for path in "$POCKET_ID_DATA" "$POCKET_ID_ENV"; do
+    if sudo test -e "$path"; then
+      echo -e "${GREEN}Removing $path${NC}"
+      run sudo rm -rf "$path"
+    fi
+  done
+  if id "$POCKET_ID_USER" &>/dev/null; then
+    echo -e "${GREEN}Removing user $POCKET_ID_USER${NC}"
+    run sudo userdel "$POCKET_ID_USER"
+  fi
 fi
 
 # The directory itself goes once nothing else is left in it.

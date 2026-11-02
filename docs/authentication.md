@@ -112,6 +112,22 @@ Applications → Providers → Create → OAuth2/OpenID Provider.
 
 Issuer: `https://<authentik>/application/o/<slug>/`
 
+### Pocket ID
+
+The provider both installers can set up for you, for a server with no other one
+to use; [pocket-id.md](pocket-id.md) covers installing and running it.
+
+Administration → OIDC Clients → Add OIDC Client.
+
+- Client type: **Confidential**
+- Callback URL: the URI from the Settings tab
+- Access tab: only the group of people who may sign in
+- Mark each user's address as verified (Administration → Users, the envelope
+  beside Email). Pocket ID reports addresses as unverified by default, and
+  FLUMIP refuses those.
+
+Issuer: Pocket ID's own address, e.g. `https://id.example.org`
+
 ### Shibboleth / SAML
 
 FLUMIP speaks OpenID Connect only. A SAML-only identity provider needs an OIDC

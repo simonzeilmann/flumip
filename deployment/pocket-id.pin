@@ -1,0 +1,15 @@
+# The Pocket ID that FLUMIP installs as its optional, self-hosted single sign-on.
+# See docs/pocket-id.md.
+#
+# The single place this is defined. setup-flumip.sh sources it to download and
+# verify the binary on a bare-metal install. deployment/docker/compose.yaml
+# names the same version in its image tag, and release.yml refuses to publish a
+# release in which the two disagree.
+#
+# The hash is the release's own checksums.txt entry for pocket-id_linux_amd64,
+# kept here rather than fetched at install time, so a replaced asset on GitHub
+# is refused instead of trusted. Update both lines together.
+#
+# Plain KEY=value lines only: this file is sourced by sh, not just bash.
+POCKET_ID_VERSION=2.19.1
+POCKET_ID_SHA256=fbe58b3af6e225600136c7da033810d2d86436fbd13a135fa52205f467544436

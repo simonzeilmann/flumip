@@ -52,6 +52,9 @@ it is on. **A public instance does not accept the settings password**: from the
 moment public mode is saved, the password stops opening Settings. On a server
 anyone can reach, a shared password is a brute-force target.
 
+No identity provider of your own to sign in with? Both installers can host one
+next to FLUMIP: see [pocket-id.md](pocket-id.md).
+
 So the order matters:
 
 1. Configure single sign-on as described in [authentication.md](authentication.md),

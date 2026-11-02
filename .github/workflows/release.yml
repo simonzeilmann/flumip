@@ -139,6 +139,14 @@ jobs:
           # What a Docker install needs on the host: the compose file, the local
           # MIPGEN build and the .env template, pinned to this release's image.
           # entrypoint.sh and production.yaml are not here; they are in the image.
+          #
+          # The optional Pocket ID is pinned twice, in deployment/pocket-id.pin
+          # for bare metal and in the compose image tag, so the two installs
+          # could drift apart. Refuse a release in which they have.
+          . deployment/pocket-id.pin
+          grep -x " *image: ghcr.io/pocket-id/pocket-id:v${POCKET_ID_VERSION}" \
+            deployment/docker/compose.yaml >/dev/null \
+            || { echo "::error::compose.yaml's Pocket ID image is not v${POCKET_ID_VERSION} from deployment/pocket-id.pin"; exit 1; }
           mkdir -p docker-pkg/flumip-docker
           cd docker-pkg/flumip-docker
           cp ../../deployment/docker/compose.yaml ../../deployment/docker/mipgen.Dockerfile \

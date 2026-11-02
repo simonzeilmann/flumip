@@ -77,5 +77,36 @@ services:
       - ${FLUMIP_DATA_DIR:-./data}:/opt/flumip/data
       - ${FLUMIP_PROJECTS_DIR:-./projects}:/opt/flumip/projects
 
+  # Optional: a self-hosted single sign-on provider, for a public instance that
+  # has no institutional one to use. Off unless the pocket-id profile is active,
+  # which `./init-env.sh --pocket-id <url>` arranges through COMPOSE_PROFILES in
+  # .env. See docs/pocket-id.md.
+  #
+  # ⚠️ No ${VAR:?…} checks in this service. Compose interpolates the whole file
+  # whether a profile is active or not, so one would break every install that
+  # never asked for Pocket ID.
+  pocket-id:
+    # Keep in step with deployment/pocket-id.pin; release.yml checks it.
+    image: ghcr.io/pocket-id/pocket-id:v2.19.1
+    profiles: [pocket-id]
+    restart: unless-stopped
+    # Its own file, not .env: the flumip service reads all of .env, and this
+    # key has no business in that container.
+    env_file:
+      - pocket-id.env
+    ports:
+      # 127.0.0.1 only, like FLUMIP: the reverse proxy serves it over HTTPS.
+      - "127.0.0.1:${POCKET_ID_PORT:-1411}:1411"
+    volumes:
+      # The database, holding the users, passkeys and signing keys. ⚠️ Useless
+      # without ENCRYPTION_KEY from pocket-id.env; back up the two together.
+      - ${POCKET_ID_DATA_DIR:-./pocket-id-data}:/app/data
+    healthcheck:
+      test: ["CMD", "/app/pocket-id", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   db:
