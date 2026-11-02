@@ -1,0 +1,26 @@
+[Unit]
+Description=Pocket ID (single sign-on for FLUMIP)
+After=network.target
+
+[Service]
+Type=simple
+# Installed by setup-flumip.sh --pocket-id; see docs/pocket-id.md.
+User=pocket-id
+Group=pocket-id
+# Pocket ID keeps its database, uploads and keys under data/ in its working
+# directory. systemd creates /var/lib/pocket-id owned by the service user.
+StateDirectory=pocket-id
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/pocket-id
+ExecStart=/opt/pocket-id/pocket-id
+# No leading dash, unlike flumip.service: without this file Pocket ID would try
+# its defaults, which listen on every interface. A missing file has to stop it.
+EnvironmentFile=/etc/flumip/pocket-id.env
+Restart=always
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

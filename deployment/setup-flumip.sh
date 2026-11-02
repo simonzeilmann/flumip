@@ -11,10 +11,12 @@
 #   4. generates config/production.yaml and a passwords.yaml with random secrets
 #   5. applies the database migrations
 #   6. installs and starts the flumip systemd unit
+#   7. with --pocket-id, installs Pocket ID as this server's own single sign-on
 #
 # Re-running is safe: an existing database and its generated passwords are
 # reused, and the choices made on the first run (hostname, database, service
-# user) are remembered in /etc/flumip/setup.conf, so it doubles as an updater.
+# user, Pocket ID) are remembered in /etc/flumip/setup.conf, so it doubles as an
+# updater.
 # Any switch given on a re-run replaces the remembered value.
 #
 # The script has two modes, like setup-mipgen.sh:
@@ -39,6 +41,13 @@
 #   --db-user USER          Database user (default: postgres).
 #   --service-user USER     User the service runs as, and owner of the install
 #                           dir (default: www-data).
+#   --pocket-id URL         Also install Pocket ID, a self-hosted single sign-on
+#                           provider, reached at URL (e.g. https://id.example.org).
+#                           Only for a server with no institutional provider to
+#                           sign in with, such as a public instance. See
+#                           docs/pocket-id.md.
+#   --no-pocket-id          Remove a Pocket ID installed by an earlier run. Its
+#                           users and keys stay; uninstall-flumip.sh removes them.
 #   --no-migrations         Do not apply database migrations.
 #   --no-restart            Install files/unit but do not (re)start the service.
 #   -i, --interactive       Force interactive prompts even if switches are given.
@@ -93,18 +102,33 @@ DB_PORT=""
 DB_NAME=""
 DB_USER=""
 SERVICE_USER=""
+# "none" for --no-pocket-id, so that it is not mistaken for "not given" and
+# filled in again from the previous run's choice.
+POCKET_ID_URL=""
 MIGRATIONS=true
 RESTART=true
+
+# Pocket ID's layout on a bare-metal install. uninstall-flumip.sh must agree.
+# The env file sits in $SECRETS_DIR so that backing that up (step 5 of the next
+# steps) also covers the key without which Pocket ID's database is unreadable.
+POCKET_ID_BIN="/opt/pocket-id/pocket-id"
+POCKET_ID_USER="pocket-id"
+POCKET_ID_DATA="/var/lib/pocket-id"
+POCKET_ID_PORT=1411
 
 INTERACTIVE="auto"
 SWITCHES_GIVEN=false
 
-# Temp directory for a downloaded build; removed on exit.
+# Temp directories for a downloaded build and Pocket ID; removed on exit.
 TMP_DL=""
+POCKET_ID_TMP=""
 cleanup() {
-  if [[ -n "$TMP_DL" && -d "$TMP_DL" ]]; then
-    rm -rf "$TMP_DL"
-  fi
+  local dir
+  for dir in "$TMP_DL" "$POCKET_ID_TMP"; do
+    if [[ -n "$dir" && -d "$dir" ]]; then
+      rm -rf "$dir"
+    fi
+  done
   return 0
 }
 trap cleanup EXIT
@@ -164,6 +188,9 @@ install. Staging is deployed by the project's own CI, not by this script." ;;
       require_value "$1" "${2:-}"; DB_USER="$2"; SWITCHES_GIVEN=true; shift ;;
     --service-user)
       require_value "$1" "${2:-}"; SERVICE_USER="$2"; SWITCHES_GIVEN=true; shift ;;
+    --pocket-id)
+      require_value "$1" "${2:-}"; POCKET_ID_URL="$2"; SWITCHES_GIVEN=true; shift ;;
+    --no-pocket-id) POCKET_ID_URL="none"; SWITCHES_GIVEN=true ;;
     --no-migrations) MIGRATIONS=false; SWITCHES_GIVEN=true ;;
     --no-restart) RESTART=false; SWITCHES_GIVEN=true ;;
     -i|--interactive) INTERACTIVE="yes" ;;
@@ -258,7 +285,7 @@ if sudo test -f "$CHOICES_FILE"; then
   echo -e "${GREEN}Using the choices remembered in $CHOICES_FILE${NC}"
   while IFS='=' read -r key value; do
     case "$key" in
-      PUBLIC_HOST|DB_MODE|DB_HOST|DB_PORT|DB_NAME|DB_USER|SERVICE_USER)
+      PUBLIC_HOST|DB_MODE|DB_HOST|DB_PORT|DB_NAME|DB_USER|SERVICE_USER|POCKET_ID_URL)
         [[ -n "${!key}" ]] || printf -v "$key" '%s' "$value" ;;
     esac
   done < <(sudo cat "$CHOICES_FILE")
@@ -278,6 +305,17 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
     DB_NAME="$(prompt_value "Database name" "${DB_NAME:-flumip}")"
     DB_USER="$(prompt_value "Database user" "${DB_USER:-postgres}")"
   fi
+
+  if prompt_yes_no "Install Pocket ID as this server's own single sign-on? Only for a
+  public instance with no institutional provider to sign in with." \
+      "$([[ -n "$POCKET_ID_URL" && "$POCKET_ID_URL" != "none" ]] && echo y || echo n)"; then
+    POCKET_ID_URL="$(prompt_value "Address Pocket ID will be reached at" \
+      "$([[ "$POCKET_ID_URL" == "none" ]] && echo "" || echo "${POCKET_ID_URL:-https://id.${PUBLIC_HOST}}")")"
+  elif [[ -n "$POCKET_ID_URL" ]]; then
+    # Declining an earlier choice removes it, as --no-pocket-id does; declining
+    # one never made leaves nothing to remove.
+    POCKET_ID_URL="none"
+  fi
 fi
 
 # --- Defaults ---------------------------------------------------------------
@@ -289,6 +327,22 @@ DB_HOST="${DB_HOST:-localhost}"
 DB_NAME="${DB_NAME:-flumip}"
 DB_USER="${DB_USER:-postgres}"
 DB_PORT="${DB_PORT:-5432}"
+
+# Pocket ID: POCKET_ID_URL set means install or update it, REMOVE_POCKET_ID
+# means take away one an earlier run installed, and neither means leave it be.
+REMOVE_POCKET_ID=false
+if [[ "$POCKET_ID_URL" == "none" ]]; then
+  POCKET_ID_URL=""
+  REMOVE_POCKET_ID=true
+elif [[ -n "$POCKET_ID_URL" ]]; then
+  # Passkeys are bound to this domain for good, so a typo here costs every
+  # administrator their passkey later. https, or plain http on localhost for a
+  # trial; the bare origin, with no path.
+  POCKET_ID_URL="${POCKET_ID_URL%/}"
+  [[ "$POCKET_ID_URL" =~ ^https://[^/]+$ || "$POCKET_ID_URL" =~ ^http://localhost(:[0-9]+)?$ ]] \
+    || die "--pocket-id must be the bare https:// origin Pocket ID will be reached at,
+such as https://id.example.org (plain http only for localhost): $POCKET_ID_URL"
+fi
 
 # The ports of config/production.yaml, which the app's own URL logic expects
 # (installWebPorts in flumip_flutter/lib/api_config.dart).
@@ -331,6 +385,14 @@ fi
 
 [[ -f "$UNIT_SRC" ]] || die "Missing systemd unit: $UNIT_SRC"
 
+if [[ -n "$POCKET_ID_URL" ]]; then
+  [[ -f "$SCRIPT_DIR/pocket-id.pin" ]] || die "Missing $SCRIPT_DIR/pocket-id.pin"
+  [[ -f "$SCRIPT_DIR/pocket-id.service" ]] || die "Missing systemd unit: $SCRIPT_DIR/pocket-id.service"
+  command -v sha256sum >/dev/null 2>&1 || die "Required command not found: sha256sum"
+  # The pin holds the hash of the amd64 build only, which is all FLUMIP runs on.
+  [[ "$(uname -m)" == "x86_64" ]] || die "--pocket-id is only supported on x86_64."
+fi
+
 id "$SERVICE_USER" &>/dev/null \
   || die "Service user '$SERVICE_USER' does not exist. Create it first, or pass --service-user."
 
@@ -372,6 +434,11 @@ if [[ "$DB_MODE" == "docker" ]]; then
   echo -e "  Database:         ${POSTGRES_IMAGE} container '${DB_CONTAINER}' on port ${DB_PORT}"
 else
   echo -e "  Database:         existing at ${DB_HOST}:${DB_PORT}/${DB_NAME} as ${DB_USER}"
+fi
+if [[ -n "$POCKET_ID_URL" ]]; then
+  echo -e "  Pocket ID:        ${POCKET_ID_URL} (service pocket-id on 127.0.0.1:${POCKET_ID_PORT})"
+elif $REMOVE_POCKET_ID; then
+  echo -e "  Pocket ID:        remove (its data stays in ${POCKET_ID_DATA})"
 fi
 echo -e "  Apply migrations: ${MIGRATIONS}"
 echo -e "  Start service:    ${RESTART}"
@@ -601,8 +668,13 @@ DB_PORT=${DB_PORT}
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 SERVICE_USER=${SERVICE_USER}
+POCKET_ID_URL=${POCKET_ID_URL}
 EOF
 sudo chmod 640 "$CHOICES_FILE"
+
+# The example issuer in a new flumip.env: Pocket ID's own address when this run
+# installs it, so the line only needs uncommenting.
+OIDC_ISSUER_EXAMPLE="${POCKET_ID_URL:-https://login.example.org/realms/staff}"
 
 # Optional runtime configuration, read by the systemd unit's EnvironmentFile.
 #
@@ -634,7 +706,7 @@ else
 #FLUMIP_AUTH_ENABLED=true
 
 # Without a trailing slash; /.well-known/openid-configuration is appended.
-#FLUMIP_OIDC_ISSUER=https://login.example.org/realms/staff
+#FLUMIP_OIDC_ISSUER=${OIDC_ISSUER_EXAMPLE}
 #FLUMIP_OIDC_CLIENT_ID=flumip
 #FLUMIP_OIDC_CLIENT_SECRET=
 
@@ -706,7 +778,184 @@ else
   echo -e "${YELLOW}--no-restart given; not starting the service.${NC}"
 fi
 
+# --- Pocket ID (optional) ---------------------------------------------------
+
+# A self-hosted single sign-on provider for a server that has no institutional
+# one, such as a public instance, where signing in is the only way an
+# administrator gets in. FLUMIP talks to it like any other OIDC provider; only
+# installing it is special. See docs/pocket-id.md.
+POCKET_ID_ENV="$SECRETS_DIR/pocket-id.env"
+POCKET_ID_UNIT="/etc/systemd/system/pocket-id.service"
+POCKET_ID_RECOVERY="sudo systemd-run --pipe --wait --quiet -p User=${POCKET_ID_USER} \\
+         -p EnvironmentFile=${POCKET_ID_ENV} -p WorkingDirectory=${POCKET_ID_DATA} \\
+         ${POCKET_ID_BIN} one-time-access-token <username or email>"
+
+if [[ -n "$POCKET_ID_URL" ]]; then
+  # shellcheck source=pocket-id.pin
+  . "$SCRIPT_DIR/pocket-id.pin"
+  echo -e "${GREEN}Installing Pocket ID ${POCKET_ID_VERSION}${NC}"
+
+  POCKET_ID_TMP="$(mktemp -d)"
+  POCKET_ID_ASSET="pocket-id_linux_amd64"
+  POCKET_ID_DL="https://github.com/pocket-id/pocket-id/releases/download/v${POCKET_ID_VERSION}/${POCKET_ID_ASSET}"
+  curl -fsSL --retry 3 -o "$POCKET_ID_TMP/$POCKET_ID_ASSET" "$POCKET_ID_DL" \
+    || die "Download failed: $POCKET_ID_DL"
+  # Against the hash in the pin, not one fetched alongside the binary: a release
+  # asset replaced on GitHub would bring its own matching checksum.
+  echo "${POCKET_ID_SHA256}  $POCKET_ID_TMP/$POCKET_ID_ASSET" | sha256sum -c --quiet - \
+    || die "The Pocket ID download does not match the hash in pocket-id.pin; not installing it."
+
+  if ! id "$POCKET_ID_USER" &>/dev/null; then
+    sudo useradd --system --user-group --no-create-home \
+      --home-dir "$POCKET_ID_DATA" --shell /usr/sbin/nologin "$POCKET_ID_USER"
+  fi
+
+  # Never overwritten, like flumip.env, and for a stronger reason: the key in it
+  # is the only way to read Pocket ID's database, and the URL is what every
+  # registered passkey is bound to.
+  if sudo test -f "$POCKET_ID_ENV"; then
+    echo -e "${GREEN}Keeping existing $POCKET_ID_ENV${NC}"
+    current_url="$(sudo sed -n 's/^APP_URL=//p' "$POCKET_ID_ENV")"
+    if [[ "$current_url" != "$POCKET_ID_URL" ]]; then
+      echo -e "${YELLOW}⚠️  $POCKET_ID_ENV still says APP_URL=${current_url}, not ${POCKET_ID_URL}.
+   It is left alone: every passkey registered so far is bound to the old address.
+   To really move Pocket ID, edit APP_URL there, restart pocket-id, and have each
+   administrator register a new passkey with a login code.${NC}"
+      # Remember the address in force, not the one asked for, so the next run
+      # neither warns again nor prints next steps for an address nothing uses.
+      POCKET_ID_URL="$current_url"
+      sudo sed -i "s|^POCKET_ID_URL=.*|POCKET_ID_URL=${POCKET_ID_URL}|" "$CHOICES_FILE"
+    fi
+  else
+    echo -e "${GREEN}Creating $POCKET_ID_ENV${NC}"
+    sudo mkdir -p "$SECRETS_DIR"
+    sudo chmod 750 "$SECRETS_DIR"
+    # Read by systemd as root, so nobody else needs to read it at all.
+    (umask 077; sudo tee "$POCKET_ID_ENV" >/dev/null) <<EOF
+# Pocket ID's configuration, read by systemd for the pocket-id service.
+# Generated by setup-flumip.sh; never overwritten on a re-run. Apply changes with
+#   sudo systemctl restart pocket-id
+# See docs/pocket-id.md.
+
+# The address people reach Pocket ID at. ⚠️ Passkeys are bound to its domain:
+# changing it later means every administrator registers theirs again.
+APP_URL=${POCKET_ID_URL}
+
+# ⚠️ Encrypts the signing keys in Pocket ID's database under ${POCKET_ID_DATA}.
+# Without it that database is useless: back the two up together, and never
+# change it.
+ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+# Reachable from this machine only; the reverse proxy serves it over HTTPS, and
+# its X-Forwarded-For is the visitor's real address.
+HOST=127.0.0.1
+PORT=${POCKET_ID_PORT}
+TRUST_PROXY=127.0.0.1
+
+# Not settable here: whether addresses count as verified, and whether anyone may
+# sign up, are Pocket ID settings in its own web UI, and it ignores them in the
+# environment. Sign-ups are off by default. ⚠️ Every administrator's address has
+# to be marked verified there (Administration → Users → the envelope beside
+# Email), the one from /setup included: FLUMIP refuses a sign-in whose address
+# the provider calls unverified.
+
+# No daily heartbeat to Pocket ID's instance counter.
+ANALYTICS_DISABLED=true
+EOF
+    sudo chown root:root "$POCKET_ID_ENV"
+    sudo chmod 600 "$POCKET_ID_ENV"
+  fi
+
+  # Replacing the file under a running service is safe: install unlinks the old
+  # binary, which the process keeps until the restart below.
+  sudo install -d -m 755 "$(dirname "$POCKET_ID_BIN")"
+  sudo install -m 755 "$POCKET_ID_TMP/$POCKET_ID_ASSET" "$POCKET_ID_BIN"
+  sudo install -m 644 "$SCRIPT_DIR/pocket-id.service" "$POCKET_ID_UNIT"
+  sudo systemctl daemon-reload
+  sudo systemctl enable pocket-id
+  if $RESTART; then
+    echo -e "${GREEN}Starting pocket-id${NC}"
+    sudo systemctl restart pocket-id
+  fi
+elif $REMOVE_POCKET_ID; then
+  if [[ -f "$POCKET_ID_UNIT" || -e "$POCKET_ID_BIN" ]]; then
+    echo -e "${GREEN}Removing Pocket ID${NC}"
+    sudo systemctl disable --now pocket-id 2>/dev/null || true
+    sudo rm -f "$POCKET_ID_UNIT"
+    sudo systemctl daemon-reload
+    sudo rm -rf "$(dirname "$POCKET_ID_BIN")"
+  fi
+  # Its users, passkeys and keys stay, so --pocket-id again picks them up.
+  if sudo test -e "$POCKET_ID_DATA" || sudo test -f "$POCKET_ID_ENV"; then
+    echo -e "${YELLOW}Pocket ID's data stays in $POCKET_ID_DATA and $POCKET_ID_ENV.
+uninstall-flumip.sh --pocket-id-data removes it.${NC}"
+  fi
+fi
+
 # --- Next steps -------------------------------------------------------------
+
+# Step 4 is about single sign-on: an organisation's provider in general, or the
+# Pocket ID this run installed.
+if [[ -n "$POCKET_ID_URL" ]]; then
+  POCKET_ID_HOST="${POCKET_ID_URL#*://}"
+  POCKET_ID_HOST="${POCKET_ID_HOST%%:*}"
+  SSO_STEP="  4. Pocket ID runs on 127.0.0.1:${POCKET_ID_PORT}, as the pocket-id service.
+     Before anyone else can reach it:
+
+     a. Give it its own HTTPS server block, like step 3:
+
+          sudo certbot --nginx -d ${POCKET_ID_HOST}
+          # proxy_pass http://127.0.0.1:${POCKET_ID_PORT};
+
+     b. Open ${POCKET_ID_URL}/setup AT ONCE. Whoever opens it first
+        becomes Pocket ID's administrator. Register a passkey there.
+        Then, under Administration → Users, mark your address as verified
+        (the envelope beside Email). FLUMIP refuses unverified addresses,
+        and Pocket ID creates this first account unverified.
+
+     c. In Pocket ID, create a user group (say flumip-admins) and an OIDC
+        client: confidential, callback https://${PUBLIC_HOST}/auth/callback.
+        On the client's Access tab allow only that group. Copy the client
+        secret: it is shown once.
+
+     d. In ${ENV_FILE} set FLUMIP_OIDC_ISSUER=${POCKET_ID_URL},
+        the client id and secret, FLUMIP_OIDC_ADMIN_EMAILS and
+        FLUMIP_PUBLIC_URL=https://${PUBLIC_HOST}, then
+        'sudo systemctl restart ${SERVICE}'.
+
+     If the last administrator loses their passkey, this prints a one-time
+     sign-in link:
+
+       ${POCKET_ID_RECOVERY}
+
+     See docs/pocket-id.md."
+  BACKUP_STEP="  5. Back up ${SECRETS_DIR}/ and ${POCKET_ID_DATA}/. ${SECRETS_FILE}
+     holds the only copy of the database password, and ${POCKET_ID_ENV}
+     the only key to Pocket ID's database."
+else
+  SSO_STEP="  4. Optional: connect this server to your organisation's single sign-on.
+     FLUMIP runs with no authentication by default, which is fine for a trusted
+     network — skip this step and nothing changes.
+
+     Register FLUMIP with your identity provider using this redirect URI:
+
+       http://${PUBLIC_HOST}:${WEB_PORT}/auth/callback
+
+     Note the plain http and the port. Most providers refuse a non-HTTPS
+     redirect URI for anything other than localhost, so do step 3 first; the URI
+     then becomes https://${PUBLIC_HOST}/auth/callback and you must set
+
+       FLUMIP_PUBLIC_URL=https://${PUBLIC_HOST}
+
+     in ${ENV_FILE}, or the public URL
+     in the Settings tab. The Settings tab always shows the URI this server
+     computes — register exactly that. See docs/authentication.md.
+
+     No provider to use, but need sign-in (a public instance does)? Re-run
+     with --pocket-id to host one here; see docs/pocket-id.md."
+  BACKUP_STEP="  5. Back up ${SECRETS_DIR}/. ${SECRETS_FILE} holds the only copy of
+     the database password."
+fi
 
 cat <<EOF
 
@@ -754,31 +1003,14 @@ $(echo -e "${YELLOW}Next steps:${NC}")
      (under /api), downloads, uploads and sign-in. Keep ${API_PORT} and
      ${INSIGHTS_PORT} off the proxy and firewalled.
 
-  4. Optional: connect this server to your organisation's single sign-on.
-     FLUMIP runs with no authentication by default, which is fine for a trusted
-     network — skip this step and nothing changes.
-
-     Register FLUMIP with your identity provider using this redirect URI:
-
-       http://${PUBLIC_HOST}:${WEB_PORT}/auth/callback
-
-     Note the plain http and the port. Most providers refuse a non-HTTPS
-     redirect URI for anything other than localhost, so do step 3 first; the URI
-     then becomes https://${PUBLIC_HOST}/auth/callback and you must set
-
-       FLUMIP_PUBLIC_URL=https://${PUBLIC_HOST}
-
-     in ${ENV_FILE}, or the public URL
-     in the Settings tab. The Settings tab always shows the URI this server
-     computes — register exactly that. See docs/authentication.md.
+${SSO_STEP}
 
      If a sign-in configuration ever locks you out: set
      FLUMIP_AUTH_ENABLED=false in that env file and
      'sudo systemctl restart ${SERVICE}'. While sign-in is enforced the
      admin password does not open the Settings tab; only an admin account does.
 
-  5. Back up ${SECRETS_DIR}/. ${SECRETS_FILE} holds the only copy of
-     the database password.
+${BACKUP_STEP}
 
   To update later, re-run this script with the new build. The choices
   above are remembered in ${CHOICES_FILE}.

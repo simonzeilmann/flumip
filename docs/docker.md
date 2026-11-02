@@ -188,6 +188,7 @@ holds what has to be known before the server starts:
 | `COMPOSE_PROJECT_NAME` | `flumip` | Names the containers and the database volume (`<name>_db`). Set it only for a second install on the same machine, before its first start. |
 | `FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_*`, `FLUMIP_PUBLIC_URL`, `FLUMIP_AUTH_STRICT` | unset | Single sign-on; see [authentication.md](authentication.md) |
 | `FLUMIP_PUBLIC_MODE` | unset | A public instance for anonymous visitors; see [public-instance.md](public-instance.md) |
+| `COMPOSE_PROFILES`, `POCKET_ID_PORT`, `POCKET_ID_DATA_DIR` | unset, `1411`, `./pocket-id-data` | The optional self-hosted single sign-on; see [pocket-id.md](pocket-id.md). `./init-env.sh --pocket-id <url>` sets it up. |
 
 The sign-in variables work exactly as they do in `/etc/flumip/flumip.env`
 on a bare-metal install. A value set here overrides the Settings tab, which then
@@ -231,6 +232,9 @@ its `flumip-docker.tar.gz` and copy your `.env` across.
 
 - **`.env`**. It holds the only copy of the database password.
 - **The projects directory**, if the designs matter to you.
+- **`pocket-id-data/` and `pocket-id.env`**, if you run
+  [Pocket ID](pocket-id.md). The key in the file is the only way to read the
+  data.
 
 The genomes can always be downloaded again. Custom SNP sets in `data/custom_snp`
 cannot, unless you still have the files.

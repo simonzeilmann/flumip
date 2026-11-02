@@ -214,7 +214,10 @@ switches to script it. `--help` lists them all.
 - applies database migrations;
 - installs and starts the `flumip` systemd service, running as
   `www-data` (`--service-user` to change; `--no-restart` to leave it stopped);
-- remembers the hostname, database and service user in
+- with `--pocket-id https://id.example.org`, also installs
+  [Pocket ID](docs/pocket-id.md) as the server's own single sign-on, for a
+  public instance with no institutional provider to sign in with;
+- remembers the hostname, database, service user and Pocket ID in
   `/etc/flumip/setup.conf`, so a later run needs none of those switches.
 
 Like the MIPGEN script, it prompts on a terminal when run with no switches.
@@ -468,7 +471,7 @@ is the way back in if sign-in ever locks you out.
 | `flumip_server/` | The [Serverpod](https://serverpod.dev) 4 backend: endpoints, services that drive MIPGEN, web routes for downloads, sign-in and UCSC tracks, database models and migrations. |
 | `flumip_flutter/` | The Flutter web app. |
 | `flumip_client/` | The client library, **generated** by `serverpod generate`. Do not edit it. |
-| `deployment/` | The install scripts and systemd units, `fetch-genome.sh`, the MIPGEN pin (`mipgen.pin`), and in `docker/` the Docker install: compose file, local MIPGEN build, entrypoint. |
+| `deployment/` | The install scripts and systemd units, `fetch-genome.sh`, the MIPGEN pin (`mipgen.pin`), the optional Pocket ID's pin and unit (`pocket-id.pin`, `pocket-id.service`), and in `docker/` the Docker install: compose file, local MIPGEN build, entrypoint. |
 | `Dockerfile` | The published Docker image (no MIPGEN); see [docs/docker.md](docs/docker.md). |
 | `docs/` | Operator documentation. |
 | `.github/workflows/` | CI, the staging and production deploys, and the release build. |
