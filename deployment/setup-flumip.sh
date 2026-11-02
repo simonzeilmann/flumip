@@ -390,7 +390,6 @@ fetch_build() {
     [[ -f "$BUILD_FILE" ]] || die "Build file not found: $BUILD_FILE"
     out="$BUILD_FILE"
   else
-    TMP_DL="$(mktemp -d)"
     out="$TMP_DL/flumip-build.tar.gz"
     echo -e "${GREEN}Downloading build from $BUILD_URL${NC}" >&2
     # -f fail on HTTP errors, -sS quiet but still report errors, -L follow redirects.
@@ -416,6 +415,10 @@ fetch_build() {
 }
 
 echo -e "\n${GREEN}=== Installing ${SERVICE} ===${NC}"
+# ⚠️ Made here, not in fetch_build: that runs in the subshell of the $(...)
+# below, so a directory it made would never reach cleanup, and every download
+# used to leave its tarball behind in /tmp.
+[[ -n "$BUILD_FILE" ]] || TMP_DL="$(mktemp -d)"
 BUILD="$(fetch_build)"
 
 # --- Database ---------------------------------------------------------------
