@@ -190,6 +190,92 @@ void main() {
       expect(reloaded.active, isTrue);
     }, tags: ['unit']);
 
+    test('a hostile project name never reaches mipgen', () async {
+      // mipgen pastes `-project_name` unquoted into `system()` calls, so the
+      // name itself on the command line was a shell for whoever chose it.
+      final base = createTempDir('hostile');
+      await overrideSettingsDirs(
+        session,
+        projectDir: base.path,
+        mipgenExecutable: 'mipgen-exe',
+      );
+      final options = await seedOptions(session);
+      final genome = await seedGenome(
+        session,
+        name: 'hg38',
+        fastaPath: '/data/hg38.fa',
+      );
+      final project = await seedProject(
+        session,
+        name: r'x;id>&2;#$(reboot) `a` ../../y',
+        options: options.id!,
+        folderName: 'proj',
+        genome: genome.id,
+      );
+      Directory('${base.path}/proj').createSync(recursive: true);
+      fake.stubRun(
+        'pgrep',
+        exitCode: 0,
+        stdout: '777 mipgen -regions_to_scan /p/proj/genes.bed\n',
+      );
+
+      await NoScheduleMipgenService().generateMips(session, project.id!, false);
+
+      final args = fake.startCalls
+          .firstWhere((c) => c.executable == 'mipgen-exe')
+          .arguments;
+      expect(args[args.indexOf('-project_name') + 1], 'x_id_2_reboot_a_y');
+      expect(args, isNot(contains(project.name)));
+      expect(
+        args.where((a) => RegExp(r'''[;&|<>$`'"\\\s#()]''').hasMatch(a)),
+        isEmpty,
+        reason: 'mipgen puts several of these into shell commands',
+      );
+    }, tags: ['unit']);
+
+    for (final (what, fastaPath) in [
+      ('a command separator', '/data/hg38.fa;id;#'),
+      ('a space', '/data/my genomes/hg38.fa'),
+      ('a substitution', r'/data/$(id)/hg38.fa'),
+      ('a leading dash', '-file_of_parameters'),
+    ]) {
+      test('a reference path with $what is refused, not run', () async {
+        final base = createTempDir('unsafe-path');
+        await overrideSettingsDirs(
+          session,
+          projectDir: base.path,
+          mipgenExecutable: 'mipgen-exe',
+        );
+        final options = await seedOptions(session);
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          fastaPath: fastaPath,
+        );
+        final project = await seedProject(
+          session,
+          name: 'demo',
+          options: options.id!,
+          folderName: 'proj',
+          genome: genome.id,
+        );
+        Directory('${base.path}/proj').createSync(recursive: true);
+
+        await expectLater(
+          NoScheduleMipgenService().generateMips(session, project.id!, false),
+          throwsMessage(
+            'The genome "hg38" is stored under a path with spaces or special '
+            'characters in it, which MIPGEN cannot use. Ask your administrator '
+            'to rename the folder or file and re-scan.',
+          ),
+        );
+        expect(
+          fake.startCalls.where((c) => c.executable == 'mipgen-exe'),
+          isEmpty,
+        );
+      }, tags: ['unit']);
+    }
+
     /// A project ready to run, in a fresh project directory, with the run
     /// limits set as given.
     Future<Project> seedRunnable(

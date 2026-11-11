@@ -1,19 +1,28 @@
 import 'dart:io';
 
 import 'package:flumip_server/service_locator.dart';
+import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/auth/url_guard.dart';
 import 'package:flumip_server/src/endpoints/flumip_endpoint.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/genome_service.dart';
+import 'package:flumip_server/src/services/project_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
-/// Why a guest on a public instance cannot add an SNP set.
+/// Why a guest on a public instance cannot add an SNP set this way.
+///
+/// Guests may upload, when `Settings.guestSnpMaxMegabytes` allows it, but
+/// never import from a URL or rescan the tree.
 const _guestSnpRefusal =
     'Adding SNP sets is not available on this public server. Use one of the '
     'SNP sets it provides.';
+
+const _guestImportRefusal =
+    'On this public server SNP sets can only be uploaded, not fetched from '
+    'a URL.';
 
 /// Everything to do with SNP sets that a user, rather than the server's
 /// administrator, brought along.
@@ -94,13 +103,25 @@ class SnpEndpoint extends FlumipEndpoint {
   /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
   /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
   /// ```
+  ///
+  /// A guest's set is always private and gets a deletion date
+  /// (`Snp.expires`), which is also what makes the upload route hold its files
+  /// to the guest size limit.
   Future<Snp> createUpload(Session session, CustomSnpRequestDto request) async {
     session.log(
       'Creating an upload slot for a custom SNP',
       level: LogLevel.info,
     );
     try {
-      await authz.refuseGuest(session, message: _guestSnpRefusal);
+      final who = await authz.principal(session);
+      DateTime? expires;
+      if (who.isGuest) {
+        final settings = await sl<SettingsService>().getSettings(session);
+        await _requireGuestSnpRoom(session, who, settings);
+        expires = endOfDay(
+          DateTime.now().toUtc().add(guestSnpRetention(settings)),
+        );
+      }
       final name = request.name.trim();
       if (name.isEmpty) {
         throw ArgumentException(message: 'An SNP set needs a name.');
@@ -120,7 +141,9 @@ class SnpEndpoint extends FlumipEndpoint {
           vcfPath: '',
           tbiPath: '',
           folder: '',
-          private: request.private,
+          // A guest cannot share: everyone else on a public server is a
+          // stranger.
+          private: request.private || who.isGuest,
           custom: true,
           genome: genome.id,
           owner: await authz.ownerForNewSnp(session),
@@ -128,6 +151,7 @@ class SnpEndpoint extends FlumipEndpoint {
           statusMessage: 'Waiting for the files',
           created: DateTime.now().toUtc(),
           statusUpdated: DateTime.now().toUtc(),
+          expires: expires,
         ),
       );
 
@@ -209,7 +233,7 @@ class SnpEndpoint extends FlumipEndpoint {
   ) async {
     session.log('Importing an SNP set from URLs', level: LogLevel.info);
     try {
-      await authz.refuseGuest(session, message: _guestSnpRefusal);
+      await authz.refuseGuest(session, message: _guestImportRefusal);
       final name = request.name.trim();
       if (name.isEmpty) {
         throw ArgumentException(message: 'An SNP set needs a name.');
@@ -392,6 +416,10 @@ class SnpEndpoint extends FlumipEndpoint {
   Future<Snp> setShared(Session session, int snpId, bool shared) async {
     session.log('Setting SNP $snpId shared=$shared', level: LogLevel.info);
     try {
+      await authz.refuseGuest(
+        session,
+        message: 'SNP sets cannot be shared on this public server.',
+      );
       final snp = await _writableCustom(session, snpId);
       snp.private = !shared;
       await Snp.db.updateRow(session, snp);
@@ -583,5 +611,40 @@ class SnpEndpoint extends FlumipEndpoint {
     }
     await authz.requireSnpWrite(session, snp);
     return snp;
+  }
+
+  /// Refuses a guest when guests cannot add SNP sets, or this one already has
+  /// as many as one visitor may.
+  ///
+  /// Counts what the guest owns, whatever state it is in: a failed upload still
+  /// holds its files until it is deleted. Mirrors `_requireGuestQuota` for
+  /// projects, including zero or less meaning no limit.
+  Future<void> _requireGuestSnpRoom(
+    Session session,
+    Principal who,
+    Settings settings,
+  ) async {
+    if (guestSnpMaxBytes(settings) == null) {
+      throw ProjectAccessDeniedException(message: _guestSnpRefusal);
+    }
+    final userId = who.userId;
+    final limit = settings.guestMaxSnps;
+    if (userId == null || limit <= 0) return;
+
+    final owned = await Snp.db.count(
+      session,
+      where: (t) => t.owner.equals(userId),
+    );
+    if (owned < limit) return;
+
+    session.log(
+      'Refused a new SNP set for guest $userId: $owned of $limit',
+      level: LogLevel.warning,
+    );
+    throw ArgumentException(
+      message:
+          'You already have $owned SNP sets, the most this public server keeps '
+          'for one visitor. Delete one to make room for a new one.',
+    );
   }
 }

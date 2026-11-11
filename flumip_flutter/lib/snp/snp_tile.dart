@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/format.dart';
+import 'package:flumip_flutter/project/expiry.dart';
 import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
 import 'package:flumip_flutter/ui/status_pill.dart';
@@ -129,6 +130,15 @@ class SnpTile extends StatelessWidget {
             tooltip: 'Added by another user and shared with everyone',
           ),
       ],
+      // A guest's set on a public instance, which goes on this date.
+      if (snp.expires case final expires?)
+        StatusPill(
+          label:
+              'Until ${DateFormat('dd.MM.yyyy').format(lastDayKept(expires))}',
+          icon: Icons.auto_delete_outlined,
+          colour: colours.outline,
+          tooltip: 'Deleted automatically when this day ends',
+        ),
       // ⚠️ On every SNP set, global ones included. The first version hid this
       // on globals, on the theory that they are ready by construction and a
       // "Ready" badge on each is noise — but that stopped being true the moment
@@ -262,7 +272,8 @@ class SnpTile extends StatelessWidget {
         // say what is actually left to do, which is delete it.
         if (_mayEdit && _hasData)
           const PopupMenuItem(value: SnpAction.rename, child: Text('Rename…')),
-        if (_mayEdit && _hasData)
+        // Not a guest's set, which cannot be shared (`snp.expires` marks it).
+        if (_mayEdit && _hasData && snp.expires == null)
           PopupMenuItem(
             value: snp.private ? SnpAction.share : SnpAction.unshare,
             child: Text(snp.private ? 'Share with everyone' : 'Make private'),

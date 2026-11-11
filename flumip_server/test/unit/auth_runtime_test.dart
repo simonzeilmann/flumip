@@ -29,10 +29,12 @@ void main() {
     String storedIssuer = issuer,
     String clientId = 'flumip',
     String? clientSecret = 's3cret',
+    bool publicMode = false,
   }) async {
     final settings = await SettingsService().getSettings(session);
     settings
       ..loginRequired = loginRequired
+      ..publicMode = publicMode
       ..oidcIssuer = storedIssuer
       ..oidcClientId = clientId
       ..authPublicUrl = 'https://flumip.example';
@@ -166,7 +168,101 @@ void main() {
 
       final runtime = AuthRuntime(environment: const {});
       await expectLater(runtime.refresh(session), completes);
+    });
+
+    test(
+      'settings that have never been readable keep the gate closed',
+      () async {
+        // A restart during a database blip used to come up open, public mode
+        // included, until the next tick. Nothing works without the database
+        // anyway, so refusing costs nothing.
+        sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+        addTearDown(
+          () => sl.registerSingleton<SettingsService>(SettingsService()),
+        );
+
+        final runtime = AuthRuntime(environment: const {});
+        await runtime.refresh(session);
+        expect(runtime.isEnforcing, isTrue);
+      },
+    );
+
+    test('opens once the settings can be read and say so', () async {
+      // The fresh-install path: closed before the migration, open after it.
+      sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+      addTearDown(
+        () => sl.registerSingleton<SettingsService>(SettingsService()),
+      );
+      final runtime = AuthRuntime(environment: const {});
+      await runtime.refresh(session);
+      expect(runtime.isEnforcing, isTrue);
+
+      sl.registerSingleton<SettingsService>(SettingsService());
+      await configure(session, loginRequired: false);
+      await runtime.refresh(session);
       expect(runtime.isEnforcing, isFalse);
+    });
+
+    test(
+      'the environment alone can still keep unreadable settings open',
+      () async {
+        // The way back for a server whose settings row cannot be read at all.
+        // Both switches, because public mode might be on in the row nobody can
+        // read.
+        sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+        addTearDown(
+          () => sl.registerSingleton<SettingsService>(SettingsService()),
+        );
+
+        final half = AuthRuntime(environment: const {AuthEnv.enabled: 'false'});
+        await half.refresh(session);
+        expect(half.isEnforcing, isTrue);
+
+        final both = AuthRuntime(
+          environment: const {
+            AuthEnv.enabled: 'false',
+            AuthEnv.publicMode: 'false',
+          },
+        );
+        await both.refresh(session);
+        expect(both.isEnforcing, isFalse);
+      },
+    );
+
+    test('a failed settings read while enforcing keeps enforcing', () async {
+      // Finding: a refresh tick whose read failed used to resolve from the
+      // environment alone — "sign-in off" — and open the server.
+      await configure(session);
+      http.stubProvider(issuer: issuer);
+      final runtime = AuthRuntime(environment: const {});
+      await runtime.refresh(session);
+      expect(runtime.isEnforcing, isTrue);
+
+      sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+      addTearDown(
+        () => sl.registerSingleton<SettingsService>(SettingsService()),
+      );
+      await runtime.refresh(session);
+
+      expect(runtime.isEnforcing, isTrue);
+      expect(runtime.config.loginRequired, isTrue);
+      expect(runtime.canSignIn, isTrue);
+    });
+
+    test('a failed settings read keeps stored public mode on', () async {
+      await configure(session, loginRequired: false, publicMode: true);
+      final runtime = AuthRuntime(environment: const {});
+      await runtime.refresh(session);
+      expect(runtime.isEnforcing, isTrue);
+
+      sl.registerSingleton<SettingsService>(ThrowingSettingsService());
+      addTearDown(
+        () => sl.registerSingleton<SettingsService>(SettingsService()),
+      );
+      await runtime.refresh(session);
+
+      expect(runtime.isEnforcing, isTrue);
+      expect(runtime.config.publicMode, isTrue);
     });
 
     test(
@@ -190,8 +286,9 @@ void main() {
 
         expect(runtime.config.loginRequired, isTrue);
         expect(runtime.config.issuer, issuer);
-        // Still not complete: no secret is configured, so it fails open.
-        expect(runtime.isEnforcing, isFalse);
+        // Not complete — no secret is configured — but with the settings
+        // unread that no longer opens the gate: public mode may be on in them.
+        expect(runtime.isEnforcing, isTrue);
       },
     );
 
@@ -256,6 +353,132 @@ void main() {
         expect(runtime.config.cookieSecure, isTrue);
       },
     );
+
+    group('a provider that is down when the server starts', () {
+      Future<void> signedInBefore({String withIssuer = issuer}) async {
+        await FlumipUser.db.insertRow(
+          session,
+          FlumipUser(email: 'a@uni.example', subject: 'a', issuer: withIssuer),
+        );
+      }
+
+      void providerDown() => http.getError = HttpJsonException(
+        503,
+        '$issuer/.well-known/openid-configuration',
+        'Service Unavailable',
+      );
+
+      test('enforces on an install people have signed in to', () async {
+        // Finding: discovery "has never answered" in a fresh process, so a
+        // restart during an outage used to open a server that required sign-in
+        // the day before.
+        await configure(session);
+        await signedInBefore();
+        providerDown();
+
+        final runtime = AuthRuntime(environment: const {});
+        await runtime.refresh(session);
+
+        expect(runtime.isEnforcing, isTrue);
+        // Nobody new can sign in until it answers; existing sessions live in
+        // the database and are unaffected.
+        expect(runtime.canSignIn, isFalse);
+        expect(runtime.discoveryError, contains('503'));
+      });
+
+      test('starts sign-ins again once the provider answers', () async {
+        await configure(session);
+        await signedInBefore();
+        providerDown();
+        final runtime = AuthRuntime(environment: const {});
+        await runtime.refresh(session);
+
+        http.getError = null;
+        http.stubProvider(issuer: issuer);
+        await runtime.refresh(session);
+
+        expect(runtime.isEnforcing, isTrue);
+        expect(runtime.canSignIn, isTrue);
+      });
+
+      test('stays recoverable on an install that never worked', () async {
+        // The deliberate fail-open: a first-time typo must leave the settings
+        // password usable. Guests and other issuers are no evidence.
+        await configure(session);
+        await signedInBefore(withIssuer: 'flumip:guest');
+        await signedInBefore(withIssuer: 'https://other.example.org');
+        providerDown();
+
+        final runtime = AuthRuntime(environment: const {});
+        await runtime.refresh(session);
+
+        expect(runtime.isEnforcing, isFalse);
+      });
+
+      test('counts a sign-in recorded with a trailing slash', () async {
+        // The configured issuer has its slashes stripped; the stored one is
+        // whatever the token said.
+        await configure(session);
+        await signedInBefore(withIssuer: '$issuer/');
+        providerDown();
+
+        final runtime = AuthRuntime(environment: const {});
+        await runtime.refresh(session);
+
+        expect(runtime.isEnforcing, isTrue);
+      });
+
+      test('FLUMIP_AUTH_ENABLED=false still gets back in', () async {
+        await configure(session);
+        await signedInBefore();
+        providerDown();
+
+        final runtime = AuthRuntime(
+          environment: const {AuthEnv.enabled: 'false'},
+        );
+        await runtime.refresh(session);
+
+        expect(runtime.isEnforcing, isFalse);
+      });
+
+      test(
+        'switching sign-in off in the database still gets back in',
+        () async {
+          // The SQL escape in docs/authentication.md, as the next tick sees it.
+          await configure(session);
+          await signedInBefore();
+          providerDown();
+          final runtime = AuthRuntime(environment: const {});
+          await runtime.refresh(session);
+          expect(runtime.isEnforcing, isTrue);
+
+          await configure(session, loginRequired: false);
+          await runtime.refresh(session);
+          expect(runtime.isEnforcing, isFalse);
+        },
+      );
+
+      test(
+        'a new, unreachable issuer does not inherit the old document',
+        () async {
+          // Changing the issuer is an administrator's act. A typo there must
+          // get the never-worked fail-open, not enforce against a cached
+          // document describing a different provider.
+          await configure(session);
+          http.stubProvider(issuer: issuer);
+          final runtime = AuthRuntime(environment: const {});
+          await runtime.refresh(session);
+          expect(runtime.isEnforcing, isTrue);
+
+          await configure(session, storedIssuer: 'https://typo.example.org');
+          providerDown();
+          await runtime.refresh(session);
+
+          expect(runtime.discovery, isNull);
+          expect(runtime.isEnforcing, isFalse);
+        },
+      );
+    });
 
     test('constructing one starts no timer', () {
       // A timer created in the constructor leaks out of every test that builds

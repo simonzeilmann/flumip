@@ -4,9 +4,10 @@
 # By default only the software goes, and everything that cannot be downloaded
 # again stays where it is:
 #
-#   removed  - the flumip systemd service, /var/www/flumip, MIPGEN and
-#              /opt/flumip/tools, and Pocket ID's service and binary if
-#              setup-flumip.sh --pocket-id installed it
+#   removed  - the flumip systemd service (with any `systemctl edit` drop-ins),
+#              the flumip-firewall service and its rules, /var/www/flumip,
+#              MIPGEN and /opt/flumip/tools, and Pocket ID's service and binary
+#              if setup-flumip.sh --pocket-id installed it
 #   kept     - the database, with its password and settings in /etc/flumip,
 #              the projects, the genomes and the custom SNP sets, and Pocket
 #              ID's users, passkeys and key
@@ -29,7 +30,8 @@
 #
 # Options:
 #   --database              Also delete the PostgreSQL container and its volume,
-#                           and the install's files in /etc/flumip. A database
+#                           and the install's files in /etc/flumip (the first
+#                           settings password among them). A database
 #                           given with --db existing is never touched.
 #   --projects              Also delete /opt/flumip/projects.
 #   --genomes               Also delete /opt/flumip/data/genomes: the reference
@@ -79,6 +81,13 @@ TARGET="/var/www/flumip"
 SECRETS_FILE="$SECRETS_DIR/passwords.yaml"
 CHOICES_FILE="$SECRETS_DIR/setup.conf"
 ENV_FILE="$SECRETS_DIR/flumip.env"
+# setup-flumip.sh's first settings password, and its firewall. Must match it.
+INITIAL_PASSWORD_FILE="$SECRETS_DIR/initial-settings-password.env"
+FIREWALL_RULES="$SECRETS_DIR/flumip.nft"
+FIREWALL_UNIT="flumip-firewall.service"
+FIREWALL_UNIT_FILE="/etc/systemd/system/$FIREWALL_UNIT"
+# `systemctl edit flumip` puts its overrides here.
+UNIT_DROPIN_DIR="/etc/systemd/system/$UNIT.d"
 DB_CONTAINER="flumip_postgres"
 DB_VOLUME="flumip_data"
 # Pocket ID, from setup-flumip.sh --pocket-id. Must match that script.
@@ -223,7 +232,7 @@ app_installed() {
 install_present() {
   app_installed && return 0
   local file
-  for file in "$CHOICES_FILE" "$SECRETS_FILE" "$ENV_FILE"; do
+  for file in "$CHOICES_FILE" "$SECRETS_FILE" "$ENV_FILE" "$INITIAL_PASSWORD_FILE"; do
     sudo test -e "$file" && return 0
   done
   if $HAVE_DOCKER; then
@@ -308,12 +317,15 @@ else
   if $REMOVE_DATABASE; then
     if [[ "$(remembered DB_MODE)" == "existing" ]]; then
       DB_NOTES+=("The database at $(remembered DB_HOST):$(remembered DB_PORT)/$(remembered DB_NAME) was not created by setup-flumip.sh and is left alone.")
-      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE (the database itself is external and kept)"
+      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE, $INITIAL_PASSWORD_FILE (the database itself is external and kept)"
     else
       echo -e "  container $DB_CONTAINER, volume $DB_VOLUME"
-      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE"
+      echo -e "  $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE, $INITIAL_PASSWORD_FILE"
     fi
   fi
+fi
+if [[ -f "$FIREWALL_UNIT_FILE" ]] || sudo test -e "$FIREWALL_RULES"; then
+  echo -e "  service ${FIREWALL_UNIT%.service}, $FIREWALL_RULES (ports 9080 and 9081 are then no longer firewalled)"
 fi
 if $REMOVE_MIPGEN; then
   echo -e "  $FLUMIP_ROOT/MIPGEN and $FLUMIP_ROOT/tools"
@@ -333,7 +345,7 @@ for other in "${OTHER_SERVICES[@]}"; do
   echo -e "  the $other service, which this script does not manage"; KEPT=true
 done
 if ! $REMOVE_DATABASE && $FOUND; then
-  echo -e "  the database, $SECRETS_FILE, $CHOICES_FILE and $ENV_FILE"; KEPT=true
+  echo -e "  the database, $SECRETS_FILE, $CHOICES_FILE, $ENV_FILE and $INITIAL_PASSWORD_FILE"; KEPT=true
 fi
 if ! $REMOVE_MIPGEN; then
   echo -e "  $FLUMIP_ROOT/MIPGEN and $FLUMIP_ROOT/tools"; KEPT=true
@@ -382,6 +394,11 @@ if $FOUND; then
     run sudo systemctl daemon-reload
     run sudo systemctl reset-failed "$UNIT" 2>/dev/null || true
   fi
+  if [[ -d "$UNIT_DROPIN_DIR" ]]; then
+    echo -e "${GREEN}Removing $UNIT_DROPIN_DIR${NC}"
+    run sudo rm -rf "$UNIT_DROPIN_DIR"
+    run sudo systemctl daemon-reload
+  fi
 
   # .new and .old are what setup-flumip.sh swaps through; an interrupted run
   # can leave either behind.
@@ -408,12 +425,29 @@ if $FOUND && $REMOVE_DATABASE; then
     fi
   fi
 
-  for file in "$SECRETS_FILE" "$CHOICES_FILE" "$ENV_FILE"; do
+  for file in "$SECRETS_FILE" "$CHOICES_FILE" "$ENV_FILE" "$INITIAL_PASSWORD_FILE"; do
     if sudo test -e "$file"; then
       echo -e "${GREEN}Removing $file${NC}"
       run sudo rm -f "$file"
     fi
   done
+fi
+
+# --- Firewall ---------------------------------------------------------------
+
+# Software, not data: it goes with the service. Stopping it deletes FLUMIP's
+# nftables table and nothing else, so no other firewall rule is affected.
+if [[ -f "$FIREWALL_UNIT_FILE" ]] || sudo test -e "$FIREWALL_RULES"; then
+  echo -e "\n${GREEN}=== Removing ${FIREWALL_UNIT} ===${NC}"
+  if [[ -f "$FIREWALL_UNIT_FILE" ]]; then
+    run sudo systemctl disable --now "$FIREWALL_UNIT" || true
+    run sudo rm -f "$FIREWALL_UNIT_FILE"
+    run sudo systemctl daemon-reload
+    run sudo systemctl reset-failed "$FIREWALL_UNIT" 2>/dev/null || true
+  fi
+  if sudo test -e "$FIREWALL_RULES"; then
+    run sudo rm -f "$FIREWALL_RULES"
+  fi
 fi
 
 # --- Pocket ID --------------------------------------------------------------
@@ -466,6 +500,11 @@ remove_dir() {
 if $REMOVE_MIPGEN; then
   remove_dir "$FLUMIP_ROOT/MIPGEN"
   remove_dir "$FLUMIP_ROOT/tools"
+  # An old tree setup-mipgen.sh moved aside, left by a run that stopped before
+  # it could delete it.
+  for dir in "$FLUMIP_ROOT"/MIPGEN.untrusted.*; do
+    if [[ -e "$dir" ]]; then remove_dir "$dir"; fi
+  done
 fi
 $REMOVE_PROJECTS && remove_dir "$FLUMIP_ROOT/projects"
 $REMOVE_GENOMES && remove_dir "$FLUMIP_ROOT/data/genomes"

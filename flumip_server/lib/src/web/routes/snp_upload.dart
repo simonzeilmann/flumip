@@ -5,7 +5,9 @@ import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
+import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
+import 'package:flumip_server/src/web/origin_guard.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart'
     show authCookieName;
 import 'package:serverpod/serverpod.dart';
@@ -44,7 +46,8 @@ import 'package:serverpod/serverpod.dart';
 /// same position `/download` takes, but that one only reads. What bounds it: the
 /// row must already exist and be waiting for files, the directory comes from the
 /// row id and never from the request, only two filename shapes are accepted,
-/// nothing is ever overwritten, and each file is capped.
+/// nothing is ever overwritten, a set takes one file of each shape, and each
+/// file is capped.
 class SnpUploadRoute extends Route {
   SnpUploadRoute() : super(methods: {Method.put});
 
@@ -62,6 +65,13 @@ class SnpUploadRoute extends Route {
 
   @override
   Future<Result> handleCall(Session session, Request request) async {
+    // Before anything else, and with its own answer: a page on another site
+    // has no business starting an upload with this browser's session cookie.
+    // A cross-origin PUT already needs a preflight this server never grants;
+    // this is the second lock, and the same one every other cookie route has.
+    final crossOrigin = OriginGuard.current.refuseUnlessSameOrigin(request);
+    if (crossOrigin != null) return crossOrigin;
+
     // ⚠️ One refusal for everything — a bad id, no access, a rejected name, a
     // row not accepting files, a file already there. Anything more specific would
     // let somebody enumerate SNP ids or probe what is already uploaded.
@@ -95,7 +105,32 @@ class SnpUploadRoute extends Route {
     final paths = await snpService.resolveUploadTarget(session, snp, fileName);
     if (paths == null) return refused;
 
-    return _receive(session, request, snp, fileName, paths);
+    // The slot is held for the whole transfer, so a second file of the same
+    // kind cannot be started alongside this one; see `resolveUploadTarget`.
+    try {
+      return await _receive(
+        session,
+        request,
+        snp,
+        fileName,
+        paths,
+        await _limitFor(session, snp),
+      );
+    } finally {
+      snpService.releaseUploadTarget(snp, fileName);
+    }
+  }
+
+  /// The largest file [snp] may receive.
+  ///
+  /// A set with a deletion date is a guest's (see `Snp.expires`), and gets the
+  /// guest limit. Decided by the set rather than by who is uploading, so that
+  /// it holds whoever ends up putting files in it. A guest set on a server
+  /// that has since switched guest uploads off gets nothing more.
+  Future<int> _limitFor(Session session, Snp snp) async {
+    if (snp.expires == null) return maxBytes;
+    final settings = await sl<SettingsService>().getSettings(session);
+    return guestSnpMaxBytes(settings) ?? 0;
   }
 
   /// Whether the caller may add files to this SNP set.
@@ -119,9 +154,9 @@ class SnpUploadRoute extends Route {
         cookie,
       );
       if (authSession == null) return false;
-      // Guests never add SNP sets (see `SnpEndpoint.createUpload`), so they own
-      // none to put files in. Refused here too rather than left to follow.
-      if (authSession.isGuest) return false;
+      // A guest may write to their own sets like anyone else; what is
+      // different about a guest's set is the size limit, which `_receive`
+      // reads off the set itself.
 
       return snpIsWritable(
         enforcing: true,
@@ -153,13 +188,14 @@ class SnpUploadRoute extends Route {
     Snp snp,
     String fileName,
     ({File partial, File target}) paths,
+    int limit,
   ) async {
     IOSink? sink;
     var written = 0;
     final declared = request.body.contentLength;
     try {
       sink = paths.partial.openWrite();
-      await for (final chunk in request.read(maxLength: maxBytes)) {
+      await for (final chunk in request.read(maxLength: limit)) {
         written += chunk.length;
         sink.add(chunk);
       }

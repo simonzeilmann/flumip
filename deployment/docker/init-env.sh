@@ -65,11 +65,36 @@ if [ -e .env ]; then
 else
   DB_PASSWORD="$(random_hex 24)"
   SERVICE_SECRET="$(random_hex 32)"
+  # The first settings password. The server takes it from here only when it
+  # creates its settings, on the first start against an empty database, so it
+  # does nothing for an existing one. 12 bytes, 24 hex characters: typed once,
+  # then changed in the Settings tab.
+  SETTINGS_PASSWORD="$(random_hex 12)"
   sed -e "s/^FLUMIP_DB_PASSWORD=.*/FLUMIP_DB_PASSWORD=$DB_PASSWORD/" \
       -e "s/^FLUMIP_SERVICE_SECRET=.*/FLUMIP_SERVICE_SECRET=$SERVICE_SECRET/" \
+      -e "s/^FLUMIP_DB_USER=.*/FLUMIP_DB_USER=flumip/" \
+      -e "s/^FLUMIP_INITIAL_SETTINGS_PASSWORD=.*/FLUMIP_INITIAL_SETTINGS_PASSWORD=$SETTINGS_PASSWORD/" \
       .env.example > .env.tmp
+  # A new install connects as its own role, not as the superuser postgres;
+  # compose.yaml creates it with the database. Only here, for a new .env: an
+  # existing database has no such role (see "Database role" in docs/docker.md).
+  if ! grep -q '^FLUMIP_DB_USER=' .env.tmp; then
+    printf '\n# Written by init-env.sh: the database role FLUMIP connects as, created\n# with the database. Do not change it once the database exists.\nFLUMIP_DB_USER=flumip\n' >> .env.tmp
+  fi
+  if ! grep -q '^FLUMIP_INITIAL_SETTINGS_PASSWORD=' .env.tmp; then
+    printf '\n# Written by init-env.sh: the first settings password, read only when the\n# database is new. Change it in the Settings tab; this line can then go.\nFLUMIP_INITIAL_SETTINGS_PASSWORD=%s\n' "$SETTINGS_PASSWORD" >> .env.tmp
+  fi
   mv .env.tmp .env
   echo "Wrote .env with a new database password and service secret."
+  echo ""
+  echo "The settings password of this new install is:"
+  echo ""
+  echo "    $SETTINGS_PASSWORD"
+  echo ""
+  echo "Open Settings in the app and change it. Until you do, it is also in .env"
+  echo "(FLUMIP_INITIAL_SETTINGS_PASSWORD). It only takes effect on an empty"
+  echo "database: one this machine already has keeps the password it had."
+  echo ""
 fi
 
 if [ -z "$POCKET_ID_URL" ]; then
@@ -120,6 +145,27 @@ else
   printf '\n# Added by init-env.sh --pocket-id.\nCOMPOSE_PROFILES=pocket-id\n' >> .env
   echo "Switched the pocket-id profile on in .env."
 fi
+
+# A localhost trial needs no proxy, and FLUMIP's own container cannot use it:
+# localhost inside the container is the container itself.
+case "$POCKET_ID_URL" in
+  http://localhost*)
+    cat <<EOF
+
+Next, for a trial on this machine (see docs/pocket-id.md). Passkeys work on
+localhost without HTTPS, so there is nothing to proxy:
+  1. docker compose up -d pocket-id
+  2. Open ${POCKET_ID_URL}/setup and create the administrator.
+  3. Under Administration → Users, mark your address as verified (the envelope
+     beside Email). FLUMIP refuses unverified addresses.
+  4. Create a group, and an OIDC client for FLUMIP restricted to it, with the
+     callback http://localhost:<FLUMIP's port>/auth/callback.
+  5. Point a FLUMIP running on this host, not in a container, at it:
+     FLUMIP_OIDC_ISSUER=${POCKET_ID_URL}, the client's id and secret, and
+     FLUMIP_PUBLIC_URL=http://localhost:<FLUMIP's port> in its environment.
+EOF
+    exit 0 ;;
+esac
 
 cat <<EOF
 

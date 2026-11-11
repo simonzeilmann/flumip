@@ -50,6 +50,7 @@ abstract class Snp
     int? totalBytes,
     this.statusUpdated,
     DateTime? created,
+    this.expires,
   }) : description = description ?? '',
        private = private ?? false,
        size = size ?? 0,
@@ -80,6 +81,7 @@ abstract class Snp
     int? totalBytes,
     DateTime? statusUpdated,
     DateTime? created,
+    DateTime? expires,
   }) = _SnpImpl;
 
   factory Snp.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -117,6 +119,9 @@ abstract class Snp
       created: jsonSerialization['created'] == null
           ? null
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['created']),
+      expires: jsonSerialization['expires'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['expires']),
     );
   }
 
@@ -192,6 +197,16 @@ abstract class Snp
 
   DateTime created;
 
+  /// When this set is deleted automatically, or null if it is not.
+  ///
+  /// Set only on a guest's set, when it is added on a public instance, from
+  /// `Settings.guestSnpRetentionDays`; `SnpService.deleteExpired` removes it
+  /// once the time has passed, whether or not public mode is still on. Also
+  /// what marks a set as a guest's after the guest's identity is cleaned up and
+  /// [owner] goes null, and what makes the upload route apply the guest size
+  /// limit.
+  DateTime? expires;
+
   /// Returns a shallow copy of this [Snp]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -215,6 +230,7 @@ abstract class Snp
     int? totalBytes,
     DateTime? statusUpdated,
     DateTime? created,
+    DateTime? expires,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -239,6 +255,7 @@ abstract class Snp
       'totalBytes': totalBytes,
       if (statusUpdated != null) 'statusUpdated': statusUpdated?.toJson(),
       'created': created.toJson(),
+      if (expires != null) 'expires': expires?.toJson(),
     };
   }
 
@@ -265,6 +282,7 @@ abstract class Snp
       'totalBytes': totalBytes,
       if (statusUpdated != null) 'statusUpdated': statusUpdated?.toJson(),
       'created': created.toJson(),
+      if (expires != null) 'expires': expires?.toJson(),
     };
   }
 
@@ -297,6 +315,7 @@ class _SnpImpl extends Snp {
     int? totalBytes,
     DateTime? statusUpdated,
     DateTime? created,
+    DateTime? expires,
   }) : super._(
          id: id,
          name: name,
@@ -317,6 +336,7 @@ class _SnpImpl extends Snp {
          totalBytes: totalBytes,
          statusUpdated: statusUpdated,
          created: created,
+         expires: expires,
        );
 
   /// Returns a shallow copy of this [Snp]
@@ -343,6 +363,7 @@ class _SnpImpl extends Snp {
     int? totalBytes,
     Object? statusUpdated = _Undefined,
     DateTime? created,
+    Object? expires = _Undefined,
   }) {
     return Snp(
       id: id is int? ? id : this.id,
@@ -366,6 +387,7 @@ class _SnpImpl extends Snp {
           ? statusUpdated
           : this.statusUpdated,
       created: created ?? this.created,
+      expires: expires is DateTime? ? expires : this.expires,
     );
   }
 }

@@ -23,6 +23,8 @@ import 'package:flumip_server/src/generated/flumip_user_dto.dart' as _ipn4uvlw;
 import 'package:flumip_server/src/generated/future_calls.dart' as _i9339m0o;
 import 'package:flumip_server/src/generated/genome.dart' as _i2jfp72f;
 import 'package:flumip_server/src/generated/project.dart' as _idblq1ye;
+import 'package:flumip_server/src/generated/project_draft_dto.dart'
+    as _ix7q5lqe;
 import 'package:flumip_server/src/generated/project_file_dto.dart' as _iaw3nq06;
 import 'package:flumip_server/src/generated/project_options.dart' as _i83mfwb1;
 import 'package:flumip_server/src/generated/search_hit_dto.dart' as _ih1e1b1z;
@@ -1114,6 +1116,37 @@ class _ProjectEndpoint {
             'options': options,
             'description': description,
           }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_idblq1ye.Project>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_idblq1ye.Project> createConfiguredProject(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ix7q5lqe.ProjectDraftDto draft,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'project',
+            method: 'createConfiguredProject',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'project',
+          methodName: 'createConfiguredProject',
+          parameters: _ist.testObjectToJson({'draft': draft}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =

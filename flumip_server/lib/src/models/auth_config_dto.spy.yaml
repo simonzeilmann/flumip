@@ -19,3 +19,9 @@ fields:
   ### The furthest "Keep longer" can go, in hours after creation. Null exactly
   ### when [projectRetentionHours] is.
   maxProjectLifetimeHours: int?
+  ### The largest file a guest may upload as part of an SNP set, in bytes, or
+  ### null when guests cannot add SNP sets (or this is not a public instance).
+  guestSnpMaxBytes: int?
+  ### How long a guest's SNP set is kept, in days. Null exactly when
+  ### [guestSnpMaxBytes] is.
+  guestSnpRetentionDays: int?

@@ -64,6 +64,72 @@ void main() {
     }, tags: ['unit']);
 
     test(
+      'updateGenome takes the switch and nothing that names a file',
+      () async {
+        // The whole client object used to be written. That let anyone who may
+        // flip the switch point the reference at a path of their choosing, which
+        // mipgen then pastes into a shell command.
+        final seeded = await seedGenome(
+          session,
+          name: 'hg38',
+          path: '/data/hg38',
+          fastaPath: '/data/hg38/fa/hg38.fa',
+          refPath: '/data/hg38/refGene.txt',
+          snpFolder: '/data/hg38/snp',
+          category: 'human',
+          indexed: true,
+          indexPID: 41,
+        );
+
+        await genomeService.updateGenome(
+          session,
+          seeded.id!,
+          Genome(
+            id: seeded.id,
+            name: 'renamed',
+            active: false,
+            path: '/tmp/elsewhere',
+            fastaPath: '/x;id;#',
+            refPath: '/etc/passwd',
+            snpFolder: '/tmp',
+            category: 'other',
+            indexed: false,
+            indexing: true,
+            indexPID: 1,
+          ),
+        );
+
+        final reloaded = await genomeService.getGenome(session, seeded.id!);
+        expect(reloaded.active, isFalse);
+        expect(reloaded.name, 'hg38');
+        expect(reloaded.path, '/data/hg38');
+        expect(reloaded.fastaPath, '/data/hg38/fa/hg38.fa');
+        expect(reloaded.refPath, '/data/hg38/refGene.txt');
+        expect(reloaded.snpFolder, '/data/hg38/snp');
+        expect(reloaded.category, 'human');
+        expect(reloaded.indexed, isTrue);
+        expect(reloaded.indexing, isFalse);
+        expect(reloaded.indexPID, 41);
+      },
+      tags: ['unit'],
+    );
+
+    test('updateGenome changes the genome it was asked about', () async {
+      // It used to update the row named by the object, not by the id.
+      final asked = await seedGenome(session, name: 'asked');
+      final other = await seedGenome(session, name: 'other');
+
+      await genomeService.updateGenome(
+        session,
+        asked.id!,
+        Genome(id: other.id, name: 'other', active: false),
+      );
+
+      expect((await genomeService.getGenome(session, asked.id!)).active, false);
+      expect((await genomeService.getGenome(session, other.id!)).active, true);
+    }, tags: ['unit']);
+
+    test(
       'updateGenome throws FlumipFileNotFoundException for a missing id',
       () async {
         final ghost = Genome(id: 9999, name: 'ghost');

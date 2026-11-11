@@ -65,13 +65,170 @@ bool progressSaysComplete(Iterable<String> progress) =>
 bool isShortPickedMipsRow(String line) =>
     line.trim().isNotEmpty && line.split('\t').length < pickedMipsFieldCount;
 
+/// The longest prefix [mipgenPrefixOf] returns.
+///
+/// mipgen appends suffixes of its own (`.oligo_copy_count.sam` is the longest),
+/// and the whole thing has to stay a legal file name.
+const mipgenPrefixMaxLength = 60;
+
+/// What [mipgenPrefixOf] returns for a name with nothing usable in it.
+const mipgenPrefixFallback = 'project';
+
+final _notPrefixSafe = RegExp(r'[^A-Za-z0-9_-]+');
+final _prefixEdges = RegExp(r'^[_-]+|_+$');
+
+/// The value of mipgen's `-project_name` for a project called [name]: its
+/// output files are `<prefix>.picked_mips.txt`, `<prefix>.progress.txt`, and so
+/// on.
+///
+/// ⚠️ Security boundary, not tidiness. A project's name is free text typed by
+/// whoever created it — an anonymous guest, on a public instance — and mipgen
+/// pastes `-project_name` **unquoted into shell command lines**
+/// (`mipgen.cpp`: `system(("rm -f " + project_name + ".feature_sequences.fa")`,
+/// and the bwa, tabix, trf and samtools calls). Passing the name itself meant a
+/// project called `x;id;#` ran `id` as the service user, and one called
+/// `../../x` wrote its results outside the project folder. Dart quoting the
+/// argument on the way *to* mipgen does not help: the shell that matters is the
+/// one mipgen starts.
+///
+/// So the name never reaches mipgen. What does is the name with every run of
+/// anything but `A-Z a-z 0-9 _ -` turned into one `_`:
+///
+/// - no shell metacharacter, space or quote survives;
+/// - no `/` or `.`, so the prefix cannot leave the project folder;
+/// - no leading `-`, which mipgen's own parser would read as an option;
+/// - never empty, and never long enough to overflow a file name.
+///
+/// A name that was already safe is its own prefix, so the files of every
+/// project that could ever have run keep their names. (One with a space in it
+/// never produced a design: the same unquoted commands fell apart.) Names are
+/// set once, at creation, so the prefix of a project does not change.
+String mipgenPrefixOf(String name) {
+  var prefix = name
+      .replaceAll(_notPrefixSafe, '_')
+      .replaceAll(_prefixEdges, '');
+  if (prefix.length > mipgenPrefixMaxLength) {
+    prefix = prefix
+        .substring(0, mipgenPrefixMaxLength)
+        .replaceAll(_prefixEdges, '');
+  }
+  return prefix.isEmpty ? mipgenPrefixFallback : prefix;
+}
+
+/// What a path may consist of before it is handed to mipgen.
+///
+/// The same reason as [mipgenPrefixOf]: mipgen puts the reference, the SNP file
+/// and the TRF helper into shell command lines without quoting them. These
+/// come from the server's own directories rather than from a user, so this is
+/// the second lock, not the first — but a genome folder with a space or a `;`
+/// in its name should be a refusal somebody can read, not a command.
+final _mipgenSafePath = RegExp(r'^[A-Za-z0-9_./+:@%,=][A-Za-z0-9_./+:@%,=-]*$');
+
+/// Whether [path] can go on mipgen's command line as it is.
+bool isMipgenSafePath(String path) => _mipgenSafePath.hasMatch(path);
+
+/// The largest whole number or decimal a project option may hold.
+///
+/// Far beyond anything a sensible design uses (capture sizes are in the low
+/// hundreds), and far below what overflows the C `int` mipgen parses every
+/// option into — a value past 2^31 makes `boost::lexical_cast` throw, and
+/// mipgen adds these numbers to genome coordinates before it does.
+const mipgenOptionMax = 1000000;
+
+final _armLengthsFormat = RegExp(r'^\d{1,4}:\d{1,4}(,\d{1,4}:\d{1,4})*$');
+final _armLengthSumsFormat = RegExp(r'^\d{1,4}(,\d{1,4})*$');
+final _tagSizesFormat = RegExp(r'^\d{1,3}(,\d{1,3})?$');
+final _whitespace = RegExp(r'\s+');
+
+/// [value] with the spaces people type after commas taken out.
+///
+/// mipgen cannot parse `40, 41` either, so this changes no design that ever
+/// worked; it only turns a typing habit into a run rather than a refusal.
+String compactMipgenList(String value) => value.replaceAll(_whitespace, '');
+
+/// Why [options] cannot be handed to mipgen, or null when they can.
+///
+/// ⚠️ Security boundary, the same one as [mipgenPrefixOf]. Every one of these
+/// values arrives from the client — anybody on a public instance — and the
+/// app's input filters are no defence against somebody calling the API
+/// directly. Two things in unmodified mipgen make an unchecked value dangerous:
+///
+/// - Its argument parser treats **any** argv entry starting with `-` as an
+///   option name and the next entry as its value. A negative number, or an arm
+///   length list of `-bwa`, therefore re-binds whichever option follows it —
+///   `-bwa`, `-trf` and `-tabix` are command strings mipgen hands straight to
+///   `system()`, and `-file_of_parameters` reads more options from any file.
+/// - Several values end up unquoted in `/bin/sh` command lines, so a string
+///   option is only safe when it cannot hold anything but digits and the
+///   separators mipgen's own parser expects.
+///
+/// So the rule is a whitelist per field, not a blacklist of characters: whole
+/// numbers and decimals are finite, never negative and at most
+/// [mipgenOptionMax]; the three list options are digits, commas and (for arm
+/// lengths) colons. Called by `OptionsService` when options are saved, so the
+/// user hears about it early, and again by `_prepareRun` right before the
+/// launch, because that is the only check that holds whatever wrote the row.
+///
+/// `genomeDir` is not checked here because it is never passed at all: see
+/// `_prepareRun`. `bwaThreads` is not checked because it is clamped instead.
+String? mipgenOptionsProblem(ProjectOptions options) {
+  final whole = <String, int>{
+    'Min capture size': options.minCaptureSize,
+    'Max capture size': options.maxCaptureSize,
+    'Ext min length': options.extMinLength,
+    'Ext max length': options.extMaxLength,
+    'Lig min length': options.ligMinLength,
+    'Target arm copy': options.targetArmCopy,
+    'Max arm copy product': options.maxArmCopyProduct,
+    'Feature flank': options.featureFlank,
+    'Capture increment': options.captureIncrement,
+    'Max MIP overlap': options.maxMipOverlap,
+    'Starting MIP overlap': options.startingMipOverlap,
+  };
+  for (final MapEntry(key: label, value: value) in whole.entries) {
+    if (value < 0 || value > mipgenOptionMax) {
+      return '"$label" must be a whole number from 0 to $mipgenOptionMax.';
+    }
+  }
+
+  final decimal = <String, double>{
+    'Masked arm threshold': options.maskedArmThreshold,
+    'Logistic optimal score': options.logisticOptimalScore,
+    'SVR optimal score': options.svrOptimalScore,
+    'Logistic priority score': options.logisticPriorityScore,
+    'SVR priority score': options.svrPriorityScore,
+  };
+  for (final MapEntry(key: label, value: value) in decimal.entries) {
+    // `!(x >= 0)` rather than `x < 0`, so NaN is refused too.
+    if (!value.isFinite || !(value >= 0) || value > mipgenOptionMax) {
+      return '"$label" must be a number from 0 to $mipgenOptionMax.';
+    }
+  }
+
+  final armLengths = compactMipgenList(options.armLengths ?? '');
+  if (armLengths.isNotEmpty && !_armLengthsFormat.hasMatch(armLengths)) {
+    return '"Arm lengths" must be pairs like 16:24,16:25, or left empty.';
+  }
+  if (!_armLengthSumsFormat.hasMatch(
+    compactMipgenList(options.armLengthSums),
+  )) {
+    return '"Arm length sums" must be whole numbers separated by commas, '
+        'like 40,41,42.';
+  }
+  if (!_tagSizesFormat.hasMatch(compactMipgenList(options.tagSizes))) {
+    return '"Tag sizes" must be two whole numbers separated by a comma, '
+        'like 5,0.';
+  }
+  return null;
+}
+
 /// Where mipgen writes the design for [project].
 ///
 /// One definition, because two things read it — the completeness check and the
 /// UCSC track writer — and a path built twice is a path that drifts.
 String pickedMipsPathOf(Settings settings, Project project) =>
     '${settings.projectDir}/${project.folderName}/'
-    '${project.name}.$pickedMipsSuffix';
+    '${mipgenPrefixOf(project.name)}.$pickedMipsSuffix';
 
 class MipgenService {
   /// Constructor to initialize file paths for reference gene, fasta file, and SNP file.
@@ -444,11 +601,50 @@ class MipgenService {
       );
     }
 
+    // The paths mipgen puts into shell command lines unquoted (see
+    // [isMipgenSafePath]). Checked at the last moment before the launch, so it
+    // holds whatever wrote the row.
+    final shellBound = <String, String>{
+      'The genome "${genome.name}"': genome.fastaPath!,
+      if (snp != null) 'The SNP set "${snp.name}"': snp.vcfPath,
+      if (options.trf == true) 'The Tandem Repeats Finder helper': trfWrapper,
+    };
+    // The client-supplied values, for the reasons on [mipgenOptionsProblem].
+    // `OptionsService` refuses these on the way in as well; this is the check
+    // that holds for a row written before it did, or by anything else.
+    final optionsProblem = mipgenOptionsProblem(options);
+    if (optionsProblem != null) {
+      session.log(
+        "Refusing to run project ${project.id}: options ${options.id} "
+        "cannot be given to mipgen: $optionsProblem",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'This project\'s options cannot be used. $optionsProblem',
+      );
+    }
+
+    for (final MapEntry(key: what, value: path) in shellBound.entries) {
+      if (isMipgenSafePath(path)) continue;
+      session.log(
+        "Refusing to run project ${project.id}: $path cannot be given to "
+        "mipgen, which puts it into a shell command unquoted.",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message:
+            '$what is stored under a path with spaces or special characters '
+            'in it, which MIPGEN cannot use. Ask your administrator to rename '
+            'the folder or file and re-scan.',
+      );
+    }
+
     List<String> arg = [
       "-regions_to_scan",
       "${settings.projectDir}/${project.folderName}/genes.bed",
+      // ⚠️ Never `project.name`: see [mipgenPrefixOf].
       "-project_name",
-      project.name,
+      mipgenPrefixOf(project.name),
       "-bwa_genome_index",
       genome.fastaPath!,
       // Only the VCF goes on the command line; mipgen finds the tabix index
@@ -462,18 +658,18 @@ class MipgenService {
       // Nullable on the model, and a null used to take the whole run down here.
       // The test seed helper carries a comment about working around it, which is
       // a fair sign it was a trap rather than an invariant.
-      if (options.armLengths?.isNotEmpty ?? false) ...[
+      if (compactMipgenList(options.armLengths ?? '').isNotEmpty) ...[
         "-arm_lengths",
-        options.armLengths!,
+        compactMipgenList(options.armLengths!),
       ],
       "-arm_length_sums",
-      options.armLengthSums.toString(),
+      compactMipgenList(options.armLengthSums),
       "-ext_min_length",
       options.extMinLength.toString(),
       "-lig_min_length",
       options.ligMinLength.toString(),
       "-tag_sizes",
-      options.tagSizes.toString(),
+      compactMipgenList(options.tagSizes),
       "-masked_arm_threshold",
       options.maskedArmThreshold.toString(),
       "-target_arm_copy",
@@ -482,7 +678,14 @@ class MipgenService {
       options.maxArmCopyProduct.toString(),
       "-trf",
       options.trf == true ? trfWrapper : "off",
-      if (options.genomeDir != null) ...["-genome_dir", options.genomeDir!],
+      // ⚠️ No `-genome_dir`, whatever the options row says. It was passed
+      // straight from `ProjectOptions.genomeDir`, which the client sets: a
+      // path of the caller's choosing that mipgen opens as `<dir>/chrN.fa`
+      // and reads into the design, and with a leading `-` an option name of
+      // the caller's choosing. Nothing in the app ever set it, and there is
+      // no server-side setting for a per-chromosome directory to take its
+      // place, so it is gone rather than checked. `OptionsService` clears it
+      // on the way in, too.
       "-feature_flank",
       options.featureFlank.toString(),
       "-capture_increment",
@@ -883,6 +1086,12 @@ class MipgenService {
       "Writing UCSC track for project ID: ${project.id} from $pickedMips",
       level: LogLevel.info,
     );
-    await writeUcscTrack(pickedMips, "${project.name}_ucsc_track");
+    // The prefix, not the name: the track's `track name=` lines are read by
+    // UCSC, and a name with a space or a line break in it would end or forge
+    // one.
+    await writeUcscTrack(
+      pickedMips,
+      "${mipgenPrefixOf(project.name)}_ucsc_track",
+    );
   }
 }

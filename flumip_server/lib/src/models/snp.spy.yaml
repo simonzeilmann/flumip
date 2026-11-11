@@ -65,6 +65,15 @@ fields:
   ### died mid-flight.
   statusUpdated: DateTime?
   created: DateTime, default=now
+  ### When this set is deleted automatically, or null if it is not.
+  ###
+  ### Set only on a guest's set, when it is added on a public instance, from
+  ### `Settings.guestSnpRetentionDays`; `SnpService.deleteExpired` removes it
+  ### once the time has passed, whether or not public mode is still on. Also
+  ### what marks a set as a guest's after the guest's identity is cleaned up and
+  ### [owner] goes null, and what makes the upload route apply the guest size
+  ### limit.
+  expires: DateTime?
 indexes:
   snp_genome_idx:
     fields: genome

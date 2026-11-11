@@ -68,6 +68,9 @@ class SettingsForm {
 
   final maxProjectLifetimeDays = TextEditingController();
   final guestMaxProjects = TextEditingController();
+  final guestSnpMaxMegabytes = TextEditingController();
+  final guestMaxSnps = TextEditingController();
+  final guestSnpRetentionDays = TextEditingController();
   final termsVersion = TextEditingController();
   final publicNoticeText = TextEditingController();
   final imprintUrl = TextEditingController();
@@ -113,6 +116,9 @@ class SettingsForm {
     demoRetentionHours.text = '${settings.demoModeRetentionHours}';
     maxProjectLifetimeDays.text = '${settings.maxProjectLifetimeDays}';
     guestMaxProjects.text = '${settings.guestMaxProjects}';
+    guestSnpMaxMegabytes.text = '${settings.guestSnpMaxMegabytes}';
+    guestMaxSnps.text = '${settings.guestMaxSnps}';
+    guestSnpRetentionDays.text = '${settings.guestSnpRetentionDays}';
     termsVersion.text = '${settings.termsVersion}';
     publicNoticeText.text = settings.publicNoticeText;
     imprintUrl.text = settings.imprintUrl;
@@ -168,11 +174,15 @@ class SettingsForm {
     demoMode: demoMode,
     // The server clamps this to 1..8760, so a nonsense entry becomes the nearest
     // sane value rather than being rejected.
-    demoModeRetentionHours: int.tryParse(demoRetentionHours.text) ?? 168,
+    demoModeRetentionHours: int.tryParse(demoRetentionHours.text) ?? 48,
     publicMode: publicMode,
     // Clamped on the server like the retention above.
-    maxProjectLifetimeDays: int.tryParse(maxProjectLifetimeDays.text) ?? 30,
+    maxProjectLifetimeDays: int.tryParse(maxProjectLifetimeDays.text) ?? 14,
     guestMaxProjects: int.tryParse(guestMaxProjects.text) ?? 10,
+    guestSnpMaxMegabytes: int.tryParse(guestSnpMaxMegabytes.text) ?? 10,
+    guestMaxSnps: int.tryParse(guestMaxSnps.text) ?? 3,
+    // Clamped on the server to 1..365.
+    guestSnpRetentionDays: int.tryParse(guestSnpRetentionDays.text) ?? 7,
     termsVersion: int.tryParse(termsVersion.text) ?? 1,
     publicNoticeText: publicNoticeText.text.trim(),
     imprintUrl: imprintUrl.text.trim(),
@@ -214,6 +224,9 @@ class SettingsForm {
       demoRetentionHours,
       maxProjectLifetimeDays,
       guestMaxProjects,
+      guestSnpMaxMegabytes,
+      guestMaxSnps,
+      guestSnpRetentionDays,
       termsVersion,
       publicNoticeText,
       imprintUrl,

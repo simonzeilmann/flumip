@@ -32,6 +32,7 @@ options:
   - deleteProjectOptions:
 project:
   - createProject:
+  - createConfiguredProject:
   - deleteProject:
   - extendProject:
   - setKeptIndefinitely:

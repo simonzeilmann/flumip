@@ -82,11 +82,20 @@ class GenomeService {
     return Genome.db.find(session, where: (t) => t.id > 0);
   }
 
-  /// Updates a genome.
+  /// Updates what a person may change about a genome: whether it is offered
+  /// for new projects, and its description.
+  ///
+  /// ⚠️ Only those two fields are taken from [genome], and they are copied onto
+  /// the row stored under [id]. This used to write the caller's whole object,
+  /// under whatever id *it* carried — so anyone allowed to flip the switch could
+  /// also set `fastaPath`, `path` and `refPath`. Those are where the server
+  /// runs `bwa index`, where it deletes index files, and what mipgen pastes
+  /// into shell commands; the paths, the index state and the index pid belong
+  /// to the scan and the indexer and are never the client's to say.
   ///
   /// \param session The current session.
   /// \param id The ID of the genome to update.
-  /// \param genome The updated genome data.
+  /// \param genome The genome as the caller has it; see above for what is used.
   Future<void> updateGenome(Session session, int id, Genome genome) async {
     session.log("Updating genome with ID: $id", level: LogLevel.info);
     var genomeToUpdate = await Genome.db.findById(session, id);
@@ -96,7 +105,14 @@ class GenomeService {
         message: 'This genome no longer exists.',
       );
     }
-    await Genome.db.updateRow(session, genome);
+    genomeToUpdate
+      ..active = genome.active
+      ..description = genome.description;
+    await Genome.db.updateRow(
+      session,
+      genomeToUpdate,
+      columns: (t) => [t.active, t.description],
+    );
     session.log("Genome updated with ID: $id", level: LogLevel.info);
   }
 

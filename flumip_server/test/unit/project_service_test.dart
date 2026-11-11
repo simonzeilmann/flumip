@@ -29,7 +29,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
     }, tags: ['unit']);
@@ -39,7 +39,7 @@ void main() {
         final result = await projectService.createProject(
           session,
           "test123",
-          ProjectOptions(id: 1),
+          await seedOptions(session),
           "description",
         );
         expect(result.description, "description");
@@ -51,7 +51,7 @@ void main() {
       final project = await projectService.createProject(
         session,
         'withfolder',
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
 
       expect(
@@ -74,13 +74,10 @@ void main() {
       final blocker = File('${base.path}/blocked')..writeAsStringSync('x');
       await overrideSettingsDirs(session, projectDir: blocker.path);
 
+      final options = await seedOptions(session);
       final before = await Project.db.find(session);
       await expectLater(
-        () => projectService.createProject(
-          session,
-          'doomed',
-          ProjectOptions(id: 1),
-        ),
+        () => projectService.createProject(session, 'doomed', options),
         throwsA(isA<FileSystemException>()),
       );
 
@@ -103,11 +100,202 @@ void main() {
       expect(dir.listSync().length, before, reason: 'a folder was left behind');
     }, tags: ['unit']);
 
+    group('createConfiguredProject', () {
+      test(
+        'stores the genome, SNP set, genes and switches in one go',
+        () async {
+          final genome = await seedGenome(session, name: 'hg38');
+          final snp = await seedSnp(session, name: 'common', genome: genome.id);
+
+          final project = await projectService.createConfiguredProject(
+            session,
+            ProjectDraftDto(
+              name: 'panel',
+              description: 'first round',
+              options: ProjectOptions(minCaptureSize: 181),
+              genome: genome.id,
+              snp: snp.id,
+              genes: [' brca1 ', 'TP53', 'Brca1'],
+              emailNotification: true,
+            ),
+          );
+
+          final stored = await projectService.getProject(session, project.id!);
+          expect(stored.name, 'panel');
+          expect(stored.description, 'first round');
+          expect(stored.genome, genome.id);
+          expect(stored.snp, snp.id);
+          // Trimmed, upper-cased, and the repeat dropped — what the tile's own
+          // calls would have stored.
+          expect(stored.genes, ['BRCA1', 'TP53']);
+          expect(stored.emailNotification, isTrue);
+          expect(stored.bedFileCreated, isFalse);
+
+          final options = await ProjectOptions.db.findById(
+            session,
+            stored.options,
+          );
+          expect(options?.minCaptureSize, 181);
+        },
+        tags: ['unit'],
+      );
+
+      test('a name is all it needs', () async {
+        final project = await projectService.createConfiguredProject(
+          session,
+          ProjectDraftDto(name: 'bare', options: ProjectOptions()),
+        );
+
+        expect(project.genome, isNull);
+        expect(project.snp, isNull);
+        expect(project.genes, isNull);
+        expect(project.emailNotification, isFalse);
+      }, tags: ['unit']);
+
+      test('⚠️ a refusal leaves no project, options or folder', () async {
+        // The point of the call: "Save" makes the whole project or nothing.
+        // The form stays open on a refusal, so anything left behind would be
+        // left behind again on every retry.
+        final hg38 = await seedGenome(session, name: 'hg38');
+        final hs1 = await seedGenome(session, name: 'hs1');
+        final otherBuild = await seedSnp(session, name: 'hs1', genome: hs1.id);
+        final pending = await seedSnp(
+          session,
+          name: 'downloading',
+          genome: hg38.id,
+          custom: true,
+          status: SnpImportStatus.downloading,
+        );
+        final settings = await SettingsService().getSettings(session);
+        final dir = Directory(settings.projectDir);
+
+        final refused = <String, ProjectDraftDto>{
+          'A project needs a name.': ProjectDraftDto(
+            name: '',
+            options: ProjectOptions(),
+          ),
+          'This genome no longer exists.': ProjectDraftDto(
+            name: 'x',
+            options: ProjectOptions(),
+            genome: -1,
+          ),
+          'This SNP set no longer exists.': ProjectDraftDto(
+            name: 'x',
+            options: ProjectOptions(),
+            genome: hg38.id,
+            snp: -1,
+          ),
+          'different genome build': ProjectDraftDto(
+            name: 'x',
+            options: ProjectOptions(),
+            genome: hg38.id,
+            snp: otherBuild.id,
+          ),
+          'not ready to use': ProjectDraftDto(
+            name: 'x',
+            options: ProjectOptions(),
+            genome: hg38.id,
+            snp: pending.id,
+          ),
+          'cannot be one': ProjectDraftDto(
+            name: 'x',
+            options: ProjectOptions(),
+            genome: hg38.id,
+            genes: ['BRCA1', 'HLA-A'],
+          ),
+        };
+
+        for (final MapEntry(key: message, value: draft) in refused.entries) {
+          final projects = await Project.db.count(session);
+          final options = await ProjectOptions.db.count(session);
+          final folders = dir.listSync().length;
+
+          await expectLater(
+            () => projectService.createConfiguredProject(session, draft),
+            throwsMessage(message),
+          );
+
+          expect(await Project.db.count(session), projects, reason: message);
+          expect(
+            await ProjectOptions.db.count(session),
+            options,
+            reason: message,
+          );
+          expect(dir.listSync().length, folders, reason: message);
+        }
+      }, tags: ['unit']);
+
+      test('a folder it cannot make takes the options back out', () async {
+        // The options are the one thing written before the folder. Left in,
+        // they would be a row belonging to no project.
+        final base = createTempDir('projsvc-blocked');
+        final blocker = File('${base.path}/blocked')..writeAsStringSync('x');
+        await overrideSettingsDirs(session, projectDir: blocker.path);
+        final options = await ProjectOptions.db.count(session);
+        final projects = await Project.db.count(session);
+
+        await expectLater(
+          () => projectService.createConfiguredProject(
+            session,
+            ProjectDraftDto(name: 'doomed', options: ProjectOptions()),
+          ),
+          throwsA(isA<FileSystemException>()),
+        );
+
+        expect(await ProjectOptions.db.count(session), options);
+        expect(await Project.db.count(session), projects);
+      }, tags: ['unit']);
+    });
+
     test('empty project name should throw an exception', () async {
       expect(
-        () => projectService.createProject(session, "", ProjectOptions(id: 1)),
+        () => projectService.createProject(session, "", ProjectOptions(id: -1)),
         throwsMessage('A project needs a name.'),
       );
+    }, tags: ['unit']);
+
+    test('a project name has a maximum length', () async {
+      final options = await seedOptions(session);
+      await expectLater(
+        () => projectService.createProject(
+          session,
+          'a' * (projectNameMaxLength + 1),
+          options,
+        ),
+        throwsMessage('A project name can be at most 100 characters.'),
+      );
+      final longest = await projectService.createProject(
+        session,
+        'a' * projectNameMaxLength,
+        options,
+      );
+      expect(longest.name.length, projectNameMaxLength);
+    }, tags: ['unit']);
+
+    test('a project name cannot contain control characters', () async {
+      // A line break forges lines in the log and in the UCSC track header.
+      final options = await seedOptions(session);
+      for (final name in ['a\nb', 'a\r\nb', 'a\tb', 'a\u0000b', 'a b']) {
+        await expectLater(
+          () => projectService.createProject(session, name, options),
+          throwsMessage('A project name cannot contain line breaks or tabs.'),
+          reason: name.codeUnits.toString(),
+        );
+      }
+    }, tags: ['unit']);
+
+    test('a project name is otherwise free text', () async {
+      // It is a label. What mipgen gets is `mipgenPrefixOf(name)`, so nothing
+      // here needs to be shell-safe — and refusing umlauts would be a
+      // regression.
+      for (final name in ['Müller Panel (v2)', 'x;id>&2;#', '../../y', '日本語']) {
+        final project = await projectService.createProject(
+          session,
+          name,
+          await seedOptions(session),
+        );
+        expect(project.name, name);
+      }
     }, tags: ['unit']);
   });
 
@@ -126,7 +314,7 @@ void main() {
         final result = await projectService.createProject(
           session,
           "test123",
-          ProjectOptions(id: 1),
+          await seedOptions(session),
         );
         expect(result.name, "test123");
         await projectService.deleteProject(session, result.id!);
@@ -155,7 +343,7 @@ void main() {
       final project = await projectService.createProject(
         session,
         "never-ran",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
 
       final settings = await SettingsService().getSettings(session);
@@ -171,7 +359,7 @@ void main() {
       final project = await projectService.createProject(
         session,
         "has-files",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
 
       final settings = await SettingsService().getSettings(session);
@@ -199,7 +387,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
       final project = await projectService.getProject(session, result.id!);
@@ -218,7 +406,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
       final projects = await projectService.getProjects(session);
@@ -247,7 +435,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
       await projectService.addGenesToProject(session, result.id!, genes);
@@ -262,7 +450,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
       await projectService.addGeneToProject(session, result.id!, "BART1");
@@ -277,7 +465,7 @@ void main() {
       final result = await projectService.createProject(
         session,
         "test123",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.name, "test123");
       await projectService.addGeneToProject(session, result.id!, "BART1");
@@ -312,7 +500,7 @@ void main() {
       final project = await seedProject(session, options: 1);
       expect(
         () => projectService.setGenomeById(session, project.id!, -1),
-        throwsMessage('This gene is not on this project.'),
+        throwsMessage('This genome no longer exists.'),
       );
     }, tags: ['unit']);
 

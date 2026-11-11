@@ -75,7 +75,8 @@ class FormSaveBar extends StatelessWidget {
         FilledButton(onPressed: onSave, child: const Text('Update settings')),
       ];
 
-  /// Any set of actions, right-aligned. The create-project form needs two.
+  /// Any set of actions, right-aligned and spaced. The create-project form
+  /// needs three.
   const FormSaveBar.custom({
     super.key,
     required this.maxWidth,
@@ -100,9 +101,20 @@ class FormSaveBar extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: children,
+              // ⚠️ A `Wrap`, not a `Row`: the create-project form has three
+              // actions, and on a phone a `Row` of them overflows instead of
+              // breaking. The `SizedBox` is what keeps them right-aligned —
+              // under `Center` a `Wrap` would otherwise shrink to its buttons
+              // and sit in the middle.
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: children,
+                ),
               ),
             ),
           ),

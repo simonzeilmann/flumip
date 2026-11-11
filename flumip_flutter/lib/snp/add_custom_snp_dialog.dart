@@ -1,5 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/format.dart';
+import 'package:flumip_flutter/project/expiry.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/snp/snp_validation.dart';
 import 'package:flutter/material.dart';
@@ -58,12 +59,24 @@ class CustomSnpDraft {
 /// server, so the cookie the upload needs never travels. Somebody who expects to
 /// upload a file should be told why they cannot, not left to conclude the feature
 /// is missing.
+/// What a guest on a public instance may upload, from the server's config.
+class GuestSnpLimits {
+  const GuestSnpLimits({required this.maxBytes, required this.retention});
+
+  /// The largest single file, the index included.
+  final int maxBytes;
+
+  /// How long the set is kept before it is deleted automatically.
+  final Duration retention;
+}
+
 class AddCustomSnpDialog extends StatefulWidget {
   const AddCustomSnpDialog({
     super.key,
     required this.genome,
     this.uploadAvailable = false,
     required this.pickFile,
+    this.guestLimits,
   });
 
   /// Opens a file dialog. Injected so this widget can be pumped in a test.
@@ -77,6 +90,9 @@ class AddCustomSnpDialog extends StatefulWidget {
   final Genome genome;
 
   final bool uploadAvailable;
+
+  /// Set for a guest, who may only upload, only small files, and cannot share.
+  final GuestSnpLimits? guestLimits;
 
   @override
   State<AddCustomSnpDialog> createState() => _AddCustomSnpDialogState();
@@ -102,6 +118,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
   @override
   void initState() {
     super.initState();
+    if (widget.guestLimits != null) _mode = AddSnpMode.upload;
     _vcfUrlController.addListener(_suggestTbi);
     _tbiUrlController.addListener(_noteTbiEdited);
   }
@@ -138,10 +155,20 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
   String? get _vcfUrlError => validateVcfUrl(_vcfUrlController.text);
   String? get _tbiUrlError => validateTbiUrl(_tbiUrlController.text);
 
-  String? get _vcfFileError =>
-      _vcfFile == null ? null : validateVcfName(_vcfFile!.name);
-  String? get _tbiFileError =>
-      _tbiFile == null ? null : validateTbiName(_tbiFile!.name);
+  String? get _vcfFileError => _vcfFile == null
+      ? null
+      : validateVcfName(_vcfFile!.name) ?? _sizeError(_vcfFile!);
+  String? get _tbiFileError => _tbiFile == null
+      ? null
+      : validateTbiName(_tbiFile!.name) ?? _sizeError(_tbiFile!);
+
+  /// Refused here rather than after the bytes have gone: the server would
+  /// stop reading at the limit anyway, and say less about why.
+  String? _sizeError(PickedFile file) {
+    final max = widget.guestLimits?.maxBytes;
+    if (max == null || file.size <= max) return null;
+    return 'Larger than the ${formatBytes(max)} this server accepts.';
+  }
 
   bool get _canAdd {
     if (_nameError != null) return false;
@@ -194,26 +221,31 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-              _modeSelector(),
-              const SizedBox(height: 16),
+              if (widget.guestLimits == null) ...[
+                _modeSelector(),
+                const SizedBox(height: 16),
+              ],
               if (_mode == AddSnpMode.url)
                 ..._urlFields()
               else
                 ..._uploadFields(),
               const SizedBox(height: 12),
-              SwitchListTile(
-                value: _shared,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (v) => setState(() => _shared = v),
-                title: const Text('Share with everyone on this server'),
-                // Framed as sharing rather than privacy, so that the default —
-                // off — reads as the safe choice rather than a restriction.
-                subtitle: Text(
-                  _shared
-                      ? 'Everyone can see and use this SNP set.'
-                      : 'Only you can see and use it. You can share it later.',
+              if (widget.guestLimits case final limits?)
+                _guestNote(limits)
+              else
+                SwitchListTile(
+                  value: _shared,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) => setState(() => _shared = v),
+                  title: const Text('Share with everyone on this server'),
+                  // Framed as sharing rather than privacy, so that the default —
+                  // off — reads as the safe choice rather than a restriction.
+                  subtitle: Text(
+                    _shared
+                        ? 'Everyone can see and use this SNP set.'
+                        : 'Only you can see and use it. You can share it later.',
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -231,7 +263,7 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
                     name: _nameController.text.trim(),
                     description: _descriptionController.text.trim(),
                     genomeId: widget.genome.id!,
-                    shared: _shared,
+                    shared: _shared && widget.guestLimits == null,
                     vcfUrl: _mode == AddSnpMode.url
                         ? _vcfUrlController.text.trim()
                         : '',
@@ -248,6 +280,15 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
       ],
     );
   }
+
+  /// In place of the share switch: what a guest's set is, and how long it
+  /// stays.
+  Widget _guestNote(GuestSnpLimits limits) => Text(
+    'Only you can see and use it. Files can be up to '
+    '${formatBytes(limits.maxBytes)} each, and the set is deleted '
+    'automatically after ${describeRetention(limits.retention)}.',
+    style: TextStyle(color: context.colours.onSurfaceVariant, fontSize: 12),
+  );
 
   Widget _genomeRow() => Container(
     width: double.infinity,
@@ -370,7 +411,10 @@ class _AddCustomSnpDialogState extends State<AddCustomSnpDialog> {
           : 'Both files will be sent, one after the other.',
       style: TextStyle(color: context.colours.onSurfaceVariant, fontSize: 12),
     ),
-    if (_vcfFile != null && _vcfFile!.size < 1000000)
+    // Not for a guest, whose files are small by design.
+    if (widget.guestLimits == null &&
+        _vcfFile != null &&
+        _vcfFile!.size < 1000000)
       Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(

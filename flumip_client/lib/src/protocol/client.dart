@@ -20,6 +20,7 @@ import 'package:flumip_client/src/protocol/custom_snp_request_dto.dart'
 import 'package:flumip_client/src/protocol/flumip_user_dto.dart' as _i15z9m0g;
 import 'package:flumip_client/src/protocol/genome.dart' as _ixuye8o9;
 import 'package:flumip_client/src/protocol/project.dart' as _iqi8mkqf;
+import 'package:flumip_client/src/protocol/project_draft_dto.dart' as _ilp6tr08;
 import 'package:flumip_client/src/protocol/project_file_dto.dart' as _i5l1g0eo;
 import 'package:flumip_client/src/protocol/project_options.dart' as _iqoum48a;
 import 'package:flumip_client/src/protocol/search_hit_dto.dart' as _i8y6t52d;
@@ -196,7 +197,9 @@ class EndpointGenome extends EndpointFlumip {
         {},
       );
 
-  /// Updates a genome.
+  /// Updates a genome: switches it on or off, or changes its description.
+  ///
+  /// **Administrators only** on an install with sign-in or public mode.
   ///
   /// \param session The current session.
   /// \param id The ID of the genome to update.
@@ -210,6 +213,10 @@ class EndpointGenome extends EndpointFlumip {
 
   /// Collects genomes from the genome directory.
   ///
+  /// Open to every signed-in user, not only administrators: it adds what
+  /// somebody already put on the server's disk and removes nothing that is
+  /// still there.
+  ///
   /// \param session The current session.
   /// \throws Exception if an error occurs during collection.
   _ida.Future<void> collectGenomes() =>
@@ -217,18 +224,29 @@ class EndpointGenome extends EndpointFlumip {
 
   /// Retrieves an SNP by its ID.
   ///
+  /// ⚠️ Filtered by [AuthorizationService.readableSnp]. This used to return any
+  /// row to anybody, which made every private SNP set — its name, owner and
+  /// server paths — one counted id away. What the project tile still needs, the
+  /// name of the set a project it can open runs with, is what that method
+  /// keeps.
+  ///
   /// \param session The current session.
   /// \param id The ID of the SNP to retrieve.
   /// \returns The SNP with the specified ID.
-  /// \throws Exception if an error occurs during retrieval.
+  /// \throws [ProjectAccessDeniedException] if the caller may not see it.
   _ida.Future<_iumnx4id.Snp> getSnp(int id) =>
       caller.callServerEndpoint<_iumnx4id.Snp>('genome', 'getSnp', {'id': id});
 
-  /// Retrieves all SNPs for a specific genome.
+  /// Retrieves the SNPs for a specific genome that the caller may be offered.
+  ///
+  /// ⚠️ The same answer as `SnpEndpoint.listSnpsForGenome`, through the same
+  /// [AuthorizationService.listableSnps]. It used to return every row,
+  /// everybody's private sets included, to anybody. Nothing in the app calls
+  /// it any more; it stays because removing it would be a protocol change.
   ///
   /// \param session The current session.
   /// \param genomeId The ID of the genome to retrieve SNPs for.
-  /// \returns A list of all SNPs for the specified genome.
+  /// \returns The SNPs for the specified genome the caller may see.
   /// \throws Exception if an error occurs during retrieval.
   _ida.Future<List<_iumnx4id.Snp>> getAllSnpForGenome(int genomeId) =>
       caller.callServerEndpoint<List<_iumnx4id.Snp>>(
@@ -258,9 +276,17 @@ class EndpointGenome extends EndpointFlumip {
         {'category': category},
       );
 
+  /// Builds the index a genome needs before it can be designed against.
+  ///
+  /// Open to every signed-in user, like [collectGenomes]: a genome found by a
+  /// scan is no use until this has run. It cannot be repeated — an indexed
+  /// genome refuses — and undoing it is [deleteFastaIndex], which is not open.
   _ida.Future<void> indexFasta(int id) =>
       caller.callServerEndpoint<void>('genome', 'indexFasta', {'id': id});
 
+  /// Removes a genome's index.
+  ///
+  /// **Administrators only** on an install with sign-in or public mode.
   _ida.Future<void> deleteFastaIndex(int id) =>
       caller.callServerEndpoint<void>('genome', 'deleteFastaIndex', {'id': id});
 }
@@ -340,6 +366,9 @@ class EndpointOptions extends EndpointFlumip {
 
   /// Updates project options.
   ///
+  /// Writes the row named by [id] — never the one `options.id` names — and
+  /// only after checking the caller may touch every project using it.
+  ///
   /// \param session The current session.
   /// \param id The ID of the project options to update.
   /// \param options The [ProjectOptions] object to update.
@@ -382,6 +411,24 @@ class EndpointProject extends EndpointFlumip {
     'project',
     'createProject',
     {'name': name, 'options': options, 'description': description},
+  );
+
+  /// Creates a project with its genome, SNP set and genes already chosen.
+  ///
+  /// What the create-project form calls: one request that makes the whole
+  /// project or nothing. Like [createProject] it needs no project access check —
+  /// there is no project yet — and the SNP set is checked against the caller in
+  /// the service.
+  ///
+  /// \param session The current session.
+  /// \param draft What the form collected.
+  /// \returns The created [Project] object.
+  _ida.Future<_iqi8mkqf.Project> createConfiguredProject(
+    _ilp6tr08.ProjectDraftDto draft,
+  ) => caller.callServerEndpoint<_iqi8mkqf.Project>(
+    'project',
+    'createConfiguredProject',
+    {'draft': draft},
   );
 
   /// Deletes a project by ID.
@@ -877,6 +924,10 @@ class EndpointSnp extends EndpointFlumip {
   /// 2. PUT /snp_upload/<id>/<fileName>         x1 or x2, raw bytes
   /// 3. finishUpload(id)                        -> Snp (ready | indexing | failed)
   /// ```
+  ///
+  /// A guest's set is always private and gets a deletion date
+  /// (`Snp.expires`), which is also what makes the upload route hold its files
+  /// to the guest size limit.
   _ida.Future<_iumnx4id.Snp> createUpload(
     _iqct5zkb.CustomSnpRequestDto request,
   ) => caller.callServerEndpoint<_iumnx4id.Snp>('snp', 'createUpload', {

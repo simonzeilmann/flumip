@@ -380,8 +380,109 @@ void main() {
 
     test('an address on the admin list gets the admin flag', () async {
       await enableSso(session, adminEmails: 'boss@uni.example');
-      final result = await signIn(session, email: 'boss@uni.example');
+      final result = await signIn(
+        session,
+        email: 'boss@uni.example',
+        extra: {'email_verified': true},
+      );
       expect(result.session.isAdmin, isTrue);
+    });
+
+    group('the admin flag needs a verified address', () {
+      // Finding: the admin list is a string match on `email`, and at a provider
+      // that lets an account set any address, an unverified match handed out
+      // the admin scope — every project, and the executable paths in Settings.
+
+      test('⚠️ an absent email_verified gets no admin flag', () async {
+        await enableSso(session, adminEmails: 'boss@uni.example');
+        final result = await signIn(session, email: 'boss@uni.example');
+        // Still signed in — just not as an administrator.
+        expect(result.session.email, 'boss@uni.example');
+        expect(result.session.isAdmin, isFalse);
+      });
+
+      test('a string "true" counts, the way some providers send it', () async {
+        await enableSso(session, adminEmails: 'boss@uni.example');
+        final result = await signIn(
+          session,
+          email: 'boss@uni.example',
+          extra: {'email_verified': 'true'},
+        );
+        expect(result.session.isAdmin, isTrue);
+      });
+
+      test('userinfo can vouch when the ID token does not say', () async {
+        await enableSso(session, adminEmails: 'boss@uni.example');
+        final result = await signIn(
+          session,
+          email: 'boss@uni.example',
+          userinfo: {
+            'sub': 'user-123',
+            'email': 'boss@uni.example',
+            'email_verified': true,
+          },
+        );
+        expect(result.session.isAdmin, isTrue);
+      });
+
+      test('but not about a different address', () async {
+        await enableSso(session, adminEmails: 'boss@uni.example');
+        final result = await signIn(
+          session,
+          email: 'boss@uni.example',
+          userinfo: {
+            'sub': 'user-123',
+            'email': 'someone-else@uni.example',
+            'email_verified': true,
+          },
+        );
+        expect(result.session.isAdmin, isFalse);
+      });
+
+      test('an address read from userinfo needs userinfo to vouch', () async {
+        await enableSso(session, adminEmails: 'boss@uni.example');
+        final unverified = await signIn(
+          session,
+          email: null,
+          userinfo: {'sub': 'user-123', 'email': 'boss@uni.example'},
+        );
+        expect(unverified.session.isAdmin, isFalse);
+
+        final verified = await signIn(
+          session,
+          email: null,
+          // The ID token's claim is about no address at all here, so it must
+          // not count for the one userinfo supplied.
+          extra: {'email_verified': true},
+          userinfo: {
+            'sub': 'user-123',
+            'email': 'boss@uni.example',
+            'email_verified': true,
+          },
+        );
+        expect(verified.session.isAdmin, isTrue);
+      });
+
+      test(
+        '${AuthEnv.adminRequireVerifiedEmail}=false is the opt-out',
+        () async {
+          // For providers that never send the claim (Entra ID).
+          await enableSso(session, adminEmails: 'boss@uni.example');
+          final optedOut = AuthRuntime(
+            environment: const {AuthEnv.adminRequireVerifiedEmail: 'false'},
+          );
+          sl.registerSingleton<AuthRuntime>(optedOut);
+          addTearDown(
+            () => sl.registerSingleton<AuthRuntime>(
+              AuthRuntime(environment: const {}),
+            ),
+          );
+          await optedOut.refresh(session);
+
+          final result = await signIn(session, email: 'boss@uni.example');
+          expect(result.session.isAdmin, isTrue);
+        },
+      );
     });
 
     test('everyone else does not', () async {
@@ -577,7 +678,11 @@ void main() {
 
     test('a cookie is traded for a bearer token', () async {
       await enableSso(session, adminEmails: 'boss@uni.example');
-      final signedIn = await signIn(session, email: 'boss@uni.example');
+      final signedIn = await signIn(
+        session,
+        email: 'boss@uni.example',
+        extra: {'email_verified': true},
+      );
 
       final issued = await authService.issueApiToken(
         session,

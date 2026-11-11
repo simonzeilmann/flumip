@@ -5,30 +5,53 @@ on:
     branches:
       - staging
 
+# Least privilege: nothing here writes to the repository. The deploy reaches
+# the server with its own SSH key, not with the GITHUB_TOKEN.
+permissions:
+  contents: read
+
 jobs:
   # Checks live in checks.yml so this pipeline cannot drift from the others.
   checks:
     uses: ./.github/workflows/checks.yml
     with:
       web_build_args: --debug
-    secrets: inherit
+    # Only the two secrets the test job reads, not `secrets: inherit`, which
+    # handed this run every secret in the repository: deploy key, sudo password
+    # and all. TEST_PASSWORDS_YAML, when it exists, is a passwords.yaml holding
+    # only what the tests read (the `shared:` and `test:` sections); until the
+    # owner has created it the full PASSWORDS_YAML stands in, so this keeps
+    # working either way.
+    secrets:
+      POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      PASSWORDS_YAML: ${{ secrets.TEST_PASSWORDS_YAML || secrets.PASSWORDS_YAML }}
 
   deploy-staging-to-server:
     runs-on: ubuntu-latest
     needs: checks
+    # The deploy secrets can be scoped to this environment, and the environment
+    # limited to the staging branch and gated on a reviewer (Settings →
+    # Environments). Until the owner has set it up, GitHub creates it bare on
+    # the first run and the repository-level secrets still apply, so the deploy
+    # works either way.
+    environment: staging
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes, so the token is not left in .git/config for
+          # the build steps to find.
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
       - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         id: flutter-action
         with:
           channel: 'stable'
@@ -39,18 +62,27 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
+      # Through env and printf, not `echo "${{ secrets.PASSWORDS_YAML }}"`: a
+      # secret pasted into the script is shell source, so a `$`, backtick or
+      # quote in a password was expanded or broke the step.
       - name: Inject passwords.yaml
+        env:
+          PASSWORDS_YAML: ${{ secrets.PASSWORDS_YAML }}
         run: |
-          echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
+          printf '%s\n' "$PASSWORDS_YAML" > flumip_server/config/passwords.yaml
 
       - name: Extract APP_VERSION
         run: |
           export APP_VERSION=$(grep '^version:' flumip_flutter/pubspec.yaml | awk '{print $2}')
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
+      # The title through env and quoted, so a repository variable is data,
+      # not shell source.
       - name: Build and inject frontend
+        env:
+          SITE_TITLE: ${{ vars.STAGING_TITLE }}
         run: |
-          cd flumip_flutter && flutter build web --debug --wasm --no-web-resources-cdn --dart-define=APP_VERSION=${{ env.APP_VERSION }} --dart-define=SITE_TITLE=${{ vars.STAGING_TITLE }} --output ../flumip_server/web/app
+          cd flumip_flutter && flutter build web --debug --wasm --no-web-resources-cdn "--dart-define=APP_VERSION=$APP_VERSION" "--dart-define=SITE_TITLE=$SITE_TITLE" --output ../flumip_server/web/app
 
       - name: Build server
         run: |
@@ -73,42 +105,108 @@ jobs:
           # tarball ships); the remote script below installs it from here.
           cp ../.github/deploy/flumip_staging.service app/deployment/
 
-      - name: Transfer app to remote server
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
-          rm: true
-          source: "flumip_server/app"
-          target: "~/flumip_staging"
+      # ⚠️ Plain OpenSSH on the runner. This used to be appleboy/scp-action and
+      # appleboy/ssh-action, which meant the deploy key and the sudo password
+      # were handed to code this project does not control, and that a moved tag
+      # in someone else's repository would have run with them. Now they reach
+      # only ssh and bash.
+      #
+      # The host key is pinned: REMOTE_KNOWN_HOSTS holds the server's known_hosts
+      # line(s), and StrictHostKeyChecking=yes refuses any other key. The step
+      # fails until that secret exists, rather than trust whatever answers at
+      # REMOTE_HOST.
+      - name: Set up SSH
+        env:
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_SSH_KEY: ${{ secrets.REMOTE_SSH_KEY }}
+          REMOTE_KNOWN_HOSTS: ${{ secrets.REMOTE_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$REMOTE_KNOWN_HOSTS" ]; then
+            echo "::error::Secret REMOTE_KNOWN_HOSTS is not set. It pins the deploy host's SSH key; see the comment on this step."
+            exit 1
+          fi
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$REMOTE_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$REMOTE_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
+          # Port 22, as the ssh actions used. BatchMode: fail, never prompt.
+          cat > ~/.ssh/config <<EOF
+          Host flumip-deploy
+            HostName $REMOTE_HOST
+            User $REMOTE_USER
+            Port 22
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/deploy_known_hosts
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
 
+      # What scp-action with `rm: true` did: empty ~/flumip_staging, then unpack
+      # the app at ~/flumip_staging/flumip_server/app, where the script below
+      # picks it up. A tar stream, as scp-action used internally, keeps the
+      # bundle's file modes.
+      - name: Transfer app to remote server
+        run: |
+          set -o pipefail
+          ssh flumip-deploy 'rm -rf ~/flumip_staging && mkdir -p ~/flumip_staging'
+          tar -czf - flumip_server/app | ssh flumip-deploy 'tar -xzf - -C ~/flumip_staging'
+
+      # The script goes to bash on ssh's stdin, and the two secrets travel at its
+      # head, quoted by printf %q: never on a command line, where `ps` on either
+      # machine would show them, and never pasted into the script as `${{ }}`,
+      # where a `$` or a quote in a password became shell source. No `set -e`,
+      # as with ssh-action: the step fails if the last command does.
       - name: Execute remote script
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
-          script: |
-            #!/bin/bash
-            docker stop postgres_staging || true
-            docker rm postgres_staging || true
-            # postgres:18 matches dev, test, CI and deployment/setup-flumip.sh.
-            # The volume mounts at /var/lib/postgresql, NOT .../data: postgres:18
-            # sets PGDATA=/var/lib/postgresql/18/docker, so the old path would
-            # keep the data in the container layer and lose it on the next
-            # `docker rm` here. Matches flumip_server/docker-compose.yaml.
-            # NOTE: the existing flumip_staging_data volume holds a 16.3 data
-            # directory at the old path and must be dumped and restored before
-            # this first runs.
-            # Published on 127.0.0.1 only: the server runs on this host and
-            # connects to localhost, and Docker's own iptables rules bypass ufw,
-            # so a bare -p would put the database on the internet. Reach it from
-            # elsewhere through an SSH tunnel.
-            docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_STAGING_KEY }} -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql -p 127.0.0.1:5433:5432 --restart unless-stopped postgres:18
-            rm -rf /var/www/flumip_staging
-            mv ~/flumip_staging/flumip_server/app /var/www/flumip_staging
-            echo ${{ secrets.USERPWD }} | sudo -S cp /var/www/flumip_staging/deployment/flumip_staging.service /etc/systemd/system/
-            echo ${{ secrets.USERPWD }} | sudo -S systemctl enable flumip_staging
-            echo ${{ secrets.USERPWD }} | sudo -S systemctl daemon-reload
-            echo ${{ secrets.USERPWD }} | sudo -S systemctl restart flumip_staging
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_STAGING_KEY }}
+          USERPWD: ${{ secrets.USERPWD }}
+        run: |
+          set -o pipefail
+          {
+          printf 'POSTGRES_PASSWORD=%q\n' "$POSTGRES_PASSWORD"
+          printf 'USERPWD=%q\n' "$USERPWD"
+          cat <<'REMOTE'
+          export POSTGRES_PASSWORD
+          # Root for the unit install and restart. While USERPWD is set, its
+          # password goes to sudo on stdin, as before. Once the server has a
+          # NOPASSWD sudoers rule for exactly these commands, delete the USERPWD
+          # secret and this uses `sudo -n`, which fails instead of prompting.
+          as_root() {
+            if [ -n "$USERPWD" ]; then
+              printf '%s\n' "$USERPWD" | sudo -S -p '' "$@"
+            else
+              sudo -n "$@"
+            fi
+          }
+          docker stop postgres_staging || true
+          docker rm postgres_staging || true
+          # postgres:18 matches dev, test, CI and deployment/setup-flumip.sh.
+          # The volume mounts at /var/lib/postgresql, NOT .../data: postgres:18
+          # sets PGDATA=/var/lib/postgresql/18/docker, so the old path would
+          # keep the data in the container layer and lose it on the next
+          # `docker rm` here. Matches flumip_server/docker-compose.yaml.
+          # NOTE: the existing flumip_staging_data volume holds a 16.3 data
+          # directory at the old path and must be dumped and restored before
+          # this first runs.
+          # Published on 127.0.0.1 only: the server runs on this host and
+          # connects to localhost, and Docker's own iptables rules bypass ufw,
+          # so a bare -p would put the database on the internet. Reach it from
+          # elsewhere through an SSH tunnel.
+          docker run -d --name postgres_staging -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD -e POSTGRES_DB=flumip_staging -v flumip_staging_data:/var/lib/postgresql -p 127.0.0.1:5433:5432 --restart unless-stopped postgres:18
+          rm -rf /var/www/flumip_staging
+          mv ~/flumip_staging/flumip_server/app /var/www/flumip_staging
+          as_root cp /var/www/flumip_staging/deployment/flumip_staging.service /etc/systemd/system/
+          as_root systemctl enable flumip_staging
+          as_root systemctl daemon-reload
+          as_root systemctl restart flumip_staging
+          REMOTE
+          } | ssh flumip-deploy 'bash -s'
+
+      # GitHub-hosted runners are thrown away after the job, but do not count
+      # on it.
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

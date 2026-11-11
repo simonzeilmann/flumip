@@ -1,4 +1,3 @@
-import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
 import '../services.dart';
@@ -7,6 +6,7 @@ import '../ui/info_banner.dart';
 import '../ui/layout.dart';
 import 'create_project_widget.dart';
 import 'expiry.dart';
+import 'new_project_controller.dart';
 import 'project_tile.dart';
 import 'projects_controller.dart';
 
@@ -59,9 +59,20 @@ class _ProjectsTabState extends State<ProjectsTab> {
     setState(() => _showCreateProject = !_showCreateProject);
   }
 
-  void _onProjectCreated(Project created) {
-    _controller.projectCreated(created);
+  /// The form stored a project: open it in the list, and say what became of
+  /// "Save and start" — a plain "Save" needs no message, the open tile is one.
+  void _onProjectSaved(NewProjectResult result) {
+    _controller.projectCreated(result.project);
     _toggleCreateProject();
+
+    final message =
+        result.startError ??
+        (result.started ? 'MIPs generation started successfully' : null);
+    if (message != null) {
+      ScaffoldMessenger.maybeOf(
+        context,
+      )?.showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   @override
@@ -71,14 +82,23 @@ class _ProjectsTabState extends State<ProjectsTab> {
     // way the settings one does. It caps its fields itself.
     if (_showCreateProject) {
       return CreateProjectWidget(
-        onProjectCreated: _onProjectCreated,
+        onSaved: _onProjectSaved,
         onAbort: _toggleCreateProject,
+        notificationsAvailable: _controller.notificationsAvailable,
+        // The server stamps an owner exactly when somebody is signed in.
+        willHaveOwner: authController.user != null,
       );
     }
 
     final projects = _controller.projects;
     final error = _controller.errorMessage;
-    final retention = authController.config.projectRetention;
+    final config = authController.config;
+    // Not for a signed-in user on a public instance: only guests' projects
+    // expire there, and any of those this user opened from a link carry their
+    // own date.
+    final retention = config.publicMode && authController.user?.isGuest == false
+        ? null
+        : config.projectRetention;
 
     return ContentWidth(
       padding: const EdgeInsets.all(16),

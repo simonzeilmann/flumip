@@ -27,6 +27,7 @@ class AuthEndpoint extends Endpoint {
     final publicMode = runtime.config.publicMode;
     final settings = await sl<SettingsService>().getSettings(session);
     final autoDelete = settings.demoMode || publicMode;
+    final guestSnpBytes = publicMode ? guestSnpMaxBytes(settings) : null;
     return AuthConfigDto(
       // Show the sign-in button whenever signing in is possible, not only when
       // it is compulsory: an install can reasonably want identities without
@@ -43,6 +44,10 @@ class AuthEndpoint extends Endpoint {
       maxProjectLifetimeHours: autoDelete
           ? maxProjectLifetime(settings).inHours
           : null,
+      guestSnpMaxBytes: guestSnpBytes,
+      guestSnpRetentionDays: guestSnpBytes == null
+          ? null
+          : guestSnpRetention(settings).inDays,
     );
   }
 

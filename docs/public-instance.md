@@ -21,8 +21,8 @@ database with the internet.
    *guest*: an anonymous identity held in a cookie. Guests see only the projects
    they created and the ones opened from a share link. Nobody sees anybody
    else's.
-3. **A deletion date on every project.** Projects are deleted automatically, and
-   each one shows the last day it is kept. **Keep longer** adds another
+3. **A deletion date on every project.** A guest's projects are deleted
+   automatically, and each one shows the last day it is kept. **Keep longer** adds another
    retention window to that date each time it is pressed, up to a maximum you
    set.
 4. **A share link on every project.** **Copy link** gives an address like
@@ -37,13 +37,47 @@ database with the internet.
    own, the shared project is added to its list, and the first browser keeps
    everything it had.
 
-Guests can browse the genome library and use every SNP set you provide. They
-**cannot**:
+Guests can browse the genome library and use every SNP set you provide.
 
-- add, upload or import SNP sets
+They can also **upload small SNP sets of their own**: a `.vcf.gz` and
+optionally its `.tbi`, each up to 10 MB by default. A guest's set is visible
+only to them and to administrators, can't be shared, and is deleted
+automatically after 7 days. A project that used it then runs without SNP
+masking. Each guest may have 3 sets at a time. All three numbers are settings
+(see below), and a size limit of 0 turns guest uploads off.
+
+Guests **cannot**:
+
+- import SNP sets from a URL, or rescan the SNP tree (a URL import has the
+  server fetch whatever address it is given)
 - scan for genomes, build or delete indexes, or switch genomes on and off
 - open Settings
 - turn on email notifications (guests have no address)
+
+## Signed-in users
+
+Anyone who signs in through single sign-on is a *signed-in user*, not a guest,
+whether they are an administrator or not. Signed-in users work as they would on
+an internal install:
+
+- Their projects are **never deleted automatically** and show no deletion date
+  (see "Expiry" below).
+- They can add, upload and import SNP sets.
+- They can add to the genome library: scan for genomes you have put on the
+  server, and build a genome's index. They cannot take from it. **Deleting an
+  index and switching a genome on or off are for administrators only.**
+- They don't count against **Projects per visitor**, and can turn on email
+  notifications.
+
+Only administrators can open Settings, delete a genome's index, or switch a
+genome on or off.
+
+This makes who can sign in matter more than on an internal install. Everybody
+your identity provider lets in gets storage with no time limit, so keep
+**Allowed email domains** narrow, or let the identity provider decide. With
+Pocket ID, only the people you add to the client's group can sign in: add them
+the way [pocket-id.md](pocket-id.md#administration) describes for an
+administrator, but leave their address off the administrator list.
 
 ## Switching it on
 
@@ -92,9 +126,12 @@ All in **Settings → Public instance**, except the first.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Keep projects for (hours), under **Security** | 168 | How long a new project lives, rounded up to the end of that day. Public mode implies demo-mode deletion, and this is its window. It is also what each **Keep longer** adds. |
-| Longest a project can be kept (days) | 30 | How far **Keep longer** can push a deletion, counted from creation. Never shorter than the window above. Also how long a guest's cookie lasts between visits. |
+| Keep projects for (hours), under **Security** | 48 | How long a guest's new project lives, rounded up to the end of that day. Public mode implies demo-mode deletion, and this is its window. It is also what each **Keep longer** adds. |
+| Longest a project can be kept (days) | 14 | How far **Keep longer** can push a deletion, counted from creation. Never shorter than the window above. Also how long a guest's cookie lasts between visits. |
 | Projects per visitor | 10 | How many projects one guest may have at a time. 0 means no limit. Administrators and signed-in users are not counted. |
+| Largest SNP file a visitor can upload (MB) | 10 | Applies to the VCF and the index separately. 0 means guests cannot add SNP sets. |
+| SNP sets per visitor | 3 | How many SNP sets one guest may have at a time, failed uploads included. 0 means no limit. |
+| Keep a visitor's SNP set for (days) | 7 | Counted from the upload, rounded up to the end of that day. There is no **Keep longer** for SNP sets. |
 | Terms of use on the entry notice | empty | Replaces the default terms paragraph. The cookie paragraph is always shown. |
 | Terms version | 1 | Raise it after changing the terms. Every guest sees the notice again on their next visit and keeps their projects once they accept. |
 | Imprint (Impressum) URL | empty | Linked from the entry notice and the footer. |
@@ -112,6 +149,15 @@ waiting at a time, so one visitor cannot fill the queue ahead of everybody else.
 
 ## Expiry
 
+Only guests' projects expire. Whether a project does is decided when it is
+created: a guest's gets a deletion date, a signed-in user's doesn't and is kept
+until somebody deletes it. A guest's project keeps its date after the guest's
+identity is cleaned up. **Demo mode changes nothing on a public instance.**
+
+An administrator who changes a project's **Owner** changes this too. Handing a
+guest's project to a signed-in user keeps it. Handing a project to a guest gives
+it a fresh window from today. Setting it to unowned leaves it as it was.
+
 Projects are kept in whole days. A project created on 28 October with a 7-day
 window shows "kept until 4 November" and is deleted when that day ends, at
 midnight in the **server's** time zone. Each press of **Keep longer** adds
@@ -126,8 +172,8 @@ The deletion runs when the day ends, whether or not anyone is looking.
 
 ### Keeping a project indefinitely
 
-An administrator can exempt any project from deletion, for example one cited in
-a paper. Sign in, open the project and select **Keep indefinitely**. The project
+An administrator can exempt any guest's project from deletion, for example one
+cited in a paper. Sign in, open the project and select **Keep indefinitely**. The project
 then shows "Kept indefinitely by an administrator" instead of a date, and
 **Keep longer** disappears. Owners cannot do this themselves. They can only keep
 a project longer, up to the maximum.
@@ -209,10 +255,10 @@ writes your privacy policy can describe it correctly.
   project lifetime and is renewed on each visit.
 - **What is stored about a guest:** a random identifier, when they accepted the
   notice and which terms version, when their identity was created and last used,
-  and their projects. No name, no email address, no IP address in the database.
+  their projects, and any SNP sets they uploaded. No name, no email address, no IP address in the database.
   (Your reverse proxy's access log is a separate matter.)
-- **Deletion:** a guest's projects are deleted when their last day ends. Their identity is
-  deleted once their cookie has expired.
+- **Deletion:** a guest's projects and SNP sets are deleted when their last day ends.
+  Their identity is deleted once their cookie has expired.
 - **Consent:** a cookie that is strictly necessary for a service the visitor asked
   for needs no consent under § 25(2) TDDDG (formerly TTDSG) and Art. 5(3) of the
   ePrivacy Directive. The notice informs visitors about it. What it actually asks

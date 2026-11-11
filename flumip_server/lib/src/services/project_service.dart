@@ -4,8 +4,10 @@ import 'package:flumip_server/src/generated/future_calls.dart';
 import 'package:flumip_server/src/auth/auth_tokens.dart';
 import 'package:flumip_server/src/auth/project_access.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/auth_service.dart';
 import 'package:flumip_server/src/services/authorization_service.dart';
 import 'package:flumip_server/src/services/mipgen_service.dart';
+import 'package:flumip_server/src/services/options_service.dart';
 import 'package:flumip_server/src/services/process_service.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
@@ -21,9 +23,35 @@ import 'package:uuid/uuid.dart';
 /// for yet; see HANDOFF.md.
 final geneSymbol = RegExp(r'^[A-Za-z0-9]+$');
 
+/// The longest name a project can be given.
+const projectNameMaxLength = 100;
+
+/// C0 and C1 control characters, line breaks and tabs among them.
+final _controlCharacter = RegExp(r'[\x00-\x1F\x7F-\x9F  ]');
+
 /// Whether projects on this server are deleted automatically: demo mode, or a
 /// public instance, which implies it.
+///
+/// Whether a particular project goes is [projectExpires].
 bool projectsExpire(Settings settings) => settings.demoMode || authz.isPublic;
+
+/// Whether [project] is deleted automatically, leaving aside
+/// [Project.keptIndefinitely].
+///
+/// On a public instance only guests' projects are, and [Project.expires] is the
+/// record of which those are: stamped when a guest creates the project, left
+/// null when a signed-in user does (see [newProjectExpires]). A guest's project
+/// keeps its date after the guest's identity is cleaned up and the owner goes,
+/// which is what still deletes it then. Demo mode changes nothing there.
+///
+/// Elsewhere it is demo mode, for every project, and a null [Project.expires]
+/// falls back to the retention window; see [deletionDeadline].
+bool projectExpires(Project project, Settings settings) =>
+    authz.isPublic ? project.expires != null : settings.demoMode;
+
+/// Whether a project [creator] makes now is given a deletion date.
+bool newProjectExpires(Principal creator, Settings settings) =>
+    authz.isPublic ? creator.isGuest : settings.demoMode;
 
 /// The end of the day [moment] falls in: the first midnight, in the server's
 /// own time zone, at or after it.
@@ -40,7 +68,7 @@ DateTime endOfDay(DateTime moment) {
   return DateTime(local.year, local.month, local.day + 1).toUtc();
 }
 
-/// When [project] is due to be deleted, assuming [projectsExpire]: always a
+/// When [project] is due to be deleted, assuming [projectExpires]: always a
 /// midnight, the end of the project's last day.
 ///
 /// [Project.expires] where it is set, but never earlier than the end of the day
@@ -85,21 +113,19 @@ class ProjectService {
   /// \param options The [ProjectOptions] for the project.
   /// \param desc An optional description for the project.
   /// \returns The created [Project] object.
-  /// \throws [ArgumentException] if the project name is empty.
+  /// \throws [ArgumentException] if the project name is empty, longer than
+  /// [projectNameMaxLength], or contains control characters.
   Future<Project> createProject(
     Session session,
     String projectName,
     ProjectOptions options, [
     String? desc,
   ]) async {
+    _requireValidName(session, projectName);
     session.log(
       "Creating project with name: $projectName",
       level: LogLevel.info,
     );
-    if (projectName == '') {
-      session.log("Project name cannot be empty", level: LogLevel.error);
-      throw ArgumentException(message: 'A project needs a name.');
-    }
     // Before the directory below: options that were never saved have no id, and
     // `options.id!` used to throw a bare null check *after* the folder existed,
     // so the caller got a 500 and an empty folder was left behind. The app
@@ -110,7 +136,164 @@ class ProjectService {
         message: 'Save the project options before creating the project.',
       );
     }
+    // ⚠️ Options and projects are one to one, and this is what keeps them so.
+    // Only the id of [options] is used, and it used to be taken on trust: a
+    // project could be created pointing at the options of somebody else's
+    // project. The new project then counted as "the project owning those
+    // options" for the access check, which made the victim's configuration
+    // readable and writable — and deleting the new project deleted the
+    // victim's options with it. Fresh, unused options are the only kind a
+    // project can be created with; the app always inserts them just before.
+    if (await ProjectOptions.db.findById(session, options.id!) == null ||
+        await Project.db.count(
+              session,
+              where: (t) => t.options.equals(options.id!),
+            ) >
+            0) {
+      session.log(
+        "Refusing to create a project with options ${options.id}: they are "
+        "missing or already used by another project",
+        level: LogLevel.warning,
+      );
+      throw ArgumentException(
+        message:
+            'These project options are already in use. Save new options '
+            'before creating the project.',
+      );
+    }
 
+    final (settings, who) = await _admitCreator(session);
+    return _insertProject(
+      session,
+      settings,
+      who,
+      name: projectName,
+      description: desc,
+      optionsId: options.id!,
+    );
+  }
+
+  /// Creates a project with its genome, SNP set and genes already chosen.
+  ///
+  /// What the create-project form calls. [createProject] makes a bare project
+  /// and leaves the rest to one call each; this takes all of it at once, so the
+  /// form's "Save" either makes the whole project or makes nothing.
+  ///
+  /// ⚠️ **Every refusal comes before the first write.** The name, the options,
+  /// the genome, the SNP set, the genes and the guest quota are all checked
+  /// first, with the same rules — the same code — as the calls that set them
+  /// one at a time. Only then are the options inserted, and they are removed
+  /// again if the project cannot be made after all, so a failure never leaves
+  /// options that belong to nothing.
+  ///
+  /// \param session The current session.
+  /// \param draft What the form collected.
+  /// \returns The created [Project] object.
+  /// \throws [ArgumentException] if the name, an option, a gene or the SNP set
+  /// is refused, or the caller is a guest with no room for another project.
+  /// \throws [FlumipFileNotFoundException] if the genome or the SNP set is gone.
+  Future<Project> createConfiguredProject(
+    Session session,
+    ProjectDraftDto draft,
+  ) async {
+    _requireValidName(session, draft.name);
+    // Thrown away: this is only the check. The row is written further down by
+    // the options service, which reduces the options the same way.
+    OptionsService.clientSettable(draft.options);
+
+    final genomeId = draft.genome;
+    if (genomeId != null) await _requireGenome(session, genomeId);
+    final snpId = draft.snp;
+    if (snpId != null) await _requireUsableSnp(session, snpId, genomeId);
+    final genes = _normaliseGenes(session, draft.genes ?? const []);
+
+    final (settings, who) = await _admitCreator(session);
+
+    session.log(
+      "Creating configured project with name: ${draft.name}",
+      level: LogLevel.info,
+    );
+    final options = await OptionsService().insertProjectOptions(
+      session,
+      draft.options,
+    );
+    try {
+      return await _insertProject(
+        session,
+        settings,
+        who,
+        name: draft.name,
+        description: draft.description,
+        optionsId: options.id!,
+        genome: genomeId,
+        snp: snpId,
+        // Null rather than empty, which is what a project nobody has added a
+        // gene to looks like everywhere else.
+        genes: genes.isEmpty ? null : genes,
+        emailNotification: draft.emailNotification,
+      );
+    } catch (_) {
+      await ProjectOptions.db.deleteRow(session, options);
+      rethrow;
+    }
+  }
+
+  /// Refuses a project name that is empty, too long, or not a label.
+  void _requireValidName(Session session, String projectName) {
+    if (projectName == '') {
+      session.log("Project name cannot be empty", level: LogLevel.error);
+      throw ArgumentException(message: 'A project needs a name.');
+    }
+    // The name is a label: it is shown, mailed and logged, and never handed to
+    // mipgen as it is (see `mipgenPrefixOf`). So any printable text is fine,
+    // and these two rules are only about what a label cannot be — anybody can
+    // type this on a public instance.
+    if (projectName.length > projectNameMaxLength) {
+      session.log("Project name is too long", level: LogLevel.error);
+      throw ArgumentException(
+        message:
+            'A project name can be at most $projectNameMaxLength characters.',
+      );
+    }
+    if (_controlCharacter.hasMatch(projectName)) {
+      session.log(
+        "Project name contains control characters",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'A project name cannot contain line breaks or tabs.',
+      );
+    }
+  }
+
+  /// Who is creating a project, and under which settings — or a refusal, for a
+  /// guest who has no room for another one.
+  ///
+  /// Called before anything is written, for the reason [_insertProject] gives
+  /// for its own ordering.
+  Future<(Settings, Principal)> _admitCreator(Session session) async {
+    final settings = await SettingsService().getSettings(session);
+    final who = await authz.principal(session);
+    await _requireGuestQuota(session, who, settings);
+    return (settings, who);
+  }
+
+  /// Makes the project's folder, its row and its cleanup call.
+  ///
+  /// The last step of both ways to create a project. Everything that can refuse
+  /// has already run by the time this is called.
+  Future<Project> _insertProject(
+    Session session,
+    Settings settings,
+    Principal who, {
+    required String name,
+    required String? description,
+    required int optionsId,
+    int? genome,
+    int? snp,
+    List<String>? genes,
+    bool emailNotification = false,
+  }) async {
     // ⚠️ The directory is made **before** the row is inserted, and the order is
     // the whole point. It used to run last, after the insert and after the
     // cleanup call was scheduled, so anything that went wrong in `create()`
@@ -124,11 +307,6 @@ class ProjectService {
     // `recursive: true` because the non-recursive form throws
     // PathNotFoundException when `projectDir` itself is absent — which is the
     // ordinary state of a fresh install that has not had a project yet.
-    final settings = await SettingsService().getSettings(session);
-    final who = await authz.principal(session);
-    // Before the directory, for the same reason as the options check above.
-    await _requireGuestQuota(session, who, settings);
-
     final folderName = Uuid().v7();
     await Directory(
       "${settings.projectDir}/$folderName",
@@ -136,16 +314,22 @@ class ProjectService {
 
     final now = DateTime.now().toUtc();
     var projectRow = Project(
-      name: projectName,
+      name: name,
       created: now,
       // What the tile shows as "Deleted on". The cleanup call scheduled below
-      // is what actually deletes it, and reads this when it fires.
-      expires: projectsExpire(settings)
+      // is what actually deletes it, and reads this when it fires. On a public
+      // instance it is also what decides *whether* it goes: a signed-in user's
+      // project gets none and is kept.
+      expires: newProjectExpires(who, settings)
           ? endOfDay(now.add(demoRetention(settings)))
           : null,
-      description: desc,
+      description: description,
       folderName: folderName,
-      options: options.id!,
+      options: optionsId,
+      genome: genome,
+      snp: snp,
+      genes: genes,
+      emailNotification: emailNotification,
       // Null while single sign-on is off, which is what keeps every project on a
       // no-auth install unowned and therefore shared. Stamping is done here
       // rather than in the endpoint because it populates data; the *checks* live
@@ -171,6 +355,93 @@ class ProjectService {
         .run(project);
     session.log("Project created with ID: ${project.id}", level: LogLevel.info);
     return project;
+  }
+
+  /// Refuses a genome that does not exist.
+  Future<void> _requireGenome(Session session, int genomeId) async {
+    if (await Genome.db.findById(session, genomeId) == null) {
+      session.log("Genome not found with ID: $genomeId", level: LogLevel.error);
+      throw FlumipFileNotFoundException(
+        message: 'This genome no longer exists.',
+      );
+    }
+  }
+
+  /// Refuses an SNP set that a project on [genomeId] cannot use.
+  ///
+  /// Three checks, each possible because an SNP knows which genome it belongs
+  /// to and whether its bytes have arrived:
+  ///
+  /// - **The builds must match.** VCF coordinates are build-specific, so an hg38
+  ///   file used against hs1 does not fail — it quietly designs the wrong MIPs.
+  /// - **The caller must be able to see it.** Without this, guessing an id would
+  ///   attach somebody else's private upload, and its contents could then be read
+  ///   back indirectly out of the design output.
+  /// - **It must be ready.** A failed or half-downloaded import has no usable VCF.
+  Future<void> _requireUsableSnp(
+    Session session,
+    int snpId,
+    int? genomeId,
+  ) async {
+    var snp = await Snp.db.findById(session, snpId);
+    if (snp == null) {
+      session.log("Snp not found with ID: $snpId", level: LogLevel.error);
+      throw FlumipFileNotFoundException(
+        message: 'This SNP set no longer exists.',
+      );
+    }
+    await authz.requireSnpAccess(session, snp);
+
+    if (snp.genome != null && snp.genome != genomeId) {
+      session.log(
+        "Refused SNP $snpId: it is for genome ${snp.genome}, the project "
+        "uses $genomeId",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(
+        message: 'This SNP set is for a different genome build.',
+      );
+    }
+
+    if (snp.status != SnpImportStatus.ready) {
+      session.log(
+        "Refused SNP $snpId: status is ${snp.status.name}",
+        level: LogLevel.error,
+      );
+      throw ArgumentException(message: 'This SNP set is not ready to use yet.');
+    }
+  }
+
+  /// [genes] as a project stores them: trimmed, upper-cased, repeats dropped.
+  ///
+  /// \throws [ArgumentException] if any gene is empty or contains invalid
+  /// characters.
+  List<String> _normaliseGenes(Session session, List<String> genes) {
+    final normalised = <String>[];
+    for (var gene in genes) {
+      final typed = gene.trim();
+      if (typed.isEmpty) {
+        session.log("Supplied gene is empty", level: LogLevel.error);
+        throw ArgumentException(message: 'Enter a gene symbol.');
+      }
+      if (!geneSymbol.hasMatch(typed)) {
+        session.log(
+          "Gene name contains invalid characters",
+          level: LogLevel.error,
+        );
+        throw ArgumentException(
+          message:
+              'A gene symbol can only contain letters and numbers, so '
+              '"$typed" cannot be one.',
+        );
+      }
+      final upper = typed.toUpperCase();
+      // Quietly dropped rather than refused: a list is pasted in one go, and
+      // failing the whole write over a repeat would make the caller diff it
+      // by hand.
+      if (!normalised.contains(upper)) normalised.add(upper);
+    }
+    return normalised;
   }
 
   /// Deletes a project by its ID.
@@ -388,30 +659,7 @@ class ProjectService {
       // replaces the whole list rather than appending, so without it a bulk
       // write could seed mixed case that the single-gene duplicate check would
       // then never catch.
-      final normalised = <String>[];
-      for (var gene in genes) {
-        final typed = gene.trim();
-        if (typed.isEmpty) {
-          session.log("Supplied gene is empty", level: LogLevel.error);
-          throw ArgumentException(message: 'Enter a gene symbol.');
-        }
-        if (!geneSymbol.hasMatch(typed)) {
-          session.log(
-            "Gene name contains invalid characters",
-            level: LogLevel.error,
-          );
-          throw ArgumentException(
-            message:
-                'A gene symbol can only contain letters and numbers, so '
-                '"$typed" cannot be one.',
-          );
-        }
-        final upper = typed.toUpperCase();
-        // Quietly dropped rather than refused: a list is pasted in one go, and
-        // failing the whole write over a repeat would make the caller diff it
-        // by hand.
-        if (!normalised.contains(upper)) normalised.add(upper);
-      }
+      final normalised = _normaliseGenes(session, genes);
       project.genes = normalised;
       await Project.db.updateRow(session, project);
       session.log(
@@ -436,17 +684,18 @@ class ProjectService {
   ///
   /// The caller is responsible for the access check.
   ///
-  /// \throws [ArgumentException] if nothing on this server is deleted
-  ///   automatically.
+  /// \throws [ArgumentException] if this project is not deleted
+  ///   automatically — nothing on this server is, or it belongs to a signed-in
+  ///   user on a public instance.
   Future<Project> extendProject(Session session, int id) async {
     final project = await getProject(session, id);
     final settings = await SettingsService().getSettings(session);
     if (project.keptIndefinitely) return project;
-    if (!projectsExpire(settings)) {
+    if (!projectExpires(project, settings)) {
       throw ArgumentException(
         message:
-            'Projects on this server are not deleted automatically, so there '
-            'is nothing to extend.',
+            'This project is not deleted automatically, so there is nothing '
+            'to extend.',
       );
     }
 
@@ -475,6 +724,9 @@ class ProjectService {
   /// project's call stops rescheduling itself when it fires, so there may be
   /// none left to find the new deadline.
   ///
+  /// A signed-in user's project on a public instance has no deadline to
+  /// restart, and clearing the flag leaves it kept; see [projectExpires].
+  ///
   /// The caller is responsible for the check — administrators only.
   Future<Project> setKeptIndefinitely(
     Session session,
@@ -484,28 +736,20 @@ class ProjectService {
     final project = await getProject(session, id);
     final settings = await SettingsService().getSettings(session);
     project.keptIndefinitely = kept;
-    if (!kept && projectsExpire(settings)) {
+    if (!kept && projectExpires(project, settings)) {
       project.expires = endOfDay(
         DateTime.now().toUtc().add(demoRetention(settings)),
       );
     }
     final updated = await Project.db.updateRow(session, project);
 
-    final folderName = project.folderName;
-    if (folderName != null && folderName.isNotEmpty) {
-      await session.serverpod.futureCalls.cancel(folderName);
-      if (!kept) {
-        await session.serverpod.futureCalls
-            .callWithDelay(
-              deletionDeadline(
-                updated,
-                settings,
-              ).difference(DateTime.now().toUtc()),
-              identifier: folderName,
-            )
-            .demoModeCleanup
-            .run(updated);
+    if (kept) {
+      final folderName = project.folderName;
+      if (folderName != null && folderName.isNotEmpty) {
+        await session.serverpod.futureCalls.cancel(folderName);
       }
+    } else {
+      await _rescheduleCleanup(session, updated, settings);
     }
     session.log(
       kept
@@ -713,28 +957,16 @@ class ProjectService {
         message: 'This project no longer exists.',
       );
     }
-    var genome = await Genome.db.findById(session, geneId);
-    if (genome == null) {
-      session.log("Gene not found with ID: $geneId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(
-        message: 'This gene is not on this project.',
-      );
-    }
+    await _requireGenome(session, geneId);
     project.genome = geneId;
     await Project.db.updateRow(session, project);
   }
 
   /// Sets the SNP for a project, or clears it when [snpId] is null.
   ///
-  /// Three checks the first version did not make, each now possible because an
-  /// SNP knows which genome it belongs to and whether its bytes have arrived:
-  ///
-  /// - **The builds must match.** VCF coordinates are build-specific, so an hg38
-  ///   file used against hs1 does not fail — it quietly designs the wrong MIPs.
-  /// - **The caller must be able to see it.** Without this, guessing an id would
-  ///   attach somebody else's private upload, and its contents could then be read
-  ///   back indirectly out of the design output.
-  /// - **It must be ready.** A failed or half-downloaded import has no usable VCF.
+  /// The set has to be one this project can use: visible to the caller, for the
+  /// project's genome build, and ready. See [_requireUsableSnp], which
+  /// [createConfiguredProject] shares.
   ///
   /// \param session The current session.
   /// \param id The ID of the project.
@@ -756,33 +988,7 @@ class ProjectService {
       return;
     }
 
-    var snp = await Snp.db.findById(session, snpId);
-    if (snp == null) {
-      session.log("Snp not found with ID: $snpId", level: LogLevel.error);
-      throw FlumipFileNotFoundException(
-        message: 'This SNP set no longer exists.',
-      );
-    }
-    await authz.requireSnpAccess(session, snp);
-
-    if (snp.genome != null && snp.genome != project.genome) {
-      session.log(
-        "Refused SNP $snpId for project $id: it is for genome ${snp.genome}, "
-        "the project uses ${project.genome}",
-        level: LogLevel.error,
-      );
-      throw ArgumentException(
-        message: 'This SNP set is for a different genome build.',
-      );
-    }
-
-    if (snp.status != SnpImportStatus.ready) {
-      session.log(
-        "Refused SNP $snpId for project $id: status is ${snp.status.name}",
-        level: LogLevel.error,
-      );
-      throw ArgumentException(message: 'This SNP set is not ready to use yet.');
-    }
+    await _requireUsableSnp(session, snpId, project.genome);
 
     project.snp = snpId;
     await Project.db.updateRow(session, project);
@@ -798,6 +1004,11 @@ class ProjectService {
   /// The user is looked up rather than trusted, so a bad id fails here with a
   /// readable message instead of as a foreign-key violation from the driver.
   ///
+  /// On a public instance the new owner also decides whether the project is
+  /// deleted (see [projectExpires]): handing it to a signed-in user keeps it,
+  /// handing it to a guest starts a fresh window if it had none. Handing it to
+  /// nobody leaves that as it was, since there is nobody to decide by.
+  ///
   /// No access check: reassignment is administrative and is gated at the
   /// endpoint, like every other rule in this codebase. Guarding here would also
   /// stop the unauthenticated future calls that legitimately write projects.
@@ -810,8 +1021,9 @@ class ProjectService {
       );
     }
 
+    FlumipUser? user;
     if (ownerId != null) {
-      final user = await FlumipUser.db.findById(session, ownerId);
+      user = await FlumipUser.db.findById(session, ownerId);
       if (user == null) {
         session.log("User not found with ID: $ownerId", level: LogLevel.error);
         throw FlumipFileNotFoundException(
@@ -821,7 +1033,44 @@ class ProjectService {
     }
 
     project.owner = ownerId;
-    await Project.db.updateRow(session, project);
+    Settings? restarted;
+    if (authz.isPublic && user != null) {
+      if (user.issuer != AuthService.guestIssuer) {
+        project.expires = null;
+      } else if (project.expires == null) {
+        restarted = await SettingsService().getSettings(session);
+        project.expires = endOfDay(
+          DateTime.now().toUtc().add(demoRetention(restarted)),
+        );
+      }
+    }
+    final updated = await Project.db.updateRow(session, project);
+    // A signed-in user's project stopped rescheduling its cleanup call the
+    // last time one fired, so there may be none left to find the new date.
+    if (restarted != null && !updated.keptIndefinitely) {
+      await _rescheduleCleanup(session, updated, restarted);
+    }
+  }
+
+  /// Replaces [project]'s cleanup call with one due at its deadline.
+  Future<void> _rescheduleCleanup(
+    Session session,
+    Project project,
+    Settings settings,
+  ) async {
+    final folderName = project.folderName;
+    if (folderName == null || folderName.isEmpty) return;
+    await session.serverpod.futureCalls.cancel(folderName);
+    await session.serverpod.futureCalls
+        .callWithDelay(
+          deletionDeadline(
+            project,
+            settings,
+          ).difference(DateTime.now().toUtc()),
+          identifier: folderName,
+        )
+        .demoModeCleanup
+        .run(project);
   }
 
   /// Moves a project into [department], or out of every department when null.

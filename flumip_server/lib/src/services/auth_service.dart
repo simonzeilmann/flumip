@@ -249,11 +249,16 @@ class AuthService {
 
     var email = claims.email ?? '';
     var displayName = claims.name ?? '';
+    // Travels with the address it describes: an address read from userinfo is
+    // vouched for (or not) by userinfo, never by a claim about some other
+    // address in the ID token.
+    var emailVerified = claims.emailVerified;
     if (email.isEmpty) {
       // Not every provider puts email in the ID token even when the scope was
       // granted, so fall back to userinfo before giving up.
       final info = await _fetchUserinfo(session, discovery, tokens.accessToken);
       email = (info?['email'] as String?)?.trim() ?? '';
+      emailVerified = booleanClaim(info?['email_verified']);
       displayName = displayName.isNotEmpty
           ? displayName
           : ((info?['name'] ?? info?['preferred_username']) as String? ?? '');
@@ -268,6 +273,21 @@ class AuthService {
 
     email = email.toLowerCase();
 
+    // An administrator's address with no verdict in the ID token: ask
+    // userinfo before withholding the admin scope, since some providers put
+    // `email_verified` only there. Only for an address on the admin list —
+    // nobody else's sign-in depends on the answer — and only when userinfo
+    // describes the same address.
+    if (emailVerified == null &&
+        config.adminRequiresVerifiedEmail &&
+        config.isAdminEmail(email)) {
+      final info = await _fetchUserinfo(session, discovery, tokens.accessToken);
+      final infoEmail = (info?['email'] as String?)?.trim().toLowerCase();
+      if (infoEmail == email) {
+        emailVerified = booleanClaim(info?['email_verified']);
+      }
+    }
+
     // ⚠️ OpenID Connect Core §5.7: `email` is not guaranteed unique and is not
     // guaranteed verified. Identity here is keyed on `iss` + `sub`, which is
     // correct — but **authorization** is keyed on the address: the domain
@@ -279,8 +299,9 @@ class AuthService {
     // Explicit `false` is refused. **Absent is not**: `email_verified` is
     // optional, plenty of providers omit it entirely, and refusing those would
     // lock out installs that are working today. Absent means "the provider did
-    // not say", and is logged so that it is at least visible.
-    if (claims.emailVerified == false) {
+    // not say", and is logged so that it is at least visible. It does **not**
+    // earn the admin scope, though: see `isAdmin` below.
+    if (emailVerified == false) {
       session.log(
         'Refused sign-in for $email: the identity provider reports the address '
         'as unverified.',
@@ -291,7 +312,7 @@ class AuthService {
         'server will not sign you in with it.',
       );
     }
-    if (claims.emailVerified == null &&
+    if (emailVerified == null &&
         (config.adminEmails.isNotEmpty || config.allowedDomains.isNotEmpty)) {
       session.log(
         'The identity provider sent no "email_verified" claim for $email, and '
@@ -337,6 +358,20 @@ class AuthService {
       }
     }
 
+    // ⚠️ The admin scope needs a *verified* address — absent is not enough,
+    // unlike the sign-in itself above. See `AuthConfig.grantsAdmin`.
+    final isAdmin = config.grantsAdmin(email, emailVerified: emailVerified);
+    if (!isAdmin && config.isAdminEmail(email)) {
+      session.log(
+        'Signed in $email without the administrator scope, although the '
+        'address is on the admin list: the identity provider did not report it '
+        'as verified. Mark the address verified at the provider, or — for a '
+        'provider that never sends "email_verified" — set '
+        '${AuthEnv.adminRequireVerifiedEmail}=false.',
+        level: LogLevel.warning,
+      );
+    }
+
     final user = await _upsertUser(
       session,
       issuer: claims.issuer,
@@ -354,7 +389,7 @@ class AuthService {
         userId: user.id!,
         cookieHash: AuthTokens.sha256Hex(cookieValue),
         email: email,
-        isAdmin: config.isAdminEmail(email),
+        isAdmin: isAdmin,
         // Null rather than an empty list, matching FlumipUser: "not collected"
         // and "collected, and they are in nothing" are different facts, and
         // only the first should look like the feature being off.

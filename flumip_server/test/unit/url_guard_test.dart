@@ -332,4 +332,86 @@ void main() {
       );
     });
   });
+
+  group('IP literals in disguise', () {
+    // ⚠️ All of these are 127.0.0.1 to `inet_aton` and to a browser. Whether
+    // the platform resolver agrees is not something to rely on, so the guard
+    // refuses every spelling but the canonical one before any lookup.
+    for (final host in [
+      '2130706433',
+      '0x7f000001',
+      '0x7f.1',
+      '0177.0.0.1',
+      '127.1',
+      '127.0.0.1.',
+      '017700000001',
+      '127.000.000.001',
+      '1.2.3.256',
+      'example.123',
+    ]) {
+      test('http://$host/ is refused', () {
+        expect(reject('http://$host/x.vcf.gz'), isNotNull);
+      });
+    }
+
+    test('a canonical public literal is accepted', () {
+      expect(reject('http://93.184.216.34/x.vcf.gz'), isNull);
+    });
+
+    test('a name that merely looks hexadecimal is still a name', () {
+      expect(reject('https://deadbeef.cafe/x.vcf.gz'), isNull);
+      expect(reject('https://0x7f.example/x.vcf.gz'), isNull);
+    });
+  }, tags: ['unit']);
+
+  group('more IPv6 ranges', () {
+    for (final address in [
+      '::127.0.0.1', // IPv4-compatible, deprecated but sometimes still routed
+      '::a9fe:a9fe', // the same, for 169.254.169.254
+      '64:ff9b::7f00:1', // NAT64 of 127.0.0.1
+      '64:ff9b::a9fe:a9fe', // NAT64 of 169.254.169.254
+      '2002:7f00:1::1', // 6to4 via 127.0.0.1
+      '2002:a00:1::1', // 6to4 via 10.0.0.1
+      '2001::1', // Teredo
+      '2001:db8::1', // documentation
+      '100::1', // discard
+      'fec0::1', // site-local
+      'ff02::1', // multicast
+    ]) {
+      test('$address is refused', () {
+        expect(
+          reject(
+            'https://example.org/x.vcf.gz',
+            resolved: [InternetAddress(address)],
+          ),
+          isNotNull,
+        );
+      });
+    }
+
+    test('NAT64 of a public address is allowed', () {
+      // On an IPv6-only network with DNS64, every IPv4-only source looks like
+      // this; refusing it would break the feature there.
+      expect(
+        reject(
+          'https://example.org/x.vcf.gz',
+          resolved: [InternetAddress('64:ff9b::5db8:d822')],
+        ),
+        isNull,
+      );
+    });
+
+    test('documentation IPv4 ranges are refused', () {
+      for (final a in ['192.0.2.1', '198.51.100.1', '203.0.113.1']) {
+        expect(
+          reject(
+            'https://example.org/x.vcf.gz',
+            resolved: [InternetAddress(a)],
+          ),
+          isNotNull,
+          reason: a,
+        );
+      }
+    });
+  }, tags: ['unit']);
 }

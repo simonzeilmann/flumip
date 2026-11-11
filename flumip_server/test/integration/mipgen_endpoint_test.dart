@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flumip_server/src/generated/project_options.dart';
 import 'package:test/test.dart';
 
 import '../support/seed.dart';
@@ -23,7 +22,7 @@ void main() {
       final result = await endpoints.project.createProject(
         sessionBuilder,
         "int_test",
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(result.id, greaterThan(0));
     }, tags: ['integration']);

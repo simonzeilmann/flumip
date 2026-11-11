@@ -135,4 +135,20 @@ void main() {
       expect(singleClaimValue(payload('{}'), 'd'), isNull);
     });
   });
+
+  group('booleanClaim', () {
+    test('reads a JSON boolean, and the strings some providers send', () {
+      expect(booleanClaim(true), isTrue);
+      expect(booleanClaim(false), isFalse);
+      expect(booleanClaim('true'), isTrue);
+      expect(booleanClaim(' FALSE '), isFalse);
+    });
+
+    test('anything else is "the provider did not say"', () {
+      expect(booleanClaim(null), isNull);
+      expect(booleanClaim(1), isNull);
+      expect(booleanClaim('yes'), isNull);
+      expect(booleanClaim(const {'value': true}), isNull);
+    });
+  });
 }

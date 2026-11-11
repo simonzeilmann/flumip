@@ -35,6 +35,7 @@ import 'flumip_user.dart' as _ijkt6zbv;
 import 'flumip_user_dto.dart' as _im3lr0ct;
 import 'genome.dart' as _ik3s3pjn;
 import 'project.dart' as _ifiazq2p;
+import 'project_draft_dto.dart' as _i87lmv4r;
 import 'project_file_dto.dart' as _ip1wvjxo;
 import 'project_grant.dart' as _i45tws7n;
 import 'project_options.dart' as _i4kq7s26;
@@ -61,6 +62,7 @@ export 'flumip_user.dart';
 export 'flumip_user_dto.dart';
 export 'genome.dart';
 export 'project.dart';
+export 'project_draft_dto.dart';
 export 'project_file_dto.dart';
 export 'project_grant.dart';
 export 'project_options.dart';
@@ -1179,7 +1181,7 @@ class Protocol extends _is.DatabaseSerializationManager {
           columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
-          columnDefault: '168',
+          columnDefault: '48',
         ),
         _isp.ColumnDefinition(
           name: 'publicMode',
@@ -1193,7 +1195,7 @@ class Protocol extends _is.DatabaseSerializationManager {
           columnType: _isp.ColumnType.bigint,
           isNullable: false,
           dartType: 'int',
-          columnDefault: '30',
+          columnDefault: '14',
         ),
         _isp.ColumnDefinition(
           name: 'guestMaxProjects',
@@ -1201,6 +1203,27 @@ class Protocol extends _is.DatabaseSerializationManager {
           isNullable: false,
           dartType: 'int',
           columnDefault: '10',
+        ),
+        _isp.ColumnDefinition(
+          name: 'guestSnpMaxMegabytes',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '10',
+        ),
+        _isp.ColumnDefinition(
+          name: 'guestMaxSnps',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '3',
+        ),
+        _isp.ColumnDefinition(
+          name: 'guestSnpRetentionDays',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '7',
         ),
         _isp.ColumnDefinition(
           name: 'termsVersion',
@@ -1566,6 +1589,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'DateTime',
           columnDefault: 'now',
         ),
+        _isp.ColumnDefinition(
+          name: 'expires',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
       ],
       foreignKeys: [
         _isp.ForeignKeyDefinition(
@@ -1704,6 +1733,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ifiazq2p.Project) {
       return _ifiazq2p.Project.fromJson(data) as T;
     }
+    if (t == _i87lmv4r.ProjectDraftDto) {
+      return _i87lmv4r.ProjectDraftDto.fromJson(data) as T;
+    }
     if (t == _ip1wvjxo.ProjectFileDto) {
       return _ip1wvjxo.ProjectFileDto.fromJson(data) as T;
     }
@@ -1797,6 +1829,10 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_ifiazq2p.Project?>()) {
       return (data != null ? _ifiazq2p.Project.fromJson(data) : null) as T;
+    }
+    if (t == _is.getType<_i87lmv4r.ProjectDraftDto?>()) {
+      return (data != null ? _i87lmv4r.ProjectDraftDto.fromJson(data) : null)
+          as T;
     }
     if (t == _is.getType<_ip1wvjxo.ProjectFileDto?>()) {
       return (data != null ? _ip1wvjxo.ProjectFileDto.fromJson(data) : null)
@@ -1911,6 +1947,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _im3lr0ct.FlumipUserDto => 'FlumipUserDto',
       _ik3s3pjn.Genome => 'Genome',
       _ifiazq2p.Project => 'Project',
+      _i87lmv4r.ProjectDraftDto => 'ProjectDraftDto',
       _ip1wvjxo.ProjectFileDto => 'ProjectFileDto',
       _i45tws7n.ProjectGrant => 'ProjectGrant',
       _i4kq7s26.ProjectOptions => 'ProjectOptions',
@@ -1966,6 +2003,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'Genome';
       case _ifiazq2p.Project():
         return 'Project';
+      case _i87lmv4r.ProjectDraftDto():
+        return 'ProjectDraftDto';
       case _ip1wvjxo.ProjectFileDto():
         return 'ProjectFileDto';
       case _i45tws7n.ProjectGrant():
@@ -2046,6 +2085,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'Project') {
       return deserialize<_ifiazq2p.Project>(data['data']);
+    }
+    if (dataClassName == 'ProjectDraftDto') {
+      return deserialize<_i87lmv4r.ProjectDraftDto>(data['data']);
     }
     if (dataClassName == 'ProjectFileDto') {
       return deserialize<_ip1wvjxo.ProjectFileDto>(data['data']);

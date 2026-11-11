@@ -17,10 +17,13 @@ import '../auth/auth_controller.dart';
 /// server's answer and is shown as it is.
 ///
 /// Also null for a project an administrator has exempted
-/// ([Project.keptIndefinitely]): it has no date to show.
+/// ([Project.keptIndefinitely]), and on a public instance for one without a
+/// stored `expires`: only guests' projects are given one there, and a
+/// signed-in user's is kept (the server's `projectExpires`).
 DateTime? deletionDate(Project project, AuthConfigSnapshot config) {
   final retention = config.projectRetention;
   if (retention == null || project.keptIndefinitely) return null;
+  if (config.publicMode && project.expires == null) return null;
   final floor = endOfDay(project.created.add(retention));
   final expires = project.expires?.toUtc();
   return expires != null && expires.isAfter(floor) ? expires : floor;

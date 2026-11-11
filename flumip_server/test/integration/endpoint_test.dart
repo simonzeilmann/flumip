@@ -91,7 +91,7 @@ void main() {
       final project = await endpoints.project.createProject(
         sessionBuilder,
         'int_test',
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       expect(project.id, greaterThan(0));
       expect(
@@ -205,6 +205,31 @@ void main() {
         genome.id!,
         genome..description = 'x',
       );
+      // Through the endpoint too: nothing that names a file is the caller's
+      // to set (see GenomeService.updateGenome).
+      final before = await endpoints.genome.getGenome(
+        sessionBuilder,
+        genome.id!,
+      );
+      await endpoints.genome.updateGenome(
+        sessionBuilder,
+        genome.id!,
+        before.copyWith(
+          active: false,
+          path: '/tmp/elsewhere',
+          fastaPath: '/x;id;#',
+          refPath: '/etc/passwd',
+        ),
+      );
+      final after = await endpoints.genome.getGenome(
+        sessionBuilder,
+        genome.id!,
+      );
+      expect(after.active, isFalse);
+      expect(after.description, 'x');
+      expect(after.path, before.path);
+      expect(after.fastaPath, before.fastaPath);
+      expect(after.refPath, before.refPath);
     }, tags: ['integration']);
 
     // --- SnpEndpoint delegations -------------------------------------------

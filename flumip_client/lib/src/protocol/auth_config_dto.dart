@@ -30,6 +30,8 @@ abstract class AuthConfigDto
     String? privacyUrl,
     this.projectRetentionHours,
     this.maxProjectLifetimeHours,
+    this.guestSnpMaxBytes,
+    this.guestSnpRetentionDays,
   }) : enabled = enabled ?? false,
        buttonLabel = buttonLabel ?? 'Sign in with SSO',
        publicMode = publicMode ?? false,
@@ -46,6 +48,8 @@ abstract class AuthConfigDto
     String? privacyUrl,
     int? projectRetentionHours,
     int? maxProjectLifetimeHours,
+    int? guestSnpMaxBytes,
+    int? guestSnpRetentionDays,
   }) = _AuthConfigDtoImpl;
 
   factory AuthConfigDto.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -63,6 +67,8 @@ abstract class AuthConfigDto
       projectRetentionHours: jsonSerialization['projectRetentionHours'] as int?,
       maxProjectLifetimeHours:
           jsonSerialization['maxProjectLifetimeHours'] as int?,
+      guestSnpMaxBytes: jsonSerialization['guestSnpMaxBytes'] as int?,
+      guestSnpRetentionDays: jsonSerialization['guestSnpRetentionDays'] as int?,
     );
   }
 
@@ -86,6 +92,14 @@ abstract class AuthConfigDto
   /// when [projectRetentionHours] is.
   int? maxProjectLifetimeHours;
 
+  /// The largest file a guest may upload as part of an SNP set, in bytes, or
+  /// null when guests cannot add SNP sets (or this is not a public instance).
+  int? guestSnpMaxBytes;
+
+  /// How long a guest's SNP set is kept, in days. Null exactly when
+  /// [guestSnpMaxBytes] is.
+  int? guestSnpRetentionDays;
+
   /// Returns a shallow copy of this [AuthConfigDto]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -98,6 +112,8 @@ abstract class AuthConfigDto
     String? privacyUrl,
     int? projectRetentionHours,
     int? maxProjectLifetimeHours,
+    int? guestSnpMaxBytes,
+    int? guestSnpRetentionDays,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -113,6 +129,9 @@ abstract class AuthConfigDto
         'projectRetentionHours': projectRetentionHours,
       if (maxProjectLifetimeHours != null)
         'maxProjectLifetimeHours': maxProjectLifetimeHours,
+      if (guestSnpMaxBytes != null) 'guestSnpMaxBytes': guestSnpMaxBytes,
+      if (guestSnpRetentionDays != null)
+        'guestSnpRetentionDays': guestSnpRetentionDays,
     };
   }
 
@@ -130,6 +149,9 @@ abstract class AuthConfigDto
         'projectRetentionHours': projectRetentionHours,
       if (maxProjectLifetimeHours != null)
         'maxProjectLifetimeHours': maxProjectLifetimeHours,
+      if (guestSnpMaxBytes != null) 'guestSnpMaxBytes': guestSnpMaxBytes,
+      if (guestSnpRetentionDays != null)
+        'guestSnpRetentionDays': guestSnpRetentionDays,
     };
   }
 
@@ -151,6 +173,8 @@ class _AuthConfigDtoImpl extends AuthConfigDto {
     String? privacyUrl,
     int? projectRetentionHours,
     int? maxProjectLifetimeHours,
+    int? guestSnpMaxBytes,
+    int? guestSnpRetentionDays,
   }) : super._(
          enabled: enabled,
          buttonLabel: buttonLabel,
@@ -160,6 +184,8 @@ class _AuthConfigDtoImpl extends AuthConfigDto {
          privacyUrl: privacyUrl,
          projectRetentionHours: projectRetentionHours,
          maxProjectLifetimeHours: maxProjectLifetimeHours,
+         guestSnpMaxBytes: guestSnpMaxBytes,
+         guestSnpRetentionDays: guestSnpRetentionDays,
        );
 
   /// Returns a shallow copy of this [AuthConfigDto]
@@ -175,6 +201,8 @@ class _AuthConfigDtoImpl extends AuthConfigDto {
     String? privacyUrl,
     Object? projectRetentionHours = _Undefined,
     Object? maxProjectLifetimeHours = _Undefined,
+    Object? guestSnpMaxBytes = _Undefined,
+    Object? guestSnpRetentionDays = _Undefined,
   }) {
     return AuthConfigDto(
       enabled: enabled ?? this.enabled,
@@ -189,6 +217,12 @@ class _AuthConfigDtoImpl extends AuthConfigDto {
       maxProjectLifetimeHours: maxProjectLifetimeHours is int?
           ? maxProjectLifetimeHours
           : this.maxProjectLifetimeHours,
+      guestSnpMaxBytes: guestSnpMaxBytes is int?
+          ? guestSnpMaxBytes
+          : this.guestSnpMaxBytes,
+      guestSnpRetentionDays: guestSnpRetentionDays is int?
+          ? guestSnpRetentionDays
+          : this.guestSnpRetentionDays,
     );
   }
 }

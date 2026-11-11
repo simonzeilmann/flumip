@@ -40,6 +40,7 @@ class AuthController extends ChangeNotifier {
     required this._fetchSession,
     required this._navigate,
     this._acceptTerms,
+    this._logOut,
   });
 
   /// Builds the controller the running app uses.
@@ -68,10 +69,15 @@ class AuthController extends ChangeNotifier {
         privacyUrl: config.privacyUrl,
         projectRetention: _hours(config.projectRetentionHours),
         maxProjectLifetime: _hours(config.maxProjectLifetimeHours),
+        guestSnpMaxBytes: config.guestSnpMaxBytes,
+        guestSnpRetention: config.guestSnpRetentionDays == null
+            ? null
+            : Duration(days: config.guestSnpRetentionDays!),
       );
     },
     fetchSession: () => fetchSessionToken(siteUrl),
     acceptTerms: () => acceptAsGuest(siteUrl),
+    logOut: () => logOutOfSite(siteUrl),
   );
 
   static Duration? _hours(int? hours) =>
@@ -81,6 +87,7 @@ class AuthController extends ChangeNotifier {
   final Future<SessionTokenResponse?> Function() _fetchSession;
   final void Function(String url) _navigate;
   final Future<SessionTokenResponse> Function()? _acceptTerms;
+  final Future<void> Function()? _logOut;
 
   AuthState _state = AuthState.unknown;
   AuthState get state => _state;
@@ -208,14 +215,33 @@ class AuthController extends ChangeNotifier {
   /// chain ends by loading the app again.
   void signIn(String siteUrl) => _navigate('$siteUrl/auth/login');
 
-  /// Signs out.
+  /// Signs out: `POST /auth/logout`, then reloads the app.
   ///
-  /// Also a full-page navigation, so the server can clear the cookie — only it
-  /// can, since the cookie is `HttpOnly`.
-  void signOut(String siteUrl) {
+  /// Only the server can clear the cookie, since it is `HttpOnly`. It used to
+  /// be a plain navigation to `GET /auth/logout`, which meant any other site
+  /// could sign a visitor out with an image tag; the server now does it only
+  /// for a POST from the app's own origin. The reload afterwards is what makes
+  /// the app bootstrap into the signed-out state.
+  ///
+  /// ⚠️ If the POST fails, or there is no way to send one, this goes to
+  /// `GET /auth/logout` instead: a page with a single "Sign out" button. Simply
+  /// reloading would leave the cookie in place and sign the visitor straight
+  /// back in, which looks exactly like the button doing nothing.
+  Future<void> signOut(String siteUrl) async {
     _user = null;
     _authKeyProvider = null;
-    _navigate('$siteUrl/auth/logout');
+    final logOut = _logOut;
+    if (logOut == null) {
+      _navigate('$siteUrl/auth/logout');
+      return;
+    }
+    try {
+      await logOut();
+    } catch (_) {
+      _navigate('$siteUrl/auth/logout');
+      return;
+    }
+    _navigate('$siteUrl/');
   }
 
   void _set(AuthState state) {
@@ -236,6 +262,8 @@ class AuthConfigSnapshot {
     this.privacyUrl = '',
     this.projectRetention,
     this.maxProjectLifetime,
+    this.guestSnpMaxBytes,
+    this.guestSnpRetention,
   });
 
   final bool enabled;
@@ -254,6 +282,14 @@ class AuthConfigSnapshot {
   /// The furthest "Keep longer" goes, measured from creation. Null exactly when
   /// [projectRetention] is.
   final Duration? maxProjectLifetime;
+
+  /// The largest file a guest may upload as part of an SNP set, or null when
+  /// guests cannot add SNP sets.
+  final int? guestSnpMaxBytes;
+
+  /// How long a guest's SNP set is kept. Null exactly when [guestSnpMaxBytes]
+  /// is.
+  final Duration? guestSnpRetention;
 }
 
 /// `POST /auth/guest`: accepts the entry notice on a public instance.
@@ -274,6 +310,21 @@ Future<SessionTokenResponse> acceptAsGuest(String siteUrl) async {
   return SessionTokenResponse.fromJson(
     jsonDecode(response.body) as Map<String, dynamic>,
   );
+}
+
+/// `POST /auth/logout`: ends this browser's session and clears its cookie.
+///
+/// Same-origin, so the browser sends the cookie and the `Origin` the server
+/// checks, and stores the cleared cookie from the answer. The answer redirects
+/// to the app, which `package:http` follows; anything that ends in an error
+/// status is a failure.
+Future<void> logOutOfSite(String siteUrl) async {
+  final response = await http.post(Uri.parse('$siteUrl/auth/logout'));
+  if (response.statusCode >= 400) {
+    throw http.ClientException(
+      'Unexpected status ${response.statusCode} from /auth/logout',
+    );
+  }
 }
 
 String? _serverError(String body) {

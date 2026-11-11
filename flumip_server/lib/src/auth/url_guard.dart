@@ -19,14 +19,16 @@ import 'dart:io';
 /// makes every reserved range testable with a synthetic address, with no network
 /// and no DNS.
 ///
-/// ## What it does not catch
+/// ## DNS rebinding, and where it is closed
 ///
-/// ⚠️ **DNS rebinding.** There is a window between the caller's lookup and its
-/// connect, and an attacker who controls a DNS server can flip the answer inside
-/// it. Closing that needs the connection pinned to the validated address via
-/// `HttpClient.connectionFactory`. The practical mitigation meanwhile is
-/// [allowedHosts]: setting `Settings.snpSourceAllowedHosts` to the handful of
-/// real sources removes the whole class.
+/// ⚠️ Vetting a *name* is worth nothing on its own. A hostile DNS server can
+/// answer with a public address when this guard asks and with `127.0.0.1` or
+/// `169.254.169.254` a moment later when the HTTP client asks again. The guard
+/// therefore only ever vets *addresses*, and `HttpSnpDownloader` dials exactly
+/// the addresses it vetted (see `pinnedConnectionFactory` there) instead of
+/// letting `HttpClient` resolve the name a second time. Anything else that
+/// fetches a user-supplied URL must do the same, or this check is theatre.
+/// [allowedHosts] (`Settings.snpSourceAllowedHosts`) is defence in depth on top.
 String? snpSourceUrlRejection(
   Uri url, {
   required List<InternetAddress> resolved,
@@ -37,6 +39,16 @@ String? snpSourceUrlRejection(
   }
   if (!url.hasAuthority || url.host.isEmpty) {
     return 'This address has no host.';
+  }
+
+  // ⚠️ `http://2130706433/`, `http://0x7f.1/` and `http://0177.0.0.1/` are all
+  // 127.0.0.1 to a browser and to `inet_aton`, but not to [InternetAddress]'s
+  // literal parser. Whether they then resolve depends on the platform's
+  // resolver, which is not something a security check should depend on. A host
+  // whose last label is a number is an IPv4 address by the WHATWG URL rules, so
+  // it must be written the one canonical way or not at all.
+  if (_looksLikeIpv4(url.host) && !_isCanonicalIpv4(url.host)) {
+    return 'Write the IP address in the usual dotted form (like 192.0.2.1).';
   }
 
   // A `user:pass@` would be stored in `sourceVcfUrl` and rendered back in the
@@ -101,6 +113,33 @@ Future<List<InternetAddress>> resolveHost(String host) async {
   }
 }
 
+/// Whether [host] would be read as an IPv4 address by a WHATWG URL parser: its
+/// last label (ignoring one trailing dot) is decimal digits or `0x` hex.
+///
+/// That is the rule browsers use, and it is what decides whether `0x7f.1` is a
+/// name to look up or an address in disguise. A real domain never ends in a
+/// number, because no top-level domain is numeric.
+bool _looksLikeIpv4(String host) {
+  var h = host;
+  if (h.endsWith('.')) h = h.substring(0, h.length - 1);
+  final last = h.split('.').last.toLowerCase();
+  if (last.isEmpty) return false;
+  return RegExp(r'^[0-9]+$').hasMatch(last) ||
+      RegExp(r'^0x[0-9a-f]*$').hasMatch(last);
+}
+
+/// Whether [host] is a plain `a.b.c.d` with four decimal octets and no leading
+/// zeros — the only spelling every parser agrees on.
+bool _isCanonicalIpv4(String host) {
+  final parts = host.split('.');
+  if (parts.length != 4) return false;
+  for (final p in parts) {
+    if (!RegExp(r'^(0|[1-9][0-9]{0,2})$').hasMatch(p)) return false;
+    if (int.parse(p) > 255) return false;
+  }
+  return true;
+}
+
 /// Whether [host] is on the allowlist, either exactly or as a subdomain.
 ///
 /// Subdomain matching is on the label boundary — `evilftp.ncbi.nlm.nih.gov.attacker.com`
@@ -147,14 +186,45 @@ bool _isGlobalUnicast(InternetAddress address) {
     return _ipv4IsGlobal(bytes.sublist(12));
   }
 
-  // The unspecified address, `::`. Connecting to it means localhost.
-  if (bytes.every((b) => b == 0)) return false;
-  // `::1` — loopback. isLoopback covers it, belt and braces.
-  if (bytes.take(15).every((b) => b == 0) && bytes[15] == 1) return false;
+  // 64:ff9b::/96 and 64:ff9b:1::/48 — NAT64. The gateway translates these to
+  // the IPv4 address in the low 32 bits, so judge that address instead.
+  if (bytes[0] == 0x00 &&
+      bytes[1] == 0x64 &&
+      bytes[2] == 0xff &&
+      bytes[3] == 0x9b) {
+    return _ipv4IsGlobal(bytes.sublist(12));
+  }
+  // ::/8 — reserved. Holds `::` (connecting to it means localhost), `::1`, and
+  // the deprecated IPv4-compatible form `::a.b.c.d`, which some stacks still
+  // route to the embedded v4 address: `::127.0.0.1` would otherwise pass.
+  if (bytes[0] == 0) return false;
+  // 2002::/16 — 6to4, with the IPv4 relay address in bytes 2–5.
+  if (bytes[0] == 0x20 && bytes[1] == 0x02) {
+    return _ipv4IsGlobal(bytes.sublist(2, 6));
+  }
+  // 2001::/32 — Teredo, a tunnel whose far end is not this address at all.
+  if (bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0 && bytes[3] == 0) {
+    return false;
+  }
+  // 2001:db8::/32 — documentation only; never a real server.
+  if (bytes[0] == 0x20 &&
+      bytes[1] == 0x01 &&
+      bytes[2] == 0x0d &&
+      bytes[3] == 0xb8) {
+    return false;
+  }
+  // 100::/64 — the discard prefix.
+  if (bytes[0] == 0x01 && bytes.sublist(1, 8).every((b) => b == 0)) {
+    return false;
+  }
   // fc00::/7 — unique local addresses, the v6 equivalent of 10/8.
   if (bytes[0] & 0xfe == 0xfc) return false;
   // fe80::/10 — link-local. isLinkLocal covers it; kept for the same reason.
-  if (bytes[0] == 0xfe && (bytes[1] & 0xc0) == 0x80) return false;
+  // fec0::/10 — the deprecated site-local range, still routed inside some
+  // older networks. Together: fe80::/9.
+  if (bytes[0] == 0xfe && (bytes[1] & 0x80) == 0x80) return false;
+  // ff00::/8 — multicast. isMulticast covers it, belt and braces.
+  if (bytes[0] == 0xff) return false;
 
   return true;
 }
@@ -178,6 +248,10 @@ bool _ipv4IsGlobal(List<int> b) {
   if (a == 172 && second >= 16 && second <= 31) return false;
   // 192.0.0.0/24 — IETF protocol assignments.
   if (a == 192 && second == 0 && b[2] == 0) return false;
+  // 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 — documentation only.
+  if (a == 192 && second == 0 && b[2] == 2) return false;
+  if (a == 198 && second == 51 && b[2] == 100) return false;
+  if (a == 203 && second == 0 && b[2] == 113) return false;
   // 192.168.0.0/16 — private.
   if (a == 192 && second == 168) return false;
   // 198.18.0.0/15 — benchmarking.

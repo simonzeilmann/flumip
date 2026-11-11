@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flutter/material.dart';
 
+import '../access_controller.dart';
 import '../search/reveal.dart';
 import '../services.dart';
+import '../snp/add_custom_snp_dialog.dart';
 import '../snp/snp_section.dart';
 import '../ui/layout.dart';
 import 'genome_controller.dart';
@@ -22,7 +24,7 @@ import 'genome_rail.dart';
 /// file is layout plus the two things that genuinely need a `BuildContext`: the
 /// confirm dialog and the snack bars.
 class GenomeTab extends StatefulWidget {
-  const GenomeTab({super.key, this.controller, this.reveals});
+  const GenomeTab({super.key, this.controller, this.reveals, this.access});
 
   /// The controller to use, or null to build one from the app-wide client.
   ///
@@ -37,6 +39,11 @@ class GenomeTab extends StatefulWidget {
   /// a search result in the app bar can reach a genome; see [GenomeReveals].
   final GenomeReveals? reveals;
 
+  /// Whether this caller administers the server, or null for the app-wide
+  /// answer. Decides whether removing an index and the Active switch are
+  /// offered.
+  final AccessController? access;
+
   @override
   State<GenomeTab> createState() => _GenomeTabState();
 }
@@ -46,12 +53,16 @@ class _GenomeTabState extends State<GenomeTab> {
   late final GenomeController _controller =
       widget.controller ?? createGenomeController();
   late final GenomeReveals _reveals = widget.reveals ?? genomeReveals;
+  late final AccessController _access = widget.access ?? accessController;
   StreamSubscription<String>? _messages;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onChanged);
+    // The answer arrives after the first frame, and again whenever somebody
+    // signs in or out.
+    _access.addListener(_onChanged);
     _messages = _controller.messages.listen(_say);
     // `TabBarView` builds all three tabs eagerly, so this is listening from the
     // start and a request made from another tab simply waits to be taken.
@@ -66,6 +77,7 @@ class _GenomeTabState extends State<GenomeTab> {
   void dispose() {
     _messages?.cancel();
     _reveals.removeListener(_onReveal);
+    _access.removeListener(_onChanged);
     _controller.removeListener(_onChanged);
     if (_ownsController) _controller.dispose();
     super.dispose();
@@ -163,13 +175,32 @@ class _GenomeTabState extends State<GenomeTab> {
     );
   }
 
-  /// A guest on a public instance: browses the library, manages none of it.
+  /// A guest on a public instance: browses the library, manages none of it,
+  /// and may upload small SNP sets of their own if [_guestSnpLimits] allows.
   bool get _isGuest => authController.user?.isGuest ?? false;
+
+  /// What a guest may upload, or null when they cannot add SNP sets (or this
+  /// is not a guest).
+  GuestSnpLimits? get _guestSnpLimits {
+    final config = authController.config;
+    final maxBytes = config.guestSnpMaxBytes;
+    final retention = config.guestSnpRetention;
+    if (!_isGuest || maxBytes == null || retention == null) return null;
+    return GuestSnpLimits(maxBytes: maxBytes, retention: retention);
+  }
 
   Widget _detail(Genome genome, {VoidCallback? onBack}) => GenomeDetailPane(
     genome: genome,
-    snpSection: SnpSection(genome: genome, canAdd: !_isGuest),
+    snpSection: SnpSection(
+      genome: genome,
+      canAdd: !_isGuest || _guestSnpLimits != null,
+      guestLimits: _guestSnpLimits,
+    ),
     canManage: !_isGuest,
+    // ⚠️ `mayAdminister`, not `isAdmin`: an install without sign-in has no
+    // administrators and refuses nobody, and `isAdmin` alone would take these
+    // two away from everyone on it.
+    canAdminister: _access.mayAdminister,
     onDeleteIndex: _confirmDeleteIndex,
     onIndexGenome: _controller.indexGenome,
     onToggleGenomeActive: _controller.toggleActive,

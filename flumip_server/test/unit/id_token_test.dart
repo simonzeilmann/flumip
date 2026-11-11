@@ -359,5 +359,22 @@ void main() {
       // explicit false is refused, an absent claim is allowed and logged.
       expect(IdTokenClaims.parse(unsignedJwt(claims())).emailVerified, isNull);
     });
+
+    test('a string is understood rather than failing the sign-in', () {
+      // A bare `as bool?` used to throw on these, which surfaced as "the
+      // identity provider returned a token this server could not accept".
+      expect(
+        IdTokenClaims.parse(
+          unsignedJwt(claims(extra: {'email_verified': 'true'})),
+        ).emailVerified,
+        isTrue,
+      );
+      expect(
+        IdTokenClaims.parse(
+          unsignedJwt(claims(extra: {'email_verified': 1})),
+        ).emailVerified,
+        isNull,
+      );
+    });
   });
 }

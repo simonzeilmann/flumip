@@ -52,6 +52,50 @@ class ProcessTimeoutException implements Exception {
   }
 }
 
+/// Where programs are looked for when the server itself was started without a
+/// `PATH`, which systemd units and `env -i` can both do.
+const fallbackPath =
+    '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+
+/// The environment variables a child process is given, out of [parent].
+///
+/// ⚠️ **A whitelist, and a security boundary.** Children used to inherit the
+/// server's environment whole, and the server's environment is where its
+/// secrets live: the database password, the OIDC client secret, the service
+/// secrets Serverpod reads from `SERVERPOD_*`, whatever `EnvironmentFile=`
+/// loaded. mipgen runs bwa, samtools, tabix and trf through `/bin/sh` with
+/// arguments built by string concatenation (see `mipgenPrefixOf`), so a single
+/// slip anywhere in that chain would have been a shell with every one of them
+/// a `printenv` away. A child that never had them cannot leak them.
+///
+/// What is kept, and why each is needed:
+///
+/// - `PATH` — mipgen finds `bwa`, `samtools` and `tabix` by bare name, the
+///   TRF wrapper finds `trf` the same way, and `pgrep`, `ps`, `kill` and
+///   `bwa` are started by name from here. [fallbackPath] when the server has
+///   none, rather than no `PATH` at all, which would make all of those
+///   "not installed".
+/// - `HOME`, `USER`, `LOGNAME` — some tools read a dotfile or log a user name,
+///   and a missing `HOME` makes a few of them refuse to start.
+/// - `LANG`, `LANGUAGE`, `LC_*`, `TZ` — so tools format and sort as the server
+///   does; the exon script's `awk` in particular.
+/// - `TMPDIR` — where scratch files go when the operator has moved them.
+///
+/// Nothing else, including anything a tool *might* read: a variable a tool
+/// genuinely needs belongs on this list with its reason, not passed through by
+/// default.
+Map<String, String> childEnvironment(Map<String, String> parent) {
+  const kept = {'PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'LANGUAGE'};
+  const keptToo = {'TZ', 'TMPDIR'};
+  final child = <String, String>{
+    for (final MapEntry(:key, :value) in parent.entries)
+      if (kept.contains(key) || keptToo.contains(key) || key.startsWith('LC_'))
+        key: value,
+  };
+  if ((child['PATH'] ?? '').isEmpty) child['PATH'] = fallbackPath;
+  return child;
+}
+
 /// Thin abstraction over `dart:io` process invocation.
 ///
 /// Services depend on this instead of calling [Process.run] / [Process.start]
@@ -248,6 +292,9 @@ class SystemProcessRunner implements ProcessRunner {
         arguments,
         workingDirectory: workingDirectory,
         runInShell: runInShell,
+        // Never the server's own; see [childEnvironment].
+        environment: childEnvironment(Platform.environment),
+        includeParentEnvironment: false,
       );
     } on ProcessException catch (e) {
       throw ToolUnavailableException(executable, e);

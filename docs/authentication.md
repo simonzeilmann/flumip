@@ -182,6 +182,7 @@ Settings tab, so nobody saves a value that silently does nothing.
 | `FLUMIP_OIDC_DEPARTMENT_CLAIM` | Department claim; see [authorization.md](authorization.md#departments) |
 | `FLUMIP_PUBLIC_URL` | Public URL |
 | `FLUMIP_AUTH_STRICT` | See "Why sign-in might not be enforced" |
+| `FLUMIP_OIDC_ADMIN_REQUIRE_VERIFIED_EMAIL` | `false` grants the admin list without a verified address; see [email_verified](#email_verified). Environment only |
 | `FLUMIP_PUBLIC_MODE` | "Public mode". Works in **both** directions; see [public-instance.md](public-instance.md) |
 
 A blank value counts as unset, so uncommenting a key and leaving it empty means
@@ -215,17 +216,27 @@ FLUMIP only refuses requests when **all three** of these hold:
 2. the issuer, client ID and client secret are all set, and
 3. the provider's discovery document has been fetched successfully.
 
-If sign-in is on but the configuration is incomplete or the provider cannot be
-reached, FLUMIP **stays reachable without signing in** and logs a warning on every
-refresh — and the Settings tab says so in an orange banner.
+If sign-in is on but the configuration is incomplete, or the provider cannot be
+reached **and nobody has ever signed in with it here**, FLUMIP **stays reachable
+without signing in** and logs a warning on every refresh. The Settings tab says
+so in an orange banner.
 
-That is deliberate. Enforcing a sign-in that cannot succeed locks everyone out
-permanently, including whoever needs to fix it. And it is not a security hole:
-turning the flag on requires the admin password in the first place.
+That is deliberate. Enforcing a sign-in that has never succeeded locks everyone
+out, including whoever needs to fix it. And it is not a security hole: turning
+the flag on requires the admin password in the first place.
 
-Once the provider *has* answered successfully, a later outage does **not** open
-the door again — FLUMIP keeps the cached discovery document and keeps enforcing,
-retrying every 30 seconds. A blip at your provider will not sign everyone out.
+Once anybody has signed in through that issuer, an outage no longer opens the
+door, **not even across a restart**. FLUMIP keeps enforcing and retries every 30
+seconds. People already signed in carry on, because sessions live in the
+database; new sign-ins work again as soon as the provider answers. Changing the
+issuer starts this over: the new one has to answer once before it is enforced.
+
+FLUMIP also never opens because it could not read its own settings. A failed
+read keeps the last configuration. If the settings have not been read at all
+since the server started, requests are refused until they can be; to run
+regardless, set both `FLUMIP_AUTH_ENABLED=false` and `FLUMIP_PUBLIC_MODE=false`.
+A brand-new install answers "not signed in" for a moment at its very first
+start, before its database tables exist. That is expected.
 
 If you would rather fail closed, set `FLUMIP_AUTH_STRICT=true`. Requests are then
 refused whenever sign-in is on, configuration or no configuration. Make sure you
@@ -309,6 +320,13 @@ nor guaranteed verified, so:
 - **An absent claim is accepted**, because it is optional and plenty of
   providers omit it. It is logged when this install decides access by address,
   which is the only case where it matters.
+- **The administrator list needs `email_verified: true`.** An absent claim still
+  signs you in, but not as an administrator. When the claim is missing from the
+  ID token, FLUMIP asks the userinfo endpoint before deciding. If your provider
+  never sends it (Microsoft Entra ID does not), set
+  `FLUMIP_OIDC_ADMIN_REQUIRE_VERIFIED_EMAIL=false` in the environment, and only
+  if your provider does not let users choose their own address. It can be set in
+  the environment only, never in Settings.
 
 Identity itself is keyed on `iss` + `sub`, never on the address — so a changed
 email moves with the account rather than creating a second one.
@@ -321,20 +339,29 @@ In order of preference:
    Settings tab with no password at all; untick "Require sign-in" there. This is
    the normal route, and it is why the admin list is worth keeping correct.
    Saving with sign-in switched off ends **every** session, yours included, so
-   expect to be signed out the moment you save.
+   expect to be signed out the moment you save. An administrator whose provider
+   does not send `email_verified` signs in without admin rights; see
+   [email_verified](#email_verified).
 2. **The settings password — but only if sign-in is not being enforced.**
    ⚠️ Once sign-in *is* enforced, the password is refused, deliberately: a user
    who knows the shared password must not be able to reach an administrator's
    configuration with it.
 
-   In practice this still covers the most common mistake. If the provider has
-   **never** answered — a typo in the issuer, a firewall, a client ID that does
-   not exist — FLUMIP does not enforce at all (it fails open rather than locking
-   you out), so the password works and you can undo the change from the UI.
+   In practice this still covers the most common mistake. If nobody has ever
+   signed in through the configured issuer — a typo in the issuer, a firewall, a
+   client ID that does not exist — FLUMIP does not enforce at all (it fails open
+   rather than locking you out), so the password works and you can undo the
+   change from the UI.
 
    What it does not cover is a provider that worked and then broke: FLUMIP keeps
-   enforcing from its cached configuration, nobody can sign in, and the password
+   enforcing, even after a restart, nobody new can sign in, and the password
    will not help. Use option 3 or 4.
+
+   The password is also rate-limited. After ten wrong attempts each further
+   check waits its turn, up to 30 seconds apart, and a request whose turn is
+   more than a minute away is turned away with "wait N seconds and try again".
+   It recovers by itself, completely after 15 quiet minutes. Signing in as an
+   administrator is never slowed.
 3. **The environment override.** Set `FLUMIP_AUTH_ENABLED=false` in
    `/etc/flumip/flumip.env` and `sudo systemctl restart flumip`. With
    Docker, set it in `.env` and run `docker compose up -d`.

@@ -17,10 +17,42 @@ ExecStart=/opt/pocket-id/pocket-id
 # its defaults, which listen on every interface. A missing file has to stop it.
 EnvironmentFile=/etc/flumip/pocket-id.env
 Restart=always
+
+# --- Sandbox -----------------------------------------------------------------
+# Pocket ID is a single Go binary. It listens on 127.0.0.1, keeps everything in
+# its StateDirectory (which ProtectSystem=strict leaves writable, being the
+# unit's own), and talks out only over IP (email, avatars, the GeoLite database
+# when configured). It runs no other program.
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
+PrivateDevices=yes
+# New files for its own user only: its database holds the signing keys.
+UMask=0077
+# No capability at all: it binds port 1411 and owns its files.
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictSUIDSGID=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+# Other users' processes hidden; it looks at none.
+ProtectProc=invisible
+# Netlink for Go's interface listing.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RemoveIPC=yes
+# Go needs neither writable code nor any unusual system call.
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target

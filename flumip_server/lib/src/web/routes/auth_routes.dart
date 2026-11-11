@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
+import 'package:flumip_server/src/services/password_hash.dart';
+import 'package:flumip_server/src/web/origin_guard.dart';
 import 'package:serverpod/serverpod.dart';
 
 /// Name of the session cookie.
@@ -11,6 +13,12 @@ import 'package:serverpod/serverpod.dart';
 /// which matters when FLUMIP shares a domain with another application behind the
 /// same reverse proxy.
 const authCookieName = 'flumip_auth';
+
+/// Name of the cookie binding a sign-in to the browser that started it.
+///
+/// Holds the flow's `state`, scoped to `/auth/callback` and living only as long
+/// as the flow does. See [AuthLoginRoute] for why it exists.
+const authFlowCookieName = 'flumip_auth_flow';
 
 /// The routes that make up the sign-in flow, run by the *web* server.
 ///
@@ -30,26 +38,39 @@ const authCookieName = 'flumip_auth';
 /// `CookieHeader.parse` throws on, for example, duplicate cookie names — which
 /// can be caused by an unrelated cookie set elsewhere on the domain. That must
 /// not break signing in, so parse failures are treated as "no cookie".
-String? _readAuthCookie(Request request) {
+String? _readAuthCookie(Request request) =>
+    _readCookie(request, authCookieName);
+
+String? _readCookie(Request request, String name) {
   final header = Headers.cookie.getValueFrom(
     request.headers,
     orElse: (_) => null,
   );
-  return header?.getCookie(authCookieName)?.value;
+  return header?.getCookie(name)?.value;
 }
 
 Headers _cookieHeaders({
   required String value,
   required bool secure,
   required Duration maxAge,
+  String name = authCookieName,
+  String path = '/',
 }) => Headers.build(
-  (h) => h.setCookie = _setCookie(value: value, secure: secure, maxAge: maxAge),
+  (h) => h.setCookie = _setCookie(
+    value: value,
+    secure: secure,
+    maxAge: maxAge,
+    name: name,
+    path: path,
+  ),
 );
 
 SetCookieHeader _setCookie({
   required String value,
   required bool secure,
   required Duration maxAge,
+  String name = authCookieName,
+  String path = '/',
 }) {
   // Relic 2 split the type: `SetCookie` is one cookie, `SetCookieHeader` is the
   // list of them the response header carries — one `Set-Cookie` line each. This
@@ -59,9 +80,9 @@ SetCookieHeader _setCookie({
   // which is what it always was — `Uri.parse('/')` was a round trip for nothing.
   return SetCookieHeader([
     SetCookie(
-      name: authCookieName,
+      name: name,
       value: value,
-      path: '/',
+      path: path,
       httpOnly: true,
       // Never readable from JavaScript, so an XSS in the app cannot exfiltrate
       // the durable credential.
@@ -76,6 +97,17 @@ SetCookieHeader _setCookie({
 }
 
 /// `GET /auth/login` — starts the flow and redirects to the provider.
+///
+/// Also sets [authFlowCookieName] to the flow's `state`, which
+/// [AuthCallbackRoute] insists on seeing again. Without it a flow was bound to
+/// nothing but its URL: somebody could start a sign-in in their own browser,
+/// stop at the redirect back, and send the callback link to a colleague, who
+/// would then be signed in **as them** — and whatever that colleague uploaded
+/// would land in the other person's account ("login CSRF"). With it, a callback
+/// only completes in the browser that started the flow.
+///
+/// A GET, and safe as one: it signs nobody in and changes nothing but a
+/// short-lived row and cookie.
 class AuthLoginRoute extends Route {
   AuthLoginRoute() : super(methods: {Method.get});
 
@@ -88,7 +120,19 @@ class AuthLoginRoute extends Route {
 
     try {
       final url = await authService.beginFlow(session);
-      return Response.seeOther(url);
+      final state = url.queryParameters['state'];
+      if (state == null || state.isEmpty) return Response.seeOther(url);
+      return Response.seeOther(
+        url,
+        headers: _cookieHeaders(
+          name: authFlowCookieName,
+          value: state,
+          // Scoped to the callback, so it is not sent anywhere else.
+          path: '/auth/callback',
+          secure: sl<AuthRuntime>().config.cookieSecure,
+          maxAge: AuthService.flowLifetime,
+        ),
+      );
     } on AuthFlowException catch (e) {
       session.log(
         'Could not start a sign-in: ${e.message}',
@@ -143,6 +187,23 @@ class AuthCallbackRoute extends Route {
     }
 
     final config = sl<AuthRuntime>().config;
+
+    // See AuthLoginRoute. Checked before the flow is looked up, so a callback
+    // opened in the wrong browser does not use up the flow it names.
+    if (!flowCookieMatches(_readCookie(request, authFlowCookieName), state)) {
+      session.log(
+        'Refused a sign-in callback that this browser did not start.',
+        level: LogLevel.warning,
+      );
+      return Response.forbidden(
+        body: Body.fromString(
+          'This sign-in was not started in this browser, or it took too long. '
+          'Start again from the sign-in button.',
+          mimeType: MimeType.plainText,
+        ),
+      );
+    }
+
     try {
       final result = await sl<AuthService>().completeCallback(
         session,
@@ -226,11 +287,20 @@ class AuthSessionRoute extends Route {
 /// A POST, never a GET: `SameSite=Lax` sends the cookie on a cross-site
 /// top-level GET, so a link on another site could otherwise accept the terms on
 /// a visitor's behalf.
+///
+/// ⚠️ Being a POST is not enough on its own. A form on another site can still
+/// POST here as a top-level navigation, and the browser stores the `Set-Cookie`
+/// of the answer — so the terms would be accepted and a guest session forced
+/// onto the visitor without them ever seeing the notice. Hence the origin check:
+/// only the app's own page (or a client that is no browser at all) gets in.
 class AuthGuestRoute extends Route {
   AuthGuestRoute() : super(methods: {Method.post});
 
   @override
   Future<Result> handleCall(Session session, Request request) async {
+    final refusal = OriginGuard.current.refuseUnlessSameOrigin(request);
+    if (refusal != null) return refusal;
+
     final auth = sl<AuthService>();
     final CompletedSignIn accepted;
     try {
@@ -294,15 +364,31 @@ Response _tokenResponse(IssuedApiToken issued, {String? renewCookie}) {
   );
 }
 
-/// `GET /auth/logout` — revokes the session, clears the cookie, returns to the app.
+/// `/auth/logout` — revokes the session, clears the cookie, returns to the app.
 ///
-/// A GET because it is reached by a plain navigation from the app; it is
-/// idempotent and carries no side effect beyond ending the caller's own session.
+/// `POST` does the work. It used to be a GET, reached by a plain navigation —
+/// which meant any page on any site could sign a visitor out with an
+/// `<img src=".../auth/logout">`, since `SameSite=Lax` still sends the cookie
+/// on a cross-site GET. A POST additionally has to come from the app's own
+/// origin, so a cross-site form cannot do it either.
+///
+/// The app posts with `fetch` and then reloads itself. The answer is a redirect
+/// to the app either way, so a plain HTML form posting here works too.
+///
+/// `GET` answers with a page holding a single "Sign out" button that posts back
+/// here. That keeps an old app bundle (one still cached by the service worker)
+/// and a bookmarked link working, while needing a real click — which cannot be
+/// faked from another site, since the page refuses to be framed.
 class AuthLogoutRoute extends Route {
-  AuthLogoutRoute() : super(methods: {Method.get});
+  AuthLogoutRoute() : super(methods: {Method.get, Method.post});
 
   @override
   Future<Result> handleCall(Session session, Request request) async {
+    if (request.method == Method.get) return _confirmationPage();
+
+    final refusal = OriginGuard.current.refuseUnlessSameOrigin(request);
+    if (refusal != null) return refusal;
+
     final cookie = _readAuthCookie(request);
     if (cookie != null) {
       await sl<AuthService>().revokeByCookie(session, cookie);
@@ -318,4 +404,31 @@ class AuthLogoutRoute extends Route {
       ),
     );
   }
+
+  static Response _confirmationPage() => Response.ok(
+    body: Body.fromString(
+      '<!doctype html>\n'
+      '<html lang="en"><head><meta charset="utf-8">'
+      '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      '<title>Sign out of FLUMIP</title></head>'
+      '<body style="font-family: sans-serif; margin: 3rem auto; '
+      'max-width: 30rem; padding: 0 1rem;">'
+      '<h1>Sign out of FLUMIP?</h1>'
+      '<form method="post" action="/auth/logout">'
+      '<button type="submit">Sign out</button> '
+      '<a href="/">Back to FLUMIP</a>'
+      '</form></body></html>\n',
+      mimeType: MimeType.html,
+    ),
+    headers: Headers.build((h) => h['cache-control'] = ['no-store']),
+  );
+}
+
+/// Whether the sign-in flow cookie [cookie] belongs to the callback's [state].
+///
+/// Compared in constant time: the cookie is a secret of the same kind as the
+/// state itself.
+bool flowCookieMatches(String? cookie, String state) {
+  if (cookie == null || cookie.isEmpty || state.isEmpty) return false;
+  return constantTimeEquals(utf8.encode(cookie), utf8.encode(state));
 }

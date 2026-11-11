@@ -218,11 +218,13 @@ abstract class Project
 
   /// When the project will be deleted automatically, or null if it will not.
   ///
-  /// Stamped at creation while demo mode or public mode is on, and pushed back
-  /// by `ProjectEndpoint.extendProject` up to `Settings.maxProjectLifetimeDays`
-  /// after [created]. `DemoModeCleanupFutureCall` reads it when it fires; null
-  /// on a project from before this existed, which falls back to [created]
-  /// plus the retention window as it always did.
+  /// Stamped at creation in demo mode, and on a public instance when a guest
+  /// creates the project; pushed back by `ProjectEndpoint.extendProject` up to
+  /// `Settings.maxProjectLifetimeDays` after [created]. On a public instance
+  /// null means kept: it is what a signed-in user's project has, and
+  /// `setOwner` clears or stamps it when the owner changes (`projectExpires`).
+  /// In demo mode null is a project from before this existed, which falls
+  /// back to [created] plus the retention window as it always did.
   DateTime? expires;
 
   /// Exempt from automatic deletion, by an administrator's decision.
@@ -709,11 +711,13 @@ class ProjectTable extends _is.Table<int?> {
 
   /// When the project will be deleted automatically, or null if it will not.
   ///
-  /// Stamped at creation while demo mode or public mode is on, and pushed back
-  /// by `ProjectEndpoint.extendProject` up to `Settings.maxProjectLifetimeDays`
-  /// after [created]. `DemoModeCleanupFutureCall` reads it when it fires; null
-  /// on a project from before this existed, which falls back to [created]
-  /// plus the retention window as it always did.
+  /// Stamped at creation in demo mode, and on a public instance when a guest
+  /// creates the project; pushed back by `ProjectEndpoint.extendProject` up to
+  /// `Settings.maxProjectLifetimeDays` after [created]. On a public instance
+  /// null means kept: it is what a signed-in user's project has, and
+  /// `setOwner` clears or stamps it when the owner changes (`projectExpires`).
+  /// In demo mode null is a project from before this existed, which falls
+  /// back to [created] plus the retention window as it always did.
   late final _is.ColumnDateTime expires;
 
   /// Exempt from automatic deletion, by an administrator's decision.

@@ -177,6 +177,21 @@ predates this rule, so there was no existing work to keep visible.
 
 With sign-in off, as everywhere else, everybody can see and change everything.
 
+## The genome library
+
+Genomes belong to the server, not to anybody, and everyone designs against the
+same ones. So the rule is about what a change does to everybody else:
+
+- **Any signed-in user can add to the library**: scan for genomes that have been
+  put on the server, re-check the SNP sets, and build the index a genome needs.
+- **Only administrators can take from it**: delete a genome's index, or switch a
+  genome off (or back on). Deleting an index stops every design on that genome
+  until it has been rebuilt, which takes hours.
+
+Everyone else sees the Active switch but cannot move it, and is not offered
+**Delete index**. With sign-in off there are no administrators and nothing is
+restricted.
+
 ## Administrators
 
 Administrator is not a stored role — it is recomputed from the admin email list

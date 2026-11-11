@@ -182,10 +182,10 @@ void main() {
       expect(demoRetention(settings), const Duration(hours: 24 * 365));
     }, tags: ['unit']);
 
-    test('the default window is a week', () async {
+    test('the default window is two days', () async {
       final settings = await SettingsService().getSettings(session);
-      expect(settings.demoModeRetentionHours, 168);
-      expect(demoRetention(settings), const Duration(days: 7));
+      expect(settings.demoModeRetentionHours, 48);
+      expect(demoRetention(settings), const Duration(days: 2));
     }, tags: ['unit']);
 
     test('the payload is non-nullable now the call is generated', () async {

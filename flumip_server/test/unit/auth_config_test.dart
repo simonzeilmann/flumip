@@ -524,4 +524,58 @@ void main() {
       expect(config.buttonLabel, 'Uni login');
     });
   });
+
+  group('grantsAdmin', () {
+    AuthConfig admins(Map<String, String> env) => AuthConfig.resolve(
+      settings: storedSettings(adminEmails: 'boss@uni.example'),
+      env: env,
+    );
+
+    test('needs the address on the list and verified', () {
+      final config = admins(const {});
+      expect(
+        config.grantsAdmin('boss@uni.example', emailVerified: true),
+        isTrue,
+      );
+      expect(
+        config.grantsAdmin('staff@uni.example', emailVerified: true),
+        isFalse,
+      );
+      expect(
+        config.grantsAdmin('boss@uni.example', emailVerified: false),
+        isFalse,
+      );
+    });
+
+    test('⚠️ absent counts as unverified', () {
+      // Unlike the sign-in gate, where absent is let through: being refused the
+      // admin scope still leaves an ordinary sign-in.
+      expect(
+        admins(const {}).grantsAdmin('boss@uni.example', emailVerified: null),
+        isFalse,
+      );
+    });
+
+    test('the environment can opt out, and nothing else can', () {
+      final config = admins(const {AuthEnv.adminRequireVerifiedEmail: 'false'});
+      expect(config.adminRequiresVerifiedEmail, isFalse);
+      expect(config.envOverrides, contains(AuthEnv.adminRequireVerifiedEmail));
+      expect(
+        config.grantsAdmin('boss@uni.example', emailVerified: null),
+        isTrue,
+      );
+      // Still only the listed addresses.
+      expect(
+        config.grantsAdmin('staff@uni.example', emailVerified: null),
+        isFalse,
+      );
+      // A value that is not a boolean keeps the safe default.
+      expect(
+        admins(const {
+          AuthEnv.adminRequireVerifiedEmail: 'maybe',
+        }).adminRequiresVerifiedEmail,
+        isTrue,
+      );
+    });
+  });
 }

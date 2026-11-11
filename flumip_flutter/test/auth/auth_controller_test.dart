@@ -25,10 +25,12 @@ void main() {
     SessionTokenResponse? session,
     Object? sessionError,
     int? sessionNullAfter,
+    Future<void> Function()? logOut,
   }) {
     var sessionCalls = 0;
     return AuthController(
       navigate: navigations.add,
+      logOut: logOut,
       fetchConfig: () async {
         if (configError != null) throw configError;
         return config;
@@ -171,19 +173,50 @@ void main() {
       expect(navigations, ['https://flumip.example/auth/login']);
     });
 
-    test('signOut goes to /auth/logout and drops the credential', () async {
+    test('signOut posts the logout, then reloads the app', () async {
+      final order = <String>[];
+      final controller = controllerFor(
+        config: const AuthConfigSnapshot(enabled: true, buttonLabel: 'x'),
+        session: anySession,
+        logOut: () async => order.add('logOut'),
+      );
+      await controller.bootstrap();
+
+      await controller.signOut('https://flumip.example');
+      // The POST has to have finished before the page goes away, or the
+      // navigation aborts it and the cookie survives.
+      expect(order, ['logOut']);
+      expect(navigations, ['https://flumip.example/']);
+      // Only the server can clear an HttpOnly cookie, but the in-memory bearer
+      // goes immediately.
+      expect(controller.authKeyProvider, isNull);
+      expect(controller.user, isNull);
+    });
+
+    test('a failed logout lands on the sign-out page, not back in', () async {
+      final controller = controllerFor(
+        config: const AuthConfigSnapshot(enabled: true, buttonLabel: 'x'),
+        session: anySession,
+        logOut: () async => throw Exception('offline'),
+      );
+      await controller.bootstrap();
+
+      await controller.signOut('https://flumip.example');
+      // Reloading would keep the cookie and sign the visitor straight back in.
+      expect(navigations, ['https://flumip.example/auth/logout']);
+      expect(controller.user, isNull);
+    });
+
+    test('with no way to post, signOut goes to the sign-out page', () async {
       final controller = controllerFor(
         config: const AuthConfigSnapshot(enabled: true, buttonLabel: 'x'),
         session: anySession,
       );
       await controller.bootstrap();
 
-      controller.signOut('https://flumip.example');
+      await controller.signOut('https://flumip.example');
       expect(navigations, ['https://flumip.example/auth/logout']);
-      // Only the server can clear an HttpOnly cookie, but the in-memory bearer
-      // goes immediately.
       expect(controller.authKeyProvider, isNull);
-      expect(controller.user, isNull);
     });
   });
 }

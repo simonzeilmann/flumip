@@ -4,6 +4,12 @@
 # download required reference files for selected genomes.
 # Supported genomes: hg18, hg19, hg38, hs1.
 #
+# Ownership, and why it is split: the service user may write only the data
+# (data/ and projects/). /opt/flumip itself and tools/ belong to root and
+# MIPGEN/ to you, writable by nobody else, because you and root run what is in
+# them later (git, make, this script), and a file the service could change there
+# would be a way from a bug in the server to your account.
+#
 # The script has two modes:
 #   * Interactive  - run with no selection arguments on a terminal and you will be
 #                    prompted to choose whether to download reference data, which
@@ -17,7 +23,7 @@
 #
 # Options:
 #   -download, --download        Download reference files for the selected genomes.
-#   --service-user USER          Service user to grant access (default: www-data).
+#   --service-user USER          Service user that writes the data (default: www-data).
 #   -i, --interactive            Force interactive prompts even if switches are given.
 #   -y, --yes, --non-interactive Never prompt; use defaults/switches (for automation).
 #   -h, --help                   Show this help and exit.
@@ -44,6 +50,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The pin lives in mipgen.pin, shared with the Docker image's MIPGEN build.
 # shellcheck source=mipgen.pin
 . "$SCRIPT_DIR/mipgen.pin"
+
+# The hash bigGenePredToGenePred has to have. ucsc-tools.pin explains why it is
+# pinned and what to do when UCSC replaces the file. BIGGENEPRED_SHA256 in the
+# environment overrides the pin for one run, so it is saved before the pin is
+# sourced over it.
+BIGGENEPRED_SHA256_GIVEN="${BIGGENEPRED_SHA256:-}"
+# shellcheck source=ucsc-tools.pin
+. "$SCRIPT_DIR/ucsc-tools.pin"
+BIGGENEPRED_SHA256="${BIGGENEPRED_SHA256_GIVEN:-$BIGGENEPRED_SHA256}"
+
+# Where everything goes. setup-flumip.sh and uninstall-flumip.sh must agree.
+FLUMIP_ROOT=/opt/flumip
+MIPGEN_DIR="$FLUMIP_ROOT/MIPGEN"
+TOOLS_DIR="$FLUMIP_ROOT/tools"
 
 # Define colors.
 GREEN='\033[0;32m'
@@ -256,86 +276,236 @@ if [ "$INTERACTIVE" == "yes" ]; then
   fi
 fi
 
+# Checked before anything is installed. This used to be checked at the very
+# end, after the packages, the build and hours of genome downloads.
+if ! id "$SERVICE_USER" &>/dev/null; then
+  echo -e "${RED}User ${SERVICE_USER} does not exist. Create it first, or pass --service-user.${NC}\n"
+  exit 1
+fi
+
 # Update system package repository.
 echo -e "\n${GREEN}Updating system packages...${NC}\n"
 sudo apt update
 
 # Install required packages.
-echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, acl, wget...${NC}\n"
-sudo apt install build-essential git tabix samtools bwa trf acl wget -y
+echo -e "\n${GREEN}Installing required packages: build-essential, git, tabix, samtools, bwa, trf, acl, wget, curl...${NC}\n"
+sudo apt install build-essential git tabix samtools bwa trf acl wget curl -y
 
-# Create the mipgen directory and clone the MIPGEN repository.
-echo -e "\n${GREEN}Creating '/opt/flumip' directory and cloning MIPGEN repository...${NC}\n"
-sudo mkdir -p /opt/flumip
-sudo chown $USER:$USER /opt/flumip
-cd /opt/flumip
-if [ ! -d "MIPGEN" ]; then
-  git clone "$MIPGEN_REPO" MIPGEN
+# --- /opt/flumip itself -----------------------------------------------------
+
+# Root's, and writable by root alone. Earlier installs gave it to the installing
+# user with the service user's group, group-writable and setgid, so the service
+# could rename MIPGEN/ or tools/ out of the way and put its own in their place.
+# Not -R: what is below is sorted out piece by piece further down.
+# ⚠️ chmod 755 alone keeps a directory's setgid bit (GNU chmod never clears it
+# from a numeric mode), hence the separate g-s, here and below.
+echo -e "\n${GREEN}Setting up '${FLUMIP_ROOT}'...${NC}\n"
+sudo mkdir -p "$FLUMIP_ROOT"
+sudo chown root:root "$FLUMIP_ROOT"
+sudo chmod 755 "$FLUMIP_ROOT"
+sudo chmod g-s "$FLUMIP_ROOT"
+
+# --- MIPGEN -----------------------------------------------------------------
+
+# Git with nothing from the repository's own configuration that runs a program:
+# no hooks, no fsmonitor. Only matters for a tree someone else could write, which
+# mipgen_tree_trusted below refuses anyway; this is the second line.
+mgit() {
+  git -c core.hooksPath=/dev/null -c core.fsmonitor=false "$@"
+}
+
+# Whether everything in MIPGEN/ belongs to you or root and nobody else can
+# write it. Symlinks always show mode 777, so only their owner counts.
+mipgen_tree_trusted() {
+  [ -z "$(sudo find "$MIPGEN_DIR" \( ! -user "$USER" ! -user root \) -print -quit)" ] \
+    && [ -z "$(sudo find "$MIPGEN_DIR" ! -type l -perm /022 -print -quit)" ]
+}
+
+# A tree the service user could write is never built on: a planted hook,
+# filter, makefile or object file would run as you, at the git checkout or
+# `make` below. Every install made before this check has such a tree (group
+# www-data, 775, setgid), so this is what an upgrade of one does, once. Nothing
+# in the old tree is run, not even git; it is moved aside, cloned afresh, and
+# deleted once the new one is built, so a design that is running when this
+# happens keeps its files.
+MIPGEN_OLD=""
+if [ -e "$MIPGEN_DIR" ] && ! mipgen_tree_trusted; then
+  MIPGEN_OLD="$MIPGEN_DIR.untrusted.$(date +%Y%m%d%H%M%S)"
+  echo -e "${YELLOW}${MIPGEN_DIR} could be written by someone other than you (${USER}) or root,"
+  echo -e "as every install before this version left it. Cloning it afresh instead of"
+  echo -e "building on it; the old tree is deleted afterwards.${NC}"
+  sudo mv "$MIPGEN_DIR" "$MIPGEN_OLD"
 fi
-cd MIPGEN
+
+echo -e "\n${GREEN}Cloning MIPGEN into ${MIPGEN_DIR}...${NC}\n"
+if [ ! -d "$MIPGEN_DIR" ]; then
+  # Made by root inside the root-owned /opt/flumip, then handed to you: git and
+  # make run as you, never as root, and never as the service user.
+  sudo install -d -o "$USER" -g "$(id -gn)" -m 755 "$MIPGEN_DIR"
+  git clone -q "$MIPGEN_REPO" "$MIPGEN_DIR"
+fi
+cd "$MIPGEN_DIR"
 
 # Earlier installs cloned a modified fork. Refuse to build on top of one rather
 # than quietly running something other than upstream MIPGEN.
-MIPGEN_ORIGIN="$(git remote get-url origin 2>/dev/null || true)"
+MIPGEN_ORIGIN="$(mgit remote get-url origin 2>/dev/null || true)"
 if [ "$MIPGEN_ORIGIN" != "$MIPGEN_REPO" ]; then
-  echo -e "${RED}/opt/flumip/MIPGEN was cloned from ${MIPGEN_ORIGIN:-an unknown source}, not ${MIPGEN_REPO}.${NC}"
-  echo -e "${RED}Remove it (rm -rf /opt/flumip/MIPGEN) and run this script again.${NC}"
+  echo -e "${RED}${MIPGEN_DIR} was cloned from ${MIPGEN_ORIGIN:-an unknown source}, not ${MIPGEN_REPO}.${NC}"
+  echo -e "${RED}Remove it (sudo rm -rf ${MIPGEN_DIR}) and run this script again.${NC}"
   exit 1
 fi
-git -c advice.detachedHead=false checkout -q "$MIPGEN_COMMIT"
+
+# A clone made before the pin moved may not have the commit yet.
+if ! mgit cat-file -e "${MIPGEN_COMMIT}^{commit}" 2>/dev/null; then
+  mgit fetch -q origin
+fi
+mgit -c advice.detachedHead=false checkout -q "$MIPGEN_COMMIT"
+
+# The commit really checked out, in full. mipgen.pin holds the whole id, and
+# this makes sure nothing (an abbreviation, a branch or tag of the same name)
+# resolved to anything else.
+MIPGEN_HEAD="$(mgit rev-parse HEAD)"
+if [ "$MIPGEN_HEAD" != "$MIPGEN_COMMIT" ]; then
+  echo -e "${RED}MIPGEN is at ${MIPGEN_HEAD} after checking out ${MIPGEN_COMMIT}; not building it.${NC}"
+  exit 1
+fi
+# And every tracked file exactly as committed: MIPGEN is used unmodified, and
+# the makefile run below is one of those files.
+if [ -n "$(mgit status --porcelain --untracked-files=no)" ]; then
+  echo -e "${RED}Files in ${MIPGEN_DIR} differ from MIPGEN ${MIPGEN_COMMIT}:${NC}"
+  mgit status --short --untracked-files=no
+  echo -e "${RED}Remove it (sudo rm -rf ${MIPGEN_DIR}) and run this script again.${NC}"
+  exit 1
+fi
 
 echo -e "\n${GREEN}Building MIPGEN...${NC}\n"
-make
+# -f makefile, the tracked one: make would prefer an untracked GNUmakefile.
+make -f makefile
 
 echo -e "\n${GREEN}Setting execute permissions for MIPGEN tools...${NC}\n"
 chmod +x mipgen
 chmod +x tools/extract_coding_gene_exons.sh
-cd ..
+# Your umask may leave files group-writable (Ubuntu's 002 does). Writable by
+# you alone, so that the next run trusts the tree; the service reads and runs it.
+chmod -R go-w "$MIPGEN_DIR"
+cd "$FLUMIP_ROOT"
 
-# Create the base directory structure.
-echo -e "\n${GREEN}Setting up base data directories...${NC}\n"
-mkdir -p /opt/flumip/data/genomes/
-mkdir -p /opt/flumip/projects
-mkdir -p /opt/flumip/tools
-mkdir -p /opt/flumip/data/custom_snp/{common,private}
+if [ -n "$MIPGEN_OLD" ]; then
+  sudo rm -rf "$MIPGEN_OLD"
+fi
 
-# FLUMIP's own helpers.
+# --- tools/ -----------------------------------------------------------------
+
+# Root's, like /opt/flumip: the service runs these, and fetch-genome.sh runs
+# bigGenePredToGenePred.
 echo -e "\n${GREEN}Installing FLUMIP helper scripts...${NC}\n"
-install -m 755 "$SCRIPT_DIR/mipgen-trf" /opt/flumip/tools/mipgen-trf
+sudo mkdir -p "$TOOLS_DIR"
+sudo chown -R root:root "$TOOLS_DIR"
+sudo chmod -R go-w "$TOOLS_DIR"
+sudo chmod 755 "$TOOLS_DIR"
+sudo chmod -R g-s "$TOOLS_DIR"
+sudo install -o root -g root -m 755 "$SCRIPT_DIR/mipgen-trf" "$TOOLS_DIR/mipgen-trf"
 # Earlier installs put a Python helper here; its job is now done inline, in awk.
-rm -f /opt/flumip/tools/add_bins_to_refgene.py
+sudo rm -f "$TOOLS_DIR/add_bins_to_refgene.py"
 
-# Download and activate bigGenePredToGenePred (needed for hs1).
-echo -e "\n${GREEN}Downloading bigGenePredToGenePred...${NC}\n"
-cd /opt/flumip/tools
-wget -N https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
-chmod +x bigGenePredToGenePred
+# bigGenePredToGenePred, needed for hs1 only. Installed only if it matches the
+# hash in ucsc-tools.pin; that file says why. When it does not (UCSC replaced it,
+# or the pin is empty), the rest of the install goes ahead without it, and a
+# copy an earlier run installed is left where it is.
+BIGGENEPRED_DEST="$TOOLS_DIR/bigGenePredToGenePred"
+install_biggenepred() {
+  local tmp got
+  if [ -n "$BIGGENEPRED_SHA256" ] && [ -f "$BIGGENEPRED_DEST" ] \
+      && [ "$(sha256sum < "$BIGGENEPRED_DEST" | cut -d' ' -f1)" = "$BIGGENEPRED_SHA256" ]; then
+    echo -e "${GREEN}bigGenePredToGenePred is installed and matches the pinned hash.${NC}"
+    return 0
+  fi
+  tmp="$(mktemp -d)"
+  # https only, also after a redirect.
+  if ! curl -fsSL --proto '=https' --proto-redir '=https' --tlsv1.2 --retry 3 \
+      -o "$tmp/bigGenePredToGenePred" "$BIGGENEPRED_URL"; then
+    rm -rf "$tmp"
+    echo -e "${YELLOW}⚠️  Could not download bigGenePredToGenePred from ${BIGGENEPRED_URL}.${NC}"
+    return 1
+  fi
+  got="$(sha256sum < "$tmp/bigGenePredToGenePred" | cut -d' ' -f1)"
+  if [ -n "$BIGGENEPRED_SHA256" ] && [ "$got" = "$BIGGENEPRED_SHA256" ]; then
+    sudo install -o root -g root -m 755 "$tmp/bigGenePredToGenePred" "$BIGGENEPRED_DEST"
+    rm -rf "$tmp"
+    echo -e "${GREEN}Installed bigGenePredToGenePred (sha256 ${got}).${NC}"
+    return 0
+  fi
+  rm -rf "$tmp"
+  if [ -z "$BIGGENEPRED_SHA256" ]; then
+    echo -e "${YELLOW}⚠️  ucsc-tools.pin has no hash for bigGenePredToGenePred, so the download"
+    echo -e "   cannot be checked and is not installed.${NC}"
+  else
+    echo -e "${YELLOW}⚠️  The bigGenePredToGenePred UCSC serves now does not match ucsc-tools.pin."
+    echo -e "   UCSC replaces it with each release, so this is most likely a new version,"
+    echo -e "   but it is not installed unchecked.${NC}"
+  fi
+  echo -e "${YELLOW}   Downloaded file: sha256 ${got}"
+  echo -e "   Only hs1 needs it. If you have checked that file, install it with:"
+  echo -e "     BIGGENEPRED_SHA256=${got} $0${NC}"
+  return 1
+}
+
+echo -e "\n${GREEN}Installing bigGenePredToGenePred...${NC}\n"
+if ! install_biggenepred; then
+  if [ -f "$BIGGENEPRED_DEST" ]; then
+    echo -e "${YELLOW}   Keeping the copy an earlier run installed at ${BIGGENEPRED_DEST}.${NC}"
+  elif [[ " ${GENOMES[*]} " == *" hs1 "* ]]; then
+    echo -e "${RED}hs1 was asked for, and cannot be set up without bigGenePredToGenePred.${NC}"
+    exit 1
+  fi
+fi
+
+# --- data/ and projects/ ----------------------------------------------------
+
+# The service user's to write, and the only part of /opt/flumip that is. Group
+# ${SERVICE_USER}, group-writable and setgid, as before, so that you (added to
+# the group below) can still put a genome of your own there.
+echo -e "\n${GREEN}Setting up the data directories for ${SERVICE_USER}...${NC}\n"
+for dir in "$FLUMIP_ROOT/data" "$FLUMIP_ROOT/data/genomes" "$FLUMIP_ROOT/projects" \
+    "$FLUMIP_ROOT/data/custom_snp" "$FLUMIP_ROOT/data/custom_snp/common" \
+    "$FLUMIP_ROOT/data/custom_snp/private"; do
+  if ! sudo test -d "$dir"; then
+    sudo install -d -o "$SERVICE_USER" -g "$SERVICE_USER" -m 2775 "$dir"
+  fi
+done
+
+# Group write for the service on everything in them. g+rwX rather than the 775
+# earlier installs set: that made every genome and result file executable.
+fix_data_permissions() {
+  local dir
+  for dir in "$FLUMIP_ROOT/data" "$FLUMIP_ROOT/projects"; do
+    sudo chgrp -R "$SERVICE_USER" "$dir"
+    sudo chmod -R g+rwX "$dir"
+    sudo find "$dir" -type d -exec chmod g+s {} +
+  done
+}
+fix_data_permissions
 
 # Download genomes if the download flag is set. The downloads themselves live in
 # fetch-genome.sh, which the Docker image runs too.
+#
+# As the service user, as in the Docker image, not as you: these directories
+# are the service's to write, so a symlink it had planted there would otherwise
+# turn a download of yours into a write anywhere you can write. The script is fed
+# on stdin, because your home directory, where it was unpacked, is often closed
+# to other users; -H gives wget the service user's home rather than yours.
 if $DOWNLOAD; then
-  "$SCRIPT_DIR/fetch-genome.sh" --root /opt/flumip "${GENOMES[@]}"
+  (cd / && sudo -H -u "$SERVICE_USER" bash -s -- --root "$FLUMIP_ROOT" "${GENOMES[@]}") \
+    < "$SCRIPT_DIR/fetch-genome.sh"
+  fix_data_permissions
 fi
 
-# Set permissions for the service user and maintain current user access
-echo -e "\n${GREEN}Setting permissions for service user ${SERVICE_USER}...${NC}\n"
-# Check if the service user exists
-if id "$SERVICE_USER" &>/dev/null; then
-  # Set group to the service user
-  sudo chgrp -R "$SERVICE_USER" /opt/flumip
-  # Set permissions to allow both owner and group to have full access
-  sudo chmod -R 775 /opt/flumip
-  # Ensure future files created will inherit the group
-  sudo chmod -R g+s /opt/flumip
-  # Optionally add the current user to the service user group to ensure continued access
-  sudo usermod -a -G "$SERVICE_USER" "$USER"
-  echo -e "${GREEN}Full access granted to ${SERVICE_USER} for /opt/flumip${NC}"
-  echo -e "${GREEN}Current user ${USER} added to ${SERVICE_USER} group${NC}"
-  echo -e "${GREEN}You may need to log out and back in for group changes to take effect${NC}\n"
-else
-  echo -e "${RED}User ${SERVICE_USER} does not exist. Permissions not changed.${NC}\n"
-  exit 1
-fi
+# You keep group access to the data, for genomes of your own.
+sudo usermod -a -G "$SERVICE_USER" "$USER"
+echo -e "${GREEN}${SERVICE_USER} can write ${FLUMIP_ROOT}/data and ${FLUMIP_ROOT}/projects;"
+echo -e "MIPGEN and tools/ are read-only to it.${NC}"
+echo -e "${GREEN}Current user ${USER} is in the ${SERVICE_USER} group${NC}"
+echo -e "${GREEN}You may need to log out and back in for group changes to take effect${NC}\n"
 
 if $DOWNLOAD; then
   echo -e "\n${GREEN}Setup completed successfully. Reference data is in place for: ${GENOMES[*]}.${NC}\n"

@@ -1,9 +1,11 @@
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
+import 'package:flumip_server/src/services/process_runner.dart';
 import 'package:flumip_server/src/services/settings_service.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:archive/archive_io.dart';
 
@@ -600,6 +602,56 @@ class FileService {
     return file;
   }
 
+  /// Where [zipProjectFiles] writes, created on first use.
+  ///
+  /// One directory per process, with a random name and mode 0700, so no
+  /// other local user can read what is in it, list it, or put anything there.
+  /// One per process rather than one per archive because the caller deletes
+  /// the archive it was handed and knows nothing of a directory around it — a
+  /// directory per archive would leave an empty one behind for every
+  /// download. Made again if something (`systemd-tmpfiles`, say) has cleared
+  /// it away.
+  ///
+  /// ⚠️ `createTemp` alone is not enough, which is easy to assume otherwise.
+  /// Dart makes the directory with `mkdir(0777)` and the umask, not with
+  /// `mkdtemp`, so under the common umask 002 it comes out group-writable —
+  /// and a group member could then swap the finished archive for a symlink
+  /// before the download route opens it by name. `dart:io` has no `chmod`, so
+  /// the `chmod` program does it, once per directory. It is refused rather
+  /// than used if that fails, or if anything got into it in between.
+  static Directory? _zipDirectory;
+
+  static Future<Directory> _privateZipDirectory() async {
+    final existing = _zipDirectory;
+    if (existing != null && await existing.exists()) return existing;
+
+    final dir = await Directory.systemTemp.createTemp('flumip-zips-');
+    final chmod = await Process.run(
+      'chmod',
+      ['700', dir.path],
+      environment: childEnvironment(Platform.environment),
+      includeParentEnvironment: false,
+    );
+    if (chmod.exitCode != 0 || !await dir.list().isEmpty) {
+      try {
+        await dir.delete(recursive: true);
+      } catch (_) {}
+      throw FileSystemException(
+        'Could not make a private directory for the archive',
+        dir.path,
+      );
+    }
+    return _zipDirectory = dir;
+  }
+
+  static String _randomHex(int bytes) {
+    final random = Random.secure();
+    return List.generate(
+      bytes,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+  }
+
   /// Zips every file of a project into a temp file and returns it.
   ///
   /// The caller owns the result and must delete it once streamed. Written to
@@ -613,19 +665,36 @@ class FileService {
     if (files.isEmpty) return null;
 
     final dir = await projectDirectory(session, projectID);
+    // ⚠️ Not `<systemTemp>/flumip-project-<id>-<time>.zip`, which it was. That
+    // name is guessable to the microsecond, in a directory every local user
+    // can write to: somebody else on the machine could create it first, or
+    // plant a symlink under it so the archive went wherever the link pointed,
+    // and the file itself came out world-readable under the default umask —
+    // a copy of the whole project for anybody with a shell. Inside
+    // [_privateZipDirectory] none of that is possible, and the name is random
+    // besides.
     final target = File(
-      '${Directory.systemTemp.path}/flumip-project-$projectID-'
-      '${DateTime.now().microsecondsSinceEpoch}.zip',
+      '${(await _privateZipDirectory()).path}/'
+      'project-$projectID-${_randomHex(16)}.zip',
     );
 
     final encoder = ZipFileEncoder();
-    encoder.create(target.path);
     try {
-      for (final entry in files) {
-        await encoder.addFile(File('${dir.path}/${entry.name}'));
+      encoder.create(target.path);
+      try {
+        for (final entry in files) {
+          await encoder.addFile(File('${dir.path}/${entry.name}'));
+        }
+      } finally {
+        await encoder.close();
       }
-    } finally {
-      await encoder.close();
+    } catch (_) {
+      // The caller deletes the archive once it is streamed, but never sees
+      // one that failed half way; that one is ours to remove.
+      try {
+        if (await target.exists()) await target.delete();
+      } catch (_) {}
+      rethrow;
     }
 
     session.log(

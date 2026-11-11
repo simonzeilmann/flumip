@@ -2,13 +2,14 @@ class: Settings
 table: settings
 fields:
   demoMode: bool, default=false
-  ### How long a project survives on a demo install, in hours. 168 = 7 days.
+  ### How long a project survives on a demo install, or a guest's on a public
+  ### one, in hours. 48 = 2 days.
   ###
   ### ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
   ### raising it spares projects that were already queued. Lowering it cannot
   ### pull a scheduled deletion earlier — that project keeps the deadline it was
   ### created with. See DemoModeCleanup.
-  demoModeRetentionHours: int, default=168
+  demoModeRetentionHours: int, default=48
   ### Public mode: an instance open to anonymous visitors, like UCSC BLAT.
   ###
   ### Visitors accept the entry notice and become guests with their own projects,
@@ -19,10 +20,22 @@ fields:
   publicMode: bool, default=false
   ### The furthest "Keep longer" can push a project's deletion, in days after it
   ### was created. Never shorter than [demoModeRetentionHours].
-  maxProjectLifetimeDays: int, default=30
+  maxProjectLifetimeDays: int, default=14
   ### How many projects one guest may have at a time. Administrators and
   ### signed-in users are not counted.
   guestMaxProjects: int, default=10
+  ### The largest file a guest may upload as part of an SNP set, in megabytes.
+  ### Zero or less means guests cannot add SNP sets at all. They can only
+  ### upload: importing from a URL has the server fetch an address, which is
+  ### not something to offer anonymous visitors.
+  guestSnpMaxMegabytes: int, default=10
+  ### How many SNP sets one guest may have at a time. Zero or less means no
+  ### limit, as for [guestMaxProjects].
+  guestMaxSnps: int, default=3
+  ### How long a guest's SNP set is kept, in days, before it is deleted when
+  ### that day ends. Stamped into `Snp.expires` when the set is added; there
+  ### is no "Keep longer" for SNP sets.
+  guestSnpRetentionDays: int, default=7
   ### Raise this to make every guest accept the entry notice again, for example
   ### after changing [publicNoticeText]. Each guest records the version they
   ### accepted (`FlumipUser.termsVersion`).
@@ -47,11 +60,11 @@ fields:
   # exactly or as a subdomain. Empty means any public address, which is the
   # default because a fresh install has no way to know which sources a lab uses.
   #
-  # ⚠️ Filling this in is the practical answer to DNS rebinding, which
-  # `snpSourceUrlRejection` cannot close on its own. On a hospital or university
-  # network, listing the three or four real sources — ftp.ncbi.nlm.nih.gov,
-  # ftp.ensembl.org, hgdownload.soe.ucsc.edu — turns off the whole class of
-  # attack. See docs/authorization.md.
+  # Defence in depth. The downloader pins each connection to the address the
+  # guard vetted, so DNS rebinding is closed without this. Listing the three or
+  # four real sources — ftp.ncbi.nlm.nih.gov, ftp.ensembl.org,
+  # hgdownload.soe.ucsc.edu — additionally stops the server being used to fetch
+  # from arbitrary public hosts. See docs/authorization.md.
   snpSourceAllowedHosts: String, default=""
   toolsDir: String, default="/opt/flumip/tools"
   mipgenExecutable: String, default="/opt/flumip/MIPGEN/mipgen"

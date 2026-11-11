@@ -150,6 +150,7 @@ Almost everything happens in Pocket ID's web UI.
 | Task | How |
 | --- | --- |
 | Add an administrator | **Users → Add User**, mark the address verified, add them to the group. Then **⋯ → Login Code** and send them the link: they sign in once with it and register a passkey. Add their address to `FLUMIP_OIDC_ADMIN_EMAILS`. |
+| Add a user who is not an administrator | The same, without the last step. On a public instance their projects are never deleted automatically and they can add SNP sets ([public-instance.md](public-instance.md#signed-in-users)). |
 | Someone lost their passkey | **⋯ → Login Code** again. It works like a passkey until it expires, so send it to that person only. |
 | The last administrator lost theirs | A one-time sign-in link, valid for an hour, from the server: see below. |
 | Remove someone | Turn on **Account Disabled**, or take them out of the group: Pocket ID checks the group on every sign-in. Remove their address from the FLUMIP list too. |

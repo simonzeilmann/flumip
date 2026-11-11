@@ -59,7 +59,7 @@ void main() {
       final project = await projectService.createProject(
         session,
         'smoke',
-        ProjectOptions(id: 1),
+        await seedOptions(session),
       );
       project.genome = genome.id;
       await projectService.updateProject(session, project);

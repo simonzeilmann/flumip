@@ -57,6 +57,8 @@ void main() {
         'sub': 'user-123',
         'nonce': flow!.nonce,
         'email': email ?? 'a@uni.example',
+        // The admin flag needs a verified address; see AuthConfig.grantsAdmin.
+        'email_verified': true,
         'exp': epochSeconds(
           DateTime.now().toUtc().add(const Duration(minutes: 5)),
         ),

@@ -164,4 +164,52 @@ void main() {
       expect(long, endsWith('…'));
     });
   });
+
+  group('the environment a child gets', () {
+    test('childEnvironment keeps what tools need and drops the rest', () {
+      final child = childEnvironment({
+        'PATH': '/usr/bin:/bin',
+        'HOME': '/var/www',
+        'LANG': 'C.UTF-8',
+        'LC_ALL': 'C',
+        'TMPDIR': '/srv/tmp',
+        'SERVERPOD_PASSWORD_database': 'hunter2',
+        'FLUMIP_OIDC_CLIENT_SECRET': 'shh',
+        'AWS_SECRET_ACCESS_KEY': 'x',
+      });
+      expect(child, {
+        'PATH': '/usr/bin:/bin',
+        'HOME': '/var/www',
+        'LANG': 'C.UTF-8',
+        'LC_ALL': 'C',
+        'TMPDIR': '/srv/tmp',
+      });
+    }, tags: ['unit']);
+
+    test('a server started without PATH still finds its tools', () {
+      expect(childEnvironment(const {})['PATH'], fallbackPath);
+    }, tags: ['unit']);
+
+    for (final shell in [false, true]) {
+      test('a real child sees only the whitelist '
+          '(runInShell: $shell)', () async {
+        // The server's own environment is where its secrets are; mipgen hands
+        // its arguments to /bin/sh, so a child must never have them.
+        final result = await runner.run('env', const [], runInShell: shell);
+        expect(result.exitCode, 0);
+        final names = result.stdout
+            .toString()
+            .split('\n')
+            .where((l) => l.contains('='))
+            .map((l) => l.substring(0, l.indexOf('=')))
+            .toSet();
+        final allowed = childEnvironment(Platform.environment).keys.toSet();
+        // A shell adds a couple of its own (PWD, SHLVL, _); none of them is
+        // anything the server had.
+        final fromShell = {'PWD', 'SHLVL', '_', 'OLDPWD'};
+        expect(names.difference(allowed).difference(fromShell), isEmpty);
+        expect(names, contains('PATH'));
+      }, tags: ['unit']);
+    }
+  });
 }

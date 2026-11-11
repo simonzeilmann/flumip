@@ -77,10 +77,10 @@ void main() {
       expect(form.toSettings(id: 1).smtpPort, 25);
     });
 
-    test('an empty retention falls back to a week', () {
+    test('an empty retention falls back to two days', () {
       form.load(settingsFixture());
       form.demoRetentionHours.text = '';
-      expect(form.toSettings(id: 1).demoModeRetentionHours, 168);
+      expect(form.toSettings(id: 1).demoModeRetentionHours, 48);
     });
 
     test('⚠️ the OIDC fields are trimmed, and the paths are not', () {

@@ -20,6 +20,16 @@ abstract final class AuthEnv {
   static const publicUrl = 'FLUMIP_PUBLIC_URL';
   static const strict = 'FLUMIP_AUTH_STRICT';
   static const publicMode = 'FLUMIP_PUBLIC_MODE';
+
+  /// Set to `false` to grant the administrator scope to an address on the admin
+  /// list even when the provider does not say it verified that address.
+  ///
+  /// The opt-out for providers that never send `email_verified` (Microsoft
+  /// Entra ID is the common one). Environment-only, deliberately: it widens who
+  /// can become an administrator, so it is not something the Settings tab — or
+  /// a settings password — should be able to switch.
+  static const adminRequireVerifiedEmail =
+      'FLUMIP_OIDC_ADMIN_REQUIRE_VERIFIED_EMAIL';
 }
 
 /// The effective authentication configuration: stored settings with environment
@@ -39,6 +49,7 @@ class AuthConfig {
     required this.adminEmails,
     this.departmentClaim = '',
     this.publicMode = false,
+    this.adminRequiresVerifiedEmail = true,
     required this.redirectUri,
     required this.appOrigin,
     required this.cookieSecure,
@@ -95,6 +106,13 @@ class AuthConfig {
   /// is the default, so an install that has not asked for this behaves exactly
   /// as it did before the feature existed.
   final String departmentClaim;
+
+  /// Whether an address on [adminEmails] gets the `admin` scope only when the
+  /// provider vouches for it with `email_verified: true`.
+  ///
+  /// True unless [AuthEnv.adminRequireVerifiedEmail] says `false`. See
+  /// [grantsAdmin].
+  final bool adminRequiresVerifiedEmail;
 
   /// Whether this install collects group membership at all.
   bool get usesDepartments => departmentClaim.isNotEmpty;
@@ -246,6 +264,16 @@ class AuthConfig {
       }
     }
 
+    var adminRequiresVerifiedEmail = true;
+    final verifiedEnv = envValue(AuthEnv.adminRequireVerifiedEmail);
+    if (verifiedEnv != null) {
+      final parsed = _parseBool(verifiedEnv);
+      if (parsed != null) {
+        overrides.add(AuthEnv.adminRequireVerifiedEmail);
+        adminRequiresVerifiedEmail = parsed;
+      }
+    }
+
     final publicUrl = _stripTrailingSlash(
       pick(AuthEnv.publicUrl, settings?.authPublicUrl ?? ''),
     );
@@ -267,6 +295,7 @@ class AuthConfig {
         settings?.oidcDepartmentClaim ?? '',
       ).trim(),
       publicMode: publicMode,
+      adminRequiresVerifiedEmail: adminRequiresVerifiedEmail,
       redirectUri: origin.isEmpty ? '' : '$origin/auth/callback',
       appOrigin: origin,
       cookieSecure: origin.startsWith('https://'),
@@ -293,6 +322,25 @@ class AuthConfig {
   /// Whether [email] gets the `admin` scope. Exact, case-insensitive match.
   bool isAdminEmail(String email) =>
       adminEmails.contains(email.trim().toLowerCase());
+
+  /// Whether a sign-in as [email] gets the `admin` scope, given what the
+  /// provider said about verifying it.
+  ///
+  /// ⚠️ The admin list is a string match on an address, and OpenID Connect Core
+  /// §5.7 promises nothing about who controls the address in `email`. At a
+  /// provider that lets an account type in any address, matching it unverified
+  /// hands out the admin scope — and with it every project and the executable
+  /// paths in Settings — to whoever types an administrator's address. So only
+  /// [emailVerified] `true` counts. **Absent counts as unverified here**, unlike
+  /// at the sign-in gate, where absent is let through: being refused the admin
+  /// scope still leaves an ordinary sign-in, whereas guessing wrong the other
+  /// way is a privilege escalation. [adminRequiresVerifiedEmail] is the opt-out
+  /// for providers that never send the claim.
+  bool grantsAdmin(String email, {required bool? emailVerified}) {
+    if (!isAdminEmail(email)) return false;
+    if (!adminRequiresVerifiedEmail) return true;
+    return emailVerified == true;
+  }
 
   static String _domainOf(String email) {
     final at = email.lastIndexOf('@');

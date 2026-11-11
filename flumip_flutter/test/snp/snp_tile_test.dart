@@ -353,4 +353,24 @@ void main() {
       expect(find.text('Delete…'), findsOneWidget);
     });
   });
+
+  group("a guest's set", () {
+    Snp guestSet() =>
+        snpFixture(custom: true, private: true)
+          ..expires = DateTime(2026, 11, 10);
+
+    testWidgets('shows the last day it is kept', (tester) async {
+      await pumpTile(tester, snp: guestSet(), isMine: true);
+      // The midnight that ends 9 November, not the 10th.
+      expect(find.text('Until 09.11.2026'), findsOneWidget);
+    });
+
+    testWidgets('cannot be shared', (tester) async {
+      await pumpTile(tester, snp: guestSet(), isMine: true);
+      await tester.tap(find.byType(PopupMenuButton<SnpAction>));
+      await tester.pumpAndSettle();
+      expect(find.text('Share with everyone'), findsNothing);
+      expect(find.text('Rename…'), findsOneWidget);
+    });
+  });
 }

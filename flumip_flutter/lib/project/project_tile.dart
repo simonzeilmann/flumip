@@ -339,9 +339,12 @@ class _ProjectTileState extends State<ProjectTile> {
           if (_controller.expanded) ...[
             _ProjectLifetimeRow(
               deletion: deletion,
-              // Only where projects expire at all: on a server that keeps
-              // everything there is nothing to exempt a project from.
-              keptIndefinitely: _serverConfig.projectRetention == null
+              // Only where this project expires at all: on a server that keeps
+              // everything, or for a signed-in user's project on a public
+              // one, there is nothing to exempt it from.
+              keptIndefinitely:
+                  _serverConfig.projectRetention == null ||
+                      (deletion == null && !project.keptIndefinitely)
                   ? null
                   : project.keptIndefinitely,
               onKeptIndefinitelyChanged:
@@ -461,8 +464,9 @@ class _ProjectLifetimeRow extends StatelessWidget {
   /// Null when this server keeps projects indefinitely, or this project is.
   final DateTime? deletion;
 
-  /// Whether an administrator exempted this project, or null on a server that
-  /// deletes nothing.
+  /// Whether an administrator exempted this project, or null where it would
+  /// not be deleted anyway: on a server that deletes nothing, or for a
+  /// signed-in user's project on a public instance.
   final bool? keptIndefinitely;
 
   /// Toggles [keptIndefinitely]. Null unless the viewer is an administrator.

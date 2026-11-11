@@ -2,6 +2,7 @@ import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
 import '../generated/project_options.dart';
+import '../services/authorization_service.dart';
 import '../services/options_service.dart';
 import 'flumip_endpoint.dart';
 
@@ -52,7 +53,7 @@ class OptionsEndpoint extends FlumipEndpoint {
   Future<ProjectOptions> getProjectOptions(Session session, int id) async {
     session.log("Retrieving project options for ID: $id", level: LogLevel.info);
     try {
-      await requireProjectOptions(session, id);
+      await authz.requireOptionsAccessForAll(session, id);
       return await optionsService.getProjectOptions(session, id);
     } catch (e) {
       session.log(
@@ -66,6 +67,9 @@ class OptionsEndpoint extends FlumipEndpoint {
 
   /// Updates project options.
   ///
+  /// Writes the row named by [id] — never the one `options.id` names — and
+  /// only after checking the caller may touch every project using it.
+  ///
   /// \param session The current session.
   /// \param id The ID of the project options to update.
   /// \param options The [ProjectOptions] object to update.
@@ -76,7 +80,7 @@ class OptionsEndpoint extends FlumipEndpoint {
   ) async {
     session.log("Updating project options for ID: $id", level: LogLevel.info);
     try {
-      await requireProjectOptions(session, id);
+      await authz.requireOptionsAccessForAll(session, id);
       return await optionsService.updateProjectOptions(session, id, options);
     } catch (e) {
       session.log(
@@ -95,7 +99,7 @@ class OptionsEndpoint extends FlumipEndpoint {
   Future<void> deleteProjectOptions(Session session, int id) async {
     session.log("Deleting project options for ID: $id", level: LogLevel.info);
     try {
-      await requireProjectOptions(session, id);
+      await authz.requireOptionsAccessForAll(session, id);
       return await optionsService.deleteProjectOptions(session, id);
     } catch (e) {
       session.log(

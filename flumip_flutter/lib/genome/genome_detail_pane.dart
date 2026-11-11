@@ -61,6 +61,7 @@ class GenomeDetailPane extends StatelessWidget {
     this.error,
     this.onDismissError,
     this.canManage = true,
+    this.canAdminister = true,
   });
 
   final Genome genome;
@@ -72,9 +73,16 @@ class GenomeDetailPane extends StatelessWidget {
   final VoidCallback onDeleteIndex;
   final VoidCallback onIndexGenome;
 
-  /// Whether this genome can be indexed, un-indexed or switched off from here.
-  /// False for a guest on a public instance: these act on the whole server.
+  /// Whether an index can be built from here. False for a guest on a public
+  /// instance: it acts on the whole server.
   final bool canManage;
+
+  /// Whether the index can be removed and the genome switched on or off.
+  ///
+  /// Narrower than [canManage]: a signed-in user may add to the shared library,
+  /// and only an administrator may take from it. The server refuses the rest
+  /// whatever is drawn here; this only stops offering what would fail.
+  final bool canAdminister;
   final void Function(bool) onToggleGenomeActive;
 
   /// Only set on a narrow window, where this pane replaces the rail entirely.
@@ -201,7 +209,7 @@ class GenomeDetailPane extends StatelessWidget {
             icon: const Icon(Icons.build, size: 18),
             label: const Text('Build index'),
           ),
-        if (canManage && state == IndexState.built)
+        if (canAdminister && state == IndexState.built)
           // Outlined rather than a filled redAccent button. It is already behind
           // a confirmation dialog, and a destructive action should not be the
           // loudest thing on the screen.
@@ -218,9 +226,17 @@ class GenomeDetailPane extends StatelessWidget {
           children: [
             Text('Active', style: context.text.bodyMedium),
             const SizedBox(width: 4),
-            Switch(
-              value: genome.active,
-              onChanged: canManage ? onToggleGenomeActive : null,
+            // Shown to everybody, because it is also how the state is read. The
+            // tooltip is for the signed-in user who can otherwise do things in
+            // this pane and would take a dead switch for a fault.
+            Tooltip(
+              message: canAdminister
+                  ? ''
+                  : 'Only an administrator can switch a genome on or off.',
+              child: Switch(
+                value: genome.active,
+                onChanged: canAdminister ? onToggleGenomeActive : null,
+              ),
             ),
           ],
         ),

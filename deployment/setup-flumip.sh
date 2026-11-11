@@ -6,16 +6,20 @@
 # get the app serving:
 #
 #   1. checks prerequisites (and that setup-mipgen.sh has run)
-#   2. downloads a release build (or uses a local tarball)
-#   3. provisions a PostgreSQL container
-#   4. generates config/production.yaml and a passwords.yaml with random secrets
+#   2. downloads a release build (or uses a local tarball) and checks it
+#      against the SHA256SUMS published with it
+#   3. provisions a PostgreSQL container, with an ordinary role for FLUMIP
+#   4. generates config/production.yaml and a passwords.yaml with random secrets,
+#      and on a new install a random first settings password
 #   5. applies the database migrations
-#   6. installs and starts the flumip systemd unit
-#   7. with --pocket-id, installs Pocket ID as this server's own single sign-on
+#   6. keeps the internal API and Insights ports to this machine (nftables)
+#   7. installs and starts the flumip systemd unit, sandboxed so that it can
+#      write only its data directories
+#   8. with --pocket-id, installs Pocket ID as this server's own single sign-on
 #
 # Re-running is safe: an existing database and its generated passwords are
 # reused, and the choices made on the first run (hostname, database, service
-# user, Pocket ID) are remembered in /etc/flumip/setup.conf, so it doubles as an
+# user, Pocket ID, firewall, extra writable directories) are remembered in /etc/flumip/setup.conf, so it doubles as an
 # updater.
 # Any switch given on a re-run replaces the remembered value.
 #
@@ -38,9 +42,22 @@
 #   --db-host HOST          Database host for --db existing (default: localhost).
 #   --db-port PORT          Database port (default: 5432).
 #   --db-name NAME          Database name (default: flumip).
-#   --db-user USER          Database user (default: postgres).
-#   --service-user USER     User the service runs as, and owner of the install
-#                           dir (default: www-data).
+#   --db-user USER          Database user (default: flumip; an install made
+#                           before this default keeps its postgres).
+#   --service-user USER     User the service runs as (default: www-data). It
+#                           can read the install dir but not change it.
+#   --skip-checksum         Install a build that cannot be checked against a
+#                           SHA256SUMS (or .sha256) published with it. Needed
+#                           only for a --url without one; see "Build" below.
+#   --firewall              Keep the API (9080) and Insights (9081) ports to this
+#                           machine with an nftables rule of FLUMIP's own (the
+#                           default; needs nft).
+#   --no-firewall           Do not, and remove that rule if an earlier run added
+#                           it.
+#   --writable-dir DIR      Another directory the service may write, for a path
+#                           moved away from /opt/flumip in Settings → Storage.
+#                           Repeatable; remembered. The service is sandboxed and
+#                           can write nowhere else.
 #   --pocket-id URL         Also install Pocket ID, a self-hosted single sign-on
 #                           provider, reached at URL (e.g. https://id.example.org).
 #                           Only for a server with no institutional provider to
@@ -107,6 +124,12 @@ SERVICE_USER=""
 POCKET_ID_URL=""
 MIGRATIONS=true
 RESTART=true
+SKIP_CHECKSUM=false
+# yes|no, empty for "not given" like the database switches above.
+FIREWALL=""
+# --writable-dir, each given on this run; joined with the remembered ones below.
+WRITABLE_DIRS_GIVEN=()
+WRITABLE_DIRS=""
 
 # Pocket ID's layout on a bare-metal install. uninstall-flumip.sh must agree.
 # The env file sits in $SECRETS_DIR so that backing that up (step 5 of the next
@@ -191,6 +214,16 @@ install. Staging is deployed by the project's own CI, not by this script." ;;
     --pocket-id)
       require_value "$1" "${2:-}"; POCKET_ID_URL="$2"; SWITCHES_GIVEN=true; shift ;;
     --no-pocket-id) POCKET_ID_URL="none"; SWITCHES_GIVEN=true ;;
+    --skip-checksum) SKIP_CHECKSUM=true; SWITCHES_GIVEN=true ;;
+    --firewall) FIREWALL="yes"; SWITCHES_GIVEN=true ;;
+    --no-firewall) FIREWALL="no"; SWITCHES_GIVEN=true ;;
+    --writable-dir)
+      require_value "$1" "${2:-}"
+      [[ "$2" == /* ]] || die "--writable-dir needs an absolute path: $2"
+      # Kept colon-separated in setup.conf and space-separated in the unit.
+      [[ "$2" =~ ^[A-Za-z0-9._/@+-]+$ ]] \
+        || die "--writable-dir: only letters, digits and . _ / @ + - are supported: $2"
+      WRITABLE_DIRS_GIVEN+=("${2%/}"); SWITCHES_GIVEN=true; shift ;;
     --no-migrations) MIGRATIONS=false; SWITCHES_GIVEN=true ;;
     --no-restart) RESTART=false; SWITCHES_GIVEN=true ;;
     -i|--interactive) INTERACTIVE="yes" ;;
@@ -257,6 +290,10 @@ fi
 SECRETS_FILE="$SECRETS_DIR/passwords.yaml"
 CHOICES_FILE="$SECRETS_DIR/setup.conf"
 ENV_FILE="$SECRETS_DIR/flumip.env"
+INITIAL_PASSWORD_FILE="$SECRETS_DIR/initial-settings-password.env"
+# Generated by this script for a sandboxed service; see "systemd" below.
+FIREWALL_RULES="$SECRETS_DIR/flumip.nft"
+FIREWALL_UNIT="flumip-firewall.service"
 
 # --- Older installs ---------------------------------------------------------
 
@@ -285,11 +322,17 @@ if sudo test -f "$CHOICES_FILE"; then
   echo -e "${GREEN}Using the choices remembered in $CHOICES_FILE${NC}"
   while IFS='=' read -r key value; do
     case "$key" in
-      PUBLIC_HOST|DB_MODE|DB_HOST|DB_PORT|DB_NAME|DB_USER|SERVICE_USER|POCKET_ID_URL)
+      PUBLIC_HOST|DB_MODE|DB_HOST|DB_PORT|DB_NAME|DB_USER|SERVICE_USER|POCKET_ID_URL|FIREWALL)
         [[ -n "${!key}" ]] || printf -v "$key" '%s' "$value" ;;
+      # Added to, not replaced: --writable-dir on a re-run adds one more.
+      WRITABLE_DIRS) WRITABLE_DIRS="$value" ;;
     esac
   done < <(sudo cat "$CHOICES_FILE")
 fi
+# Colon-separated in setup.conf; a path with a colon is refused below.
+for dir in "${WRITABLE_DIRS_GIVEN[@]}"; do
+  [[ ":$WRITABLE_DIRS:" == *":$dir:"* ]] || WRITABLE_DIRS="${WRITABLE_DIRS:+$WRITABLE_DIRS:}$dir"
+done
 
 if [[ "$INTERACTIVE" == "yes" ]]; then
   PUBLIC_HOST="$(prompt_value "Public hostname clients will use" "${PUBLIC_HOST:-localhost}")"
@@ -303,7 +346,7 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
     DB_HOST="$(prompt_value "Database host" "${DB_HOST:-localhost}")"
     DB_PORT="$(prompt_value "Database port" "${DB_PORT:-5432}")"
     DB_NAME="$(prompt_value "Database name" "${DB_NAME:-flumip}")"
-    DB_USER="$(prompt_value "Database user" "${DB_USER:-postgres}")"
+    DB_USER="$(prompt_value "Database user" "${DB_USER:-flumip}")"
   fi
 
   if prompt_yes_no "Install Pocket ID as this server's own single sign-on? Only for a
@@ -316,6 +359,14 @@ if [[ "$INTERACTIVE" == "yes" ]]; then
     # one never made leaves nothing to remove.
     POCKET_ID_URL="none"
   fi
+
+  if prompt_yes_no "Keep the internal API (9080) and Insights (9081) ports to this machine
+  with a firewall rule? Only these two ports are touched." \
+      "$([[ "$FIREWALL" == "no" ]] && echo n || echo y)"; then
+    FIREWALL="yes"
+  else
+    FIREWALL="no"
+  fi
 fi
 
 # --- Defaults ---------------------------------------------------------------
@@ -325,8 +376,17 @@ SERVICE_USER="${SERVICE_USER:-www-data}"
 DB_MODE="${DB_MODE:-docker}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_NAME="${DB_NAME:-flumip}"
-DB_USER="${DB_USER:-postgres}"
 DB_PORT="${DB_PORT:-5432}"
+FIREWALL="${FIREWALL:-yes}"
+# A new install connects as an ordinary role that owns its database, not as a
+# superuser; for --db docker this script creates it (see "Database" below).
+# An install that already has its passwords connects as before: every one made
+# before this default is postgres, and setup.conf remembers that, but one so old
+# that setup.conf has no DB_USER must not be switched over by a missing line.
+if [[ -z "$DB_USER" ]] && sudo test -f "$SECRETS_DIR/passwords.yaml"; then
+  DB_USER="postgres"
+fi
+DB_USER="${DB_USER:-flumip}"
 
 # Pocket ID: POCKET_ID_URL set means install or update it, REMOVE_POCKET_ID
 # means take away one an earlier run installed, and neither means leave it be.
@@ -358,6 +418,17 @@ UNIT_SRC="$SCRIPT_DIR/$UNIT"
 
 # Fall back to the published release when no build source was given.
 if [[ -z "$BUILD_URL" && -z "$BUILD_FILE" ]]; then
+  if [[ "$RELEASE_TAG" == "latest" ]]; then
+    # "latest" is resolved to its tag once, here, so that the tarball and the
+    # checksums below come from the same release: two separate latest/download
+    # requests could straddle a new release and fetch one file from each.
+    # GitHub answers /releases/latest with a redirect to /releases/tag/<tag>.
+    LATEST_URL="$(curl -fsSLI --retry 3 -o /dev/null -w '%{url_effective}' \
+      "https://github.com/$REPO_SLUG/releases/latest" 2>/dev/null || true)"
+    if [[ "$LATEST_URL" == */releases/tag/* ]]; then
+      RELEASE_TAG="${LATEST_URL##*/releases/tag/}"
+    fi
+  fi
   if [[ "$RELEASE_TAG" == "latest" ]]; then
     BUILD_URL="https://github.com/$REPO_SLUG/releases/latest/download/flumip-build.tar.gz"
   else
@@ -440,6 +511,14 @@ if [[ -n "$POCKET_ID_URL" ]]; then
 elif $REMOVE_POCKET_ID; then
   echo -e "  Pocket ID:        remove (its data stays in ${POCKET_ID_DATA})"
 fi
+if [[ "$FIREWALL" == "yes" ]]; then
+  echo -e "  Firewall:         ports ${API_PORT} and ${INSIGHTS_PORT} this machine only (--no-firewall to skip)"
+else
+  echo -e "  Firewall:         none for ports ${API_PORT} and ${INSIGHTS_PORT}"
+fi
+if [[ -n "$WRITABLE_DIRS" ]]; then
+  echo -e "  Also writable:    ${WRITABLE_DIRS//:/ }"
+fi
 echo -e "  Apply migrations: ${MIGRATIONS}"
 echo -e "  Start service:    ${RESTART}"
 echo ""
@@ -450,20 +529,99 @@ fi
 
 # --- Build ------------------------------------------------------------------
 
-# Downloads (if needed) and echoes the path to a verified build tarball.
+# Echoes the SHA-256 that checksum file $1 lists for file name $2, or nothing.
+# Standard sha256sum output: "<hash>  <name>", or "<hash> *<name>" in binary
+# mode, possibly with a directory in front of the name.
+checksum_for() {
+  awk -v name="$2" '
+    { file = $2; sub(/^\*/, "", file); sub(/^.*\//, "", file) }
+    # length() rather than {64}: mawk, Debian'"'"'s awk, may not know intervals.
+    file == name && length($1) == 64 && $1 ~ /^[0-9a-fA-F]+$/ { print tolower($1); exit }
+  ' "$1"
+}
+
+# Checks build tarball $1 (named $2 where it was published) against checksum
+# file $3. Dies on a mismatch, and on a checksum file that does not list it.
+verify_build() {
+  local want got
+  want="$(checksum_for "$3" "$2")"
+  [[ -n "$want" ]] || die "The checksum file published with the build does not list $2.
+Not installing it."
+  got="$(sha256sum "$1" | cut -d' ' -f1)"
+  if [[ "$got" != "$want" ]]; then
+    die "The build does not match its published checksum, so it is not installed:
+  expected ${want}
+  got      ${got}
+A truncated download or a changed file both look like this. Download it again;
+if it still differs, do not install it."
+  fi
+  echo -e "${GREEN}Checksum verified (sha256 ${got}).${NC}" >&2
+}
+
+# Downloads (if needed), verifies and echoes the path to a build tarball.
+#
+# The checksums come from the same place as the build: SHA256SUMS, which
+# releases publish from the one that brought this check on, else the
+# <tarball>.sha256 that releases before it published (v0.8.0 and earlier). That catches a corrupted or truncated download and a mirror or
+# proxy that serves something else. It does not protect against someone who can
+# replace the release's files on GitHub itself, who could replace both.
+#
+# With --file, a SHA256SUMS or flumip-build.tar.gz.sha256 next to the tarball
+# is used if there is one; download it with the tarball (see the README).
+# Without one the file is installed with a warning: it is yours, and you may
+# have built it. A download with no checksum to be found is refused, unless
+# --skip-checksum says to install it anyway.
 fetch_build() {
-  local out
+  local out name base sums="" candidate
   if [[ -n "$BUILD_FILE" ]]; then
     [[ -f "$BUILD_FILE" ]] || die "Build file not found: $BUILD_FILE"
     out="$BUILD_FILE"
+    name="$(basename "$BUILD_FILE")"
+    for candidate in "$(dirname "$BUILD_FILE")/SHA256SUMS" "$BUILD_FILE.sha256"; do
+      if [[ -f "$candidate" ]]; then sums="$candidate"; break; fi
+    done
+    if [[ -n "$sums" ]]; then
+      echo -e "${GREEN}Checking $name against $sums${NC}" >&2
+      # A SHA256SUMS lists the tarball under its published name, which a
+      # renamed local copy no longer has.
+      if [[ -z "$(checksum_for "$sums" "$name")" && -n "$(checksum_for "$sums" flumip-build.tar.gz)" ]]; then
+        name="flumip-build.tar.gz"
+      fi
+      verify_build "$out" "$name" "$sums"
+    else
+      echo -e "${YELLOW}⚠️  No SHA256SUMS next to $BUILD_FILE, so it is not checked. Download it
+   from the same release as the tarball to have it checked.${NC}" >&2
+    fi
   else
     out="$TMP_DL/flumip-build.tar.gz"
+    name="${BUILD_URL##*/}"
+    base="${BUILD_URL%/*}"
     echo -e "${GREEN}Downloading build from $BUILD_URL${NC}" >&2
     # -f fail on HTTP errors, -sS quiet but still report errors, -L follow redirects.
     if ! curl -fsSL --retry 3 -o "$out" "$BUILD_URL" >&2; then
       echo -e "${RED}Download failed: $BUILD_URL${NC}" >&2
       echo -e "${RED}If no release has been published yet, build a tarball and pass --file.${NC}" >&2
       exit 1
+    fi
+    for candidate in "$base/SHA256SUMS" "$BUILD_URL.sha256"; do
+      if curl -fsSL --retry 3 -o "$TMP_DL/checksums" "$candidate" 2>/dev/null; then
+        sums="$TMP_DL/checksums"
+        echo -e "${GREEN}Checking it against $candidate${NC}" >&2
+        break
+      fi
+    done
+    if [[ -n "$sums" ]]; then
+      verify_build "$out" "$name" "$sums"
+    elif $SKIP_CHECKSUM; then
+      echo -e "${YELLOW}⚠️  ⚠️  NO CHECKSUM: neither $base/SHA256SUMS nor $BUILD_URL.sha256
+   could be downloaded, and --skip-checksum was given, so this build is
+   installed WITHOUT ANY CHECK that it is the file that was published.${NC}" >&2
+    else
+      die "Found no checksum for this build: neither $base/SHA256SUMS nor
+$BUILD_URL.sha256 could be downloaded, so it cannot be checked and is not
+installed. Every FLUMIP release publishes one; check the address, or the
+network. To install a build from somewhere that publishes none, at your own
+risk, pass --skip-checksum."
     fi
   fi
 
@@ -532,6 +690,8 @@ else
 fi
 SERVICE_SECRET="$(openssl rand -hex 32)"
 
+DB_CONTAINER_CREATED=false
+
 if [[ "$DB_MODE" == "docker" ]]; then
   # >/dev/null rather than grep -q, for the SIGPIPE reason in fetch_build.
   if docker ps -a --format '{{.Names}}' | grep -x "$DB_CONTAINER" >/dev/null; then
@@ -550,15 +710,34 @@ Either restore that file, or remove the container and its volume to start over:
     # it on the next `docker rm`. Matches flumip_server/docker-compose.yaml.
     # Published on 127.0.0.1 only: Docker's iptables rules bypass ufw, so a
     # bare -p would expose the database on every interface.
+    #
+    # The image's own user is always the superuser postgres. FLUMIP connects as
+    # $DB_USER, an ordinary role created below that owns the database: that is
+    # all Serverpod's migrations need, as FLUMIP's create no extensions. The
+    # superuser's password is random and kept nowhere. Nothing needs it: on
+    # this machine `docker exec $DB_CONTAINER psql -U postgres` comes in over
+    # the container's local socket, which the image trusts. Only when
+    # --db-user postgres is asked for outright does FLUMIP get the superuser,
+    # as every install did before.
+    if [[ "$DB_USER" == "postgres" ]]; then
+      DB_SUPERUSER_PASSWORD="$DB_PASSWORD"
+    else
+      # Created with CREATE ROLE below; kept to a plain name so that it reads
+      # the same everywhere it is written (passwords.yaml, setup.conf, psql).
+      [[ "$DB_USER" =~ ^[a-z_][a-z0-9_]{0,62}$ ]] \
+        || die "--db-user must be a plain lower-case name for --db docker: $DB_USER"
+      DB_SUPERUSER_PASSWORD="$(openssl rand -hex 24)"
+    fi
     docker run -d \
       --name "$DB_CONTAINER" \
       --restart unless-stopped \
-      -e POSTGRES_USER="$DB_USER" \
-      -e POSTGRES_PASSWORD="$DB_PASSWORD" \
+      -e POSTGRES_USER=postgres \
+      -e POSTGRES_PASSWORD="$DB_SUPERUSER_PASSWORD" \
       -e POSTGRES_DB="$DB_NAME" \
       -v "$DB_VOLUME":/var/lib/postgresql \
       -p "127.0.0.1:$DB_PORT":5432 \
       "$POSTGRES_IMAGE" >/dev/null
+    DB_CONTAINER_CREATED=true
   fi
   DB_HOST="127.0.0.1"
 
@@ -571,6 +750,30 @@ Either restore that file, or remove the container and its volume to start over:
     docker exec "$DB_CONTAINER" pg_isready -q -h 127.0.0.1 -U "$DB_USER" && break
     sleep 1
   done
+
+  # Only for a container this run created. One that was already there is left
+  # exactly as it is: on an upgrade FLUMIP keeps connecting as the role it
+  # always has, and the README says how to move an older install off the
+  # superuser by hand.
+  if $DB_CONTAINER_CREATED && [[ "$DB_USER" != "postgres" ]]; then
+    echo -e "${GREEN}Creating database role $DB_USER, owner of $DB_NAME${NC}"
+    # The password reaches psql through the environment (docker exec -e NAME
+    # copies it from this one), never on a command line, where ps would show it.
+    if ! FLUMIP_DB_ROLE="$DB_USER" FLUMIP_DB_ROLE_PASSWORD="$DB_PASSWORD" FLUMIP_DB_ROLE_DB="$DB_NAME" \
+        docker exec -i -e FLUMIP_DB_ROLE -e FLUMIP_DB_ROLE_PASSWORD -e FLUMIP_DB_ROLE_DB \
+          "$DB_CONTAINER" psql -q -v ON_ERROR_STOP=1 -U postgres -d "$DB_NAME" >/dev/null <<'SQL'
+\getenv role FLUMIP_DB_ROLE
+\getenv pw FLUMIP_DB_ROLE_PASSWORD
+\getenv db FLUMIP_DB_ROLE_DB
+CREATE ROLE :"role" LOGIN PASSWORD :'pw';
+ALTER DATABASE :"db" OWNER TO :"role";
+SQL
+    then
+      die "Could not create the database role $DB_USER. Remove the new container and
+its volume, then re-run:
+  docker rm -f $DB_CONTAINER && docker volume rm $DB_VOLUME"
+    fi
+  fi
 fi
 
 # --- Install files ----------------------------------------------------------
@@ -588,8 +791,13 @@ fi
 echo -e "${GREEN}Extracting build to $TARGET${NC}"
 sudo rm -rf "$TARGET.new" "$TARGET.old"
 sudo mkdir -p "$TARGET.new"
-sudo tar -xzf "$BUILD" -C "$TARGET.new"
-sudo chmod +x "$TARGET.new/bundle/bin/main"
+# Root's, and read-only to everyone else, the service included: it runs this
+# program, so it must not be able to change it. Extracted without the archive's
+# owners (the release runner's uid) and modes, then normalised.
+sudo tar --no-same-owner --no-same-permissions -xzf "$BUILD" -C "$TARGET.new"
+sudo chown -R root:root "$TARGET.new"
+sudo chmod -R u+rwX,go+rX,go-w "$TARGET.new"
+sudo chmod 755 "$TARGET.new/bundle/bin/main"
 if sudo test -d "$TARGET"; then
   sudo mv "$TARGET" "$TARGET.old"
 fi
@@ -669,6 +877,8 @@ DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 SERVICE_USER=${SERVICE_USER}
 POCKET_ID_URL=${POCKET_ID_URL}
+FIREWALL=${FIREWALL}
+WRITABLE_DIRS=${WRITABLE_DIRS}
 EOF
 sudo chmod 640 "$CHOICES_FILE"
 
@@ -737,9 +947,43 @@ EOF
   sudo chmod 640 "$ENV_FILE"
 fi
 
-if id "$SERVICE_USER" &>/dev/null; then
-  sudo chown -R "$SERVICE_USER":"$SERVICE_USER" "$TARGET"
+# The first settings password of a new install. The server takes it from
+# FLUMIP_INITIAL_SETTINGS_PASSWORD only when it creates its settings row, on the
+# first start against an empty database, and never again; without it the server
+# makes up one of its own and writes it to the journal. Earlier installs started
+# with the well-known 'changeme' instead.
+#
+# Only for a new install (no passwords.yaml yet): an upgrade generates and prints
+# nothing. Its own file rather than flumip.env, which the service user can read
+# and admins edit: this one is root's alone, and systemd reads it as root. Kept
+# after the first start so the password can still be looked up with sudo until
+# it has been changed; after that it is inert, and can be deleted.
+INITIAL_SETTINGS_PASSWORD=""
+if ! $REUSED_SECRETS; then
+  if sudo test -f "$INITIAL_PASSWORD_FILE"; then
+    # Left by a first run that stopped partway; the database may already hold it.
+    INITIAL_SETTINGS_PASSWORD="$(sudo sed -n 's/^FLUMIP_INITIAL_SETTINGS_PASSWORD=//p' "$INITIAL_PASSWORD_FILE")"
+  else
+    # 12 bytes as hex: 24 characters, typed once and then changed.
+    INITIAL_SETTINGS_PASSWORD="$(openssl rand -hex 12)"
+    echo -e "${GREEN}Creating $INITIAL_PASSWORD_FILE${NC}"
+    (umask 077; sudo tee "$INITIAL_PASSWORD_FILE" >/dev/null) <<EOF
+# The first settings password of this FLUMIP install, generated by
+# setup-flumip.sh. Read by systemd for the ${SERVICE} service, and used by the
+# server only when it creates its settings, on its very first start. Change the
+# password in the Settings tab; this file can be deleted after that.
+FLUMIP_INITIAL_SETTINGS_PASSWORD=${INITIAL_SETTINGS_PASSWORD}
+EOF
+    sudo chown root:root "$INITIAL_PASSWORD_FILE"
+    sudo chmod 600 "$INITIAL_PASSWORD_FILE"
+  fi
 fi
+
+# The install stays root's (see "Install files"). Earlier versions gave the whole
+# of it to the service user, which let it rewrite its own executable; the fresh
+# extraction above already undoes that on an upgrade. The one file the service
+# has to read that others must not is its passwords.
+sudo chown root:"$SERVICE_USER" "$TARGET/config/passwords.yaml"
 sudo chmod 640 "$TARGET/config/passwords.yaml"
 
 # --- Migrations -------------------------------------------------------------
@@ -749,7 +993,14 @@ sudo chmod 640 "$TARGET/config/passwords.yaml"
 # connection a few times in case the container is still starting up.
 if $MIGRATIONS; then
   echo -e "${GREEN}Applying database migrations...${NC}"
-  if ! sudo -u "$SERVICE_USER" sh -c "cd '$TARGET' && ./bundle/bin/main \
+  # The first settings password goes along, through the environment rather than
+  # the command line, in case anything in this run creates the settings row.
+  MIGRATE_SUDO=(sudo -u "$SERVICE_USER")
+  if [[ -n "$INITIAL_SETTINGS_PASSWORD" ]]; then
+    export FLUMIP_INITIAL_SETTINGS_PASSWORD="$INITIAL_SETTINGS_PASSWORD"
+    MIGRATE_SUDO=(sudo --preserve-env=FLUMIP_INITIAL_SETTINGS_PASSWORD -u "$SERVICE_USER")
+  fi
+  if ! "${MIGRATE_SUDO[@]}" sh -c "cd '$TARGET' && ./bundle/bin/main \
       --mode='$MODE' \
       --server-id='$MODE' \
       --role=maintenance \
@@ -759,15 +1010,211 @@ if $MIGRATIONS; then
 Check the database is reachable at ${DB_HOST}:${DB_PORT} and that the password
 in $SECRETS_FILE is right, then re-run, or pass --no-migrations to skip this step."
   fi
+  unset FLUMIP_INITIAL_SETTINGS_PASSWORD
+fi
+
+# --- Where the service may write --------------------------------------------
+
+# The unit sandboxes the service (see flumip.service): the whole file system is
+# read-only to it except for the directories listed in its ReadWritePaths=, so
+# these have to be exactly the ones it writes. From the server's code those are
+# the three Storage settings: the projects (each design's files), the genomes
+# (bwa and samtools write their indexes next to each FASTA, and the index build
+# its log) and the custom SNP sets (uploads, imports, tabix indexes). Temporary
+# files go to its own private /tmp. Nothing else, in particular not the install
+# directory or its own configuration.
+#
+# The settings live in the database and can be changed in Settings → Storage,
+# so they are read from there when that is possible, and --writable-dir adds any
+# the script cannot see. A missing directory does not stop the service
+# starting (the leading - in the unit), but it cannot be created later either:
+# after moving a directory in the Settings tab, re-run this script.
+STORAGE_DEFAULTS=("/opt/flumip/projects" "/opt/flumip/data/genomes" "/opt/flumip/data/custom_snp")
+
+# Prints the stored settings row's paths: projects, genomes, custom SNPs,
+# tools, then the three executables, separated by the ASCII unit separator
+# (a tab would collapse an empty field when read back). Nothing when it cannot be read,
+# which on a new install, before the server's first start, is always.
+stored_settings_paths() {
+  local sql='SELECT "projectDir", "genomeDir", "customSnpDir", "toolsDir", "mipgenExecutable", "exonExtractScript", "bigGenePredToGenePredExecutable" FROM settings ORDER BY id LIMIT 1'
+  if [[ "$DB_MODE" == "docker" ]]; then
+    docker exec "$DB_CONTAINER" psql -X -q -t -A -F $'\x1f' -U "$DB_USER" -d "$DB_NAME" \
+      -c "$sql" 2>/dev/null || true
+  elif command -v psql >/dev/null 2>&1; then
+    PGPASSWORD="$DB_PASSWORD" PGCONNECT_TIMEOUT=10 psql -X -q -t -A -F $'\x1f' \
+      -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "$sql" 2>/dev/null || true
+  fi
+}
+
+STORED_PATHS="$(stored_settings_paths | head -n 1)"
+WRITE_CANDIDATES=("${STORAGE_DEFAULTS[@]}")
+OTHER_PATHS=()
+if [[ -n "$STORED_PATHS" ]]; then
+  IFS=$'\x1f' read -r s_projects s_genomes s_custom s_tools s_mipgen s_exon s_bgp <<<"$STORED_PATHS"
+  WRITE_CANDIDATES+=("$s_projects" "$s_genomes" "$s_custom")
+  OTHER_PATHS+=("$s_tools" "$s_mipgen" "$s_exon" "$s_bgp")
+elif [[ "$DB_MODE" == "existing" ]] && ! command -v psql >/dev/null 2>&1 && $REUSED_SECRETS; then
+  echo -e "${YELLOW}psql is not installed, so the Storage paths in the database cannot be read.
+If you moved any away from /opt/flumip in the Settings tab, pass --writable-dir
+for each, or the service will not be able to write there.${NC}"
+fi
+if [[ -n "$WRITABLE_DIRS" ]]; then
+  IFS=':' read -r -a extra_dirs <<<"$WRITABLE_DIRS"
+  WRITE_CANDIDATES+=("${extra_dirs[@]}")
+fi
+
+# A data directory may lead elsewhere through a symlink (a genome on a bigger
+# disk, say), and the sandbox would keep that place read-only. The links in the
+# top few levels are followed, which covers <category>/<genome>/fa.
+for dir in "${WRITE_CANDIDATES[@]}"; do
+  if [[ -z "$dir" ]] || ! sudo test -d "$dir"; then continue; fi
+  WRITE_CANDIDATES+=("$(sudo readlink -f "$dir")")
+  while IFS= read -r -d '' link; do
+    target="$(sudo readlink -f "$link" || true)"
+    if [[ -n "$target" ]] && sudo test -d "$target"; then
+      WRITE_CANDIDATES+=("$target")
+    fi
+  done < <(sudo find "$dir" -maxdepth 3 -type l -print0 2>/dev/null)
+done
+
+# Deduplicated, and kept to paths that are safe to write into a unit file. The
+# whole of a system directory is never made writable: that would undo the
+# sandbox.
+WRITE_PATHS=()
+for dir in "${WRITE_CANDIDATES[@]}"; do
+  dir="${dir%/}"
+  [[ -n "$dir" ]] || continue
+  if [[ ! "$dir" =~ ^/[A-Za-z0-9._/@+-]*$ ]]; then
+    echo -e "${YELLOW}⚠️  Not making '$dir' writable for the service: it has characters the unit
+   file cannot hold. Move it to a plain path.${NC}"
+    continue
+  fi
+  case "$dir" in
+    ""|/usr|/usr/*|/etc|/etc/*|/boot|/boot/*|/bin|/sbin|/lib|/lib64|/var|/opt|/home|/root|/proc|/sys|/dev|/run)
+      echo -e "${YELLOW}⚠️  Not making '${dir:-/}' writable for the service: a system directory.${NC}"
+      continue ;;
+  esac
+  [[ " ${WRITE_PATHS[*]} " == *" $dir "* ]] || WRITE_PATHS+=("$dir")
+done
+
+# ProtectHome=yes hides /home, /root and /run/user from the service entirely.
+# Should anything it uses be in there, they become read-only instead, which
+# ReadWritePaths= can then open up where needed.
+PROTECT_HOME="yes"
+for path in "${WRITE_PATHS[@]}" "${OTHER_PATHS[@]}"; do
+  case "$path" in
+    /home/*|/root/*|/run/user/*) PROTECT_HOME="read-only" ;;
+  esac
+done
+
+READ_WRITE_LINE="ReadWritePaths="
+for dir in "${WRITE_PATHS[@]}"; do
+  READ_WRITE_LINE+="-${dir} "
+done
+READ_WRITE_LINE="${READ_WRITE_LINE% }"
+
+# --- Firewall (optional) ----------------------------------------------------
+
+# Serverpod 4.0.1 binds all three of its servers to every address, with no
+# setting to change that (InternetAddress.anyIPv6 in its server.dart and
+# web_server.dart), and systemd's IPAddressDeny= applies to all of a unit's
+# traffic, not to one port. So the internal API and Insights ports are kept to
+# this machine by a firewall rule. Insights in particular is Serverpod's
+# administration interface.
+#
+# Lockout-safe by construction: the rules sit in a table of FLUMIP's own
+# (inet flumip) and do one thing, reject TCP to these two ports unless it comes
+# from this machine. They never accept anything, so they cannot open what
+# another firewall closes, and they never touch any other port, SSH included.
+# A separate unit applies them, ordered after the distribution's firewall so a
+# reload of that does not leave FLUMIP's out, and before flumip itself.
+# `sudo systemctl stop flumip-firewall` takes them away at once; --no-firewall
+# removes them for good.
+NFT=""
+for candidate in /usr/sbin/nft /sbin/nft /usr/bin/nft; do
+  if [[ -x "$candidate" ]]; then NFT="$candidate"; break; fi
+done
+
+if [[ "$FIREWALL" == "yes" ]]; then
+  if [[ -z "$NFT" ]]; then
+    echo -e "${YELLOW}⚠️  nft is not installed, so ports ${API_PORT} and ${INSIGHTS_PORT} are not firewalled.
+   Install the nftables package (without enabling nftables.service, whose
+   default ruleset flushes every other firewall) and re-run, or firewall
+   them yourself, or pass --no-firewall to stop this warning.${NC}"
+  else
+    echo -e "${GREEN}Keeping ports ${API_PORT} and ${INSIGHTS_PORT} to this machine (${FIREWALL_UNIT})${NC}"
+    sudo mkdir -p "$SECRETS_DIR"
+    sudo tee "$FIREWALL_RULES" >/dev/null <<EOF
+#!${NFT} -f
+# Generated by setup-flumip.sh, applied by ${FIREWALL_UNIT}. Re-running the
+# script overwrites this file; --no-firewall removes it.
+#
+# FLUMIP's internal API (${API_PORT}) and Insights (${INSIGHTS_PORT}) ports
+# answer this machine only. Nothing else is matched, and nothing is accepted:
+# whatever other firewall runs here still decides everything else.
+
+# Replaces the table as a whole, so applying the file twice leaves one copy.
+table inet flumip
+delete table inet flumip
+
+table inet flumip {
+  chain input {
+    type filter hook input priority -10; policy accept;
+    iifname "lo" return
+    tcp dport { ${API_PORT}, ${INSIGHTS_PORT} } reject with tcp reset
+  }
+}
+EOF
+    sudo chmod 644 "$FIREWALL_RULES"
+    sudo tee "/etc/systemd/system/$FIREWALL_UNIT" >/dev/null <<EOF
+# Generated by setup-flumip.sh; see ${FIREWALL_RULES}.
+[Unit]
+Description=Firewall for FLUMIP's internal ports (${API_PORT}, ${INSIGHTS_PORT})
+# Ordering only: it needs none of these, but must come after any that replace
+# the whole ruleset, and before the server opens the ports.
+After=nftables.service ufw.service firewalld.service
+Before=${UNIT}
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=${NFT} -f ${FIREWALL_RULES}
+ExecReload=${NFT} -f ${FIREWALL_RULES}
+ExecStop=-${NFT} delete table inet flumip
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    sudo systemctl daemon-reload
+    sudo systemctl enable "$FIREWALL_UNIT" >/dev/null 2>&1
+    if ! sudo systemctl restart "$FIREWALL_UNIT"; then
+      echo -e "${YELLOW}⚠️  ${FIREWALL_UNIT} failed; ports ${API_PORT} and ${INSIGHTS_PORT} are not firewalled.
+   See: journalctl -u ${FIREWALL_UNIT}${NC}"
+    fi
+  fi
+elif [[ -f "/etc/systemd/system/$FIREWALL_UNIT" ]] || sudo test -f "$FIREWALL_RULES"; then
+  echo -e "${GREEN}Removing ${FIREWALL_UNIT} (--no-firewall)${NC}"
+  sudo systemctl disable --now "$FIREWALL_UNIT" 2>/dev/null || true
+  sudo rm -f "/etc/systemd/system/$FIREWALL_UNIT" "$FIREWALL_RULES"
+  sudo systemctl daemon-reload
 fi
 
 # --- systemd ----------------------------------------------------------------
 
 echo -e "${GREEN}Installing systemd unit $UNIT${NC}"
-# The unit ships with User=www-data. --service-user owns the config, so the
-# service must run as that user or it cannot read its own passwords.yaml.
-sed "s/^User=.*/User=${SERVICE_USER}/" "$UNIT_SRC" \
-  | sudo tee "/etc/systemd/system/$UNIT" >/dev/null
+echo -e "  writable for ${SERVICE_USER}: ${WRITE_PATHS[*]}"
+# Generated from flumip.service, which ships working as it is for the default
+# layout: User= becomes --service-user (it owns nothing here but must read its
+# passwords.yaml), and ReadWritePaths= and ProtectHome= the ones worked out
+# above. Settings an admin adds with `systemctl edit flumip` live in a drop-in
+# next to the unit and survive this.
+# (-v is safe here: none of these can hold a backslash, checked above.)
+awk -v user="$SERVICE_USER" -v rw="$READ_WRITE_LINE" -v home="$PROTECT_HOME" '
+  /^User=/           { print "User=" user; next }
+  /^ReadWritePaths=/ { print rw; next }
+  /^ProtectHome=/    { print "ProtectHome=" home; next }
+  { print }
+' "$UNIT_SRC" | sudo tee "/etc/systemd/system/$UNIT" >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable "${SERVICE}"
 
@@ -957,6 +1404,41 @@ else
      the database password."
 fi
 
+# Step 2: the settings password. Shown once, on the run that made it; an upgrade
+# prints no password, only where to look.
+SETTINGS_PW_TAIL="     It gates the settings screen, including the SMTP configuration and the
+     paths of the programs FLUMIP runs. It is stored hashed, so the box there
+     is write-only: type a new one, or leave it empty to keep the current one."
+if [[ -n "$INITIAL_SETTINGS_PASSWORD" ]]; then
+  PASSWORD_STEP="  2. The settings password of this new install is:
+
+       $(echo -e "${YELLOW}${INITIAL_SETTINGS_PASSWORD}${NC}")
+
+     Open Settings and change it now. It is shown only this once; until you
+     change it, 'sudo cat ${INITIAL_PASSWORD_FILE}' shows it again, and once
+     you have, that file can be deleted. (If ${DB_NAME} already had FLUMIP's
+     settings, as a database from an earlier install does, it keeps its own
+     password and this one does nothing.)
+${SETTINGS_PW_TAIL}"
+elif sudo test -f "$INITIAL_PASSWORD_FILE"; then
+  PASSWORD_STEP="  2. If you have not changed the settings password yet, the first one is in
+     ${INITIAL_PASSWORD_FILE} (sudo cat it). Change it in Settings, then
+     delete that file.
+${SETTINGS_PW_TAIL}"
+else
+  PASSWORD_STEP="  2. Make sure the settings password is not the 'changeme' installs before
+     this version started with. The Settings tab warns while it still is.
+${SETTINGS_PW_TAIL}"
+fi
+
+if [[ "$FIREWALL" == "yes" && -n "$NFT" ]]; then
+  PORTS_NOTE="     ${FIREWALL_UNIT} already keeps those two to this machine. To lift
+     that: 'sudo systemctl stop ${FIREWALL_UNIT}', or --no-firewall for good."
+else
+  PORTS_NOTE="     ⚠️  Nothing keeps those two from the network yet: Serverpod listens on
+     every address. Firewall them, or re-run with --firewall."
+fi
+
 cat <<EOF
 
 $(echo -e "${GREEN}Setup complete.${NC}")
@@ -967,11 +1449,7 @@ $(echo -e "${YELLOW}Next steps:${NC}")
      Check the service with:  systemctl status ${SERVICE}
      Follow the logs with:    journalctl -u ${SERVICE} -f
 
-  2. Change the admin settings password. It defaults to 'changeme' and gates
-     the settings screen, including the SMTP configuration. The Settings tab
-     warns until you do. It is stored hashed and is never shown again, so the
-     box there is write-only: type a new one, or leave it empty to keep the
-     current one.
+${PASSWORD_STEP}
 
   3. Traffic is plain HTTP on port ${WEB_PORT}. To serve it over HTTPS, put a
      reverse proxy in front, for example with nginx and certbot:
@@ -1001,7 +1479,8 @@ $(echo -e "${YELLOW}Next steps:${NC}")
 
      Only port ${WEB_PORT} needs to be reachable — it serves the app, the API
      (under /api), downloads, uploads and sign-in. Keep ${API_PORT} and
-     ${INSIGHTS_PORT} off the proxy and firewalled.
+     ${INSIGHTS_PORT} off the proxy.
+${PORTS_NOTE}
 
 ${SSO_STEP}
 

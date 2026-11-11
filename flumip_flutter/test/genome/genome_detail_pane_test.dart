@@ -34,6 +34,8 @@ Future<void> pumpPane(
   void Function(bool)? onToggleActive,
   VoidCallback? onIndex,
   VoidCallback? onDeleteIndex,
+  bool canManage = true,
+  bool canAdminister = true,
 }) async {
   tester.view.physicalSize = Size(width, 900);
   tester.view.devicePixelRatio = 1.0;
@@ -49,6 +51,8 @@ Future<void> pumpPane(
           onDeleteIndex: onDeleteIndex ?? () {},
           onIndexGenome: onIndex ?? () {},
           onToggleGenomeActive: onToggleActive ?? (_) {},
+          canManage: canManage,
+          canAdminister: canAdminister,
         ),
       ),
     ),
@@ -116,6 +120,74 @@ void main() {
       await pumpPane(tester, genomeFixture(indexed: true, indexing: true));
       expect(find.text('Indexing…'), findsOneWidget);
     });
+  });
+
+  group('a signed-in user who is not an administrator', () {
+    // May add to the shared library, may not take from it. The server enforces
+    // this; the pane only stops offering what would be refused.
+
+    testWidgets('can build a missing index', (tester) async {
+      await pumpPane(tester, genomeFixture(), canAdminister: false);
+      expect(find.text('Build index'), findsOneWidget);
+    });
+
+    testWidgets('is not offered removing one', (tester) async {
+      await pumpPane(
+        tester,
+        genomeFixture(indexed: true),
+        canAdminister: false,
+      );
+      expect(find.text('Delete index'), findsNothing);
+      expect(find.text('Indexed'), findsOneWidget);
+    });
+
+    testWidgets('sees the switch but cannot move it, and is told why', (
+      tester,
+    ) async {
+      bool? reported;
+      await pumpPane(
+        tester,
+        genomeFixture(active: true),
+        canAdminister: false,
+        onToggleActive: (v) => reported = v,
+      );
+
+      final toggle = tester.widget<Switch>(find.byType(Switch));
+      expect(toggle.value, isTrue);
+      expect(toggle.onChanged, isNull);
+      await tester.tap(find.byType(Switch));
+      expect(reported, isNull);
+      expect(
+        find.byTooltip('Only an administrator can switch a genome on or off.'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  testWidgets('a guest is offered neither index action', (tester) async {
+    await pumpPane(
+      tester,
+      genomeFixture(),
+      canManage: false,
+      canAdminister: false,
+    );
+    expect(find.text('Build index'), findsNothing);
+
+    await pumpPane(
+      tester,
+      genomeFixture(indexed: true),
+      canManage: false,
+      canAdminister: false,
+    );
+    expect(find.text('Delete index'), findsNothing);
+  });
+
+  testWidgets('an administrator has no tooltip on the switch', (tester) async {
+    await pumpPane(tester, genomeFixture());
+    expect(
+      find.byTooltip('Only an administrator can switch a genome on or off.'),
+      findsNothing,
+    );
   });
 
   testWidgets('a very long name does not overflow', (tester) async {

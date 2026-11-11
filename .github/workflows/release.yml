@@ -33,8 +33,11 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Read-only by default. Only the jobs that publish widen it, each to what it
+# needs: `image` may push packages, `publish` may write the release (and sign
+# its provenance). The checks and the build itself never could write.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # The same gate every deploy pipeline has. Without it a tag publishes
@@ -43,7 +46,15 @@ jobs:
     uses: ./.github/workflows/checks.yml
     with:
       web_build_args: --release --wasm
-    secrets: inherit
+    # Only the two secrets the test job reads, not `secrets: inherit`, which
+    # handed this run every secret in the repository: deploy key, sudo password
+    # and all. TEST_PASSWORDS_YAML, when it exists, is a passwords.yaml holding
+    # only what the tests read (the `shared:` and `test:` sections); until the
+    # owner has created it the full PASSWORDS_YAML stands in, so this keeps
+    # working either way.
+    secrets:
+      POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      PASSWORDS_YAML: ${{ secrets.TEST_PASSWORDS_YAML || secrets.PASSWORDS_YAML }}
 
   release:
     runs-on: ubuntu-latest
@@ -53,10 +64,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes with git; the image push logs in on its own.
+          persist-credentials: false
 
       - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
           flutter-version: '3.47.5'
@@ -75,7 +89,7 @@ jobs:
             echo "::error::flumip_flutter is $APP_VERSION but flumip_server is $SERVER_VERSION."
             exit 1
           fi
-          if [ "${{ github.ref_type }}" = "tag" ] && [ "${GITHUB_REF_NAME#v}" != "$APP_VERSION" ]; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "${GITHUB_REF_NAME#v}" != "$APP_VERSION" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match version $APP_VERSION in the pubspecs."
             exit 1
           fi
@@ -86,7 +100,7 @@ jobs:
         run: |
           cd flumip_flutter
           flutter build web --release --wasm --no-web-resources-cdn \
-            --dart-define=APP_VERSION=${{ env.APP_VERSION }} \
+            "--dart-define=APP_VERSION=$APP_VERSION" \
             --dart-define=SITE_TITLE=FLUMIP \
             --output ../flumip_server/web/app
 
@@ -152,17 +166,29 @@ jobs:
           cp ../../deployment/docker/compose.yaml ../../deployment/docker/mipgen.Dockerfile \
              ../../deployment/docker/.env.example ../../deployment/docker/init-env.sh \
              ../../deployment/docker/.dockerignore .
-          sed -i "s/^FLUMIP_VERSION=.*/FLUMIP_VERSION=${{ env.APP_VERSION }}/" .env.example
-          grep -x "FLUMIP_VERSION=${{ env.APP_VERSION }}" .env.example >/dev/null
+          sed -i "s/^FLUMIP_VERSION=.*/FLUMIP_VERSION=${APP_VERSION}/" .env.example
+          grep -x "FLUMIP_VERSION=${APP_VERSION}" .env.example >/dev/null
           cd ..
           tar -czf ../flumip_server/flumip-docker.tar.gz flumip-docker
           cd ../flumip_server
           sha256sum flumip-docker.tar.gz > flumip-docker.tar.gz.sha256
 
+      # The checksum list deployment/setup-flumip.sh verifies a download
+      # against. ⚠️ Its name and format are an interface the installer depends
+      # on: a release asset named SHA256SUMS, plain `sha256sum` output, one line
+      # per other release asset, bare file names. A new release asset goes here
+      # as well as in the publish job's `files`.
+      - name: Write SHA256SUMS
+        run: |
+          cd flumip_server
+          sha256sum flumip-build.tar.gz flumip-build.tar.gz.sha256 \
+            flumip-docker.tar.gz flumip-docker.tar.gz.sha256 > SHA256SUMS
+          cat SHA256SUMS
+
       # Every run, not only manual ones: the image and publish jobs below take
       # the build from here rather than building it again.
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: flumip-build
           path: |
@@ -170,6 +196,7 @@ jobs:
             flumip_server/flumip-build.tar.gz.sha256
             flumip_server/flumip-docker.tar.gz
             flumip_server/flumip-docker.tar.gz.sha256
+            flumip_server/SHA256SUMS
 
   # The Docker image, made from the tarball above rather than a second build of
   # the sources, so it carries exactly the bits the release does.
@@ -184,12 +211,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes with git; the image push logs in on its own.
+          persist-credentials: false
 
       - name: Download the release build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: flumip-build
+
+      # The image is built from exactly the tarball the release ships.
+      - name: Verify the release build
+        run: sha256sum -c SHA256SUMS
 
       - name: Name the image
         run: |
@@ -231,8 +265,10 @@ jobs:
 
       - name: Push the image
         if: github.ref_type == 'tag'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           MINOR="${APP_VERSION%.*}"
           docker tag "$IMAGE:$APP_VERSION" "$IMAGE:$MINOR"
           docker tag "$IMAGE:$APP_VERSION" "$IMAGE:latest"
@@ -246,19 +282,26 @@ jobs:
     if: github.ref_type == 'tag'
     permissions:
       contents: write
+      # For the provenance attestation: id-token to get the signing
+      # certificate from Sigstore, attestations to store the result.
+      id-token: write
+      attestations: write
     env:
       APP_VERSION: ${{ needs.release.outputs.version }}
 
     steps:
       - name: Download the release build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: flumip-build
           path: flumip_server
 
+      - name: Verify the release build
+        run: cd flumip_server && sha256sum -c SHA256SUMS
+
       - name: Publish release
         if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           name: FLUMIP ${{ env.APP_VERSION }}
           generate_release_notes: true
@@ -267,12 +310,15 @@ jobs:
             flumip_server/flumip-build.tar.gz.sha256
             flumip_server/flumip-docker.tar.gz
             flumip_server/flumip-docker.tar.gz.sha256
+            flumip_server/SHA256SUMS
           body: |
             Install a FLUMIP server (see the README for the details):
 
             ```bash
             mkdir flumip && cd flumip
             curl -fLO https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/flumip-build.tar.gz
+            curl -fLO https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/SHA256SUMS
+            sha256sum -c --ignore-missing SHA256SUMS
             tar -xzf flumip-build.tar.gz
 
             # 1. dependencies, MIPGEN and the hg38 reference data
@@ -294,3 +340,16 @@ jobs:
             docker compose build && docker compose up -d
             docker compose run --rm --no-deps flumip fetch-genome hg38
             ```
+
+      # Signed build provenance for the two tarballs, which anyone can check
+      # with `gh attestation verify flumip-build.tar.gz --repo <owner>/<repo>`.
+      # After the publish, deliberately: attestations need a public repository
+      # (or GitHub Enterprise Cloud), and should this step ever fail, the
+      # release is already out and only this job turns red, rather than an
+      # optional extra holding the release back.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            flumip_server/flumip-build.tar.gz
+            flumip_server/flumip-docker.tar.gz

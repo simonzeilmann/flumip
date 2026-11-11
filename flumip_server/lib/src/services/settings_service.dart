@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
 
 import 'package:flumip_server/service_locator.dart';
 import 'package:flumip_server/src/auth/auth_runtime.dart';
@@ -8,12 +11,30 @@ import 'package:flumip_server/src/services/password_hash.dart';
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
-/// What a brand-new install's settings password is, before anybody changes it.
+/// What a brand-new install's settings password is in development and test
+/// run modes, before anybody changes it.
 ///
 /// Stored hashed like any other, so this constant is the only place the word
 /// appears — `settingsPasswordIsDefault` is what tells the settings tab to nag
 /// about it.
+///
+/// ⚠️ **Never the first password of a production install.** The word is
+/// public, and the settings it opens include `mipgenExecutable`, so knowing
+/// it on a reachable server is code execution. Production and staging start
+/// from [initialSettingsPasswordEnv] or a random password instead; see
+/// `SettingsService._initialPassword`. Older installs that still have it keep
+/// working, and keep being nagged.
 const defaultSettingsPassword = 'changeme';
+
+/// The environment variable a production install takes its first settings
+/// password from. Read once, when the settings row is created, and never
+/// again: changing it later does nothing, because the password then lives
+/// (hashed) in the database and is changed in the Settings tab.
+const initialSettingsPasswordEnv = 'FLUMIP_INITIAL_SETTINGS_PASSWORD';
+
+/// The start of the log line that carries a generated first password. Fixed so
+/// that installers and admins can find it with `grep`.
+const initialSettingsPasswordLogPrefix = 'FLUMIP INITIAL SETTINGS PASSWORD: ';
 
 /// How long a project survives on a demo install.
 ///
@@ -27,6 +48,20 @@ Duration demoRetention(Settings settings) {
   return Duration(hours: hours);
 }
 
+/// How long a guest's SNP set is kept. Clamped like [demoRetention]: one day to
+/// a year.
+Duration guestSnpRetention(Settings settings) =>
+    Duration(days: settings.guestSnpRetentionDays.clamp(1, 365));
+
+/// The largest file a guest may upload as part of an SNP set, or null when
+/// guests cannot add SNP sets. Never above `SnpService.maxImportBytes`, which
+/// the upload route applies to everybody.
+int? guestSnpMaxBytes(Settings settings) {
+  final megabytes = settings.guestSnpMaxMegabytes;
+  if (megabytes <= 0) return null;
+  return (megabytes * 1024 * 1024).clamp(1, 4 * 1024 * 1024 * 1024);
+}
+
 /// The furthest "Keep longer" can push a project's deletion, measured from its
 /// creation — and how long a guest's session lasts between visits.
 ///
@@ -38,9 +73,151 @@ Duration maxProjectLifetime(Settings settings) {
   return days < initial ? initial : days;
 }
 
+/// Slows down guessing the settings password, without locking anybody out
+/// for long.
+///
+/// In memory and **global** rather than per client. Per-client would be
+/// nicer for an administrator sharing a server with a guesser, but nothing
+/// here can tell clients apart: behind the reverse proxy this deployment
+/// assumes every request comes from the proxy's address, `/api` calls are
+/// relayed in-process by `ApiRoute`, and `X-Forwarded-For` is whatever the
+/// client wrote. A key the attacker chooses is no key.
+///
+/// How it works: the first [freeAttempts] attempts since the last quiet spell
+/// are checked at once. After that each attempt is given a turn, one
+/// [delayFor] after the previous turn, so that *parallel* requests queue
+/// rather than each getting their own guess — a sleep per request alone would
+/// be no limit at all against concurrency. Throughput for a guesser therefore
+/// drops to one check per [maxDelay] (30 s by default: under 3,000 a day).
+///
+/// What keeps an administrator from being locked out:
+///
+/// - Nothing is ever refused for good. A request whose turn is more than
+///   [maxWait] away is refused with a "wait and try again" message instead of
+///   queueing, which is also what bounds the memory and the open requests.
+/// - The failures are forgotten after [forgetAfter] without one.
+/// - A correct password undoes its own attempt and clears the backoff
+///   (leaving the count one short of [freeAttempts]), so an administrator who
+///   got in once is not slowed on the next call. That gives a guesser one
+///   extra free guess per administrator success — the trade-off chosen over
+///   keeping a busy settings tab slow for a quarter of an hour.
+/// - A signed-in administrator never reaches this at all (see
+///   `SettingsService._isAdmin`), and the escapes in docs/authentication.md
+///   do not go through it either.
+///
+/// ⚠️ While somebody is actively guessing, the correct password waits its
+/// turn like any other. That is unavoidable without telling the two apart,
+/// and the wait is bounded by [maxWait].
+class SettingsPasswordThrottle {
+  SettingsPasswordThrottle({
+    this.freeAttempts = 10,
+    this.baseDelay = const Duration(seconds: 1),
+    this.maxDelay = const Duration(seconds: 30),
+    this.maxWait = const Duration(seconds: 60),
+    this.forgetAfter = const Duration(minutes: 15),
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
+
+  /// Attempts let through without any delay. Generous enough that a settings
+  /// tab firing several password-carrying calls at once is never slowed.
+  final int freeAttempts;
+  final Duration baseDelay;
+  final Duration maxDelay;
+  final Duration maxWait;
+  final Duration forgetAfter;
+  final DateTime Function() _clock;
+
+  int _failures = 0;
+  int _inFlight = 0;
+  DateTime? _lastFailure;
+  DateTime? _nextTurn;
+
+  /// The spacing before the [excess]-th attempt beyond [freeAttempts]:
+  /// doubling from [baseDelay], capped at [maxDelay].
+  Duration delayFor(int excess) {
+    if (excess <= 0) return Duration.zero;
+    final factor = 1 << min(excess - 1, 20);
+    final delay = baseDelay * factor;
+    return delay > maxDelay ? maxDelay : delay;
+  }
+
+  /// Takes a turn: returns how long to wait before checking the password.
+  ///
+  /// Every successful call must be followed by exactly one [release].
+  ///
+  /// \throws [ArgumentException] when the turn is more than [maxWait] away.
+  Duration acquire() {
+    final now = _clock();
+    if (_lastFailure != null && now.difference(_lastFailure!) > forgetAfter) {
+      _failures = 0;
+      _lastFailure = null;
+    }
+
+    final excess = _failures + _inFlight + 1 - freeAttempts;
+    if (excess <= 0) {
+      _inFlight++;
+      return Duration.zero;
+    }
+
+    final previous = _nextTurn;
+    final start = (previous == null || previous.isBefore(now)) ? now : previous;
+    final turn = start.add(delayFor(excess));
+    final wait = turn.difference(now);
+    if (wait > maxWait) {
+      final seconds = (start.difference(now).inSeconds + 1).clamp(1, 3600);
+      throw ArgumentException(
+        message:
+            'Too many wrong settings passwords have been tried recently. '
+            'Wait $seconds seconds and try again.',
+      );
+    }
+    _nextTurn = turn;
+    _inFlight++;
+    return wait;
+  }
+
+  /// Records the outcome of the check [acquire] made room for.
+  void release({required bool success}) {
+    if (_inFlight > 0) _inFlight--;
+    if (success) {
+      _failures = min(_failures, freeAttempts - 1);
+      _nextTurn = null;
+    } else {
+      _failures++;
+      _lastFailure = _clock();
+    }
+  }
+}
+
 /// A service class for handling settings-related operations.
 class SettingsService {
-  SettingsService();
+  SettingsService({
+    SettingsPasswordThrottle? throttle,
+    Future<void> Function(Duration)? sleep,
+    this._environment,
+    this._runMode,
+    void Function(String line)? announce,
+  }) : throttle = throttle ?? SettingsPasswordThrottle(),
+       _sleep = sleep ?? Future<void>.delayed,
+       _announce = announce ?? _printToConsole;
+
+  /// Exposed so tests can drive the clock-independent parts directly.
+  final SettingsPasswordThrottle throttle;
+  final Future<void> Function(Duration) _sleep;
+  final Map<String, String>? _environment;
+
+  /// Overrides the server's run mode, so tests can create the settings row the
+  /// way a production install does.
+  final String? _runMode;
+  final void Function(String line) _announce;
+
+  Map<String, String> get _env => _environment ?? Platform.environment;
+
+  /// Straight to the process output — the journal under systemd, `docker
+  /// compose logs` under Docker — and deliberately **not** `session.log`,
+  /// which in production writes to the database's log table. The point of
+  /// generating the password is that the database holds only its hash.
+  static void _printToConsole(String line) => stdout.writeln(line);
 
   /// Retrieves the settings from the database.
   ///
@@ -89,14 +266,22 @@ class SettingsService {
   /// used to work regardless, precisely because the identity provider can be the
   /// thing that is broken. What is left:
   ///
-  /// - A provider that has **never** answered discovery leaves `isEnforcing`
-  ///   false — the fail-open rule — so the password still works. This is the
-  ///   common misconfiguration, and it is still recoverable from the UI.
+  /// - A provider that has **never** answered discovery, on an install where
+  ///   nobody has ever signed in with that issuer, leaves `isEnforcing` false —
+  ///   the fail-open rule — so the password still works. This is the common
+  ///   misconfiguration, and it is still recoverable from the UI.
   /// - A provider that answered once and **then** broke keeps enforcing from the
-  ///   cached document. Nobody can sign in, and the password no longer helps.
+  ///   cached document — and so does one that is down across a restart, once
+  ///   somebody has signed in with it (see `AuthRuntime.isEnforcing`). Nobody
+  ///   new can sign in, and the password no longer helps.
   ///   Recovery is `FLUMIP_AUTH_ENABLED=false` plus a restart, or
   ///   `UPDATE settings SET "loginRequired" = false;`. Both are in
   ///   docs/authentication.md and HANDOFF.md.
+  ///
+  /// Every password check takes a turn from [throttle], so guessing is slow;
+  /// a throttled request either waits (at most a minute) or is refused with a
+  /// "wait and try again" [ArgumentException]. A missing password, an admin
+  /// session and an enforcing server never reach it.
   ///
   /// Never throws on the runtime lookup, for the reason given on
   /// `FlumipEndpoint.requireLogin`: a half-initialised process must not turn
@@ -130,6 +315,32 @@ class SettingsService {
     final stored = settings.settingsPassword;
     if (stored == null || stored.isEmpty) return false;
 
+    // Everything from here is a guess being checked, so it takes a turn. See
+    // [SettingsPasswordThrottle] for what that costs a real administrator.
+    final wait = throttle.acquire();
+    var success = false;
+    try {
+      if (wait > Duration.zero) {
+        session.log(
+          'Delaying a settings password check by ${wait.inSeconds} s after '
+          'repeated wrong passwords',
+          level: LogLevel.warning,
+        );
+        await _sleep(wait);
+      }
+      success = await _checkPassword(session, settings, password, stored);
+      return success;
+    } finally {
+      throttle.release(success: success);
+    }
+  }
+
+  Future<bool> _checkPassword(
+    Session session,
+    Settings settings,
+    String password,
+    String stored,
+  ) async {
     if (looksLikePasswordHash(stored)) {
       return verifyPassword(password, stored);
     }
@@ -186,10 +397,30 @@ class SettingsService {
       // null column would have no break-glass credential at all, so — with
       // single sign-on off, which is the default — nobody could open the
       // settings tab to configure the server they just installed.
-      await Settings.db.insertRow(
+      final initial = _initialPassword(session);
+      final inserted = await Settings.db.insertRow(
         session,
-        Settings(settingsPassword: hashPassword(defaultSettingsPassword)),
+        Settings(settingsPassword: hashPassword(initial.password)),
       );
+      if (initial.generated) {
+        // Two first reads racing on an empty table both insert, and the
+        // duplicate clean-up below keeps the oldest row. Announce only the
+        // password that survives, or the log would offer one that never works.
+        final oldest = await Settings.db.findFirstRow(
+          session,
+          where: (t) => t.id > 0,
+          orderBy: (t) => t.id,
+        );
+        if (oldest?.id == inserted.id) {
+          _announce(
+            '$initialSettingsPasswordLogPrefix${initial.password}\n'
+            'This is the password for the Settings tab of this new FLUMIP '
+            'install. It is shown once and stored only as a hash; change it in '
+            'Settings. To choose it yourself on the next new install, set '
+            '$initialSettingsPasswordEnv.',
+          );
+        }
+      }
       return;
     }
 
@@ -207,6 +438,29 @@ class SettingsService {
         where: (t) => t.id.notEquals(keep),
       );
     }
+  }
+
+  /// The first settings password of a new install.
+  ///
+  /// `changeme` in development and test run modes, so the dev workflow and the
+  /// test suite need nothing set up. Anywhere else — production, staging —
+  /// [initialSettingsPasswordEnv] if the installer set it, otherwise a random
+  /// one that [_checkAndCreateSettings] writes to the console once.
+  ({String password, bool generated}) _initialPassword(Session session) {
+    final runMode = _runMode ?? session.server.serverpod.runMode;
+    if (runMode == ServerpodRunMode.development ||
+        runMode == ServerpodRunMode.test) {
+      return (password: defaultSettingsPassword, generated: false);
+    }
+    final fromEnv = _env[initialSettingsPasswordEnv];
+    if (fromEnv != null && fromEnv.trim().isNotEmpty) {
+      session.log(
+        'Set the first settings password from $initialSettingsPasswordEnv',
+        level: LogLevel.info,
+      );
+      return (password: fromEnv, generated: false);
+    }
+    return (password: generateSettingsPassword(), generated: true);
   }
 
   /// Updates the settings in the database.
@@ -234,6 +488,9 @@ class SettingsService {
       ..publicMode = settings.publicMode
       ..maxProjectLifetimeDays = settings.maxProjectLifetimeDays
       ..guestMaxProjects = settings.guestMaxProjects
+      ..guestSnpMaxMegabytes = settings.guestSnpMaxMegabytes
+      ..guestMaxSnps = settings.guestMaxSnps
+      ..guestSnpRetentionDays = settings.guestSnpRetentionDays
       ..termsVersion = settings.termsVersion
       ..publicNoticeText = settings.publicNoticeText
       ..imprintUrl = settings.imprintUrl
@@ -323,4 +580,18 @@ class SettingsService {
     }
     return verifyPassword(defaultSettingsPassword, stored);
   }
+}
+
+/// A random settings password: 20 characters from an alphabet with no
+/// look-alikes (no 0/O, 1/l/I), in groups of five so it can be read off a
+/// terminal and typed. Over 110 bits.
+String generateSettingsPassword({Random? random}) {
+  const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  final rng = random ?? Random.secure();
+  final groups = List.generate(
+    4,
+    (_) =>
+        List.generate(5, (_) => alphabet[rng.nextInt(alphabet.length)]).join(),
+  );
+  return groups.join('-');
 }

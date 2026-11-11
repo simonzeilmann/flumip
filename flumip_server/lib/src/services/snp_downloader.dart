@@ -45,6 +45,15 @@ abstract class SnpDownloader {
   });
 }
 
+/// Looks [host] up; the same contract as [resolveHost], which is the default.
+typedef HostResolver = Future<List<InternetAddress>> Function(String host);
+
+/// Opens a TCP connection to one already-vetted [address]. [Socket.startConnect]
+/// in production; a test substitutes one that records the address and dials a
+/// local server instead.
+typedef PinnedConnector =
+    Future<ConnectionTask<Socket>> Function(InternetAddress address, int port);
+
 /// The real [SnpDownloader]: `dart:io`'s [HttpClient], following redirects by hand.
 ///
 /// ## Why redirects are followed manually
@@ -56,6 +65,23 @@ abstract class SnpDownloader {
 /// `followRedirects = false` each hop is re-validated through
 /// [snpSourceUrlRejection] before it is dialled.
 ///
+/// ## Why the connection is pinned
+///
+/// ⚠️ Vetting a hop and then handing its URL to [HttpClient] would let the client
+/// look the name up *again* when it connects, and a hostile DNS server can answer
+/// differently the second time: public for the check, `127.0.0.1` or
+/// `169.254.169.254` for the connect (DNS rebinding). So the client never sees a
+/// name it can resolve. [HttpClient.connectionFactory] is replaced by
+/// [pinnedConnectionFactory], which dials only the addresses that
+/// [snpSourceUrlRejection] passed for that hop and, for `https`, runs TLS over
+/// that socket with the *original hostname* — so SNI, certificate verification
+/// and the `Host` header are exactly what they would have been.
+///
+/// Environment proxies (`HTTP_PROXY`, `HTTPS_PROXY`) are ignored for the same
+/// reason: a proxy resolves the name itself, out of reach of the check. A
+/// deployment whose only way out is a proxy cannot import SNP sets by URL; it
+/// can still upload them.
+///
 /// What is given up is `wget -c` resume. Accepted: on failure the partial file is
 /// deleted and the import starts over, because a half-download that silently
 /// resumes against a *changed* remote file produces a corrupt archive — worse
@@ -65,10 +91,23 @@ class HttpSnpDownloader implements SnpDownloader {
     this.maxRedirects = 5,
     this.connectTimeout = const Duration(seconds: 30),
     this.idleTimeout = const Duration(minutes: 5),
+    this.resolver = resolveHost,
+    this.connector = Socket.startConnect,
+    this.securityContext,
   });
 
   final int maxRedirects;
   final Duration connectTimeout;
+
+  /// How each hop's host is looked up. Called exactly once per hop; the
+  /// addresses it returns are the only ones that hop may connect to.
+  final HostResolver resolver;
+
+  /// How a vetted address is dialled. Never given a name, only an address.
+  final PinnedConnector connector;
+
+  /// Trust store for `https` hops; null means the system roots.
+  final SecurityContext? securityContext;
 
   /// How long the transfer may stall before it is abandoned.
   ///
@@ -89,13 +128,27 @@ class HttpSnpDownloader implements SnpDownloader {
     required List<String> allowedHosts,
     required FutureOr<void> Function(int received, int? total) onProgress,
   }) async {
-    final client = HttpClient()..connectionTimeout = connectTimeout;
+    // Filled in hop by hop, just before each request, with the addresses that
+    // passed the guard. The connection factory reads nothing else.
+    final pins = <String, List<InternetAddress>>{};
+    final client = HttpClient(context: securityContext)
+      ..connectionTimeout = connectTimeout
+      // ⚠️ DIRECT, never the environment: a proxy would resolve the name itself
+      // and the pin below would be pinning the proxy, not the destination.
+      ..findProxy = ((_) => 'DIRECT')
+      ..connectionFactory = pinnedConnectionFactory(
+        pins,
+        connector: connector,
+        securityContext: securityContext,
+        connectTimeout: connectTimeout,
+      );
 
     IOSink? sink;
     try {
       final response = await _fetchFollowingRedirects(
         client,
         url,
+        pins: pins,
         allowedHosts: allowedHosts,
       );
 
@@ -176,6 +229,7 @@ class HttpSnpDownloader implements SnpDownloader {
   Future<HttpClientResponse> _fetchFollowingRedirects(
     HttpClient client,
     Uri url, {
+    required Map<String, List<InternetAddress>> pins,
     required List<String> allowedHosts,
   }) async {
     var current = url;
@@ -183,7 +237,7 @@ class HttpSnpDownloader implements SnpDownloader {
     for (var hop = 0; hop <= maxRedirects; hop++) {
       // ⚠️ The check happens on every hop, not just the first. A URL that passes
       // at the front door can still redirect into the deployment's own network.
-      final addresses = await resolveHost(current.host);
+      final addresses = await resolver(current.host);
       final refusal = snpSourceUrlRejection(
         current,
         resolved: addresses,
@@ -194,6 +248,11 @@ class HttpSnpDownloader implements SnpDownloader {
           hop == 0 ? refusal : 'This address redirected somewhere refused.',
         );
       }
+
+      // ⚠️ The very list the guard just passed — not a fresh lookup. A pooled
+      // connection from an earlier hop to the same host:port may be reused
+      // instead, which is fine: it went to an address vetted then.
+      pins[pinKey(current)] = List.unmodifiable(addresses);
 
       final request = await client.getUrl(current)
         // ⚠️ Off, so that each hop comes back here to be re-validated before it
@@ -230,6 +289,90 @@ class HttpSnpDownloader implements SnpDownloader {
     throw SnpDownloadException(
       'This address redirected more than $maxRedirects times.',
     );
+  }
+
+  /// The [pins] key for [url]: what [HttpClient] pools connections by.
+  static String pinKey(Uri url) =>
+      '${url.scheme}://${url.host.toLowerCase()}:${url.port}';
+
+  /// An [HttpClient.connectionFactory] that connects only to the addresses
+  /// recorded in [pins] for the request's scheme, host and port.
+  ///
+  /// The addresses are tried in order, each given its share of
+  /// [connectTimeout], so a host with an unreachable IPv6 address still works
+  /// over IPv4 — the fallback [Socket.startConnect] would do for a name, but
+  /// confined to the vetted list. For `https` the TLS handshake runs over the
+  /// chosen socket with `host:` set to the URL's hostname: that name, not the
+  /// address, is what goes out as SNI and what the certificate must match.
+  ///
+  /// ⚠️ Fails closed. A URL with no pin, or a proxy being asked for, is a bug in
+  /// the caller, and the answer is no connection rather than a fallback lookup.
+  static Future<ConnectionTask<Socket>> Function(
+    Uri url,
+    String? proxyHost,
+    int? proxyPort,
+  )
+  pinnedConnectionFactory(
+    Map<String, List<InternetAddress>> pins, {
+    PinnedConnector connector = Socket.startConnect,
+    SecurityContext? securityContext,
+    Duration connectTimeout = const Duration(seconds: 30),
+  }) {
+    return (url, proxyHost, proxyPort) {
+      if (proxyHost != null) {
+        return Future.error(
+          const SocketException('Refusing to connect through a proxy.'),
+        );
+      }
+      final addresses = pins[pinKey(url)];
+      if (addresses == null || addresses.isEmpty) {
+        return Future.error(
+          const SocketException('Refusing to connect to an unvetted host.'),
+        );
+      }
+
+      var cancelled = false;
+      ConnectionTask<Socket>? attempt;
+      final perAddress = connectTimeout ~/ addresses.length;
+
+      Future<Socket> connect() async {
+        Object error = const SocketException('No address could be reached.');
+        Socket? socket;
+        for (final address in addresses) {
+          if (cancelled) break;
+          try {
+            final task = attempt = await connector(address, url.port);
+            socket = await task.socket.timeout(
+              perAddress,
+              onTimeout: () {
+                task.cancel();
+                throw const SocketException('Connection timed out.');
+              },
+            );
+            break;
+          } catch (e) {
+            error = e;
+          }
+        }
+        if (socket == null || cancelled) {
+          socket?.destroy();
+          throw error;
+        }
+        if (url.scheme != 'https') return socket;
+        return SecureSocket.secure(
+          socket,
+          host: url.host,
+          context: securityContext,
+        );
+      }
+
+      return Future.value(
+        ConnectionTask.fromSocket(connect(), () {
+          cancelled = true;
+          attempt?.cancel();
+        }),
+      );
+    };
   }
 
   static String _gb(int bytes) =>

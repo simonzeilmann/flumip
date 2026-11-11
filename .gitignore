@@ -12,3 +12,7 @@
 /deployment/docker/.env
 /deployment/docker/data/
 /deployment/docker/projects/
+# The optional Pocket ID (init-env.sh --pocket-id): its encryption key, and its
+# database of users, passkeys and signing keys.
+/deployment/docker/pocket-id.env
+/deployment/docker/pocket-id-data/

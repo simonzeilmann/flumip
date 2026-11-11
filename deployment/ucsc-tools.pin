@@ -1,0 +1,29 @@
+# UCSC's bigGenePredToGenePred, which fetch-genome.sh needs to build hs1's
+# refGene.txt. Nothing else uses it.
+#
+# setup-mipgen.sh sources this file. deployment/docker/mipgen.Dockerfile names
+# the same URL and hash in its BIGGENEPRED_* build arguments: update all three
+# lines together.
+#
+# Why a pinned hash, and what happens when it goes stale: UCSC publishes no
+# checksum file for its binaries, so TLS alone would mean installing whatever
+# hgdownload.soe.ucsc.edu serves that day and running it. With the hash, a
+# changed file is refused. UCSC does replace this binary in place with every
+# release, so the pin does go stale; when it does, the installers leave the
+# tool out (and keep a copy that is already installed), say so, and carry on.
+# Only hs1 is affected. To take the new file, check it yourself and give its
+# hash for one run:
+#
+#   BIGGENEPRED_SHA256=<sha256 you checked> ./setup-mipgen.sh
+#   docker compose build --build-arg BIGGENEPRED_SHA256=<sha256 you checked>
+#
+# then update the hash here.
+#
+# ⚠️ An empty hash means "not verified yet" and is refused like a wrong one.
+# To fill it in, on any machine:
+#
+#   curl -fsSL --proto '=https' "$BIGGENEPRED_URL" | sha256sum
+#
+# Plain KEY=value lines only: this file is sourced by sh, not just bash.
+BIGGENEPRED_URL=https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigGenePredToGenePred
+BIGGENEPRED_SHA256=

@@ -35,8 +35,14 @@ web app and both install scripts.
 ```bash
 mkdir flumip && cd flumip
 curl -fLO https://github.com/simonzeilmann/flumip/releases/latest/download/flumip-build.tar.gz
+curl -fLO https://github.com/simonzeilmann/flumip/releases/latest/download/SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS     # must print: flumip-build.tar.gz: OK
 tar -xzf flumip-build.tar.gz
 ```
+
+Keep `SHA256SUMS` next to the tarball: `setup-flumip.sh --file` checks the
+tarball against it again. Releases up to v0.8.0 publish
+`flumip-build.tar.gz.sha256` instead, which is used the same way.
 
 **2. Install MIPGEN, its tools and the hg38 reference data** into `/opt/flumip`.
 This downloads several gigabytes from UCSC and NCBI.
@@ -56,14 +62,17 @@ systemd service. Use the hostname people will type into their browser.
 **4. Open the app** at `http://mips.example.org:9082` and finish setting up in
 the browser:
 
-1. **Settings** — the settings password is `changeme`. Change it now; the tab
-   warns until you do.
+1. **Settings** — sign in with the password `setup-flumip.sh` printed at the end
+   ("The settings password of this new install is …") and change it at once.
+   Until you do, `sudo cat /etc/flumip/initial-settings-password.env` shows it
+   again; delete that file once it is changed. Installs made before this
+   version started with `changeme`, and the tab warns until that is changed.
 2. **Genomes & SNP** — open the **⋮** menu beside *Genomes* and choose **Scan for
    new genomes**. hg38 appears. Click
    **Build index** on it and wait: `bwa index` on a human genome takes about an
    hour, and the genome shows **Indexing** until it is done.
-3. **Projects** — **Create project**, choose the genome, add a few genes (for
-   example `BRCA1`), then **Create BED file** and **Generate MIPs**.
+3. **Projects** — **Create project**, give it a name, choose the genome, add a
+   few genes (for example `BRCA1`), then **Save and start**.
    Progress is shown live; when it finishes, **Download** the results or open
    them in **UCSC**.
 
@@ -131,21 +140,38 @@ masking.
 A project is one probe design: a genome, an optional SNP set, a list of target
 **genes**, and the MIPGEN options.
 
-1. **Create project** and give it a name and description. **Show options**
-   exposes the MIPGEN parameters — capture size, arm lengths, tag sizes, scoring
-   method, copy-number checks, tiling and so on. The defaults are MIPGEN's own
-   and are a sensible starting point.
-2. Choose the **Genome** and, optionally, the **SNP set**, and **Add a gene** for
-   each target. Genes are looked up by their HGNC symbol in the genome's
-   `refGene.txt`.
-3. **Create BED file** turns the gene list into target regions.
-4. **Generate MIPs** starts MIPGEN. The project shows its live progress and the
-   elapsed time. Two optional switches:
-   - **Delete intermediate files** — on by default. bwa's working files are
-     most of a project's size and nothing reads them afterwards; switch it off
-     only to keep them for debugging a design.
-   - **Email me when it finishes** — shown once an administrator has
-     [configured email](#email).
+**Create project** opens one form for all of it:
+
+- **Project** — a name and, optionally, a description.
+- **Design target** — the **Genome**, optionally the **SNP set**, and **Add a
+  gene** for each target. Genes are looked up by their HGNC symbol in the
+  genome's `refGene.txt`.
+- **MIP design options** — **Show options** exposes the MIPGEN parameters:
+  capture size, arm lengths, tag sizes, scoring method, copy-number checks,
+  tiling and so on. The defaults are MIPGEN's own and are a sensible starting
+  point.
+- **Run** — two switches:
+  - **Delete intermediate files** — on by default. bwa's working files are
+    most of a project's size and nothing reads them afterwards; switch it off
+    only to keep them for debugging a design.
+  - **Email me when it finishes** — shown once an administrator has
+    [configured email](#email).
+
+The form ends in three buttons:
+
+- **Cancel** discards it. Nothing is stored until one of the other two is
+  pressed.
+- **Save** stores the project as a draft. It needs only a name. The project
+  opens in the list, where the genome, the SNP set and the genes can still be
+  changed, and where **Create BED file** (turns the gene list into target
+  regions) and **Generate MIPs** (starts MIPGEN) start it when it is ready.
+- **Save and start** stores the project, creates the BED file and starts
+  MIPGEN in one go. It needs a genome and at least one gene. The project shows
+  its live progress and the elapsed time.
+
+If the project is stored but cannot be started — a gene that is not in the
+genome, say — it is kept as a draft and a message says why. Fix it on the
+project and start it from there.
 
 ### Results
 
@@ -188,14 +214,24 @@ on your own machine and never comes prebuilt from FLUMIP; see [License](#license
 once, then again whenever you want another genome:
 
 - installs the bioinformatics tools with `apt`;
-- clones MIPGEN, unmodified and pinned to a known commit, into
-  `/opt/flumip/MIPGEN`, and builds it;
+- clones MIPGEN, unmodified, at the full commit id in `mipgen.pin` into
+  `/opt/flumip/MIPGEN`, refuses to build anything else, and builds it as you.
+  `/opt/flumip`, `MIPGEN` and `tools` are writable only by root or you;
+- installs UCSC's `bigGenePredToGenePred` (needed for hs1 only) only if it
+  matches the SHA-256 in `ucsc-tools.pin`. UCSC replaces that file in place, so
+  when the hash no longer matches, the script says so, prints the new hash and
+  carries on without it; after checking the file yourself,
+  `BIGGENEPRED_SHA256=<hash> ./deployment/setup-mipgen.sh` installs it;
 - installs FLUMIP's `mipgen-trf` helper into `/opt/flumip/tools`, which lets
   MIPGEN accept the Tandem Repeats Finder that Ubuntu ships;
 - creates `/opt/flumip/{data/genomes,data/custom_snp,projects,tools}`;
 - downloads the reference data for the genomes you name (with `--download`);
 - gives the service user (default `www-data`, `--service-user` to change) write
-  access to `/opt/flumip`.
+  access to `/opt/flumip/data` and `/opt/flumip/projects` only, and downloads
+  genomes as that user.
+
+An install made before this version has a `MIPGEN` directory the service could
+write to. The next run does not trust it: it clones and builds it afresh once.
 
 Run it with no arguments on a terminal for interactive prompts, or pass
 switches to script it. `--help` lists them all.
@@ -203,17 +239,33 @@ switches to script it. `--help` lists them all.
 **`deployment/setup-flumip.sh`** installs or updates the application itself:
 
 - checks prerequisites, and warns if `setup-mipgen.sh` has not run;
-- downloads the latest release (or uses `--file`, `--url`, `--release TAG`);
+- downloads the latest release (or uses `--file`, `--url`, `--release TAG`) and
+  checks it against the `SHA256SUMS` published with the release (or its
+  `.sha256`). A build it cannot check is refused unless you pass
+  `--skip-checksum`;
 - starts a `postgres:18` container, reachable from this machine only (or
   connects to an existing database with `--db existing --db-host … --db-port …
   --db-name … --db-user …`; the password is asked for, or read from
-  `FLUMIP_DB_PASSWORD` with `--yes`);
+  `FLUMIP_DB_PASSWORD` with `--yes`). A new install connects as the role
+  `flumip`, an ordinary role that owns the database, not as the superuser
+  (`--db-user postgres` for the old behaviour);
+- installs `/var/www/flumip` owned by root and read-only to the service;
+- generates a random first settings password for a new install and shows it
+  once;
 - writes `config/production.yaml`, generates random secrets into
   `/etc/flumip/passwords.yaml`, and creates an optional settings file at
   `/etc/flumip/flumip.env`;
 - applies database migrations;
 - installs and starts the `flumip` systemd service, running as
-  `www-data` (`--service-user` to change; `--no-restart` to leave it stopped);
+  `www-data` (`--service-user` to change; `--no-restart` to leave it stopped),
+  in a systemd sandbox: it can write only the projects, genome and custom SNP
+  directories. If you move one of these in **Settings → Storage**, re-run the
+  script (it reads the paths from the database), or pass
+  `--writable-dir /that/dir`, or add `ReadWritePaths=/that/dir` with
+  `sudo systemctl edit flumip`;
+- keeps ports 9080 and 9081 to this machine with a firewall rule of its own
+  (the `flumip-firewall` service, nftables). It touches no other port;
+  `sudo systemctl stop flumip-firewall` lifts it and `--no-firewall` removes it;
 - with `--pocket-id https://id.example.org`, also installs
   [Pocket ID](docs/pocket-id.md) as the server's own single sign-on, for a
   public instance with no institutional provider to sign in with;
@@ -228,8 +280,9 @@ Like the MIPGEN script, it prompts on a terminal when run with no switches.
 | Install directory | `/var/www/flumip` |
 | Service | `flumip` |
 | Public port (web: app, API under `/api`, downloads, sign-in) | 9082 |
-| Internal ports (API, Insights) — keep firewalled | 9080, 9081 |
+| Internal ports (API, Insights), firewalled to this machine by `flumip-firewall` | 9080, 9081 |
 | Database (localhost only) | container `flumip_postgres`, volume `flumip_data`, port 5432 |
+| Database role | `flumip`, owner of the database (installs before this version: `postgres`) |
 
 ⚠️ Installers before this layout named everything `flumip_production` (service,
 `/var/www/flumip_production`, `postgres_production`, `/etc/flumip/*_production.*`).
@@ -242,7 +295,9 @@ up `/etc/flumip` and the database if you want to keep them.
 Both ways of installing can use a PostgreSQL server you already run instead of
 starting their own. It has to be **PostgreSQL 18**, with a database of its own
 for FLUMIP and a user that may create tables in it: FLUMIP applies its
-migrations on every start. FLUMIP connects without TLS, so keep the database on
+migrations on every start. Make that an ordinary role that owns the database,
+not a superuser (`CREATE ROLE flumip LOGIN PASSWORD '…'; CREATE DATABASE flumip
+OWNER flumip;`); the migrations create no extensions. FLUMIP connects without TLS, so keep the database on
 a network you trust.
 
 **With the scripts**, pass the connection to `setup-flumip.sh`. The password is
@@ -341,8 +396,11 @@ sudo certbot --nginx -d mips.example.org
 
 Once the proxy is in place, none of FLUMIP's ports needs to be reachable from
 outside the machine. Serverpod always starts the API (9080) and Insights (9081)
-servers too, but the app never uses either; Insights is only for Serverpod's own
-monitoring tool.
+servers too, on every address, and cannot be told otherwise; the app never uses
+either, and `setup-flumip.sh` firewalls both to this machine. Firewall 9082 too
+once the proxy is in place. The proxy has to pass the original host on
+(`proxy_set_header Host $host;` above) or `FLUMIP_PUBLIC_URL` has to be set:
+FLUMIP refuses browser requests that do not come from its own address.
 
 Then re-run `setup-flumip.sh` with `--host` set to the public domain, so the
 server advertises the right URL. If you use single sign-on, also set
@@ -356,6 +414,13 @@ tarball you pass with `--file`), keeps the existing database, secrets, settings
 file and the choices of the first run, replaces the installed build, applies any
 new migrations and restarts the service. Switches given on the re-run replace
 the remembered values, for example `--host` after moving behind a proxy.
+
+The first update of an install made before the security hardening also makes
+the install directory root's, sandboxes the service and adds the firewall rule,
+and `setup-mipgen.sh` should be run again so MIPGEN is cloned afresh. Do both
+between designs. The database role and the settings password are kept; see
+[docs/security.md](docs/security.md#upgrading-an-existing-install) for what is
+left to do by hand.
 
 ### Operating
 
@@ -382,9 +447,9 @@ only the software and keeps everything that cannot be downloaded again:
 
 | | Removed by default | Kept unless you pass |
 | --- | --- | --- |
-| Service and build | `flumip` unit, `/var/www/flumip` | |
+| Service and build | `flumip` unit, `/var/www/flumip`, the `flumip-firewall` unit and its rules | |
 | MIPGEN | `/opt/flumip/MIPGEN` and `/opt/flumip/tools` (`--keep-mipgen` to keep them) | |
-| Database | | `--database`: the `flumip_postgres` container, its volume `flumip_data`, and `/etc/flumip/{passwords.yaml,setup.conf,flumip.env}` |
+| Database | | `--database`: the `flumip_postgres` container, its volume `flumip_data`, and `/etc/flumip/{passwords.yaml,setup.conf,flumip.env,initial-settings-password.env}` |
 | Projects | | `--projects`: `/opt/flumip/projects` |
 | Genomes | | `--genomes`: `/opt/flumip/data/genomes`, bwa indexes included |
 | Custom SNP sets | | `--custom-snps`: `/opt/flumip/data/custom_snp` |
@@ -411,7 +476,8 @@ removed with `docker compose`, see [docs/docker.md](docs/docker.md#uninstalling)
 ## Configuration
 
 Almost everything is configured in the **Settings** tab and takes effect without
-a restart.
+a restart. What FLUMIP does to protect a server, and the few switches for it
+that live in the environment, are in [docs/security.md](docs/security.md).
 
 **Who can open Settings:** anyone with the settings password while single
 sign-on is off, and only the administrator addresses while it is on. The

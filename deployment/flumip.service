@@ -16,8 +16,90 @@ ExecStart=/var/www/flumip/bundle/bin/main --mode=production --server-id=producti
 # docs/authentication.md. setup-flumip.sh creates this file, but the leading
 # dash keeps the service starting if an admin ever deletes it.
 EnvironmentFile=-/etc/flumip/flumip.env
+# FLUMIP_INITIAL_SETTINGS_PASSWORD, which setup-flumip.sh writes for a new
+# install only, root-readable only. The server uses it once, when it creates its
+# settings. The dash: upgrades and older installs have no such file.
+EnvironmentFile=-/etc/flumip/initial-settings-password.env
 Restart=always
+# setup-flumip.sh replaces this line with --service-user.
 User=www-data
+
+# --- Sandbox -----------------------------------------------------------------
+#
+# What the server and its children really do decides every line here. The
+# server is an ahead-of-time compiled Dart program; it serves HTTP, talks to
+# PostgreSQL, SMTP, the single sign-on provider and the SNP download hosts, and
+# starts /bin/sh, mipgen, bwa, samtools, tabix, trf (through mipgen-trf), ps,
+# pgrep and kill, all as this same user. It writes only into the three Storage
+# directories and its temporary files. Anything else it touches is read-only to
+# it, and its own program most of all.
+#
+# ⚠️ To give it another directory without re-running setup-flumip.sh, use
+#   sudo systemctl edit flumip       ([Service] ReadWritePaths=/that/dir)
+# rather than editing this file, which setup-flumip.sh regenerates.
+
+# The whole file system read-only, except the directories below and the
+# kernel's virtual ones the server only reads. A missing directory (the dash)
+# does not stop the service starting.
+ProtectSystem=strict
+# setup-flumip.sh replaces this line with the projects, genomes and custom SNP
+# directories it found (the Storage settings, symlinks inside them followed, and
+# --writable-dir). An index build writes its multi-gigabyte output next to the
+# genome, so the genome directory has to be here, not only the projects.
+ReadWritePaths=-/opt/flumip/projects -/opt/flumip/data/genomes -/opt/flumip/data/custom_snp
+# /home, /root and /run/user hidden. setup-flumip.sh makes it read-only instead
+# when a directory or tool it found is in there.
+ProtectHome=yes
+# A /tmp of its own: the zip files of a project download are built there.
+# Emptied when the service stops, which nothing relies on surviving.
+PrivateTmp=yes
+# New files: no access for others. The group (the service user's, which
+# setup-mipgen.sh gives the data directories) keeps read access, so the admin
+# in that group can still read results and indexes.
+UMask=0027
+
+# No way to gain privileges: nothing it runs is setuid, and it needs no
+# capability at all (it binds ports above 1024 and reads only its own files).
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictSUIDSGID=yes
+# Only /dev/null, /dev/zero, the random devices and the like. None of the tools
+# opens a device.
+PrivateDevices=yes
+# Nothing here changes kernel settings, modules, logs, the clock, the hostname
+# or cgroups. Reading /proc, which ps and pgrep need, still works: only writes
+# to it and the kernel log are blocked.
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+# IP and local sockets, and netlink, which listing network interfaces
+# (getifaddrs) needs. No raw sockets, no packet sockets, no Bluetooth.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+# No containers or sandboxes of its own: nothing it runs creates namespaces.
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+# System V IPC objects it leaves behind go when it stops. It makes none.
+RemoveIPC=yes
+# The system calls an ordinary service makes. ⚠️ Anything outside the set fails
+# with EPERM instead of killing the process, so a tool that needs an unusual
+# call reports an error in its log rather than vanishing mid-design.
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+#
+# Deliberately not set, because they could break a run and cannot be tested
+# here: MemoryDenyWriteExecute= (the Dart runtime may map executable memory
+# at run time),
+# ProtectProc=/ProcSubset= (ps and pgrep read /proc to find a run's
+# processes), PrivateUsers= (would hide the owners of files the admin put in
+# the data directories), IPAddressDeny= (it would apply to every connection,
+# the users' included, not to one port; see the firewall in setup-flumip.sh),
+# and MemoryMax=/TasksMax= (a hg38 design legitimately needs gigabytes).
 
 [Install]
 WantedBy=multi-user.target

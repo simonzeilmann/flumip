@@ -26,6 +26,23 @@ on:
         required: false
         default: true
         type: boolean
+    # Named, not `secrets: inherit`: the callers pass exactly these two and
+    # nothing else, so a pull request run never holds a deploy key. Optional,
+    # because a pull request from a fork has neither (run_tests is off there).
+    secrets:
+      POSTGRES_TEST_PASSWORD:
+        required: false
+      PASSWORDS_YAML:
+        description: >-
+          A passwords.yaml for the test suite, which runs in test mode and so
+          reads only its `shared:` and `test:` sections. The callers pass
+          TEST_PASSWORDS_YAML when it exists, the full PASSWORDS_YAML if not.
+        required: false
+
+# Read-only. A called workflow can only narrow what its caller grants, and this
+# one only reads the repository.
+permissions:
+  contents: read
 
 jobs:
   lint-and-build:
@@ -33,10 +50,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes, so the token is not left in .git/config for
+          # the build and test steps to find.
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
@@ -46,7 +67,7 @@ jobs:
       # between runs. Keep this in step with the sdk constraints in the three
       # pubspec.yaml files.
       - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
           flutter-version: '3.47.5'
@@ -116,9 +137,15 @@ jobs:
       # transitive sqlite3 with a native build hook, which `dart compile exe`
       # cannot bundle. Writes into the already-gitignored build/ directory.
       - name: Build
+        # Through env, not `${{ }}` inside the script, so an input is data
+        # rather than shell source. Unquoted below on purpose: it is a list of
+        # flags and has to split into words.
+        env:
+          WEB_BUILD_ARGS: ${{ inputs.web_build_args }}
         run: |
           cd flumip_server && dart build cli --target bin/main.dart --output build
-          cd ../flumip_flutter && flutter build web ${{ inputs.web_build_args }}
+          # shellcheck disable=SC2086
+          cd ../flumip_flutter && flutter build web $WEB_BUILD_ARGS
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -145,16 +172,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes, so the token is not left in .git/config for
+          # the build and test steps to find.
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'oracle' # See 'Supported distributions' for available options
           java-version: '21'
 
       - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
           flutter-version: '3.47.5'
@@ -164,9 +195,14 @@ jobs:
           cd flumip_server && flutter pub get
           cd ../flumip_flutter && flutter pub get
 
+      # Through env and printf, not `echo "${{ secrets.PASSWORDS_YAML }}"`: a
+      # secret pasted into the script is shell source, so a `$`, backtick or
+      # quote in a password was expanded or broke the step.
       - name: Inject passwords.yaml
+        env:
+          PASSWORDS_YAML: ${{ secrets.PASSWORDS_YAML }}
         run: |
-          echo "${{ secrets.PASSWORDS_YAML }}" > flumip_server/config/passwords.yaml
+          printf '%s\n' "$PASSWORDS_YAML" > flumip_server/config/passwords.yaml
 
       - name: Run tests
         run: |
@@ -185,10 +221,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Nothing here pushes, so the token is not left in .git/config for
+          # the build and test steps to find.
+          persist-credentials: false
 
       - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
           flutter-version: '3.47.5'

@@ -171,6 +171,34 @@ class AuthorizationService {
     await requireAccessTo(session, project);
   }
 
+  /// Refuses unless the caller may touch **every** project that points at
+  /// [optionsId].
+  ///
+  /// Stricter than [requireOptionsAccess], which asks about the first project
+  /// it finds. That is the same answer while options and projects are one to
+  /// one — which `ProjectService.createProject` now makes sure of — but it was
+  /// not always made sure of: `createProject` used to accept any options id, so
+  /// a project of one's own could be pointed at somebody else's options, and the
+  /// first-row check then answered for the wrong project. Reading, changing or
+  /// deleting options goes through here so a row left over from that time
+  /// cannot be used as a key to its other owner's configuration.
+  ///
+  /// Unreferenced options pass, for the reason given on [requireOptionsAccess].
+  Future<void> requireOptionsAccessForAll(
+    Session session,
+    int optionsId,
+  ) async {
+    if (!isEnforcing) return;
+
+    final projects = await Project.db.find(
+      session,
+      where: (t) => t.options.equals(optionsId),
+    );
+    for (final project in projects) {
+      await requireAccessTo(session, project);
+    }
+  }
+
   /// Every project the caller is allowed to see.
   ///
   /// Filtered in Dart with the very same predicate the single-project gate uses,
@@ -299,6 +327,49 @@ class AuthorizationService {
         .toList();
   }
 
+  /// [snp] as the caller may read it, or [ProjectAccessDeniedException].
+  ///
+  /// For `GenomeEndpoint.getSnp`, which used to return any row to anybody —
+  /// a private SNP set's name, its owner and the server paths it lives under.
+  ///
+  /// Two ways in:
+  ///
+  /// - the SNP is visible to the caller ([visibleSnps], the rule
+  ///   [requireSnpAccess] applies): the row as it is;
+  /// - it is not, but a project the caller may open uses it — somebody's
+  ///   private set on a project they share by department or share link. The
+  ///   project tile names the SNP set it runs with, and refusing would make
+  ///   the whole tile fail to load, so the caller gets the row **without**
+  ///   anything that says where it lives or came from. Using an SNP through a
+  ///   project is not the same as being shown it.
+  ///
+  /// Neither check logs a refusal on its own, because the first failing is
+  /// the ordinary way into the second.
+  Future<Snp> readableSnp(Session session, Snp snp) async {
+    if ((await visibleSnps(session, [snp])).isNotEmpty) return snp;
+
+    final snpId = snp.id;
+    if (snpId != null &&
+        (await visibleProjects(
+          session,
+          matching: (t) => t.snp.equals(snpId),
+        )).isNotEmpty) {
+      return snp.copyWith(
+        vcfPath: '',
+        tbiPath: '',
+        folder: '',
+        sourceVcfUrl: null,
+        sourceTbiUrl: null,
+      );
+    }
+
+    session.log(
+      'Refused access to SNP ${snp.id} for ${await principal(session)}',
+      level: LogLevel.warning,
+    );
+    throw ProjectAccessDeniedException();
+  }
+
   /// The subset of [all] the caller should be *offered*.
   ///
   /// [visibleSnps] plus the second rule: a shared SNP that is still downloading
@@ -385,6 +456,32 @@ class AuthorizationService {
     if (!who.isGuest) return;
 
     session.log('Refused a guest: $message', level: LogLevel.warning);
+    throw ProjectAccessDeniedException(message: message);
+  }
+
+  /// Refuses everybody but an administrator, on an install that has any.
+  ///
+  /// For changes to the server's shared library that a signed-in user should
+  /// not be able to make for everyone else: removing a genome's index, switching
+  /// a genome off. A guest is refused too, being no administrator.
+  ///
+  /// ⚠️ **Not [requireAdmin], and the difference is the point.** That one
+  /// refuses while sign-in is off; this one passes, following the fail-open
+  /// ordering the rest of this class keeps. An install without sign-in has no
+  /// users to tell apart, everybody on it can already delete every project, and
+  /// refusing here would leave it with a genome nobody can switch back on.
+  Future<void> refuseNonAdmin(
+    Session session, {
+    required String message,
+  }) async {
+    if (!isEnforcing) return;
+    final who = await principal(session);
+    if (who.isAdmin) return;
+
+    session.log(
+      'Refused a non-administrator ($who): $message',
+      level: LogLevel.warning,
+    );
     throw ProjectAccessDeniedException(message: message);
   }
 

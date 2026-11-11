@@ -5,6 +5,10 @@ name: PR checks
 # PRs #22, #23 and #24 all merged unvalidated — and #24 was itself a CI bug that
 # a run of these checks would have caught.
 
+# ⚠️ `pull_request`, never `pull_request_target`. A pull request from a fork
+# runs here with a read-only token and no secrets at all, which is what makes
+# it safe to build and run that fork's code. `pull_request_target` would run
+# with this repository's secrets and a writable token; do not switch to it.
 on:
   pull_request:
     branches:
@@ -45,4 +49,12 @@ jobs:
       # PRs #22, #23 and #24 all merged unvalidated. A minute of Postgres is
       # worth more than a minute of latency.
       run_tests: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    secrets: inherit
+    # Only the two secrets the test job reads, not `secrets: inherit`, which
+    # handed this run every secret in the repository: deploy key, sudo password
+    # and all. TEST_PASSWORDS_YAML, when it exists, is a passwords.yaml holding
+    # only what the tests read (the `shared:` and `test:` sections); until the
+    # owner has created it the full PASSWORDS_YAML stands in, so this keeps
+    # working either way.
+    secrets:
+      POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      PASSWORDS_YAML: ${{ secrets.TEST_PASSWORDS_YAML || secrets.PASSWORDS_YAML }}

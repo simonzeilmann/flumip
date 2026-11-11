@@ -225,6 +225,13 @@ void main() {
     Project project({DateTime? expires}) =>
         Project(name: 'p', options: 1, created: created, expires: expires);
 
+    const demoConfig = AuthConfigSnapshot(
+      enabled: false,
+      buttonLabel: '',
+      projectRetention: Duration(days: 7),
+      maxProjectLifetime: Duration(days: 30),
+    );
+
     test('nothing is deleted on a server that keeps projects', () {
       const keeps = AuthConfigSnapshot(enabled: false, buttonLabel: '');
       expect(deletionDate(project(), keeps), isNull);
@@ -243,9 +250,17 @@ void main() {
       expect(deletionDate(project(expires: expires), publicConfig), expires);
     });
 
+    test("a signed-in user's project has no date on a public instance", () {
+      // Only guests' projects are given one there, and the rest are kept.
+      expect(deletionDate(project(), publicConfig), isNull);
+      expect(canExtend(project(), publicConfig), isFalse);
+    });
+
     test('never earlier than the current window, as the server applies', () {
       final floor = endOfDay(created.add(const Duration(days: 7)));
-      expect(deletionDate(project(), publicConfig), floor);
+      // An unstamped project falls back to the window only in demo mode; on a
+      // public instance it is a signed-in user's, and kept.
+      expect(deletionDate(project(), demoConfig), floor);
       expect(
         deletionDate(
           project(expires: created.add(const Duration(days: 1))),
@@ -256,7 +271,7 @@ void main() {
     });
 
     test('a project goes when its last day is over', () {
-      final deadline = deletionDate(project(), publicConfig)!.toLocal();
+      final deadline = deletionDate(project(), demoConfig)!.toLocal();
       expect([deadline.hour, deadline.minute], [0, 0]);
     });
 

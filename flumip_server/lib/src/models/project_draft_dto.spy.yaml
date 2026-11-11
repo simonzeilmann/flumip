@@ -1,0 +1,22 @@
+### What the create-project form sends: everything a new project needs, in one
+### go. No table.
+###
+### The form used to create a bare project and leave the genome, the SNP set and
+### the genes to be set one call at a time on the project's tile. This carries
+### all of it, so that saving the form either makes the whole project or makes
+### nothing — see `ProjectService.createConfiguredProject`.
+class: ProjectDraftDto
+fields:
+  name: String
+  description: String, default=''
+  ### Unsaved: the server inserts the row itself, so there is no window in which
+  ### options exist without a project, and no id for a caller to point elsewhere.
+  options: ProjectOptions
+  ### The genome to design against, or null to choose it later on the tile.
+  genome: int?
+  ### Optional even with a genome. Checked like `setSnpById` checks it: visible to
+  ### the caller, for this genome's build, and ready.
+  snp: int?
+  ### Normalised like `addGenesToProject`: trimmed, upper-cased, repeats dropped.
+  genes: List<String>?
+  emailNotification: bool, default=false

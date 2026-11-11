@@ -178,6 +178,45 @@ void main() {
       }, tags: ['integration']);
     });
 
+    group('creating a project with an SNP set', () {
+      test(
+        'somebody else\'s private set cannot be attached by its id',
+        () async {
+          // Same hole `setSnpById` closes, at the other door: a project
+          // created with a guessed id would be designed against a private
+          // upload, and its contents could be read back out of the result.
+          await enforceSso(session);
+          final genome = await seedGenome(session, name: 'hg38');
+          final alice = await signIn('alice@uni.example');
+          final bob = await signIn('bob@uni.example');
+          final snp = await seedSnp(
+            session,
+            name: 'alice panel',
+            genome: genome.id,
+            owner: alice.user.id,
+            custom: true,
+            private: true,
+          );
+          final projects = await Project.db.count(session);
+
+          await expectLater(
+            endpoints.project.createConfiguredProject(
+              bob.builder,
+              ProjectDraftDto(
+                name: 'borrowed',
+                options: ProjectOptions(),
+                genome: genome.id,
+                snp: snp.id,
+              ),
+            ),
+            throwsA(isA<ProjectAccessDeniedException>()),
+          );
+          expect(await Project.db.count(session), projects);
+        },
+        tags: ['integration'],
+      );
+    });
+
     group('listMySnps', () {
       test('shows only your own, in any state', () async {
         await enforceSso(session);

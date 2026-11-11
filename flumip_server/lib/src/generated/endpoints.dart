@@ -14,6 +14,8 @@ import 'package:flumip_server/src/generated/custom_snp_request_dto.dart'
     as _iiiv2d81;
 import 'package:flumip_server/src/generated/future_calls.dart' as _i9339m0o;
 import 'package:flumip_server/src/generated/genome.dart' as _i2jfp72f;
+import 'package:flumip_server/src/generated/project_draft_dto.dart'
+    as _ix7q5lqe;
 import 'package:flumip_server/src/generated/project_options.dart' as _i83mfwb1;
 import 'package:flumip_server/src/generated/settings.dart' as _iycfx74a;
 import 'package:serverpod/serverpod.dart' as _is;
@@ -461,6 +463,19 @@ class Endpoints extends _is.EndpointDispatch {
                 params['options'],
                 params['description'],
               ),
+        ),
+        'createConfiguredProject': _is.MethodConnector(
+          name: 'createConfiguredProject',
+          params: {
+            'draft': _is.ParameterDescription(
+              name: 'draft',
+              type: _is.getType<_ix7q5lqe.ProjectDraftDto>(),
+              nullable: false,
+            ),
+          },
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['project'] as _iemg8ri2.ProjectEndpoint)
+                  .createConfiguredProject(session, params['draft']),
         ),
         'deleteProject': _is.MethodConnector(
           name: 'deleteProject',

@@ -29,11 +29,15 @@ class SnpSection extends StatefulWidget {
     required this.genome,
     this.controller,
     this.canAdd = true,
+    this.guestLimits,
   });
 
-  /// Whether the Add button is offered. False for a guest on a public instance,
-  /// who cannot add SNP sets there.
+  /// Whether the Add button is offered. False for a guest on a public instance
+  /// whose server does not let guests add SNP sets.
   final bool canAdd;
+
+  /// What a guest may upload, or null for anybody who is not a guest.
+  final GuestSnpLimits? guestLimits;
 
   final Genome genome;
 
@@ -118,6 +122,7 @@ class _SnpSectionState extends State<SnpSection> {
         // False during a `flutter run`, where the app and the web server are
         // different origins and the session cookie cannot travel with a PUT.
         uploadAvailable: uploadsAvailable,
+        guestLimits: widget.guestLimits,
       ),
     );
     if (draft == null) return;

@@ -341,6 +341,26 @@ void main() {
         expect(utf8.decode(alpha.content as List<int>), 'alpha');
       }, tags: ['unit']);
 
+      test('writes into a private directory under a random name', () async {
+        // It was `<tmp>/flumip-project-<id>-<microseconds>.zip`: guessable, in
+        // a directory every local user can write to, and world-readable.
+        final p = await prepareProject();
+        File('${p.dir}/a.txt').writeAsStringSync('alpha');
+
+        final first = await fileService.zipProjectFiles(session, p.id);
+        final second = await fileService.zipProjectFiles(session, p.id);
+        addTearDown(() {
+          for (final z in [first, second]) {
+            if (z != null && z.existsSync()) z.deleteSync();
+          }
+        });
+
+        expect(first!.path, isNot(second!.path));
+        expect(first.parent.path, isNot(Directory.systemTemp.path));
+        final mode = first.parent.statSync().mode & 0x1ff;
+        expect(mode, 0x1c0, reason: 'the directory is 0700');
+      }, tags: ['unit']);
+
       test('returns null when there is nothing to zip', () async {
         // So the route can 404 rather than hand back an empty archive, which
         // looks like a broken download.

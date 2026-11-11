@@ -42,6 +42,36 @@ class ProjectEndpoint extends FlumipEndpoint {
     }
   }
 
+  /// Creates a project with its genome, SNP set and genes already chosen.
+  ///
+  /// What the create-project form calls: one request that makes the whole
+  /// project or nothing. Like [createProject] it needs no project access check —
+  /// there is no project yet — and the SNP set is checked against the caller in
+  /// the service.
+  ///
+  /// \param session The current session.
+  /// \param draft What the form collected.
+  /// \returns The created [Project] object.
+  Future<Project> createConfiguredProject(
+    Session session,
+    ProjectDraftDto draft,
+  ) async {
+    session.log(
+      "Creating configured project with name: ${draft.name}",
+      level: LogLevel.info,
+    );
+    try {
+      return await projectService.createConfiguredProject(session, draft);
+    } catch (e) {
+      session.log(
+        "Error creating configured project with name: ${draft.name}",
+        level: LogLevel.error,
+        exception: e,
+      );
+      rethrow;
+    }
+  }
+
   /// Deletes a project by ID.
   ///
   /// \param session The current session.

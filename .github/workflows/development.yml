@@ -5,6 +5,10 @@ on:
     branches:
       - development
 
+# Least privilege: the checks only read the repository.
+permissions:
+  contents: read
+
 jobs:
   # No deploy step: development is validated, not shipped. The checks
   # themselves live in checks.yml so they cannot drift from staging/production.
@@ -12,4 +16,12 @@ jobs:
     uses: ./.github/workflows/checks.yml
     with:
       web_build_args: --debug --wasm
-    secrets: inherit
+    # Only the two secrets the test job reads, not `secrets: inherit`, which
+    # handed this run every secret in the repository: deploy key, sudo password
+    # and all. TEST_PASSWORDS_YAML, when it exists, is a passwords.yaml holding
+    # only what the tests read (the `shared:` and `test:` sections); until the
+    # owner has created it the full PASSWORDS_YAML stands in, so this keeps
+    # working either way.
+    secrets:
+      POSTGRES_TEST_PASSWORD: ${{ secrets.POSTGRES_TEST_PASSWORD }}
+      PASSWORDS_YAML: ${{ secrets.TEST_PASSWORDS_YAML || secrets.PASSWORDS_YAML }}

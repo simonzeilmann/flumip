@@ -6,6 +6,7 @@ import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 
+import 'package:flumip_server/src/web/origin_guard.dart';
 import 'package:flumip_server/src/web/routes/api_route.dart';
 import 'package:flumip_server/src/web/routes/app_route.dart';
 import 'package:flumip_server/src/web/routes/auth_routes.dart';
@@ -22,7 +23,42 @@ import 'src/generated/endpoints.dart';
 
 void run(List<String> args) async {
   // Initialize Serverpod and connect it with your generated code.
-  final pod = Serverpod(args, Protocol(), Endpoints());
+  //
+  // ⚠️ httpResponseHeaders replaces Serverpod's default, which answered every
+  // API response with `Access-Control-Allow-Origin: *` — letting any web page a
+  // user opened read the API through their browser. The CORS answer is now
+  // made per request, for allowed origins only; see origin_guard.dart.
+  final pod = Serverpod(
+    args,
+    Protocol(),
+    Endpoints(),
+    httpResponseHeaders: Headers.build((h) {
+      h.accessControlAllowMethods = AccessControlAllowMethodsHeader.methods([
+        Method.post,
+      ]);
+    }),
+  );
+
+  // Who may call the API from a browser, and the method rules that go with it.
+  // Configured before any route is added, and before the server starts.
+  final rejectedOrigins = <String>[];
+  OriginGuard.current = OriginGuard(
+    OriginPolicy.fromEnvironment(
+      Platform.environment,
+      runMode: pod.runMode,
+      rejected: rejectedOrigins,
+    ),
+  );
+  if (rejectedOrigins.isNotEmpty) {
+    print(
+      'Warning: ignoring entries in ${OriginPolicy.allowedOriginsEnv} that are '
+      'not origins (scheme://host[:port]): ${rejectedOrigins.join(', ')}',
+    );
+  }
+  // Serverpod's own API port is bound to every interface too; same rules.
+  pod.server.addMiddleware(OriginGuard.current.apiPortMiddleware);
+  // nosniff, no framing, no referrer to other sites — on every web response.
+  pod.webServer.addMiddleware(securityHeadersMiddleware, '/');
 
   // Lets the OIDC client secret be supplied as FLUMIP_OIDC_CLIENT_SECRET in the
   // environment, or as `oidcClientSecret` in config/passwords.yaml, rather than
@@ -119,9 +155,12 @@ void run(List<String> args) async {
   // database pool is started in the Serverpod constructor, not in start().
   //
   // On a fresh database the settings table does not exist yet — migrations are
-  // applied inside start() — so this read fails and the configuration falls back
-  // to the environment alone. refresh() is total and handles that itself; the
-  // refresh after start() picks up the stored settings.
+  // applied inside start() — so this read fails. refresh() is total and handles
+  // that itself: until a read succeeds the gate refuses requests (unless the
+  // environment alone switches sign-in and public mode off), and the refresh
+  // after start() picks up the stored settings. A brand-new install therefore
+  // answers 401 for the moment between the two, which is the price of never
+  // starting open on a database blip.
   await pod.withSession(authRuntime.refresh, enableLogging: false);
 
   // Start the server.

@@ -20,6 +20,16 @@ services:
       # afterwards does not change the database's password; it locks the server
       # out of it.
       POSTGRES_PASSWORD: ${FLUMIP_DB_PASSWORD:?FLUMIP_DB_PASSWORD is not set; run ./init-env.sh first}
+      # The role FLUMIP connects as. init-env.sh sets flumip for a new install,
+      # and flumip-db-role below creates it, owning the database, when the volume
+      # is first initialised. Unset, as in every .env written before, FLUMIP
+      # connects as the superuser postgres, as it always did; see "Database
+      # role" in docs/docker.md to move such an install over.
+      FLUMIP_DB_USER: ${FLUMIP_DB_USER:-postgres}
+      FLUMIP_DB_PASSWORD: ${FLUMIP_DB_PASSWORD}
+    configs:
+      - source: flumip-db-role
+        target: /docker-entrypoint-initdb.d/10-flumip-role.sh
     volumes:
       # ⚠️ /var/lib/postgresql, not /var/lib/postgresql/data. postgres:18 keeps
       # its data in /var/lib/postgresql/18/docker, so a volume on .../data would
@@ -61,14 +71,16 @@ services:
       - "${FLUMIP_BIND:-127.0.0.1}:${FLUMIP_PORT:-9082}:9082"
     # The FLUMIP_* sign-in settings go straight through from .env, and only the
     # ones that are set: an unset variable must not reach the server as an empty
-    # string, which some of them would take as a value.
+    # string, which some of them would take as a value. So does
+    # FLUMIP_INITIAL_SETTINGS_PASSWORD, which init-env.sh writes for a new
+    # install and the server reads only when it first creates its settings.
     env_file:
       - .env
     environment:
       SERVERPOD_DATABASE_HOST: postgres
       SERVERPOD_DATABASE_PORT: "5432"
       SERVERPOD_DATABASE_NAME: ${FLUMIP_DB_NAME:-flumip}
-      SERVERPOD_DATABASE_USER: postgres
+      SERVERPOD_DATABASE_USER: ${FLUMIP_DB_USER:-postgres}
       SERVERPOD_DATABASE_PASSWORD: ${FLUMIP_DB_PASSWORD}
       SERVERPOD_SERVICE_SECRET: ${FLUMIP_SERVICE_SECRET:?FLUMIP_SERVICE_SECRET is not set; run ./init-env.sh first}
     volumes:
@@ -110,3 +122,29 @@ services:
 
 volumes:
   db:
+
+configs:
+  # Run by the postgres image once, when it initialises an empty volume, and
+  # never again. With FLUMIP_DB_USER set (new installs), it creates that role as
+  # an ordinary login, not a superuser, that owns FLUMIP's database: all
+  # Serverpod's migrations need, since FLUMIP's create no extensions. It then
+  # refuses the superuser postgres on every network connection, so the password
+  # in .env, which the flumip container also sees, opens only FLUMIP's own
+  # database. `docker compose exec postgres psql -U postgres` still works: it
+  # comes in over the local socket, which the image trusts.
+  #
+  # ⚠️ Sourced by the image's entrypoint, not run: no `exit`, no `set`. $$ is a
+  # literal $ to Compose. Needs Docker Compose 2.23.1 or later (configs with
+  # inline content).
+  flumip-db-role:
+    content: |
+      if [ "$${FLUMIP_DB_USER:-postgres}" != postgres ]; then
+        psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" <<'SQL'
+      \getenv role FLUMIP_DB_USER
+      \getenv pw FLUMIP_DB_PASSWORD
+      \getenv db POSTGRES_DB
+      CREATE ROLE :"role" LOGIN PASSWORD :'pw';
+      ALTER DATABASE :"db" OWNER TO :"role";
+      SQL
+        sed -i '1i host all postgres all reject' "$$PGDATA/pg_hba.conf"
+      fi

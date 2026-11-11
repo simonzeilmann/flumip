@@ -54,6 +54,17 @@ class DemoModeCleanupFutureCall extends FutureCall<Project> {
       return;
     }
 
+    // A signed-in user's project on a public instance; see `projectExpires`.
+    // Not rescheduled either: `setOwner` schedules a new call if it is handed
+    // to a guest.
+    if (!projectExpires(project, settings)) {
+      session.log(
+        "Project ${project.id} is not deleted automatically; not deleting it.",
+        level: LogLevel.info,
+      );
+      return;
+    }
+
     // ⚠️ The deadline is re-derived here, not just when the call was
     // scheduled. That is what lets "Keep longer" work without cancelling
     // anything — the call fires at the old time, finds `expires` has moved, and

@@ -5,6 +5,11 @@
 # /usr/share/flumip/mipgen.pin, and deployment/docker/mipgen.Dockerfile builds
 # from that copy, so every FLUMIP version builds the MIPGEN it was released with.
 #
+# The full 40-character commit id, never an abbreviation: a short id names
+# whatever commit matches it, and anyone who can push to the repository (or a
+# fork GitHub serves under the same object store) can make another one match.
+# Both builds check after the checkout that `git rev-parse HEAD` is exactly this.
+#
 # Plain KEY=value lines only: this file is sourced by sh, not just bash.
 MIPGEN_REPO=https://github.com/shendurelab/MIPGEN.git
-MIPGEN_COMMIT=4d6c342
+MIPGEN_COMMIT=4d6c342bbf30db99754509935d11bbb9b19c335e

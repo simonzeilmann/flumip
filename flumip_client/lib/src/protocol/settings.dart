@@ -21,6 +21,9 @@ abstract class Settings
     bool? publicMode,
     int? maxProjectLifetimeDays,
     int? guestMaxProjects,
+    int? guestSnpMaxMegabytes,
+    int? guestMaxSnps,
+    int? guestSnpRetentionDays,
     int? termsVersion,
     String? publicNoticeText,
     String? imprintUrl,
@@ -52,10 +55,13 @@ abstract class Settings
     String? oidcDepartmentClaim,
     String? authPublicUrl,
   }) : demoMode = demoMode ?? false,
-       demoModeRetentionHours = demoModeRetentionHours ?? 168,
+       demoModeRetentionHours = demoModeRetentionHours ?? 48,
        publicMode = publicMode ?? false,
-       maxProjectLifetimeDays = maxProjectLifetimeDays ?? 30,
+       maxProjectLifetimeDays = maxProjectLifetimeDays ?? 14,
        guestMaxProjects = guestMaxProjects ?? 10,
+       guestSnpMaxMegabytes = guestSnpMaxMegabytes ?? 10,
+       guestMaxSnps = guestMaxSnps ?? 3,
+       guestSnpRetentionDays = guestSnpRetentionDays ?? 7,
        termsVersion = termsVersion ?? 1,
        publicNoticeText = publicNoticeText ?? '',
        imprintUrl = imprintUrl ?? '',
@@ -98,6 +104,9 @@ abstract class Settings
     bool? publicMode,
     int? maxProjectLifetimeDays,
     int? guestMaxProjects,
+    int? guestSnpMaxMegabytes,
+    int? guestMaxSnps,
+    int? guestSnpRetentionDays,
     int? termsVersion,
     String? publicNoticeText,
     String? imprintUrl,
@@ -144,6 +153,9 @@ abstract class Settings
       maxProjectLifetimeDays:
           jsonSerialization['maxProjectLifetimeDays'] as int?,
       guestMaxProjects: jsonSerialization['guestMaxProjects'] as int?,
+      guestSnpMaxMegabytes: jsonSerialization['guestSnpMaxMegabytes'] as int?,
+      guestMaxSnps: jsonSerialization['guestMaxSnps'] as int?,
+      guestSnpRetentionDays: jsonSerialization['guestSnpRetentionDays'] as int?,
       termsVersion: jsonSerialization['termsVersion'] as int?,
       publicNoticeText: jsonSerialization['publicNoticeText'] as String?,
       imprintUrl: jsonSerialization['imprintUrl'] as String?,
@@ -193,7 +205,8 @@ abstract class Settings
 
   bool demoMode;
 
-  /// How long a project survives on a demo install, in hours. 168 = 7 days.
+  /// How long a project survives on a demo install, or a guest's on a public
+  /// one, in hours. 48 = 2 days.
   ///
   /// ⚠️ Read when the cleanup call *fires*, not only when it is scheduled, so
   /// raising it spares projects that were already queued. Lowering it cannot
@@ -217,6 +230,21 @@ abstract class Settings
   /// How many projects one guest may have at a time. Administrators and
   /// signed-in users are not counted.
   int guestMaxProjects;
+
+  /// The largest file a guest may upload as part of an SNP set, in megabytes.
+  /// Zero or less means guests cannot add SNP sets at all. They can only
+  /// upload: importing from a URL has the server fetch an address, which is
+  /// not something to offer anonymous visitors.
+  int guestSnpMaxMegabytes;
+
+  /// How many SNP sets one guest may have at a time. Zero or less means no
+  /// limit, as for [guestMaxProjects].
+  int guestMaxSnps;
+
+  /// How long a guest's SNP set is kept, in days, before it is deleted when
+  /// that day ends. Stamped into `Snp.expires` when the set is added; there
+  /// is no "Keep longer" for SNP sets.
+  int guestSnpRetentionDays;
 
   /// Raise this to make every guest accept the entry notice again, for example
   /// after changing [publicNoticeText]. Each guest records the version they
@@ -298,6 +326,9 @@ abstract class Settings
     bool? publicMode,
     int? maxProjectLifetimeDays,
     int? guestMaxProjects,
+    int? guestSnpMaxMegabytes,
+    int? guestMaxSnps,
+    int? guestSnpRetentionDays,
     int? termsVersion,
     String? publicNoticeText,
     String? imprintUrl,
@@ -339,6 +370,9 @@ abstract class Settings
       'publicMode': publicMode,
       'maxProjectLifetimeDays': maxProjectLifetimeDays,
       'guestMaxProjects': guestMaxProjects,
+      'guestSnpMaxMegabytes': guestSnpMaxMegabytes,
+      'guestMaxSnps': guestMaxSnps,
+      'guestSnpRetentionDays': guestSnpRetentionDays,
       'termsVersion': termsVersion,
       'publicNoticeText': publicNoticeText,
       'imprintUrl': imprintUrl,
@@ -382,6 +416,9 @@ abstract class Settings
       'publicMode': publicMode,
       'maxProjectLifetimeDays': maxProjectLifetimeDays,
       'guestMaxProjects': guestMaxProjects,
+      'guestSnpMaxMegabytes': guestSnpMaxMegabytes,
+      'guestMaxSnps': guestMaxSnps,
+      'guestSnpRetentionDays': guestSnpRetentionDays,
       'termsVersion': termsVersion,
       'publicNoticeText': publicNoticeText,
       'imprintUrl': imprintUrl,
@@ -431,6 +468,9 @@ class _SettingsImpl extends Settings {
     bool? publicMode,
     int? maxProjectLifetimeDays,
     int? guestMaxProjects,
+    int? guestSnpMaxMegabytes,
+    int? guestMaxSnps,
+    int? guestSnpRetentionDays,
     int? termsVersion,
     String? publicNoticeText,
     String? imprintUrl,
@@ -468,6 +508,9 @@ class _SettingsImpl extends Settings {
          publicMode: publicMode,
          maxProjectLifetimeDays: maxProjectLifetimeDays,
          guestMaxProjects: guestMaxProjects,
+         guestSnpMaxMegabytes: guestSnpMaxMegabytes,
+         guestMaxSnps: guestMaxSnps,
+         guestSnpRetentionDays: guestSnpRetentionDays,
          termsVersion: termsVersion,
          publicNoticeText: publicNoticeText,
          imprintUrl: imprintUrl,
@@ -511,6 +554,9 @@ class _SettingsImpl extends Settings {
     bool? publicMode,
     int? maxProjectLifetimeDays,
     int? guestMaxProjects,
+    int? guestSnpMaxMegabytes,
+    int? guestMaxSnps,
+    int? guestSnpRetentionDays,
     int? termsVersion,
     String? publicNoticeText,
     String? imprintUrl,
@@ -551,6 +597,10 @@ class _SettingsImpl extends Settings {
       maxProjectLifetimeDays:
           maxProjectLifetimeDays ?? this.maxProjectLifetimeDays,
       guestMaxProjects: guestMaxProjects ?? this.guestMaxProjects,
+      guestSnpMaxMegabytes: guestSnpMaxMegabytes ?? this.guestSnpMaxMegabytes,
+      guestMaxSnps: guestMaxSnps ?? this.guestMaxSnps,
+      guestSnpRetentionDays:
+          guestSnpRetentionDays ?? this.guestSnpRetentionDays,
       termsVersion: termsVersion ?? this.termsVersion,
       publicNoticeText: publicNoticeText ?? this.publicNoticeText,
       imprintUrl: imprintUrl ?? this.imprintUrl,

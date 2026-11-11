@@ -8,9 +8,11 @@ import 'package:flumip_server/src/auth/authentication_handler.dart';
 import 'package:flumip_server/src/generated/protocol.dart';
 import 'package:flumip_server/src/services/auth_service.dart';
 import 'package:flumip_server/src/services/project_service.dart';
+import 'package:flumip_server/src/services/snp_service.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';
 
+import '../support/matchers.dart';
 import '../support/seed.dart';
 import '../support/temp_dir.dart';
 import 'test_tools/serverpod_test_tools.dart';
@@ -35,17 +37,24 @@ void main() {
       int retentionHours = 168,
       int maxLifetimeDays = 30,
       int guestMaxProjects = 10,
+      int guestSnpMaxMegabytes = 10,
+      int guestMaxSnps = 3,
+      int guestSnpRetentionDays = 7,
       int termsVersion = 1,
     }) async {
       final settings = await overrideSettingsDirs(
         session,
         projectDir: base.path,
+        customSnpDir: '${base.path}/snp',
       );
       settings
         ..publicMode = publicMode
         ..demoModeRetentionHours = retentionHours
         ..maxProjectLifetimeDays = maxLifetimeDays
         ..guestMaxProjects = guestMaxProjects
+        ..guestSnpMaxMegabytes = guestSnpMaxMegabytes
+        ..guestMaxSnps = guestMaxSnps
+        ..guestSnpRetentionDays = guestSnpRetentionDays
         ..termsVersion = termsVersion;
       final saved = await Settings.db.updateRow(session, settings);
       await sl<AuthRuntime>().refresh(session);
@@ -76,6 +85,27 @@ void main() {
         ),
         userId: accepted.session.userId,
         cookie: accepted.cookieValue,
+      );
+    }
+
+    /// A signed-in user through the identity provider, as [acceptAsGuest]
+    /// is a guest.
+    Future<({TestSessionBuilder builder, int userId})> signIn(
+      String email, {
+      bool isAdmin = false,
+    }) async {
+      final seeded = await seedSignedInUser(
+        session,
+        email: email,
+        isAdmin: isAdmin,
+      );
+      return (
+        builder: sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(email, {
+            if (isAdmin) adminScope,
+          }, authId: '${seeded.authSession.id}'),
+        ),
+        userId: seeded.user.id!,
       );
     }
 
@@ -247,8 +277,100 @@ void main() {
       });
     });
 
+    group("a guest's SNP sets", () {
+      Future<CustomSnpRequestDto> request({bool private = true}) async {
+        final genome = await seedGenome(session, name: 'hg38');
+        return CustomSnpRequestDto(
+          genomeId: genome.id!,
+          name: 'mine',
+          description: '',
+          private: private,
+        );
+      }
+
+      test('can be uploaded, privately and with a deletion date', () async {
+        await configure(guestSnpRetentionDays: 7);
+        final guest = await acceptAsGuest();
+
+        // Asked for shared, and made private anyway.
+        final snp = await endpoints.snp.createUpload(
+          guest.builder,
+          await request(private: false),
+        );
+
+        expect(snp.owner, guest.userId);
+        expect(snp.private, isTrue);
+        expect(snp.expires, endOfDay(snp.created.add(const Duration(days: 7))));
+        await expectLater(
+          endpoints.snp.setShared(guest.builder, snp.id!, true),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+      });
+
+      test('are not offered when the size limit is zero', () async {
+        await configure(guestSnpMaxMegabytes: 0);
+        final guest = await acceptAsGuest();
+        await expectLater(
+          endpoints.snp.createUpload(guest.builder, await request()),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+      });
+
+      test('are limited in number', () async {
+        await configure(guestMaxSnps: 1);
+        final guest = await acceptAsGuest();
+        final dto = await request();
+        await endpoints.snp.createUpload(guest.builder, dto);
+        await expectLater(
+          endpoints.snp.createUpload(guest.builder, dto),
+          throwsA(isA<ArgumentException>()),
+        );
+      });
+
+      test("are another guest's to neither see nor change", () async {
+        final alice = await acceptAsGuest();
+        final bob = await acceptAsGuest();
+        final dto = await request();
+        final snp = await endpoints.snp.createUpload(alice.builder, dto);
+
+        expect(
+          await endpoints.snp.listSnpsForGenome(bob.builder, dto.genomeId),
+          isEmpty,
+        );
+        await expectLater(
+          endpoints.snp.deleteCustomSnp(bob.builder, snp.id!),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+      });
+
+      test('are deleted once their date has passed', () async {
+        final guest = await acceptAsGuest();
+        final dto = await request();
+        final due = await endpoints.snp.createUpload(guest.builder, dto);
+        final later = await endpoints.snp.createUpload(guest.builder, dto);
+        final member = await signIn('member@uni.example');
+        final kept = await endpoints.snp.createUpload(member.builder, dto);
+        expect(kept.expires, isNull);
+
+        due.expires = DateTime.now().toUtc().subtract(const Duration(days: 1));
+        await Snp.db.updateRow(session, due);
+        // Gone with its owner: the date is what still finds it.
+        await FlumipUser.db.deleteWhere(
+          session,
+          where: (t) => t.id.equals(guest.userId),
+        );
+
+        await SnpService().deleteExpired(session);
+
+        expect(await Snp.db.findById(session, due.id!), isNull);
+        expect(Directory(due.folder).existsSync(), isFalse);
+        expect(await Snp.db.findById(session, later.id!), isNotNull);
+        expect(await Snp.db.findById(session, kept.id!), isNotNull);
+      });
+    });
+
     group('what a guest may not do', () {
-      test('add an SNP set', () async {
+      test('import an SNP set from a URL, or rescan', () async {
         final guest = await acceptAsGuest();
         final genome = await seedGenome(session, name: 'hg38');
         final request = CustomSnpRequestDto(
@@ -256,12 +378,9 @@ void main() {
           name: 'mine',
           description: '',
           private: true,
+          urls: ['https://example.org/panel.vcf.gz'],
         );
 
-        await expectLater(
-          endpoints.snp.createUpload(guest.builder, request),
-          throwsA(isA<ProjectAccessDeniedException>()),
-        );
         await expectLater(
           endpoints.snp.importFromUrls(guest.builder, request),
           throwsA(isA<ProjectAccessDeniedException>()),
@@ -315,6 +434,35 @@ void main() {
         );
       });
 
+      test('get past the quota by creating a configured project', () async {
+        // The form's one-call create is a second way in, and the quota has to
+        // stand in front of both.
+        await configure(guestMaxProjects: 1);
+        final guest = await acceptAsGuest();
+        final draft = ProjectDraftDto(name: 'one', options: ProjectOptions());
+
+        final first = await endpoints.project.createConfiguredProject(
+          guest.builder,
+          draft,
+        );
+        // And it expires like any other guest project.
+        expect(first.expires, isNotNull);
+
+        final options = await ProjectOptions.db.count(session);
+        await expectLater(
+          endpoints.project.createConfiguredProject(
+            guest.builder,
+            draft.copyWith(name: 'two'),
+          ),
+          throwsA(isA<ArgumentException>()),
+        );
+        expect(
+          await ProjectOptions.db.count(session),
+          options,
+          reason: 'a refused create left options behind',
+        );
+      });
+
       test('be offered mail notifications', () async {
         final settings = await Settings.db.findFirstRow(session);
         settings!.mailActive = true;
@@ -325,6 +473,111 @@ void main() {
           await endpoints.project.notificationsAvailable(guest.builder),
           isFalse,
         );
+      });
+    });
+
+    group('the shared genome library', () {
+      // A signed-in user may add to it; only an administrator may take from it.
+
+      /// A genome whose index is really on disk, so "removed" and "left alone"
+      /// can both be seen rather than inferred from a flag.
+      Future<({Genome genome, File index})> indexedGenome() async {
+        final fa = Directory('${base.path}/genomes/hg38/fa')
+          ..createSync(recursive: true);
+        final index = File('${fa.path}/hg38.fa.bwt')..writeAsStringSync('bwt');
+        final genome = await seedGenome(
+          session,
+          name: 'hg38',
+          path: '${base.path}/genomes/hg38',
+          fastaPath: '${fa.path}/hg38.fa',
+          indexed: true,
+        );
+        return (genome: genome, index: index);
+      }
+
+      test('a signed-in user cannot remove an index', () async {
+        final member = await signIn('member@uni.example');
+        final seeded = await indexedGenome();
+
+        await expectLater(
+          endpoints.genome.deleteFastaIndex(member.builder, seeded.genome.id!),
+          throwsA(
+            isA<ProjectAccessDeniedException>().having(
+              (e) => e.message,
+              'message',
+              contains('reserved for administrators'),
+            ),
+          ),
+        );
+
+        expect(seeded.index.existsSync(), isTrue);
+        final after = await Genome.db.findById(session, seeded.genome.id!);
+        expect(after!.indexed, isTrue);
+      });
+
+      test('a signed-in user cannot switch a genome off', () async {
+        final member = await signIn('member@uni.example');
+        final genome = await seedGenome(session, name: 'hg38');
+
+        await expectLater(
+          endpoints.genome.updateGenome(
+            member.builder,
+            genome.id!,
+            genome.copyWith(active: false),
+          ),
+          throwsA(isA<ProjectAccessDeniedException>()),
+        );
+
+        final after = await Genome.db.findById(session, genome.id!);
+        expect(after!.active, isTrue);
+      });
+
+      test('a signed-in user can scan for genomes', () async {
+        final member = await signIn('member@uni.example');
+        final library = Directory('${base.path}/library')..createSync();
+        await overrideSettingsDirs(session, genomeDir: library.path);
+
+        await endpoints.genome.collectGenomes(member.builder);
+      });
+
+      test('a signed-in user gets as far as building an index', () async {
+        // Past the gate and into the service, which refuses for its own reason.
+        // Starting a real build is `genome_service_fs_test`'s business.
+        final member = await signIn('member@uni.example');
+        final seeded = await indexedGenome();
+
+        await expectLater(
+          endpoints.genome.indexFasta(member.builder, seeded.genome.id!),
+          throwsMessage('is already indexed'),
+        );
+      });
+
+      test('an administrator can remove an index', () async {
+        final admin = await signIn('boss@uni.example', isAdmin: true);
+        final seeded = await indexedGenome();
+
+        await endpoints.genome.deleteFastaIndex(
+          admin.builder,
+          seeded.genome.id!,
+        );
+
+        expect(seeded.index.existsSync(), isFalse);
+        final after = await Genome.db.findById(session, seeded.genome.id!);
+        expect(after!.indexed, isFalse);
+      });
+
+      test('an administrator can switch a genome off', () async {
+        final admin = await signIn('boss@uni.example', isAdmin: true);
+        final genome = await seedGenome(session, name: 'hg38');
+
+        await endpoints.genome.updateGenome(
+          admin.builder,
+          genome.id!,
+          genome.copyWith(active: false),
+        );
+
+        final after = await Genome.db.findById(session, genome.id!);
+        expect(after!.active, isFalse);
       });
     });
 
@@ -438,6 +691,79 @@ void main() {
         expect(
           project.expires,
           endOfDay(project.created.add(const Duration(hours: 24))),
+        );
+      });
+
+      test("a signed-in user's project is kept", () async {
+        final member = await signIn('member@uni.example');
+        final project = await endpoints.project.createProject(
+          member.builder,
+          'kept',
+          await seedOptions(session),
+        );
+        expect(project.expires, isNull);
+
+        // Long past any window, and cleanup still leaves it.
+        project.created = DateTime.now().toUtc().subtract(
+          const Duration(days: 60),
+        );
+        final old = await Project.db.updateRow(session, project);
+        await DemoModeCleanupFutureCall().run(session, old);
+        expect(await Project.db.findById(session, project.id!), isNotNull);
+
+        await expectLater(
+          endpoints.project.extendProject(member.builder, project.id!),
+          throwsA(isA<ArgumentException>()),
+        );
+      });
+
+      test("a guest's project is still deleted once it has no owner", () async {
+        // What the guest's identity being cleaned up leaves behind.
+        final guest = await acceptAsGuest();
+        final project = await endpoints.project.createProject(
+          guest.builder,
+          'orphan',
+          await seedOptions(session),
+        );
+        project
+          ..owner = null
+          ..created = DateTime.now().toUtc().subtract(const Duration(days: 30))
+          ..expires = DateTime.now().toUtc().subtract(const Duration(days: 20));
+        final orphan = await Project.db.updateRow(session, project);
+
+        await DemoModeCleanupFutureCall().run(session, orphan);
+        expect(await Project.db.findById(session, project.id!), isNull);
+      });
+
+      test('the owner an administrator hands a project to decides', () async {
+        await configure(retentionHours: 24);
+        final admin = await signIn('boss@uni.example', isAdmin: true);
+        final member = await signIn('member@uni.example');
+        final guest = await acceptAsGuest();
+        final project = await endpoints.project.createProject(
+          guest.builder,
+          'handed-over',
+          await seedOptions(session),
+        );
+
+        await endpoints.project.setProjectOwner(
+          admin.builder,
+          project.id!,
+          member.userId,
+        );
+        final kept = await Project.db.findById(session, project.id!);
+        expect(kept!.expires, isNull);
+
+        // Back to a guest: a fresh window, not the date it had before.
+        await endpoints.project.setProjectOwner(
+          admin.builder,
+          project.id!,
+          guest.userId,
+        );
+        final dated = await Project.db.findById(session, project.id!);
+        expect(
+          dated!.expires,
+          endOfDay(DateTime.now().toUtc().add(const Duration(hours: 24))),
         );
       });
 

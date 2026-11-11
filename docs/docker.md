@@ -62,7 +62,7 @@ would hide MIPGEN, and every design would fail.
 | | |
 | --- | --- |
 | **Machine** | x86_64 (amd64). ARM is not supported yet. |
-| **Software** | Docker Engine with the Compose plugin (`docker compose`, v2). |
+| **Software** | Docker Engine with the Compose plugin (`docker compose`), **2.23.1 or later**: the compose file creates the database role with an inline `configs` entry, which older versions reject. |
 | **Memory** | **8 GB minimum, 16 GB recommended.** `bwa` against hg38 needs about 5 GB, both while indexing and during a design. On Docker Desktop, raise the VM's memory limit to match. |
 | **Disk** | **15–20 GB minimum per human genome**; **20–50 GB recommended**, depending on the SNP files you add. Plus space for projects, plus about 1 GB for the images. |
 | **Network** | Outbound HTTPS to GitHub (images and MIPGEN), UCSC and NCBI (genomes). |
@@ -74,16 +74,33 @@ compose file, the local MIPGEN build, a configuration template and a helper
 script, pinned to that release.
 
 ```bash
-curl -fL https://github.com/simonzeilmann/flumip/releases/latest/download/flumip-docker.tar.gz | tar -xz
+VERSION=vX.Y.Z      # the release to install, from the project's Releases page
+curl -fLO https://github.com/simonzeilmann/flumip/releases/download/$VERSION/flumip-docker.tar.gz
+curl -fLO https://github.com/simonzeilmann/flumip/releases/download/$VERSION/SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
+tar -xzf flumip-docker.tar.gz
 cd flumip-docker
 ```
 
+`sha256sum` has to print `flumip-docker.tar.gz: OK`; if it prints anything
+else, do not unpack the archive. Releases before SHA256SUMS existed publish
+`flumip-docker.tar.gz.sha256` instead: download that and run
+`sha256sum --check flumip-docker.tar.gz.sha256`. Both catch a broken or swapped
+download; neither protects against someone able to change the release on
+GitHub itself.
+
 **2. Create the configuration.** This writes `.env` with a fresh database
-password and service secret, readable only by you.
+password, service secret and first settings password, readable only by you,
+and prints the settings password once.
 
 ```bash
 ./init-env.sh
 ```
+
+Note the settings password it prints; you need it in step 6. Until you change
+it in the app it is also in `.env`, as `FLUMIP_INITIAL_SETTINGS_PASSWORD`. The
+server reads it only when it creates its settings, on the first start against
+an empty database, so it does nothing for a database that already has them.
 
 ⚠️ **Installing again on the same machine? Copy the old `.env` instead.** Every
 copy of these files names its database volume `flumip_db`, so a new install
@@ -98,6 +115,19 @@ MIPGEN on top of it. This takes a few minutes the first time.
 
 ```bash
 docker compose build
+```
+
+The build stops unless the MIPGEN it checked out is exactly the commit the
+release pins (the full 40-character id). It also fetches UCSC's
+`bigGenePredToGenePred`, which only `fetch-genome hs1` needs, and installs it
+only if it matches the SHA-256 pinned in `mipgen.Dockerfile`. UCSC replaces
+that file in place with each of its releases, so the pin can go stale; the
+build then prints a `WARNING` with the new file's hash and leaves the tool out,
+and everything except setting up hs1 works. Once you have satisfied yourself
+that the new file is genuine:
+
+```bash
+docker compose build --build-arg BIGGENEPRED_SHA256=<the hash it printed>
 ```
 
 **4. Start it.**
@@ -117,12 +147,14 @@ docker compose run --rm --no-deps flumip fetch-genome hg38
 ```
 
 **6. Open the app** at `http://localhost:9082` and finish in the browser, exactly
-as in the README's [Quickstart](../README.md#quickstart): change the settings
-password (`changeme`), **Scan for new genomes**, **Build index**, create a
-project.
+as in the README's [Quickstart](../README.md#quickstart): sign in to Settings
+with the password `init-env.sh` printed and change it, **Scan for new
+genomes**, **Build index**, create a project. Then delete the
+`FLUMIP_INITIAL_SETTINGS_PASSWORD` line from `.env`.
 
 By default the port is reachable from this machine only. Read [HTTPS](#https)
-before letting anyone else use it.
+before letting anyone else use it. The server's other two ports, the internal
+API (9080) and Serverpod's Insights (9081), are not published at all.
 
 ## Reference genomes
 
@@ -185,6 +217,8 @@ holds what has to be known before the server starts:
 | `FLUMIP_BIND`, `FLUMIP_PORT` | `127.0.0.1`, `9082` | Where the web port is published on the host |
 | `FLUMIP_DATA_DIR`, `FLUMIP_PROJECTS_DIR` | `./data`, `./projects` | Host directories for genomes and SNP sets, and for project results |
 | `FLUMIP_DB_NAME` | `flumip` | The database name |
+| `FLUMIP_DB_USER` | `flumip` from `init-env.sh`; unset (`postgres`) in older `.env` files | The database role FLUMIP connects as. Created, owning the database, when the database is first created; see [Database role](#database-role). ⚠️ Do not change it afterwards. |
+| `FLUMIP_INITIAL_SETTINGS_PASSWORD` | generated | The first settings password, read only when the server creates its settings on an empty database. Delete the line once you have changed the password in the app. |
 | `COMPOSE_PROJECT_NAME` | `flumip` | Names the containers and the database volume (`<name>_db`). Set it only for a second install on the same machine, before its first start. |
 | `FLUMIP_AUTH_ENABLED`, `FLUMIP_OIDC_*`, `FLUMIP_PUBLIC_URL`, `FLUMIP_AUTH_STRICT` | unset | Single sign-on; see [authentication.md](authentication.md) |
 | `FLUMIP_PUBLIC_MODE` | unset | A public instance for anonymous visitors; see [public-instance.md](public-instance.md) |
@@ -201,6 +235,46 @@ host. Use `docker compose exec postgres psql -U postgres flumip` to reach it.
 To use a PostgreSQL server you already run instead, see
 [Using an existing PostgreSQL](../README.md#using-an-existing-postgresql) in the
 README.
+
+### Database role
+
+A new install connects as `flumip`, an ordinary role that owns the database
+and nothing else, rather than as the superuser `postgres`. Owning the database
+is all Serverpod's migrations need: FLUMIP's create no extensions. The compose
+file creates the role when PostgreSQL first initialises its volume, and from
+then on refuses `postgres` on every network connection, so the database
+password in `.env`, which the FLUMIP container can see, opens FLUMIP's own
+database and nothing more. `docker compose exec postgres psql -U postgres` keeps
+working, over the container's local socket.
+
+An install whose `.env` predates this has no `FLUMIP_DB_USER` and keeps
+connecting as `postgres`; updating changes nothing about that. To move it over,
+between designs, in the directory with the install files:
+
+```bash
+docker compose up -d          # with the new compose file, so postgres sees FLUMIP_DB_PASSWORD
+docker compose stop flumip
+docker compose exec -T postgres psql -U postgres -d flumip -v ON_ERROR_STOP=1 <<'SQL'
+\getenv pw FLUMIP_DB_PASSWORD
+CREATE ROLE flumip LOGIN PASSWORD :'pw';
+ALTER DATABASE flumip OWNER TO flumip;
+DO $$DECLARE r record; BEGIN
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+    EXECUTE format('ALTER TABLE public.%I OWNER TO flumip', r.tablename);
+  END LOOP;
+END$$;
+SQL
+docker compose exec -u postgres postgres sh -c 'sed -i "1i host all postgres all reject" "$PGDATA/pg_hba.conf"'
+echo 'FLUMIP_DB_USER=flumip' >> .env
+docker compose up -d --force-recreate
+```
+
+`ALTER TABLE … OWNER` moves each table's sequences with it. Use your own
+database name for `flumip` in `-d` and `ALTER DATABASE` if you set
+`FLUMIP_DB_NAME`. To undo it, remove the `FLUMIP_DB_USER` line from `.env`, run
+`docker compose exec -u postgres postgres sh -c 'sed -i "/^host all postgres all reject$/d" "$PGDATA/pg_hba.conf"'`
+and `docker compose up -d --force-recreate`. The superuser reaches tables
+`flumip` owns, so nothing else needs to change back.
 
 ## Updating
 
@@ -272,9 +346,14 @@ the directory with the Docker install files:
    ```bash
    docker compose build
    docker compose up -d postgres
-   docker compose exec -T postgres pg_restore -U postgres -d flumip --no-owner --clean --if-exists < flumip.dump
+   docker compose exec -T postgres pg_restore -U postgres --role=flumip -d flumip --no-owner --clean --if-exists < flumip.dump
    docker compose up -d
    ```
+
+   `--role=flumip` makes the restored tables belong to `flumip`, the role the
+   new install connects as (see [Database role](#database-role)). The settings
+   password is the old install's: the one `init-env.sh` printed applies only to
+   an empty database.
 
 4. Check that projects, genomes and settings are all there. Then remove the old
    service with `deployment/uninstall-flumip.sh` from the old release. By default
@@ -343,6 +422,9 @@ the data directories are writable. If anything fails, it says what.
 | *… is not writable by www-data (uid 33)* | A host directory belongs to someone else. `sudo chown -R 33:33` it. |
 | A design or an index build dies partway | Almost always memory. `bwa` needs about 5 GB. See `docker compose logs flumip` and the project's `mipgen.log`. |
 | `FLUMIP_DB_PASSWORD is not set` | There is no `.env`. Run `./init-env.sh`. |
+| `configs.flumip-db-role Additional property content is not allowed` (or similar) | Docker Compose is older than 2.23.1. Update the Compose plugin. |
+| *password authentication failed for user "flumip"* or *role "flumip" does not exist* | The `.env` is new (it sets `FLUMIP_DB_USER=flumip`) but the database volume is from an earlier install, which has no such role. Copy that install's `.env` across, or move it over as in [Database role](#database-role). |
+| `check` warns that `bigGenePredToGenePred` is missing | Its pinned hash did not match what UCSC serves now; see step 3 of [Installing](#installing). |
 | The server cannot log in to the database after `.env` changed | The password only takes effect when the database is first created. Put the old one back. |
 | The same, on a new install (*Failed to connect to the database*, over and over) | An earlier Docker install on this machine left its database in the volume `flumip_db`, and the new `.env` has a different password. Copy that install's `.env` across, or, if its data can go, `docker compose down -v` and `docker compose up -d` again. |
 

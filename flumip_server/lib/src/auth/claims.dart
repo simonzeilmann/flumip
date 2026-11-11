@@ -78,3 +78,18 @@ String? singleClaimValue(Map<String, dynamic>? payload, String path) {
   final values = claimValues(payload, path);
   return values.length == 1 ? values.first : null;
 }
+
+/// A boolean claim such as `email_verified`, or null when it is absent or
+/// unreadable.
+///
+/// The spec says JSON boolean, and most providers comply. Some send the string
+/// `"true"` instead — AWS Cognito does at its userinfo endpoint — and a bare
+/// `as bool?` cast turns that into a failed sign-in with an unhelpful message.
+/// Anything else (a number, an object) is "the provider did not say", which is
+/// what null already means everywhere this is read.
+bool? booleanClaim(Object? value) => switch (value) {
+  bool b => b,
+  String s when s.trim().toLowerCase() == 'true' => true,
+  String s when s.trim().toLowerCase() == 'false' => false,
+  _ => null,
+};

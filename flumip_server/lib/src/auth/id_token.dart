@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flumip_server/src/auth/claims.dart';
+
 /// The claims of an ID token received from the token endpoint.
 ///
 /// ## Why there is no signature verification here
@@ -62,7 +64,9 @@ class IdTokenClaims {
   final String? email;
 
   /// `email_verified`. **Null means the provider did not say**, which is not
-  /// the same as false and is treated differently — see `AuthService`.
+  /// the same as false and is treated differently — see `AuthService`. Read
+  /// with [booleanClaim], so a provider that sends the string `"true"` is
+  /// understood rather than failing the whole sign-in on a cast.
   final bool? emailVerified;
   final String? name;
 
@@ -109,7 +113,7 @@ class IdTokenClaims {
       issuedAt: issuedAt,
       nonce: payload['nonce'] as String?,
       email: (payload['email'] as String?)?.trim(),
-      emailVerified: payload['email_verified'] as bool?,
+      emailVerified: booleanClaim(payload['email_verified']),
       name: (payload['name'] ?? payload['preferred_username']) as String?,
       payload: payload,
     );

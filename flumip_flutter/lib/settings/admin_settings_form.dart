@@ -360,7 +360,7 @@ class AdminSettingsForm extends StatelessWidget {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: const InputDecoration(
                 labelText: 'Keep projects for (hours)',
-                helperText: '168 is a week.',
+                helperText: '48 is two days, 168 a week.',
               ),
             ),
             // ⚠️ Says plainly which way the setting bites. Raising it reprieves
@@ -426,6 +426,28 @@ class AdminSettingsForm extends StatelessWidget {
                 form.guestMaxProjects,
                 'Projects per visitor',
                 helper: '0 means no limit.',
+              ),
+            ],
+          ),
+          // Visitors upload, never import from a URL: that would have the
+          // server fetch whatever address an anonymous visitor typed.
+          ResponsiveRow(
+            minChildWidth: 220,
+            children: [
+              _number(
+                form.guestSnpMaxMegabytes,
+                'Largest SNP file a visitor can upload (MB)',
+                helper: '0 means visitors cannot add SNP sets.',
+              ),
+              _number(
+                form.guestMaxSnps,
+                'SNP sets per visitor',
+                helper: '0 means no limit.',
+              ),
+              _number(
+                form.guestSnpRetentionDays,
+                "Keep a visitor's SNP set for (days)",
+                helper: 'Deleted when that day ends. It cannot be extended.',
               ),
             ],
           ),

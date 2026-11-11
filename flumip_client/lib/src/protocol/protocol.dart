@@ -30,6 +30,7 @@ import 'exceptions/project_access_denied_exception.dart' as _iq9wx7jy;
 import 'flumip_user_dto.dart' as _im3lr0ct;
 import 'genome.dart' as _ik3s3pjn;
 import 'project.dart' as _ifiazq2p;
+import 'project_draft_dto.dart' as _i87lmv4r;
 import 'project_file_dto.dart' as _ip1wvjxo;
 import 'project_options.dart' as _i4kq7s26;
 import 'score_method.dart' as _iootg8bv;
@@ -51,6 +52,7 @@ export 'exceptions/project_access_denied_exception.dart';
 export 'flumip_user_dto.dart';
 export 'genome.dart';
 export 'project.dart';
+export 'project_draft_dto.dart';
 export 'project_file_dto.dart';
 export 'project_options.dart';
 export 'score_method.dart';
@@ -126,6 +128,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ifiazq2p.Project) {
       return _ifiazq2p.Project.fromJson(data) as T;
+    }
+    if (t == _i87lmv4r.ProjectDraftDto) {
+      return _i87lmv4r.ProjectDraftDto.fromJson(data) as T;
     }
     if (t == _ip1wvjxo.ProjectFileDto) {
       return _ip1wvjxo.ProjectFileDto.fromJson(data) as T;
@@ -205,6 +210,10 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isc.getType<_ifiazq2p.Project?>()) {
       return (data != null ? _ifiazq2p.Project.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_i87lmv4r.ProjectDraftDto?>()) {
+      return (data != null ? _i87lmv4r.ProjectDraftDto.fromJson(data) : null)
+          as T;
     }
     if (t == _isc.getType<_ip1wvjxo.ProjectFileDto?>()) {
       return (data != null ? _ip1wvjxo.ProjectFileDto.fromJson(data) : null)
@@ -309,6 +318,7 @@ class Protocol extends _isc.SerializationManager {
       _im3lr0ct.FlumipUserDto => 'FlumipUserDto',
       _ik3s3pjn.Genome => 'Genome',
       _ifiazq2p.Project => 'Project',
+      _i87lmv4r.ProjectDraftDto => 'ProjectDraftDto',
       _ip1wvjxo.ProjectFileDto => 'ProjectFileDto',
       _i4kq7s26.ProjectOptions => 'ProjectOptions',
       _iootg8bv.ScoreMethod => 'ScoreMethod',
@@ -355,6 +365,8 @@ class Protocol extends _isc.SerializationManager {
         return 'Genome';
       case _ifiazq2p.Project():
         return 'Project';
+      case _i87lmv4r.ProjectDraftDto():
+        return 'ProjectDraftDto';
       case _ip1wvjxo.ProjectFileDto():
         return 'ProjectFileDto';
       case _i4kq7s26.ProjectOptions():
@@ -417,6 +429,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'Project') {
       return deserialize<_ifiazq2p.Project>(data['data']);
+    }
+    if (dataClassName == 'ProjectDraftDto') {
+      return deserialize<_i87lmv4r.ProjectDraftDto>(data['data']);
     }
     if (dataClassName == 'ProjectFileDto') {
       return deserialize<_ip1wvjxo.ProjectFileDto>(data['data']);

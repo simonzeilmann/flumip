@@ -79,9 +79,9 @@ class ProjectInputsColumn extends StatelessWidget {
       children: [
         if (errorMessage != null)
           ErrorBanner(errorMessage!, onDismiss: onDismissError),
-        _InputRow(label: 'Genome', child: _genomeValue(context)),
-        _InputRow(label: 'SNP set', child: _snpValue(context)),
-        _InputRow(
+        InputRow(label: 'Genome', child: _genomeValue(context)),
+        InputRow(label: 'SNP set', child: _snpValue(context)),
+        InputRow(
           label: 'Genes',
           child: GeneEditor(
             genes: project.genes ?? const <String>[],
@@ -144,7 +144,7 @@ class ProjectInputsColumn extends StatelessWidget {
         child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
-    return _SnpSelector(
+    return SnpSelector(
       snps: snpsForGenome!,
       selectedId: project.snp,
       onChanged: onSnpChanged,
@@ -153,8 +153,10 @@ class ProjectInputsColumn extends StatelessWidget {
 }
 
 /// A label above its control, so the three inputs read as one form.
-class _InputRow extends StatelessWidget {
-  const _InputRow({required this.label, required this.child});
+///
+/// Public because the create-project form lays out the same three inputs.
+class InputRow extends StatelessWidget {
+  const InputRow({super.key, required this.label, required this.child});
 
   final String label;
   final Widget child;
@@ -182,8 +184,11 @@ class _InputRow extends StatelessWidget {
 /// ones can fail to import or be deleted out from under a project, so being able
 /// to change or clear the choice is now the difference between fixing a project
 /// and abandoning it.
-class _SnpSelector extends StatelessWidget {
-  const _SnpSelector({
+///
+/// Public for the same reason as [InputRow].
+class SnpSelector extends StatelessWidget {
+  const SnpSelector({
+    super.key,
     required this.snps,
     required this.selectedId,
     required this.onChanged,

@@ -75,7 +75,14 @@ AuthController authController = AuthController(
 );
 
 /// What this caller may do, asked of the server rather than inferred.
-late AccessController accessController;
+///
+/// Not `late`, for the reason [authController] is not: the genome tab reads it
+/// and is pumped in tests that never call [installServices]. Until that runs
+/// this has asked nothing and so grants nothing.
+AccessController accessController = AccessController(
+  fetchAccess: () async =>
+      UserSettingsDto(isAdmin: false, passwordAccepted: false),
+);
 
 /// Browser uploads of custom SNP files.
 ///
@@ -235,9 +242,15 @@ void openSearchHit(SearchHitDto hit, void Function(int tabIndex) goToTab) {
 /// ⚠️ A factory: the form is built fresh each time it is opened.
 NewProjectController createNewProjectController() => NewProjectController(
   loadDefaultOptions: () => client.options.createProjectOptions(),
-  insertOptions: (options) => client.options.insertProjectOptions(options),
-  createProject: (name, options, description) =>
-      client.project.createProject(name, options, description),
+  saveProject: (draft) => client.project.createConfiguredProject(draft),
+  loadGenomeCategories: () => client.genome.getCategories(),
+  loadGenomesInCategory: (category) =>
+      client.genome.getGenomeByCategory(category),
+  // Through `client.snp`, for the reason given in [createProjectTileController].
+  loadSnpsForGenome: (genomeId) => client.snp.listSnpsForGenome(genomeId),
+  createBedFile: (id) => client.mipgen.createBedFile(id),
+  generateMips: (id, deleteExcessFiles) =>
+      client.mipgen.generateMips(id, deleteExcessFiles),
 );
 
 /// The app's `ScaffoldMessenger`, for the few messages that have no widget of

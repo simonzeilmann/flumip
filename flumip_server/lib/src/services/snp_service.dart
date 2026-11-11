@@ -628,12 +628,17 @@ class SnpService {
   /// `FileService.resolveProjectFile` can verify containment after resolving
   /// symlinks because the file it guards already exists; an upload makes the
   /// file, so [snpUploadFileKind] is a gate rather than a verification.
+  ///
+  /// ⚠️ **A successful answer reserves the slot**, and the caller must hand it
+  /// back with [releaseUploadTarget] once the transfer is over, however it
+  /// ended. See [_uploadsInFlight].
   Future<({File partial, File target})?> resolveUploadTarget(
     Session session,
     Snp snp,
     String fileName,
   ) async {
-    if (snpUploadFileKind(fileName) == null) {
+    final kind = snpUploadFileKind(fileName);
+    if (kind == null) {
       session.log(
         'Refused an upload name that is not a bare .vcf.gz or .vcf.gz.tbi, '
         'for SNP ${snp.id}',
@@ -680,9 +685,60 @@ class SnpService {
       return null;
     }
 
-    final incoming = await createIncomingDirectory(dir);
-    return (partial: File('${incoming.path}/$fileName.part'), target: target);
+    // ⚠️ One file of each kind per set, and this is a disk-space limit, not
+    // tidiness. Every name ending in `.vcf.gz` passes [snpUploadFileKind], and
+    // "nothing is ever overwritten" only stops the *same* name twice — so one
+    // set used to take `a.vcf.gz`, `b.vcf.gz`, … without end, each up to the
+    // per-file limit. On a public instance that was a guest filling the disk
+    // one capped file at a time. A set is one VCF and at most one index, and
+    // [settleUpload] refuses anything else anyway.
+    final existing = await dir
+        .list()
+        .where((e) => e is File)
+        .map((e) => snpUploadFileKind(e.uri.pathSegments.last))
+        .toList();
+    final slot = _uploadSlot(snp, kind);
+    if (existing.contains(kind) || !_uploadsInFlight.add(slot)) {
+      session.log(
+        'Refused a second ${kind.name} file for SNP ${snp.id}: a set holds one '
+        'of each.',
+        level: LogLevel.warning,
+      );
+      return null;
+    }
+
+    try {
+      final incoming = await createIncomingDirectory(dir);
+      return (partial: File('${incoming.path}/$fileName.part'), target: target);
+    } catch (_) {
+      _uploadsInFlight.remove(slot);
+      rethrow;
+    }
   }
+
+  /// Hands back the slot [resolveUploadTarget] reserved for [fileName].
+  ///
+  /// Safe to call for a name that reserved nothing.
+  void releaseUploadTarget(Snp snp, String fileName) {
+    final kind = snpUploadFileKind(fileName);
+    if (kind != null) _uploadsInFlight.remove(_uploadSlot(snp, kind));
+  }
+
+  /// Which SNP sets are receiving which kind of file right now.
+  ///
+  /// The directory check in [resolveUploadTarget] only sees files that have
+  /// *finished*: a transfer writes to `.incoming/<name>.part` and renames at
+  /// the end. Without this, a hundred parallel `PUT`s with a hundred names
+  /// would all find the directory empty and all be let in — the very thing the
+  /// one-of-each rule is there to stop.
+  ///
+  /// In memory, so it does not survive a restart — which is the right
+  /// lifetime: a transfer does not survive one either. Static, because the
+  /// route and the endpoints do not necessarily share an instance.
+  static final Set<String> _uploadsInFlight = {};
+
+  static String _uploadSlot(Snp snp, SnpFileKind kind) =>
+      '${snp.id}:${kind.name}';
 
   /// Works out what arrived in [snp]'s directory and settles its status.
   ///
@@ -1128,12 +1184,54 @@ class SnpService {
     );
   }
 
+  /// Deletes every SNP set whose [Snp.expires] has passed: guests' sets on a
+  /// public instance.
+  ///
+  /// Called from the authentication refresh tick, like the guest identities
+  /// these sets outlive, rather than from a future call per set: a query on a
+  /// small table every 30 seconds is cheaper than keeping a call scheduled per
+  /// row in step with it. Runs whether or not public mode is still on; only a
+  /// guest's set has a date.
+  ///
+  /// One set failing (its files cannot be removed, say) is logged and left for
+  /// the next tick, and does not stop the rest.
+  Future<void> deleteExpired(Session session) async {
+    final now = DateTime.now().toUtc();
+    final due = await Snp.db.find(
+      session,
+      where: (t) => t.expires.notEquals(null) & (t.expires < now),
+    );
+    for (final snp in due) {
+      try {
+        await deleteSnp(session, snp);
+      } catch (e) {
+        session.log(
+          'Could not delete expired SNP ${snp.id}: $e',
+          level: LogLevel.error,
+        );
+      }
+    }
+  }
+
   /// Refuses to recursively delete anything that is not inside one of the two
   /// directories SNP files are allowed to live in.
   ///
   /// `folder` is written by this codebase and never by a user, so this should be
   /// unreachable — which is exactly why it is worth having. A corrupted or
   /// hand-edited row is otherwise a recursive delete of whatever it names.
+  ///
+  /// ⚠️ "Inside" means a strict descendant, by path segment, after `..` and
+  /// symbolic links are taken out — see [isStrictlyInside]. It was a string
+  /// `startsWith` on the raw folder, which the trailing `/` kept from accepting
+  /// `/data/snp-evil` for `/data/snp`, but which accepted `/data/snp/../..`
+  /// (everything) and `/data/snp/` itself (every SNP set at once), and trusted a
+  /// symlinked directory in between to lead where its name said.
+  ///
+  /// The folder's **own** final component is not resolved: deleting a
+  /// directory that is a symlink removes the link and leaves its target
+  /// alone, so a set that is a link to somewhere else may still be deleted.
+  /// Every component above it is, because a link there moves what the
+  /// recursive delete reaches.
   ///
   /// An **empty** folder is not checked here and not an error: it means the row
   /// never got as far as having files, and refusing it would leave a half-created
@@ -1143,9 +1241,14 @@ class SnpService {
     final roots = [
       settings.genomeDir,
       settings.customSnpDir,
-    ].where((r) => r.isNotEmpty).map((r) => r.endsWith('/') ? r : '$r/');
+    ].where((r) => r.isNotEmpty).toList();
 
-    if (roots.any(snp.folder.startsWith)) return;
+    final folder = normalizeAbsolutePath(snp.folder);
+    if (folder != null) {
+      for (final root in roots) {
+        if (await _deletableInside(folder, root)) return;
+      }
+    }
 
     session.log(
       'Refusing to delete SNP ${snp.id}: "${snp.folder}" is outside both the '
@@ -1156,5 +1259,56 @@ class SnpService {
       message:
           'This SNP records a file location that cannot be deleted safely.',
     );
+  }
+
+  /// Whether a recursive delete of [folder] (already normalised) stays strictly
+  /// inside [root], symbolic links above [folder] included.
+  Future<bool> _deletableInside(String folder, String root) async {
+    final lexicalRoot = normalizeAbsolutePath(root);
+    if (lexicalRoot == null || !isStrictlyInside(folder, lexicalRoot)) {
+      return false;
+    }
+
+    final cut = folder.lastIndexOf('/');
+    final parent = Directory(cut == 0 ? '/' : folder.substring(0, cut));
+    // Nothing there means nothing to delete, and the lexical answer stands.
+    if (!await parent.exists()) return true;
+
+    final rootDir = Directory(lexicalRoot);
+    final realRoot = await rootDir.exists()
+        ? await rootDir.resolveSymbolicLinks()
+        : lexicalRoot;
+    final realParent = await parent.resolveSymbolicLinks();
+    final realFolder =
+        '${realParent == '/' ? '' : realParent}/${folder.substring(cut + 1)}';
+    return isStrictlyInside(realFolder, realRoot);
+  }
+
+  /// [path] with `.`, `..` and repeated or trailing `/` taken out, or null
+  /// when it is not absolute.
+  ///
+  /// Lexical only, the way a shell resolves `..` rather than the way the
+  /// kernel does; symbolic links are the caller's business. A `..` above `/`
+  /// stays at `/`, as it does on disk.
+  static String? normalizeAbsolutePath(String path) {
+    if (!path.startsWith('/')) return null;
+    final out = <String>[];
+    for (final segment in path.split('/')) {
+      if (segment.isEmpty || segment == '.') continue;
+      if (segment == '..') {
+        if (out.isNotEmpty) out.removeLast();
+        continue;
+      }
+      out.add(segment);
+    }
+    return '/${out.join('/')}';
+  }
+
+  /// Whether normalised absolute [path] lies strictly below normalised
+  /// absolute [root]: never [root] itself, and never a sibling that merely
+  /// shares its spelling (`/data/snp-evil` for `/data/snp`).
+  static bool isStrictlyInside(String path, String root) {
+    final prefix = root == '/' ? '/' : '$root/';
+    return path.length > prefix.length && path.startsWith(prefix);
   }
 }
