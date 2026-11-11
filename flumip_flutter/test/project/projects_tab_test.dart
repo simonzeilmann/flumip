@@ -1,7 +1,7 @@
 import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flumip_flutter/project/projects_tab.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'projects_controller_test.dart' show Harness, projectFixture;

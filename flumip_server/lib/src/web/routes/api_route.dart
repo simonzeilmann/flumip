@@ -96,7 +96,7 @@ class ApiRoute extends Route {
     return applyApiCors(
       result,
       verdict: verdict,
-      origin: req.headers[Headers.originHeader]?.first,
+      origin: req.headers[HeaderName.origin]?.first,
     );
   }
 

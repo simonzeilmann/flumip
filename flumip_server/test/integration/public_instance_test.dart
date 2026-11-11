@@ -767,6 +767,24 @@ void main() {
         );
       });
 
+      test('the owner list says which users are guests', () async {
+        // A guest has no address and no name, so the flag is the only thing the
+        // owner picker can label one with. Without it a guest is an empty row.
+        final admin = await signIn('boss@uni.example', isAdmin: true);
+        final guest = await acceptAsGuest();
+
+        final owners = await endpoints.project.assignableOwners(admin.builder);
+
+        final listedGuest = owners.singleWhere((u) => u.id == guest.userId);
+        expect(listedGuest.isGuest, isTrue);
+        expect(listedGuest.email, isEmpty);
+        expect(listedGuest.displayName, isEmpty);
+        expect(
+          owners.singleWhere((u) => u.id == admin.userId).isGuest,
+          isFalse,
+        );
+      });
+
       test('an internal install stamps nothing', () async {
         await configure(publicMode: false);
         final project = await endpoints.project.createProject(

@@ -1,6 +1,6 @@
 import 'package:flumip_flutter/ui/layout.dart';
 import 'package:flumip_flutter/ui/responsive_row.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

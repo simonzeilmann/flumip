@@ -216,6 +216,11 @@ loses its owner when the guest's cookie expires and the identity is cleaned up,
 and it must not then show up for every visitor. People who opened it from a share
 link keep it.
 
+The **Owner** menu on a project says so: its first entry reads **Unowned —
+administrators only** here, and **Unowned — shared with everyone** on an internal
+install. Guests are not offered as owners; a guest appears in the menu only on a
+project they currently own, as **Guest #** and a number.
+
 This is the main reason not to switch an existing internal install to public
 mode: all its unowned projects would disappear from everyone but administrators.
 

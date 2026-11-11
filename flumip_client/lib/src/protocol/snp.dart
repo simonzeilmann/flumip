@@ -228,9 +228,9 @@ abstract class Snp
     String? sourceTbiUrl,
     int? bytesDownloaded,
     int? totalBytes,
-    DateTime? statusUpdated,
+    DateTime? statusUpdated = const _isc.$UndefinedDateTime(),
     DateTime? created,
-    DateTime? expires,
+    DateTime? expires = const _isc.$UndefinedDateTime(),
   });
   @override
   Map<String, dynamic> toJson() {
@@ -361,9 +361,9 @@ class _SnpImpl extends Snp {
     Object? sourceTbiUrl = _Undefined,
     int? bytesDownloaded,
     int? totalBytes,
-    Object? statusUpdated = _Undefined,
+    DateTime? statusUpdated = const _isc.$UndefinedDateTime(),
     DateTime? created,
-    Object? expires = _Undefined,
+    DateTime? expires = const _isc.$UndefinedDateTime(),
   }) {
     return Snp(
       id: id is int? ? id : this.id,
@@ -383,11 +383,11 @@ class _SnpImpl extends Snp {
       sourceTbiUrl: sourceTbiUrl is String? ? sourceTbiUrl : this.sourceTbiUrl,
       bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
       totalBytes: totalBytes ?? this.totalBytes,
-      statusUpdated: statusUpdated is DateTime?
-          ? statusUpdated
-          : this.statusUpdated,
+      statusUpdated: statusUpdated is _isc.UndefinedSentinel
+          ? this.statusUpdated
+          : statusUpdated,
       created: created ?? this.created,
-      expires: expires is DateTime? ? expires : this.expires,
+      expires: expires is _isc.UndefinedSentinel ? this.expires : expires,
     );
   }
 }

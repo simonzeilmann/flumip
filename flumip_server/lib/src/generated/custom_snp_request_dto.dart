@@ -77,7 +77,7 @@ abstract class CustomSnpRequestDto
     String? description,
     int? genomeId,
     bool? private,
-    List<String>? urls,
+    List<String>? urls = const _is.$UndefinedList<String>(),
   });
   @override
   Map<String, dynamic> toJson() {
@@ -109,8 +109,6 @@ abstract class CustomSnpRequestDto
   }
 }
 
-class _Undefined {}
-
 class _CustomSnpRequestDtoImpl extends CustomSnpRequestDto {
   _CustomSnpRequestDtoImpl({
     required String name,
@@ -135,14 +133,16 @@ class _CustomSnpRequestDtoImpl extends CustomSnpRequestDto {
     String? description,
     int? genomeId,
     bool? private,
-    Object? urls = _Undefined,
+    List<String>? urls = const _is.$UndefinedList<String>(),
   }) {
     return CustomSnpRequestDto(
       name: name ?? this.name,
       description: description ?? this.description,
       genomeId: genomeId ?? this.genomeId,
       private: private ?? this.private,
-      urls: urls is List<String>? ? urls : this.urls?.map((e0) => e0).toList(),
+      urls: urls is _is.UndefinedSentinel
+          ? this.urls?.map((e0) => e0).toList()
+          : urls,
     );
   }
 }

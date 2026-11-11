@@ -6,7 +6,7 @@ environment:
   sdk: '^3.12.2'
 
 dependencies:
-  serverpod: 4.0.1
+  serverpod: 4.1.1
   uuid: ^4.6.0
   get_it: ^9.2.1
   mailer: ^6.4.1
@@ -22,5 +22,19 @@ dependencies:
 dev_dependencies:
   lints: ^6.0.0
   test: '^1.24.2'
-  serverpod_test: 4.0.1
+  serverpod_test: 4.1.1
 
+
+# Read by the Serverpod CLI, not by pub. `serverpod start` (and its MCP server's
+# `spawn_flutter_app` tool) runs the app from here with hot reload, on the port
+# the server's development CORS rule and .vscode/launch.json already use.
+# Sign-in does not work on this port (the session cookie belongs to 8082); see
+# "Server (single sign-on)" in .vscode/launch.json.
+serverpod:
+  flutter_apps:
+    flumip:
+      path: ../flumip_flutter
+      displayName: FLUMIP
+      device: chrome
+      auto_launch: true
+      web-port: 8083

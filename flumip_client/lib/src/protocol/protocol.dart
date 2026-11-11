@@ -65,24 +65,109 @@ export 'snp_usage_dto.dart';
 export 'user_settings_dto.dart';
 export 'client.dart';
 
-class Protocol extends _isc.SerializationManager {
+class Protocol extends _isc.SerializationManager
+    implements _isc.ProtocolDeserializationProvider {
   Protocol._();
 
   factory Protocol() => _instance;
 
   static final Protocol _instance = Protocol._();
 
-  static String? getClassNameFromObjectJson(dynamic data) {
-    if (data is! Map) return null;
-    final className = data['__className__'] as String?;
-    return className;
-  }
+  @override
+  _isc.ProtocolDeserialization get deserializationMetadata =>
+      _isc.ProtocolDeserialization.cached(
+        this,
+        types: const [
+          _isc.getType<_ilu62sh8.AuthAdminStatusDto>,
+          _isc.getType<_i3pxz8st.AuthConfigDto>,
+          _isc.getType<_i9fqmmja.AuthUserDto>,
+          _isc.getType<_i50r13ns.CustomSnpRequestDto>,
+          _isc.getType<_il9ya82w.BedCreationException>,
+          _isc.getType<_ix5u8j9t.ArgumentException>,
+          _isc.getType<_iua77lfj.FlumipFileNotFoundException>,
+          _isc.getType<_iq9wx7jy.ProjectAccessDeniedException>,
+          _isc.getType<_im3lr0ct.FlumipUserDto>,
+          _isc.getType<_ik3s3pjn.Genome>,
+          _isc.getType<_ifiazq2p.Project>,
+          _isc.getType<_i87lmv4r.ProjectDraftDto>,
+          _isc.getType<_ip1wvjxo.ProjectFileDto>,
+          _isc.getType<_i4kq7s26.ProjectOptions>,
+          _isc.getType<_iootg8bv.ScoreMethod>,
+          _isc.getType<_iy8r37ur.SearchHitDto>,
+          _isc.getType<_ia4xis23.SearchHitKind>,
+          _isc.getType<_ibmr8d9c.Settings>,
+          _isc.getType<_ip0fcn2o.Snp>,
+          _isc.getType<_iq9n7xnd.SnpImportStatus>,
+          _isc.getType<_i8stnodc.SnpUsageDto>,
+          _isc.getType<_igo562ik.UserSettingsDto>,
+          _isc.getType<_ilu62sh8.AuthAdminStatusDto?>,
+          _isc.getType<_i3pxz8st.AuthConfigDto?>,
+          _isc.getType<_i9fqmmja.AuthUserDto?>,
+          _isc.getType<_i50r13ns.CustomSnpRequestDto?>,
+          _isc.getType<_il9ya82w.BedCreationException?>,
+          _isc.getType<_ix5u8j9t.ArgumentException?>,
+          _isc.getType<_iua77lfj.FlumipFileNotFoundException?>,
+          _isc.getType<_iq9wx7jy.ProjectAccessDeniedException?>,
+          _isc.getType<_im3lr0ct.FlumipUserDto?>,
+          _isc.getType<_ik3s3pjn.Genome?>,
+          _isc.getType<_ifiazq2p.Project?>,
+          _isc.getType<_i87lmv4r.ProjectDraftDto?>,
+          _isc.getType<_ip1wvjxo.ProjectFileDto?>,
+          _isc.getType<_i4kq7s26.ProjectOptions?>,
+          _isc.getType<_iootg8bv.ScoreMethod?>,
+          _isc.getType<_iy8r37ur.SearchHitDto?>,
+          _isc.getType<_ia4xis23.SearchHitKind?>,
+          _isc.getType<_ibmr8d9c.Settings?>,
+          _isc.getType<_ip0fcn2o.Snp?>,
+          _isc.getType<_iq9n7xnd.SnpImportStatus?>,
+          _isc.getType<_i8stnodc.SnpUsageDto?>,
+          _isc.getType<_igo562ik.UserSettingsDto?>,
+          _isc.getType<List<String>>,
+          _isc.getType<List<String>?>,
+          _isc.getType<List<String>>,
+          _isc.getType<List<_i5l1g0eo.ProjectFileDto>>,
+          _isc.getType<List<_ixuye8o9.Genome>>,
+          _isc.getType<List<_iumnx4id.Snp>>,
+          _isc.getType<List<_iqi8mkqf.Project>>,
+          _isc.getType<List<_i15z9m0g.FlumipUserDto>>,
+          _isc.getType<List<_i8y6t52d.SearchHitDto>>,
+          _isc.getType<List<_idqeum9a.SnpUsageDto>>,
+        ],
+        modules: const [],
+        classNames: const [
+          'AuthAdminStatusDto',
+          'AuthConfigDto',
+          'AuthUserDto',
+          'CustomSnpRequestDto',
+          'BedCreationException',
+          'ArgumentException',
+          'FlumipFileNotFoundException',
+          'ProjectAccessDeniedException',
+          'FlumipUserDto',
+          'Genome',
+          'Project',
+          'ProjectDraftDto',
+          'ProjectFileDto',
+          'ProjectOptions',
+          'ScoreMethod',
+          'SearchHitDto',
+          'SearchHitKind',
+          'Settings',
+          'Snp',
+          'SnpImportStatus',
+          'SnpUsageDto',
+          'UserSettingsDto',
+        ],
+      );
+
+  static String? getClassNameFromObjectJson(dynamic data) =>
+      _isc.ProtocolDeserialization.readClassName(data);
 
   @override
   T deserialize<T>(dynamic data, [Type? t]) {
     t ??= T;
-
-    final dataClassName = getClassNameFromObjectJson(data);
+    final rawDataClassName = _isc.ProtocolDeserialization.readClassName(data);
+    final dataClassName = rawDataClassName;
     if (dataClassName != null && dataClassName != getClassNameForType(t)) {
       try {
         return deserializeByClassName({

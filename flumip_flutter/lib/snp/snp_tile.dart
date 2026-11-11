@@ -5,7 +5,7 @@ import 'package:flumip_flutter/snp/snp_status.dart';
 import 'package:flumip_flutter/snp/snp_upload_controller.dart';
 import 'package:flumip_flutter/ui/status_pill.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 /// One action from an SNP's overflow menu.

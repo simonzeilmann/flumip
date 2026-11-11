@@ -2,7 +2,7 @@ import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/snp/add_custom_snp_dialog.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The add dialog as a guest on a public instance sees it: upload only, small

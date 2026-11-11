@@ -1,6 +1,6 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/snp/delete_snp_dialogs.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The first real widget tests in this app, on the single highest-consequence

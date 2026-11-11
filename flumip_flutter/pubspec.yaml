@@ -9,12 +9,12 @@ version: 0.8.0
 
 environment:
   sdk: '^3.12.2'
-  flutter: '>=3.44.4'
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  serverpod_flutter: 4.0.1
+  serverpod_flutter: 4.1.1
   flumip_client:
     path: ../flumip_client
 
@@ -24,11 +24,15 @@ dependencies:
   http: ^1.6.0
   # Used directly for the auth key provider types; comes in via flumip_client
   # but this package imports it, so declare it.
-  serverpod_client: 4.0.1
+  serverpod_client: 4.1.1
   intl: ^0.20.3
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.9
+  # Material widgets. Flutter 3.50 deprecates package:flutter/material.dart in
+  # favour of this package, which is released separately from the SDK. From
+  # 1.4 on it needs Dart 3.13, hence the Flutter floor above.
+  material_ui: ^1.11.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0

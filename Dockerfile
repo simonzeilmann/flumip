@@ -35,7 +35,7 @@ ARG APP_SOURCE=app-from-source
 FROM debian:trixie AS build
 
 # Keep in step with flutter-version in .github/workflows/*.yml.
-ARG FLUTTER_VERSION=3.47.5
+ARG FLUTTER_VERSION=3.50.0
 
 # build-essential: Serverpod 4 pulls in sqlite3, whose native build hook may
 # compile C. The rest is what the Flutter tool itself needs.

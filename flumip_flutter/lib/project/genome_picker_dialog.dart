@@ -1,5 +1,5 @@
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../format.dart';
 import '../ui/dialog_body.dart';

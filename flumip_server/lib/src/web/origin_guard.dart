@@ -274,9 +274,9 @@ class OriginGuard {
   OriginVerdict judge(Request request) {
     final headers = request.headers;
     return policy.judge(
-      origin: _header(headers, Headers.originHeader),
-      secFetchSite: _header(headers, Headers.secFetchSiteHeader),
-      host: _header(headers, Headers.hostHeader),
+      origin: _header(headers, HeaderName.origin),
+      secFetchSite: _header(headers, HeaderName.secFetchSite),
+      host: _header(headers, HeaderName.host),
       forwardedHost: _header(headers, 'x-forwarded-host'),
       appOrigin: _appOrigin(),
     );
@@ -366,7 +366,7 @@ class OriginGuard {
         )
       : url;
 
-  static String? _header(Headers headers, String name) {
+  static String? _header(Headers headers, Object name) {
     final values = headers[name];
     if (values == null || values.isEmpty) return null;
     return values.first;

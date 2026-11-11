@@ -2,7 +2,7 @@ import 'package:flumip_flutter/project/project_state.dart';
 import 'package:flumip_flutter/project/project_state_pill.dart';
 import 'package:flumip_flutter/ui/status_pill.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<StatusPill> pumpPill(WidgetTester tester, ProjectState state) async {

@@ -15,7 +15,7 @@
 library;
 
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../error_text.dart';
 import '../format.dart';

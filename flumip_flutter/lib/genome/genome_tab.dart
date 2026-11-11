@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../access_controller.dart';
 import '../search/reveal.dart';

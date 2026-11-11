@@ -2,7 +2,7 @@ import 'package:flumip_flutter/genome/genome_detail_pane.dart';
 import 'package:flumip_flutter/genome/genome_rail.dart';
 import 'package:flumip_flutter/genome/genome_tab.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'genome_controller_test.dart' show Harness, genomeFixture;

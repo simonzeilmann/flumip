@@ -544,8 +544,11 @@ is the way back in if sign-in ever locks you out.
 
 ### Toolchain
 
-- Flutter **3.47.5** (pinned in CI), which brings Dart 3.12
-- Serverpod CLI **4.0.1**: `dart pub global activate serverpod_cli 4.0.1`
+- Flutter **3.50.0** (pinned in CI), which brings Dart 3.14. Not older: the app
+  uses `material_ui`, which needs Dart 3.13
+- Serverpod CLI **4.1.1**: `dart install serverpod_cli 4.1.1` (then put
+  `~/.local/state/Dart/install/bin` on your `PATH`; `serverpod doctor` checks
+  the result)
 - Docker, for PostgreSQL 18 (compose also starts Redis, which the server does
   not use yet)
 
@@ -581,6 +584,20 @@ is the way back in if sign-in ever locks you out.
    cd ../flumip_server
    dart run bin/main.dart --apply-migrations
    ```
+
+   While working on the server, run it under Serverpod's runner instead, which
+   reloads it when a file is saved:
+
+   ```bash
+   cd flumip_server
+   ./tool/dev.sh up      # start in the background
+   ./tool/dev.sh last    # after an edit: reloaded, or the compile errors
+   ./tool/dev.sh down
+   ```
+
+   `./tool/dev.sh ui` adds a terminal UI and runs the app in Chrome on port
+   8083 with hot reload. The script's header lists the rest, and
+   `tool/mcp.py` calls the runner's and Dart's MCP tools from a shell.
 
 4. Open <http://localhost:8082>.
 

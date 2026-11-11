@@ -4,7 +4,7 @@ import 'package:flumip_flutter/auth/public_notice_screen.dart';
 import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
 import 'package:flumip_flutter/project/expiry.dart';
 import 'package:flumip_flutter/share_link.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A public instance, from the app's side: the entry notice, the guest it

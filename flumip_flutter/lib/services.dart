@@ -1,5 +1,5 @@
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:serverpod_flutter/serverpod_flutter.dart';
 
 import 'access_controller.dart';

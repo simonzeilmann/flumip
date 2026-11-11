@@ -1,7 +1,7 @@
 import 'package:flumip_flutter/settings/admin_settings_form.dart';
 import 'package:flumip_flutter/settings/settings_form.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'settings_form_test.dart' show settingsFixture;

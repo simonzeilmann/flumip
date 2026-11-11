@@ -42,11 +42,20 @@ String? _readAuthCookie(Request request) =>
     _readCookie(request, authCookieName);
 
 String? _readCookie(Request request, String name) {
-  final header = Headers.cookie.getValueFrom(
-    request.headers,
-    orElse: (_) => null,
-  );
+  final header = _cookieHeaderOrNull(request);
   return header?.getCookie(name)?.value;
+}
+
+/// The parsed `Cookie` header, or null when it is absent or does not parse.
+///
+/// Relic 2.0.0-rc.3 dropped `getValueFrom(orElse:)`; `headers(accessor)` throws
+/// an `InvalidHeaderException` on a header it cannot decode.
+CookieHeader? _cookieHeaderOrNull(Request request) {
+  try {
+    return request.headers(Headers.cookie);
+  } on Exception {
+    return null;
+  }
 }
 
 Headers _cookieHeaders({

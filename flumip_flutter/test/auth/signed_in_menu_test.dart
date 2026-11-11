@@ -2,7 +2,7 @@ import 'package:flumip_flutter/auth/session_auth_key_provider.dart';
 import 'package:flumip_flutter/auth/signed_in_menu.dart';
 import 'package:flumip_flutter/ui/layout.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Who is signed in, and whether saying so fits in the app bar.

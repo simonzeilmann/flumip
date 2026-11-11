@@ -293,9 +293,18 @@ class DownloadRoute extends Route {
 /// on things like a duplicate cookie name set by something else on the domain,
 /// and that must not turn into a failed download.
 String? _readAuthCookie(Request request) {
-  final header = Headers.cookie.getValueFrom(
-    request.headers,
-    orElse: (_) => null,
-  );
+  final header = _cookieHeaderOrNull(request);
   return header?.getCookie(authCookieName)?.value;
+}
+
+/// The parsed `Cookie` header, or null when it is absent or does not parse.
+///
+/// Relic 2.0.0-rc.3 dropped `getValueFrom(orElse:)`; `headers(accessor)` throws
+/// an `InvalidHeaderException` on a header it cannot decode.
+CookieHeader? _cookieHeaderOrNull(Request request) {
+  try {
+    return request.headers(Headers.cookie);
+  } on Exception {
+    return null;
+  }
 }

@@ -4,7 +4,7 @@ import 'package:flumip_flutter/project/create_project_widget.dart';
 import 'package:flumip_flutter/project/new_project_controller.dart';
 import 'package:flumip_flutter/project/project_options_fields.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'new_project_controller_test.dart' show Harness;

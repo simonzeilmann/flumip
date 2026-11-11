@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A small, non-interactive badge: `Ready`, `Global`, `Indexing…`.
 ///

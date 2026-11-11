@@ -1,7 +1,7 @@
 import 'package:flumip_client/flumip_client.dart';
 import 'package:flumip_flutter/genome/genome_detail_pane.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Testable because the pane takes its data as parameters and its SNP list as an

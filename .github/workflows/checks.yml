@@ -66,11 +66,15 @@ jobs:
       # an unpinned SDK means the formatter and analyzer drift under the repo
       # between runs. Keep this in step with the sdk constraints in the three
       # pubspec.yaml files.
+      #
+      # 3.50.0 is also the floor now, not just the pin: the app imports
+      # material_ui (Flutter 3.50 deprecates package:flutter/material.dart),
+      # and material_ui >=1.4 needs Dart 3.13, which no 3.47.x release has.
       - name: Set Up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
-          flutter-version: '3.47.5'
+          flutter-version: '3.50.0'
 
       - name: Get dependencies
         run: |
@@ -188,7 +192,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
-          flutter-version: '3.47.5'
+          flutter-version: '3.50.0'
 
       - name: Get dependencies
         run: |
@@ -231,7 +235,7 @@ jobs:
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: 'stable'
-          flutter-version: '3.47.5'
+          flutter-version: '3.50.0'
 
       - name: Get dependencies
         run: cd flumip_flutter && flutter pub get

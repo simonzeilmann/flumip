@@ -3,7 +3,7 @@ import 'package:flumip_flutter/format.dart';
 import 'package:flumip_flutter/project/expiry.dart';
 import 'package:flumip_flutter/snp/picked_file.dart';
 import 'package:flumip_flutter/snp/snp_validation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flumip_flutter/ui/theme.dart';
 import 'package:flumip_flutter/ui/dialog_body.dart';
 

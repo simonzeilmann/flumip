@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flumip_flutter/ui/status_colors.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Contrast, checked once here instead of by eye at every call site.

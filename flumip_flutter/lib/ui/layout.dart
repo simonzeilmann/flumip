@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Below this, a master–detail cannot show both panes and collapses to one.
 ///

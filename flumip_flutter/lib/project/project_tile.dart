@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flumip_client/flumip_client.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -364,6 +364,7 @@ class _ProjectTileState extends State<ProjectTile> {
                 owners: widget.assignableOwners!,
                 ownerId: project.owner,
                 onChanged: (id) => widget.onOwnerChanged?.call(id),
+                publicMode: _serverConfig.publicMode,
               ),
             if (widget.assignableDepartments.isNotEmpty)
               DepartmentPicker(

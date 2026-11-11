@@ -25,13 +25,19 @@ import 'package:serverpod/serverpod.dart' as _is;
 /// own this".
 abstract class FlumipUserDto
     implements _is.SerializableModel, _is.ProtocolSerialization {
-  FlumipUserDto._({required this.id, required this.email, String? displayName})
-    : displayName = displayName ?? '';
+  FlumipUserDto._({
+    required this.id,
+    required this.email,
+    String? displayName,
+    bool? isGuest,
+  }) : displayName = displayName ?? '',
+       isGuest = isGuest ?? false;
 
   factory FlumipUserDto({
     required int id,
     required String email,
     String? displayName,
+    bool? isGuest,
   }) = _FlumipUserDtoImpl;
 
   factory FlumipUserDto.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -39,6 +45,9 @@ abstract class FlumipUserDto
       id: jsonSerialization['id'] as int,
       email: jsonSerialization['email'] as String,
       displayName: jsonSerialization['displayName'] as String?,
+      isGuest: jsonSerialization['isGuest'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['isGuest']),
     );
   }
 
@@ -48,10 +57,20 @@ abstract class FlumipUserDto
 
   String displayName;
 
+  /// True for a guest on a public instance, which has neither an address nor a
+  /// name. The picker has nothing else to label one with: without this a guest
+  /// is an empty row.
+  bool isGuest;
+
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
-  FlumipUserDto copyWith({int? id, String? email, String? displayName});
+  FlumipUserDto copyWith({
+    int? id,
+    String? email,
+    String? displayName,
+    bool? isGuest,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -59,6 +78,7 @@ abstract class FlumipUserDto
       'id': id,
       'email': email,
       'displayName': displayName,
+      'isGuest': isGuest,
     };
   }
 
@@ -69,6 +89,7 @@ abstract class FlumipUserDto
       'id': id,
       'email': email,
       'displayName': displayName,
+      'isGuest': isGuest,
     };
   }
 
@@ -83,17 +104,29 @@ class _FlumipUserDtoImpl extends FlumipUserDto {
     required int id,
     required String email,
     String? displayName,
-  }) : super._(id: id, email: email, displayName: displayName);
+    bool? isGuest,
+  }) : super._(
+         id: id,
+         email: email,
+         displayName: displayName,
+         isGuest: isGuest,
+       );
 
   /// Returns a shallow copy of this [FlumipUserDto]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
   @override
-  FlumipUserDto copyWith({int? id, String? email, String? displayName}) {
+  FlumipUserDto copyWith({
+    int? id,
+    String? email,
+    String? displayName,
+    bool? isGuest,
+  }) {
     return FlumipUserDto(
       id: id ?? this.id,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
+      isGuest: isGuest ?? this.isGuest,
     );
   }
 }

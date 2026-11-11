@@ -14,3 +14,7 @@ fields:
   id: int
   email: String
   displayName: String, default=""
+  ### True for a guest on a public instance, which has neither an address nor a
+  ### name. The picker has nothing else to label one with: without this a guest
+  ### is an empty row.
+  isGuest: bool, default=false

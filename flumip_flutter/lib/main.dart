@@ -26,7 +26,7 @@ import 'package:flumip_flutter/services.dart';
 import 'package:flumip_flutter/share_link.dart';
 import 'package:flumip_flutter/snp/file_picker.dart';
 import 'package:flumip_flutter/snp/web_snp_transport.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:web/web.dart' as web;
 
 /// Asks the browser to confirm before the page goes away.

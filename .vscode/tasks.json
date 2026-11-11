@@ -161,6 +161,33 @@
       }
     },
     {
+      // Server and app together under Serverpod's runner: saving a file
+      // reloads the running server (about 1.5 s) and the app in Chrome on 8083,
+      // without the restart the "Server" configurations need.
+      //
+      // ⚠️ It is not a debug session: no breakpoints. And the runner always
+      // starts the server with --apply-migrations, unlike "Server". Same
+      // sign-in limitation as "Full stack" — the app is on its own port — so
+      // run "Full stack: prepare" first if sign-in is switched on.
+      //
+      // flumip_server/tool/dev.sh has the same thing without the UI (`up`,
+      // `last`, `logs`, `down`), which is what a script or an agent uses.
+      "label": "Dev: hot-reload stack",
+      "detail": "serverpod start — server + app with hot reload, in a terminal UI",
+      "type": "shell",
+      "command": "./tool/dev.sh ui",
+      "options": {
+        "cwd": "${workspaceFolder}/flumip_server"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
+    },
+    {
       // What both "Full stack" compounds run before starting.
       //
       // ⚠️ Switching sign-in off is the point, not a side effect. Those

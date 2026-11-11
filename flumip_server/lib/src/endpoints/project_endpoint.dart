@@ -1,6 +1,7 @@
 import 'package:serverpod/protocol.dart';
 import 'package:serverpod/server.dart';
 
+import '../services/auth_service.dart';
 import '../services/authorization_service.dart';
 import '../services/project_service.dart';
 import '../services/settings_service.dart';
@@ -418,6 +419,7 @@ class ProjectEndpoint extends FlumipEndpoint {
               id: u.id!,
               email: u.email,
               displayName: u.displayName,
+              isGuest: u.issuer == AuthService.guestIssuer,
             ),
           )
           .toList();

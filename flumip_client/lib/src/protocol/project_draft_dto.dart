@@ -95,7 +95,7 @@ abstract class ProjectDraftDto
     _i4kq7s26.ProjectOptions? options,
     int? genome,
     int? snp,
-    List<String>? genes,
+    List<String>? genes = const _isc.$UndefinedList<String>(),
     bool? emailNotification,
   });
   @override
@@ -163,7 +163,7 @@ class _ProjectDraftDtoImpl extends ProjectDraftDto {
     _i4kq7s26.ProjectOptions? options,
     Object? genome = _Undefined,
     Object? snp = _Undefined,
-    Object? genes = _Undefined,
+    List<String>? genes = const _isc.$UndefinedList<String>(),
     bool? emailNotification,
   }) {
     return ProjectDraftDto(
@@ -172,9 +172,9 @@ class _ProjectDraftDtoImpl extends ProjectDraftDto {
       options: options ?? this.options.copyWith(),
       genome: genome is int? ? genome : this.genome,
       snp: snp is int? ? snp : this.snp,
-      genes: genes is List<String>?
-          ? genes
-          : this.genes?.map((e0) => e0).toList(),
+      genes: genes is _isc.UndefinedSentinel
+          ? this.genes?.map((e0) => e0).toList()
+          : genes,
       emailNotification: emailNotification ?? this.emailNotification,
     );
   }

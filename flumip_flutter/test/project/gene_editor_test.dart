@@ -1,6 +1,6 @@
 import 'package:flumip_flutter/project/gene_editor.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The gene list and the field under it.

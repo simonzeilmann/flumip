@@ -1,5 +1,5 @@
 import 'package:flumip_flutter/ui/layout.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The regression test for the complaint that started this work: on a wide

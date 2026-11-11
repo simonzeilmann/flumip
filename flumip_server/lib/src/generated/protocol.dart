@@ -75,12 +75,115 @@ export 'snp_import_status.dart';
 export 'snp_usage_dto.dart';
 export 'user_settings_dto.dart';
 
-class Protocol extends _is.DatabaseSerializationManager {
+class Protocol extends _is.DatabaseSerializationManager
+    implements _is.DatabaseProtocolDeserializationProvider {
   Protocol._();
 
   factory Protocol() => _instance;
 
   static final Protocol _instance = Protocol._();
+
+  @override
+  _is.ProtocolDeserialization get deserializationMetadata =>
+      _is.ProtocolDeserialization.cached(
+        this,
+        types: const [
+          _is.getType<_ilu62sh8.AuthAdminStatusDto>,
+          _is.getType<_i1qrzley.AuthApiToken>,
+          _is.getType<_i3pxz8st.AuthConfigDto>,
+          _is.getType<_iopq1986.AuthFlow>,
+          _is.getType<_i1cqtl3u.AuthSession>,
+          _is.getType<_i9fqmmja.AuthUserDto>,
+          _is.getType<_i50r13ns.CustomSnpRequestDto>,
+          _is.getType<_il9ya82w.BedCreationException>,
+          _is.getType<_ix5u8j9t.ArgumentException>,
+          _is.getType<_iua77lfj.FlumipFileNotFoundException>,
+          _is.getType<_iq9wx7jy.ProjectAccessDeniedException>,
+          _is.getType<_ijkt6zbv.FlumipUser>,
+          _is.getType<_im3lr0ct.FlumipUserDto>,
+          _is.getType<_ik3s3pjn.Genome>,
+          _is.getType<_ifiazq2p.Project>,
+          _is.getType<_i87lmv4r.ProjectDraftDto>,
+          _is.getType<_ip1wvjxo.ProjectFileDto>,
+          _is.getType<_i45tws7n.ProjectGrant>,
+          _is.getType<_i4kq7s26.ProjectOptions>,
+          _is.getType<_iootg8bv.ScoreMethod>,
+          _is.getType<_iy8r37ur.SearchHitDto>,
+          _is.getType<_ia4xis23.SearchHitKind>,
+          _is.getType<_ibmr8d9c.Settings>,
+          _is.getType<_ip0fcn2o.Snp>,
+          _is.getType<_iq9n7xnd.SnpImportStatus>,
+          _is.getType<_i8stnodc.SnpUsageDto>,
+          _is.getType<_igo562ik.UserSettingsDto>,
+          _is.getType<_ilu62sh8.AuthAdminStatusDto?>,
+          _is.getType<_i1qrzley.AuthApiToken?>,
+          _is.getType<_i3pxz8st.AuthConfigDto?>,
+          _is.getType<_iopq1986.AuthFlow?>,
+          _is.getType<_i1cqtl3u.AuthSession?>,
+          _is.getType<_i9fqmmja.AuthUserDto?>,
+          _is.getType<_i50r13ns.CustomSnpRequestDto?>,
+          _is.getType<_il9ya82w.BedCreationException?>,
+          _is.getType<_ix5u8j9t.ArgumentException?>,
+          _is.getType<_iua77lfj.FlumipFileNotFoundException?>,
+          _is.getType<_iq9wx7jy.ProjectAccessDeniedException?>,
+          _is.getType<_ijkt6zbv.FlumipUser?>,
+          _is.getType<_im3lr0ct.FlumipUserDto?>,
+          _is.getType<_ik3s3pjn.Genome?>,
+          _is.getType<_ifiazq2p.Project?>,
+          _is.getType<_i87lmv4r.ProjectDraftDto?>,
+          _is.getType<_ip1wvjxo.ProjectFileDto?>,
+          _is.getType<_i45tws7n.ProjectGrant?>,
+          _is.getType<_i4kq7s26.ProjectOptions?>,
+          _is.getType<_iootg8bv.ScoreMethod?>,
+          _is.getType<_iy8r37ur.SearchHitDto?>,
+          _is.getType<_ia4xis23.SearchHitKind?>,
+          _is.getType<_ibmr8d9c.Settings?>,
+          _is.getType<_ip0fcn2o.Snp?>,
+          _is.getType<_iq9n7xnd.SnpImportStatus?>,
+          _is.getType<_i8stnodc.SnpUsageDto?>,
+          _is.getType<_igo562ik.UserSettingsDto?>,
+          _is.getType<List<String>>,
+          _is.getType<List<String>?>,
+          _is.getType<List<String>>,
+          _is.getType<List<_iaw3nq06.ProjectFileDto>>,
+          _is.getType<List<_i2jfp72f.Genome>>,
+          _is.getType<List<_icqkl7md.Snp>>,
+          _is.getType<List<_idblq1ye.Project>>,
+          _is.getType<List<_ipn4uvlw.FlumipUserDto>>,
+          _is.getType<List<_ih1e1b1z.SearchHitDto>>,
+          _is.getType<List<_ivyy2rnq.SnpUsageDto>>,
+        ],
+        modules: const [_isp.Protocol.new],
+        classNames: const [
+          'AuthAdminStatusDto',
+          'AuthApiToken',
+          'AuthConfigDto',
+          'AuthFlow',
+          'AuthSession',
+          'AuthUserDto',
+          'CustomSnpRequestDto',
+          'BedCreationException',
+          'ArgumentException',
+          'FlumipFileNotFoundException',
+          'ProjectAccessDeniedException',
+          'FlumipUser',
+          'FlumipUserDto',
+          'Genome',
+          'Project',
+          'ProjectDraftDto',
+          'ProjectFileDto',
+          'ProjectGrant',
+          'ProjectOptions',
+          'ScoreMethod',
+          'SearchHitDto',
+          'SearchHitKind',
+          'Settings',
+          'Snp',
+          'SnpImportStatus',
+          'SnpUsageDto',
+          'UserSettingsDto',
+        ],
+      );
 
   static List<_isp.TableDefinition> get targetTableDefinitions => [
     _isp.TableDefinition(
@@ -1664,17 +1767,14 @@ class Protocol extends _is.DatabaseSerializationManager {
     ..._isp.Protocol.targetTableDefinitions,
   ];
 
-  static String? getClassNameFromObjectJson(dynamic data) {
-    if (data is! Map) return null;
-    final className = data['__className__'] as String?;
-    return className;
-  }
+  static String? getClassNameFromObjectJson(dynamic data) =>
+      _is.ProtocolDeserialization.readClassName(data);
 
   @override
   T deserialize<T>(dynamic data, [Type? t]) {
     t ??= T;
-
-    final dataClassName = getClassNameFromObjectJson(data);
+    final rawDataClassName = _is.ProtocolDeserialization.readClassName(data);
+    final dataClassName = rawDataClassName;
     if (dataClassName != null && dataClassName != getClassNameForType(t)) {
       try {
         return deserializeByClassName({
@@ -1924,9 +2024,16 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
-    try {
-      return _isp.Protocol().deserialize<T>(data, t);
-    } on _is.DeserializationTypeNotFoundException catch (_) {}
+    final modules = deserializationMetadata.modulesForDeserialization(
+      t,
+      className: rawDataClassName,
+    );
+    for (final module in modules) {
+      try {
+        return module.deserialize<T>(data, t);
+      } on _is.DeserializationTypeNotFoundException catch (_) {}
+    }
+
     return super.deserialize<T>(data, t);
   }
 
@@ -2123,8 +2230,10 @@ class Protocol extends _is.DatabaseSerializationManager {
       return deserialize<_igo562ik.UserSettingsDto>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
-      data['className'] = dataClassName.substring(10);
-      return _isp.Protocol().deserializeByClassName(data);
+      return _isp.Protocol().deserializeByClassName({
+        ...data,
+        'className': dataClassName.substring(10),
+      });
     }
     return super.deserializeByClassName(data);
   }

@@ -1,8 +1,9 @@
+import 'package:flumip_flutter/auth/auth_controller.dart';
 import 'package:flumip_flutter/project/project_options_view.dart';
 import 'package:flumip_flutter/project/project_run_panel.dart';
 import 'package:flumip_flutter/project/project_tile.dart';
 import 'package:flumip_flutter/ui/theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'project_run_panel_test.dart' show projectFixture;
@@ -219,6 +220,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ProjectOptionsView), findsOneWidget);
+    h.controller.dispose();
+  });
+
+  testWidgets('⚠️ on a public instance the tile says unowned is admins only', (
+    tester,
+  ) async {
+    // The picker cannot know what kind of install it is on; the tile tells it.
+    // Left out, the label falls back to "shared with everyone", which on a
+    // public instance is the opposite of what the server does.
+    final h = Harness();
+
+    Widget tile({required bool publicMode}) => MaterialApp(
+      theme: buildAppTheme(),
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: ProjectTile(
+            project: h.project,
+            onDelete: () {},
+            controller: h.controller,
+            assignableOwners: const [],
+            serverConfig: AuthConfigSnapshot(
+              enabled: true,
+              buttonLabel: 'Sign in',
+              publicMode: publicMode,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    tester.view.physicalSize = const Size(1400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(tile(publicMode: true));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
+    await tester.pumpAndSettle();
+    expect(find.text('Unowned — administrators only'), findsOneWidget);
+
+    await tester.pumpWidget(tile(publicMode: false));
+    await tester.pumpAndSettle();
+    expect(find.text('Unowned — shared with everyone'), findsOneWidget);
     h.controller.dispose();
   });
 

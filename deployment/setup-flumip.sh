@@ -1115,7 +1115,7 @@ READ_WRITE_LINE="${READ_WRITE_LINE% }"
 
 # --- Firewall (optional) ----------------------------------------------------
 
-# Serverpod 4.0.1 binds all three of its servers to every address, with no
+# Serverpod 4.1.1 binds all three of its servers to every address, with no
 # setting to change that (InternetAddress.anyIPv6 in its server.dart and
 # web_server.dart), and systemd's IPAddressDeny= applies to all of a unit's
 # traffic, not to one port. So the internal API and Insights ports are kept to
